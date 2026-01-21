@@ -145,7 +145,9 @@ def main():
     runroot = cfg['machine'].get('runroot', rootdir + '/e3sm_run')
     modelroot = cfg['machine'].get('modelroot', '')
     exeroot = cfg['machine'].get('exeroot', '')
+    # exeroot
     print('Run root directory:  '+runroot)
+    print('Exe root directory:  '+exeroot)
     print('Case root directory: '+caseroot)
     print('Input data directory: '+inputdata)
     print('Model root directory: '+modelroot+'\n')

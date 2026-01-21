@@ -452,7 +452,7 @@ class ELMcase():
     #ADD MPILIB OPTION HERE
     cmd = cmd+' > '+self.OLMTdir+'/create_newcase.log'
     os.chdir(self.modelroot+'/cime/scripts')
-
+    print(cmd)
     result = subprocess.run(cmd, stdout=subprocess.PIPE, \
             stderr=subprocess.PIPE, text=True, shell=True)
     if (result.returncode > 0):
@@ -661,6 +661,8 @@ class ELMcase():
 
     if (self.has_finidat):
         self.customize_namelist(variable='finidat',value="'"+self.finidat+"'")
+    
+    # Tianyi Hu move set up new case after fsurdata is set
     #Setup the new case
     result = subprocess.run(['./case.setup'], stdout=subprocess.PIPE, \
             stderr=subprocess.PIPE, text=True)
@@ -668,6 +670,8 @@ class ELMcase():
         print('Error: runcase.py failed to setup case')
         print(result.stderr)
         sys.exit(1)
+    # -----------------Tianyi Hu modify namelist ---------
+
     #get the default parameter files for the case
     if ('FATES' in self.compset or 'ED' in self.compset):
         self.set_fates_param_file()
@@ -714,6 +718,7 @@ class ELMcase():
        pftdynfile = self.rundir+'/surfdata.pftdyn.nc'
     self.customize_namelist(variable='do_budgets',value='.false.')
     self.customize_namelist(variable='fsurdat',value="'"+surffile+"'")
+
     if ('20TR' in self.casename):
       if (self.nopftdyn):
           self.customize_namelist(variable='flanduse_timeseries',value='')
@@ -1044,9 +1049,11 @@ class ELMcase():
                 stdout=log_file)
             jobnum=0
     else:
+        print(cmd)
         result = subprocess.run(cmd, stderr=subprocess.STDOUT, \
                 stdout=subprocess.PIPE, text=True)
         output = result.stdout.strip()
+        print(output)
         jobnum = int(output.split()[-1])
         print('\nSubmitted '+str(jobnum))
     os.chdir(self.OLMTdir)
