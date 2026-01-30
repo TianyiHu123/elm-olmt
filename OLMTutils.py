@@ -95,6 +95,7 @@ def get_site_info(inputdata, sitegroup='AmeriFlux', sftp=None, use_crop=False):
         npfts = 17
     for s in lines:
         if snum > 0:
+            # print(s.split(',')[:])
             sitename = s.split(',')[0]
             siteinfo[sitename] = {}
             siteinfo[sitename]['lon'] = float(s.split(',')[3])
