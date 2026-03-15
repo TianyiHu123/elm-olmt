@@ -26,7 +26,7 @@ class ELMcase():
             res='',tstep=1,np=1,nyears=1,startyear=-1, machine='', queue='', project = '',\
             exeroot='', modelroot='', runroot='',caseroot='',inputdata='', \
             region_name='', lat_bounds=[-90,90],lon_bounds=[-180,180], \
-            point_list=[], namelist_options=[],casename='',mpilib='', olmtdir=''):
+            point_list=[], namelist_options=[],casename='',mpilib='', olmtdir='', olmtcondaenv=''):
 
       if (casename != ''):
         #get case information from pre-existing pkl file:
@@ -47,6 +47,8 @@ class ELMcase():
             self.OLMTdir = os.getcwd()+'/..'
         else:
             self.OLMTdir = olmtdir
+        # Tianyi Hu added conda env
+        self.OLMT_condaenv = olmtcondaenv
         #Set default resolution (site or regional)
         self.site=site
         if (res == ''):
@@ -413,7 +415,7 @@ class ELMcase():
       self.has_finidat=True
 
 #-----------------------------------------------------------------------------------------
-  def create_case(self, machine='',casename='', remove=False):
+  def create_case(self, machine='',casename='', remove=False, walltime="24:00:00"):
     if (casename == ''):
       #construct default casename
       if (self.site == ''):
@@ -438,9 +440,10 @@ class ELMcase():
         os.system('rm -rf '+self.casedir)    
     print("CASE directory is: "+self.casedir)
     #create the case
-    walltime=24
-    timestr=str(int(float(walltime)))+':'+str(int((float(walltime)- \
-                                     int(float(walltime)))*60))+':00'
+    #walltime=24
+    # timestr=str(int(float(walltime)))+':'+str(int((float(walltime)- \
+    #                                  int(float(walltime)))*60))+':00'
+    timestr=walltime
     #IF the resolution is user defined (site), we will first create a case with 
     #original resolution to get them correct domain, surface and land use files.
     cmd = './create_newcase --case '+self.casedir+' --mach '+self.machine+' --compset '+ \

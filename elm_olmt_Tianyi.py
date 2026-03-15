@@ -146,6 +146,8 @@ def main():
     runroot = cfg['machine'].get('runroot', rootdir + '/e3sm_run')
     modelroot = cfg['machine'].get('modelroot', '')
     exeroot = cfg['machine'].get('exeroot', '')
+    olmt_conda = cfg['machine'].get('olmt_condaenv', 'OLMT_pm')
+    
     # exeroot
     print('Run root directory:  '+runroot)
     print('Exe root directory:  '+exeroot)
@@ -213,7 +215,11 @@ def main():
     run_startyear = cfg['run_lengths'].get('trans_startyear', 1850)
     if (nutrients == 'none'):
         run_startyear = cfg['run_lengths'].get('startyear', run_startyear)
-
+    # Walltime
+    walltime_ad = cfg['run_lengths'].get('walltime_ad', "24:00:00")
+    walltime_final = cfg['run_lengths'].get('walltime_final', "24:00:00")
+    walltime_trans = cfg['run_lengths'].get('walltime_trans', "24:00:00")
+    
     # Ensemble options
     if ('ensemble' in cfg):
         parm_list = cfg['ensemble'].get('parm_list', '')
@@ -356,28 +362,33 @@ def main():
     suffix=[]
     startyear=[]
     nyears=[]
+    walltime=[]
     if (not use_fates and (nutrients == 'none' or nutrients =='SP')):
         compsets.append(compset_type+'ELMBC')
         suffix.append('')
         startyear.append(run_startyear)
         nyears.append(nyears_final)
         depends=[-1]
+        walltime.append(walltime_final)
     else:
         if (nyears_ad > 0):
             compsets.append(compset_type+'1850'+compset_base.replace('CNP','CN'))  #ad_spinup
             suffix.append('ad_spinup')
             startyear.append(1)
+            walltime.append(walltime_ad)
         nyears.append(nyears_ad)
         if (nyears_final > 0):
             compsets.append(compset_type+'1850'+compset_base)  #Final spinup
             suffix.append('')
             startyear.append(1)
             nyears.append(nyears_final)
+            walltime.append(walltime_final)
         if (nyears_trans != 0):
             compsets.append(compset_type+'20TR'+compset_base)  #Transient
             suffix.append('')
             startyear.append(run_startyear)
             nyears.append(nyears_trans)
+            walltime.append(walltime_trans)
         depends = np.cumsum(np.ones([len(compsets)],int))-2
         if (twophase):                            #add the phase 2 compset and case info
             compsets.append(compset_type+'20TR'+compset_base)  #Transient phase 2
@@ -438,7 +449,7 @@ def main():
             machine=machine, exeroot=exeroot, suffix=mysuffix, queue=queue, project=project,  \
             res=res, nyears=nyears[c],startyear=startyear[c], region_name=region_name, \
             lat_bounds=lat_bounds, lon_bounds=lon_bounds, np=numproc, point_list=point_list, \
-            olmtdir=scriptdir)
+            olmtdir=scriptdir, olmtcondaenv=olmt_conda)
         #Save the other site names in first site's cases (for use in multi-site calibration)
         if site == sites[0]:
             cases[c].all_sites = [s for s in sites]
@@ -446,7 +457,7 @@ def main():
         # Create the case
         casename = case_names[site_s]+"_"+cases[c].compset+mysuffix
         print('Creating case: '+casename+'\n')
-        cases[c].create_case(casename=casename)
+        cases[c].create_case(casename=casename, walltime=walltime[c])
         cases[c].case_options={}
         if (site != ''):
             cases[c].siteinfo = siteinfo[site]
@@ -564,13 +575,13 @@ def main():
         if (depends[c] < 0 and site == sites[0]):
             exeroot = cases[c].exeroot
         if (ensemble):
-            multisite_scripts[c] = cases[c].create_multisite_script([site], scriptdir)
+            multisite_scripts[c] = cases[c].create_multisite_script([site], scriptdir, walltime=walltime[c])
             jobnum[c] = cases[c].submit_case(depend=jobnum_depend, \
                 ensemble=ensemble,multisite_script=multisite_scripts[c])
         else:
             if (site == sites[0]):
                 # Always use the multi-site script even for one site
-                multisite_scripts[c] = cases[c].create_multisite_script(sites, scriptdir)
+                multisite_scripts[c] = cases[c].create_multisite_script(sites, scriptdir, walltime=walltime[c])
             if (site == sites[nsites-1]):
                 jobnum[c] = cases[c].submit_case(depend=jobnum_depend, \
                     ensemble=ensemble,multisite_script=multisite_scripts[c])

@@ -84,7 +84,7 @@ def create_ensemble_script(self, walltime=24):
     os.system('chmod u+x case.submit_ensemble')
     self.rundir_UQ = self.runroot+'/UQ/'+self.casename
 
-def create_multisite_script(self,sites,scriptdir, walltime=24):
+def create_multisite_script(self,sites,scriptdir, walltime='24:00:00'):
     #Create the PBS script we will submit to run multiple sites
     os.chdir(self.casedir)
     #Get the LD_LIBRARY_PATH from software environment
@@ -104,12 +104,14 @@ def create_multisite_script(self,sites,scriptdir, walltime=24):
     if (self.queue == 'debug'):
         walltime=2
     if ('pm-cpu' in self.machine):
-        myfile.write('#SBATCH --time='+str(walltime)+':00:00\n') # Tianyi Hu fixed here
+        #myfile.write('#SBATCH --time='+str(walltime)+':00:00\n') # Tianyi Hu fixed here
+        myfile.write('#SBATCH --time='+walltime+'\n') # Tianyi Hu customized time
         myfile.write('#SBATCH --constraint=cpu\n')
         myfile.write('#SBATCH --qos='+self.queue+'\n')
         myfile.write('#SBATCH --account='+self.project+'\n')
     else:
         myfile.write('#SBATCH -t '+str(walltime)+':00:00\n')
+        myfile.write('#SBATCH -t '+walltime+'\n')# Tianyi Hu customized time
         myfile.write('#SBATCH -p '+self.queue+'\n')
         if (self.project != ''):
             myfile.write('#SBATCH -A '+self.project+'\n')
@@ -150,9 +152,13 @@ def create_multisite_script(self,sites,scriptdir, walltime=24):
         is_site_run = hasattr(self, 'site') and self.site != '' and self.site is not None
         if (not 'ICBELM' in self.compset and not '20TR' in self.compset and not 'trans' in self.casename \
             and not 'ad_spinup' in self.casename and is_site_run):
+            # Tianyi Hu activate conda environment
+            myfile.write('conda activate '+self.OLMT_condaenv+'\n')
             #Assume this is a final spinup case, do spinup diagnostic plots
             myfile.write('python manage_postproc.py --case '+self.casename.replace(sites[0],s)+' --plot_spinup\n')
         elif self.postproc_vars:
+            # Tianyi Hu activate conda environment
+            myfile.write('conda activate '+self.OLMT_condaenv+'\n')
             #Do requested postprocessing and plotting
             myfile.write('python manage_postproc.py --case '+self.casename.replace(sites[0],s)+'\n')
     myfile.close()
