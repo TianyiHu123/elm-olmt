@@ -165,7 +165,7 @@ class ELMcase():
     print('Run root directory:   '+self.runroot)
     print('Case root directory:  '+self.caseroot)
 
-  def get_forcing(self,metdir='',mettype=''):
+  def get_forcing(self,metdir='',mettype='',spinup_cycle=5):
     #Get the forcing type and directory
     if (metdir == ''):
         if (self.site != '' and (mettype == '' or mettype == 'site')):
@@ -206,8 +206,11 @@ class ELMcase():
               sys.exit(1)
         self.metdir = metdir
         if self.forcing == 'site':
-            self.metdir = metdir+'/1x1pt_'+self.site
-    self.get_metdata_year_range()
+            
+            #self.metdir = metdir+'/1x1pt_'+self.site
+            # Tanyi modified to correctly read met data
+            self.metdir = metdir+'/1x1pt_'+self.site+'/CLM1PT_data'
+    self.get_metdata_year_range(spinup_cycle)
 
   def is_bypass(self):
     #Determine whether this is a coupler bypass case from compset name
@@ -351,6 +354,7 @@ class ELMcase():
         self.CNPparm_file = self.get_namelist_variable('fsoilordercon')
     else:
         self.CNPparm_file = filename
+    print('Parameter file: '+self.CNPparm_file)
     os.system('cp '+self.CNPparm_file+' '+self.OLMTdir+'/temp/CNP_parameters.nc')
 
   def set_fates_param_file(self):
@@ -492,6 +496,7 @@ class ELMcase():
         if pftdynfile == '':
             self.nopftdyn = True
     if (domainfile == '' and makedomain):
+      print('make domain file from ',self.domain_global)
       self.makepointdata(self.domain_global)
     if (surffile == '' and makesurfdat):
       self.makepointdata(self.surfdata_global, pft=pft)
@@ -504,7 +509,7 @@ class ELMcase():
     if (pftdynfile != ''):
       print('20th landuse data file: '+pftdynfile+"'\n")
 
-  def get_metdata_year_range(self):
+  def get_metdata_year_range(self, spinup_cycle):
     #get site year information
     sitedatadir = os.path.abspath(self.inputdata_path+'/lnd/clm2/PTCLM')
     os.chdir(sitedatadir)
@@ -518,6 +523,11 @@ class ELMcase():
       else:
         pattern = os.path.join(self.metdir,'????-??.nc')
         matching_files = glob.glob(pattern)
+        # Tianyi debug
+        print('get met data:')
+        print(pattern)
+        # print(matching_files)
+        # Tianyi debug
         years=[]
         for f in matching_files:
             years.append(int(f.split('/')[-1].split('-')[0]))
@@ -526,7 +536,7 @@ class ELMcase():
       #if (self.met_endyear-self.met_startyear+1 > 20):
       #    self.met_endyear_spinup = self.met_startyear+20-1
       #else:
-      self.met_endyear_spinup = self.met_endyear
+      self.met_endyear_spinup = self.met_startyear + spinup_cycle-1
     else:
         #Assume reanalysis
         self.met_startyear = 1901
@@ -561,8 +571,8 @@ class ELMcase():
         self.met_alignyear = (self.startyear-testyear)+self.met_startyear
         if (self.met_endyear != self.met_endyear_spinup):
             self.met_endyear = self.met_endyear_spinup
-        if ('20TR' in self.compset):
-            self.run_n = self.met_endyear_spinup-self.startyear+1
+        # if ('20TR' in self.compset):
+        #     self.run_n = self.met_endyear_spinup-self.startyear+1
     elif (not self.is_bypass() and ('phase2') in self.casename):
         self.met_alignyear = self.startyear
         self.met_startyear = self.startyear
@@ -625,7 +635,10 @@ class ELMcase():
       if ('phase2' in self.casename):
         self.xmlchange('DATM_CLMNCEP_YR_END',value=str(self.met_endyear))
       else:
-        self.xmlchange('DATM_CLMNCEP_YR_END',value=str(self.met_endyear_spinup))
+        if '20TR' in self.compset:
+          self.xmlchange('DATM_CLMNCEP_YR_END',value=str(self.met_endyear))
+        else:
+          self.xmlchange('DATM_CLMNCEP_YR_END',value=str(self.met_endyear_spinup))
     #Change simulation timestep
     if (float(self.tstep) != 0.5):
       self.xmlchange('ATM_NCPL',value=str(int(24/float(self.tstep))))
@@ -696,7 +709,9 @@ class ELMcase():
             self.pftdyn_global = self.case_options['pftdynfile_global']
         else:
             self.pftdyn_global = self.get_namelist_variable('flanduse_timeseries')[2:-1]
+    
     #Set custom surface data information
+    print("Set custom surface data information")
     surffile=''
     domainfile=''
     pftdynfile=''
@@ -760,7 +775,9 @@ class ELMcase():
     keys_exclude = ['suffix','surffile','domainfile','pftdynfile','paramfile','fates_paramfile', \
             'humhol','metdir','surffile_global','pftdynfile_global','domainfile_global', \
               'fsurdat', 'flanduse_timeseries', 'fatmlndfrac', 'variable', 'name', 'nyears']
+    
     #Custom namelist options
+    print("Custom namelist options")
     for key in self.case_options.keys():
         if (not key in keys_exclude and not 'restart_' in key):
             if (isinstance(self.case_options[key], str) and not ('hist_' in key) \
@@ -776,6 +793,7 @@ class ELMcase():
         self.customize_namelist(variable='suplphos',value="'ALL'")
 
     #set domain file information
+    print('set domain file information')
     if (domainfile == ''):
       self.xmlchange('ATM_DOMAIN_PATH',value='"\${RUNDIR}"')
       self.xmlchange('LND_DOMAIN_PATH',value='"\${RUNDIR}"')
