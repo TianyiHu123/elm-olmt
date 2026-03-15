@@ -135,6 +135,8 @@ def main():
 
     use_cpl_bypass = 'False'
     res = cfg['simulation']['res']
+    global_pft = cfg['simulation'].get('global_pft', '')
+    global_soil = cfg['simulation'].get('glbsoil', '')
 
     # Crop options
     use_crop = cfg['biogeochemistry'].get('use_crop', False)
@@ -214,8 +216,9 @@ def main():
         # elif ('flanduse_timeseries' in cases.case_options):
         #     pftdynfile = cases.case_options['flanduse_timeseries']
 
-        surffile  = case_options['fsurdat_out']+f'/surfdata_1x1pt_{site}.nc'
-        domainfile= case_options['fsurdat_out']+f'/domain.lnd.1x1pt_{site}.nc'
+        surffile  = case_options['fsurdat_out']+\
+                    f'/surfdata_1x1pt_{site}_{res}_{global_pft}_{global_soil}.nc'
+        domainfile= case_options['fsurdat_out']+f'/domain.lnd.1x1pt_{site}_{res}.nc'
 
         # if (pftdynfile==''):
         # pftdynfile = cases.runroot+'/surfdata.pftdyn.nc'
