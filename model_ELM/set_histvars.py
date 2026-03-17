@@ -4,12 +4,17 @@ import numpy
 
 def set_histvars(self,spinup=-1,hist_mfilt=-9999,hist_nhtfrq=-9999):
    if (spinup>0):
+      # Tianyi Hu added for useversoil
       var_list_spinup = ['PPOOL', 'EFLX_LH_TOT', 'RETRANSN', 'PCO2', 'PBOT', 'TBOT','FSDS','NDEP_TO_SMINN', 'OCDEP', \
                     'BCDEP', 'COL_FIRE_CLOSS', 'HDM', 'LNFM', 'NEE', 'GPP', 'FPSN', 'AR', 'HR', \
                     'MR', 'GR', 'ER', 'NPP', 'TLAI', 'SOIL3C', 'TOTSOMC', 'TOTSOMC_1m', 'LEAFC', \
                     'DEADSTEMC', 'DEADCROOTC', 'FROOTC', 'LIVESTEMC', 'LIVECROOTC', 'TOTVEGC', 'N_ALLOMETRY','P_ALLOMETRY',\
                     'TOTCOLC', 'TOTLITC', 'BTRAN', 'SCALARAVG_vr', 'CWDC', 'QVEGE', 'QVEGT', 'QSOIL', 'QDRAI', \
                     'QRUNOFF', 'FPI', 'FPI_vr', 'FPG', 'FPI_P','FPI_P_vr', 'FPG_P', 'CPOOL','NPOOL', 'PPOOL', 'SMINN', 'HR_vr']
+      if (('use_vertsoilc' in self.case_options) and self.case_options['use_vertsoilc'] == '.false.'):
+          var_list_spinup = list(set(item.replace('_vr', '') for item in var_list_spinup))
+          var_list_spinup.remove('TOTSOMC_1m')
+    
       if ('ICBELMBC' in self.compset):
         var_list_spinup = ['FPSN','TLAI','QVEGT','QVEGE','QSOIL','EFLX_LH_TOT','FSH','RH2M','TSA','FSDS','FLDS','PBOT', \
                          'WIND','BTRAN','DAYL','T10','QBOT','TBOT']
@@ -93,6 +98,11 @@ def set_histvars(self,spinup=-1,hist_mfilt=-9999,hist_nhtfrq=-9999):
             self.customize_namelist(variable='hist_dov2xy',value='.true.,.true.,.false.')
             self.customize_namelist(variable='hist_fincl3',value=vst_pp_pft[:-1])
         else:
-            self.customize_namelist(variable='hist_mfilt',value='1,365')
-            self.customize_namelist(variable='hist_nhtfrq',value='-8760,-24')
+            # Tianyi Hu added for hourly output
+            if (self.postproc_freq == 'hourly'):
+                self.customize_namelist(variable='hist_mfilt',value='1,8760')
+                self.customize_namelist(variable='hist_nhtfrq',value='-8760,-1')
+            else:
+                self.customize_namelist(variable='hist_mfilt',value='1,365')
+                self.customize_namelist(variable='hist_nhtfrq',value='-8760,-24')
         self.customize_namelist(variable='hist_fincl2',value=vst_pp[:-1])

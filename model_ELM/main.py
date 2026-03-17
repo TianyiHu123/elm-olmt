@@ -734,7 +734,9 @@ class ELMcase():
         surffile = self.rundir+'/surfdata.nc'
     if (pftdynfile==''):
        pftdynfile = self.rundir+'/surfdata.pftdyn.nc'
-    self.customize_namelist(variable='do_budgets',value='.false.')
+    #self.customize_namelist(variable='do_budgets',value='.false.')
+    # Tianyi Hu added to fix pioerror https://github.com/E3SM-Project/E3SM/pull/6206
+    self.customize_namelist(variable='do_budgets',value='.true.')
     self.customize_namelist(variable='fsurdat',value="'"+surffile+"'")
 
     if ('20TR' in self.casename):
@@ -777,7 +779,8 @@ class ELMcase():
     #Excluded keys in case_options that are not namelist options (handled elsewhere)
     keys_exclude = ['suffix','surffile','domainfile','pftdynfile','paramfile','fates_paramfile', \
             'humhol','metdir','surffile_global','pftdynfile_global','domainfile_global', \
-              'fsurdat', 'flanduse_timeseries', 'fatmlndfrac', 'variable', 'name', 'nyears']
+              'fsurdat', 'flanduse_timeseries', 'fatmlndfrac', 'variable', 'name', 'nyears',\
+              'srcmods'] # Tianyi added srcmods.
     
     #Custom namelist options
     print("Custom namelist options")

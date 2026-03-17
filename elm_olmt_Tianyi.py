@@ -468,7 +468,8 @@ def main():
                 cases[c].case_options[key] = case_options[key][c]
             else:
                 cases[c].case_options[key] = case_options[key]
-
+        # Tianyi Hu added for sourcemods
+        cases[c].srcmods = case_options['srcmods']
         # Add the treatment options (must be list format)
         if (istreatment[c]):
             tname = suffix[c]
