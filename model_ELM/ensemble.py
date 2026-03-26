@@ -146,6 +146,10 @@ def create_multisite_script(self,sites,scriptdir, walltime='24:00:00'):
         myfile.write('srun -n '+str(self.np)+' -c 1 '+self.exeroot+'/e3sm.exe > '+ \
                 self.rundir+'/e3sm_log.txt &\n\n')
     myfile.write('wait\n')
+    # Tianyi Hu added to remove slurm.out because it is too big #
+    myfile.write('cd '+self.caseroot+'/'+self.casename+'\n')
+    myfile.write('rm -v slurm-*.out\n')
+    # Tianyi Hu added to remove slurm.out because it is too big #
     myfile.write('cd '+self.OLMTdir+'\n')
     for s in sites:
         # Check if it's a site run (single point simulation)
