@@ -486,8 +486,14 @@ class ELMcase():
     pftdynfile=''
     if ('domainfile' in self.case_options.keys()):
         domainfile = self.case_options['domainfile']
+        # Tianyi Hu added to assign mask to maskgrid
+        mydata = Dataset(domainfile,'r')
+        self.mask_grid = mydata['mask'][:].copy()
     elif ('fatmlndfrc' in self.case_options.keys()):
         domainfile = self.case_options['fatmlndfrc']
+        # Tianyi Hu added to assign mask to maskgrid
+        mydata = Dataset(domainfile,'r')
+        self.mask_grid = mydata['mask'][:].copy()
     if ('surffile' in self.case_options.keys()):
         surffile = self.case_options['surffile']
     elif ('fsurdat' in self.case_options.keys()):
