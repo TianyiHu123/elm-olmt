@@ -40,7 +40,9 @@ def sorted_h0_files(directory):
 #Plot ad and final spinup together
 def plot_spinup(self, plotvars=[]):
     if not plotvars:
-        plotvars = ['NEE','TOTVEGC','TOTSOMC','GPP','NPP']
+        # plotvars = ['NEE','TOTVEGC','TOTSOMC','GPP','NPP']
+        # Added more variables by Tianyi
+        plotvars = ['NEE','TOTVEGC','TOTSOMC','GPP','NPP','QRUNOFF','QDRAI','TWS']
     fn_dir = self.rundir
     ad_dir = self.rundir.replace(self.casename,self.dependcase)
     print(fn_dir)
