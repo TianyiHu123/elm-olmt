@@ -216,10 +216,17 @@ def main():
         # elif ('flanduse_timeseries' in cases.case_options):
         #     pftdynfile = cases.case_options['flanduse_timeseries']
 
-        surffile  = case_options['fsurdat_out']+\
-                    f'/surfdata_1x1pt_{site}_{res}_{global_pft}_{global_soil}.nc'
-        domainfile= case_options['fsurdat_out']+f'/domain.lnd.1x1pt_{site}_{res}.nc'
+        # surffile  = case_options['fsurdat_out']+\
+        #             f'/surfdata_1x1pt_NEON_{site}_{res}_{global_pft}_{global_soil}.nc'
+        # domainfile= case_options['fsurdat_out']+f'/domain.lnd.1x1pt_{site}_{res}.nc'
+        
+        surffile   = os.path.join(case_options['fsurdat_out'], site)
+        domainfile = os.path.join(case_options['fdomain_out'], site)
+        os.makedirs(surffile, exist_ok=True) 
 
+        surffile  = os.path.join(surffile,f'surfdata_1x1_NEON_{site}_hist_2000_16pfts.nc')
+        domainfile= os.path.join(domainfile,f'domain.lnd.1x1pt_{site}.nc')
+        
         # if (pftdynfile==''):
         # pftdynfile = cases.runroot+'/surfdata.pftdyn.nc'
         print('Extracting surface data for site: '+site)
@@ -229,7 +236,7 @@ def main():
         print('Output domain file: '+domainfile)
 
         cases.setup_domain_surfdata(makesurfdat=True,makedomain=True)
-
+        
         os.system('cp -v '+cases.OLMTdir+'/temp/surfdata.nc'+' '+surffile)
         os.system('cp -v '+cases.OLMTdir+'/temp/domain.nc'+' '+domainfile)
 
