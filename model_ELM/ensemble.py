@@ -72,14 +72,26 @@ def create_ensemble_script(self, walltime=24):
         if (self.project != ''):
             myfile.write('#SBATCH -A '+self.project+'\n')
     myfile.write('#SBATCH -J '+self.casename+'\n')
-    myfile.write('#SBATCH --nodes='+str(nnodes)+'\n')  
+    myfile.write('#SBATCH --nodes='+str(nnodes)+'\n')
+    # Tianyi added error output #
+    myfile.write('#SBATCH --output='+self.runroot+'/slurm_error_%j.out'+'\n')
+    myfile.write('#SBATCH --error='+self.runroot+'/slurm_error_%j.err'+'\n')
+    # Tianyi added error output #
 
     myfile.write('cd '+self.caseroot+'/'+self.casename+'\n')
     myfile.write('export LD_LIBRARY_PATH='+ldpath+'\n\n')
     myfile.write('./preview_namelists\n\n')
     myfile.write('ulimit -n '+str(self.nsamples+1024)+'\n')
     myfile.write('cd '+self.OLMTdir+'\n')
+    # Tianyi Hu activate conda environment
+    myfile.write('conda activate '+self.OLMT_condaenv+'\n')
+    # Tianyi Hu activate conda environment
     myfile.write('./manage_ensemble.py --case '+self.casename+'\n')
+     # Tianyi Hu added to remove slurm.out because it is too big #
+    myfile.write('[ $? -eq 0 ] && rm -v '+self.runroot+'/slurm_error_*.out\n')
+    # myfile.write('cd '+self.caseroot+'/'+self.casename+'\n')
+    # myfile.write('rm -v slurm-*.out\n')
+    # Tianyi Hu added to remove slurm.out because it is too big #
     myfile.close()  
     os.system('chmod u+x case.submit_ensemble')
     self.rundir_UQ = self.runroot+'/UQ/'+self.casename
@@ -118,6 +130,10 @@ def create_multisite_script(self,sites,scriptdir, walltime='24:00:00'):
 
     myfile.write('#SBATCH -J '+self.casename.replace('_'+self.site,'')+'\n')
     myfile.write('#SBATCH --nodes='+str(nnodes)+'\n')
+    # Tianyi added error output #
+    myfile.write('#SBATCH --output='+self.runroot+'/slurm_error_%j.out'+'\n')
+    myfile.write('#SBATCH --error='+self.runroot+'/slurm_error_%j.err'+'\n')
+    # Tianyi added error output #
     myfile.write('cd '+self.caseroot+'/'+self.casename+'\n')
     myfile.write('export LD_LIBRARY_PATH='+ldpath+'\n\n')
     for s in sites:
@@ -146,10 +162,6 @@ def create_multisite_script(self,sites,scriptdir, walltime='24:00:00'):
         myfile.write('srun -n '+str(self.np)+' -c 1 '+self.exeroot+'/e3sm.exe > '+ \
                 self.rundir+'/e3sm_log.txt &\n\n')
     myfile.write('wait\n')
-    # Tianyi Hu added to remove slurm.out because it is too big #
-    myfile.write('cd '+self.caseroot+'/'+self.casename+'\n')
-    myfile.write('rm -v slurm-*.out\n')
-    # Tianyi Hu added to remove slurm.out because it is too big #
     myfile.write('cd '+self.OLMTdir+'\n')
     for s in sites:
         # Check if it's a site run (single point simulation)
@@ -160,11 +172,17 @@ def create_multisite_script(self,sites,scriptdir, walltime='24:00:00'):
             myfile.write('conda activate '+self.OLMT_condaenv+'\n')
             #Assume this is a final spinup case, do spinup diagnostic plots
             myfile.write('python manage_postproc.py --case '+self.casename.replace(sites[0],s)+' --plot_spinup\n')
+            # Tianyi Hu added to remove slurm.out because it is too big #
+            myfile.write('[ $? -eq 0 ] && rm -v '+self.runroot+'/slurm_error_*.out\n')
+            # Tianyi Hu added to remove slurm.out because it is too big #
         elif self.postproc_vars:
             # Tianyi Hu activate conda environment
             myfile.write('conda activate '+self.OLMT_condaenv+'\n')
             #Do requested postprocessing and plotting
             myfile.write('python manage_postproc.py --case '+self.casename.replace(sites[0],s)+'\n')
+            # Tianyi Hu added to remove slurm.out because it is too big #
+            myfile.write('[ $? -eq 0 ] && rm -v '+self.runroot+'/slurm_error_*.out\n')
+            # Tianyi Hu added to remove slurm.out because it is too big #
     myfile.close()
     os.system('chmod u+x '+fname)
     return os.path.abspath('./'+fname)
@@ -181,8 +199,11 @@ def ensemble_copy(self, ens_num):
   os.system('rm -f '+ens_dir+'/*.log.* '+ens_dir+'/*.nc '+ens_dir+'/rpointer*')
   os.system('cp  '+orig_dir+'/*_in* '+ens_dir)
   os.system('cp  '+orig_dir+'/*nml '+ens_dir)
-  if (not ('CB' in self.casename)):
-    os.system('cp  '+orig_dir+'/*stream* '+ens_dir)
+  # Tianyi debug
+  print('Case Name is ', self.casename)
+  print('Copying '+ orig_dir+'/*stream* to '+ens_dir)
+  if (not ('ICB' in self.casename)): # Tianyi added I here
+    os.system('cp  -v '+orig_dir+'/*stream* '+ens_dir)
   os.system('cp  '+orig_dir+'/*.rc '+ens_dir)
   os.system('cp  '+orig_dir+'/surf*.nc '+ens_dir)
   os.system('cp  '+orig_dir+'/domain*.nc '+ens_dir)
@@ -194,6 +215,7 @@ def ensemble_copy(self, ens_num):
     if (os.path.isfile(ens_dir+'/'+f) and (f[-2:] == 'in' or f[-3:] == 'nml' or 'streams' in f)):
         myinput=open(ens_dir+'/'+f)
         myoutput=open(ens_dir+'/'+f+'.tmp','w')
+        print('Processing ensemble '+ f)
         for s in myinput:
             if ('fates_paramfile' in s):
                 paramfile_orig = ((s.split()[2]).strip("'"))
