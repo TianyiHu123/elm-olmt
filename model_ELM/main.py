@@ -504,6 +504,7 @@ class ELMcase():
         pftdynfile = self.case_options['flanduse_timeseries']
         if pftdynfile == '':
             self.nopftdyn = True
+            print('No need for 20th landuse data pft')
     if (domainfile == '' and makedomain):
       print('make domain file from ',self.domain_global)
       self.makepointdata(self.domain_global)
@@ -578,8 +579,10 @@ class ELMcase():
         while (testyear > self.startyear):
             testyear = testyear - self.nyears_spinup
         self.met_alignyear = (self.startyear-testyear)+self.met_startyear
-        if (self.met_endyear != self.met_endyear_spinup):
-            self.met_endyear = self.met_endyear_spinup
+        #Tianyi Hu added to set align = start year
+        self.met_alignyear = self.startyear
+        # if (self.met_endyear != self.met_endyear_spinup):
+        #     self.met_endyear = self.met_endyear_spinup
         # if ('20TR' in self.compset):
         #     self.run_n = self.met_endyear_spinup-self.startyear+1
     elif (not self.is_bypass() and ('phase2') in self.casename):
@@ -594,6 +597,8 @@ class ELMcase():
         print('Ending   met data year: ', self.met_endyear_spinup)
     if (not self.is_bypass()):
         print('Met data align year: ', self.met_alignyear)
+    # Tianyi Hu added for debug
+    print('Simulation starting year: '+str(self.startyear))
     print('Run length (years): '+str(self.run_n)+'\n')
 
   def xmlchange(self, variable, value='', append=''):
@@ -747,7 +752,7 @@ class ELMcase():
 
     if ('20TR' in self.casename):
       if (self.nopftdyn):
-          self.customize_namelist(variable='flanduse_timeseries',value='')
+          self.customize_namelist(variable='flanduse_timeseries',value="' '") # Tianyi Hu added
       else:
           self.customize_namelist(variable='flanduse_timeseries',value="'"+pftdynfile+"'")
       self.customize_namelist(variable='check_finidat_fsurdat_consistency',value='.false.')
@@ -938,10 +943,17 @@ class ELMcase():
                           ' '+str(self.met_endyear)+'  ", '+mypresaero+myco2+ \
                           ', "datm.streams.txt.topo.observed 1 1 1"\n')
               else:
-                  myoutput.write(' streams = "datm.streams.txt.CLM1PT.ELM_USRDAT '+ \
-                          str(self.met_alignyear)+' '+str(self.met_startyear)+ \
-                          ' '+str(self.met_endyear)+'  ", '+mypresaero+myco2+ \
-                          ', "datm.streams.txt.topo.observed 1 1 1"\n')
+                  # Tianyi Hu added if statement here to set different forcing stream year
+                  if '20TR' in self.compset:
+                      myoutput.write(' streams = "datm.streams.txt.CLM1PT.ELM_USRDAT '+ \
+                              str(self.met_alignyear)+' '+str(self.met_startyear)+ \
+                              ' '+str(self.met_endyear)+'  ", '+mypresaero+myco2+ \
+                              ', "datm.streams.txt.topo.observed 1 1 1"\n')
+                  else:
+                      myoutput.write(' streams = "datm.streams.txt.CLM1PT.ELM_USRDAT '+ \
+                              str(self.met_alignyear)+' '+str(self.met_startyear)+ \
+                              ' '+str(self.met_endyear_spinup)+'  ", '+mypresaero+myco2+ \
+                              ', "datm.streams.txt.topo.observed 1 1 1"\n')
           elif ('streams' in s):
               continue  #do nothing
           elif ('taxmode' in s):
