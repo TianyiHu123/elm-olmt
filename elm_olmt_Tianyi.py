@@ -542,6 +542,10 @@ def main():
 
         # Set up the case (surface, domain and pftdata)
         print('Setting up case for site: '+site)
+        # Tianyi Hu added to avoid incorrectly setup flanduse_timeseries in transient case
+        if ('20TR' in compsets[c] and 'flanduse_timeseries' in case_options):
+            if (case_options['flanduse_timeseries'] == ''):
+                cases[c].nopftdyn = True
         cases[c].setup_case()
         print('Setting up done')
         
