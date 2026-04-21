@@ -73,6 +73,8 @@ def create_ensemble_script(self, walltime=24):
             myfile.write('#SBATCH -A '+self.project+'\n')
     myfile.write('#SBATCH -J '+self.casename+'\n')
     myfile.write('#SBATCH --nodes='+str(nnodes)+'\n')
+    # Tianyi added for parallel srun #
+    myfile.write('#SBATCH --ntasks='+str(self.np_ensemble)+'\n')
     # Tianyi added error output #
     myfile.write('#SBATCH --output='+self.runroot+'/slurm_error_%j.out'+'\n')
     myfile.write('#SBATCH --error='+self.runroot+'/slurm_error_%j.err'+'\n')

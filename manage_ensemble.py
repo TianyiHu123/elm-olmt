@@ -152,7 +152,10 @@ if (not options.UQ_only):
       with open(log_file_path, "w") as log_file:
         if (mycase.noslurm == False):
           node_submit=get_node_submit(pactive,process_nodes,mynodes)
-          command = ['srun -n '+str(mycase.np)+' -c 1 -w '+mynodes[node_submit]+' '+mycase.exeroot+'/e3sm.exe']
+          # command = ['srun -n '+str(mycase.np)+' -c 1 -w '+mynodes[node_submit]+' '+mycase.exeroot+'/e3sm.exe']
+          # Tianyi Hu added for parallel
+          command = ['srun --exact -n '+str(mycase.np)+' -c 1 -w '+mynodes[node_submit]+' '+mycase.exeroot+'/e3sm.exe']
+          print(command)
           process_nodes.append(node_submit)
         else:
           command = [mycase.exeroot+'/e3sm.exe']
