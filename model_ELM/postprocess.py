@@ -98,7 +98,57 @@ def plot_spinup(self, plotvars=[]):
         plt.grid(True)
         os.system('mkdir -p '+self.rundir+'/../diagnostics')
         plt.savefig(self.rundir+'/../diagnostics/spinup_plot_'+v+'.png')
-             
+        
+#Plot ad spinup together
+def plot_adspinup(self, plotvars=[]):
+    if not plotvars:
+        # plotvars = ['NEE','TOTVEGC','TOTSOMC','GPP','NPP']
+        # Added more variables by Tianyi
+        plotvars = ['NEE','TOTVEGC','TOTSOMC','GPP','NPP','QRUNOFF','QDRAI','TWS','QINFL']
+
+    ad_dir = self.rundir
+    print(ad_dir)
+    #Ignore first file
+    files1 = sorted_h0_files(ad_dir)[1:]
+
+    # -- Load datasets --
+    ds1 = xr.open_mfdataset(files1, combine='nested', concat_dim='time')
+
+    # -- Extract years from filenames --
+    years1 = [int(re.search(r'\.(\d+)-01-01-00000\.nc', f).group(1)) for f in files1]
+
+    # -- Assign time coordinates --
+    ds1 = ds1.assign_coords(time=years1)
+
+    for v in plotvars:
+    # -- Extract and spatially average NEE --
+        vals = ds1[v]
+        vals_mean = vals.mean(dim=('lndgrid'))  # or 'gridcell' if applicable
+        ylabel = v
+        if (v == 'NEE' or v == 'GPP' or v == 'NPP'):
+            #Convert to gC/m2/yr
+            vals_mean=abs(vals_mean)*24*3600*365
+        if (v == 'NEE'):
+            #Log scale
+            vals_mean = np.log10(vals_mean)
+            ylabel = "log10(NEE)"
+
+        transition_year = max(years1)
+
+        # -- Plotting --
+        plt.figure(figsize=(10, 5))
+        plt.plot(ds1['time'], vals_mean, marker='o')
+        plt.title(v+" during spinup")
+        plt.xlabel("Year")
+        plt.ylabel(ylabel)
+        # Horizontal line at y=0
+        if (v == 'NEE'):
+            plt.axhline(0, color='red', linestyle='--', label='NEE threshold (1 gC/m2/yr)')
+
+        plt.grid(True)
+        os.system('mkdir -p '+self.rundir+'/../diagnostics')
+        plt.savefig(self.rundir+'/../diagnostics/ad_spinup_plot_'+v+'.png')
+
 def postprocess(self, var, index=0, gindex=0, startyear=-1, endyear=9999, hnum=0, \
         dailytomonthly=False, annualmean=False,  meanseasonalcycle=False, \
         xindex=0,yindex=0, ens_num=0, plot=False):

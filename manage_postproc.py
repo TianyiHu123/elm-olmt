@@ -14,6 +14,9 @@ parser.add_option("--cases_compare", dest="cases_compare", default="", \
                   help="Additional cases to plot for comparison")
 parser.add_option("--plot_spinup", dest="spinup", default=False, \
                   action="store_true")
+# Tianyi Hu added ad spinup
+parser.add_option("--plot_adspinup", dest="adspinup", default=False, \
+                  action="store_true")
 (options, args) = parser.parse_args()
 
 #Post-process and plot variables (non-ensemble mode)
@@ -29,6 +32,8 @@ mycase = pickle.load(myfile)
 
 if options.spinup:
     mycase.plot_spinup()
+elif options.adspinup:
+    mycase.plot_adspinup()
 else:
     for v in mycase.postproc_vars:
         if ('_pft' in v):
