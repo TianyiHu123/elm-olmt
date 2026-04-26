@@ -104,7 +104,7 @@ def plot_adspinup(self, plotvars=[]):
     if not plotvars:
         # plotvars = ['NEE','TOTVEGC','TOTSOMC','GPP','NPP']
         # Added more variables by Tianyi
-        plotvars = ['NEE','TOTVEGC','TOTSOMC','GPP','NPP','QRUNOFF','QDRAI','TWS','QINFL']
+        plotvars = ['NEE','TOTVEGC','TOTSOMC','TOTSOMN','BTRAN','GPP','NPP','QRUNOFF','QDRAI','TWS','QINFL']
 
     ad_dir = self.rundir
     print(ad_dir)
