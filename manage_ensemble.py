@@ -26,8 +26,12 @@ mycase=pickle.load(myfile)
 
 #mycase.postproc_startyear = 2010
 #mycase.postproc_freq = 'monthly'
+if (not options.UQ_only):
+    mycase.output = {}
+else:
+    print(mycase.output)
+    print(mycase.postproc_freq)
 
-mycase.output = {}
 #get the node file and parse
 def get_nodelist():
   mynodes=[]
@@ -180,7 +184,10 @@ if (not options.UQ_only):
 if (mycase.postproc_vars != []):
     #Train surrogate models
     mycase.train_surrogate(mycase.postproc_vars)
-
+    
+    #Save postprocessed output
+    mycase.create_pkl(outdir=mycase.OLMTdir+'/pklfiles/')
+    
     #run GSA
     mycase.GSA(mycase.postproc_vars)
     mycase.plot_GSA(mycase.postproc_vars)
