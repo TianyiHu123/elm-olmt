@@ -14,7 +14,7 @@ def GSA(self, myvars, n_saltelli=8192):
     #Get parameter bounds
     pbounds = np.zeros([self.nparms_ensemble,2],float)
     for p in range(0,self.nparms_ensemble):
-        print(p, self.nparms_ensemble, self.ensemble_pmin[p])
+        print(p, self.nparms_ensemble, self.ensemble_pmin[p], self.ensemble_pmax[p])
         pbounds[p,0]=self.ensemble_pmin[p]
         pbounds[p,1]=self.ensemble_pmax[p]
 
