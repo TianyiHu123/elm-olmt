@@ -90,7 +90,7 @@ def create_ensemble_script(self, walltime=24):
     # Tianyi Hu activate conda environment
     myfile.write('./manage_ensemble.py --case '+self.casename+'\n')
      # Tianyi Hu added to remove slurm.out because it is too big #
-    myfile.write('[ $? -eq 0 ] && rm -v '+self.runroot+'/slurm_error_${SLURM_JOB_ID}.out\n')
+    myfile.write('[ $? -eq 0 ] && rm -v '+self.runroot+'/slurm_error_${SLURM_JOB_ID}.*\n')
     # myfile.write('cd '+self.caseroot+'/'+self.casename+'\n')
     # myfile.write('rm -v slurm-*.out\n')
     # Tianyi Hu added to remove slurm.out because it is too big #
@@ -175,7 +175,7 @@ def create_multisite_script(self,sites,scriptdir, walltime='24:00:00'):
             #Assume this is a final spinup case, do spinup diagnostic plots
             myfile.write('python manage_postproc.py --case '+self.casename.replace(sites[0],s)+' --plot_spinup\n')
             # Tianyi Hu added to remove slurm.out because it is too big #
-            myfile.write('[ $? -eq 0 ] && rm -v '+self.runroot+'/slurm_error_*.out\n')
+            myfile.write('[ $? -eq 0 ] && rm -v '+self.runroot+'/slurm_error_${SLURM_JOB_ID}.*\n')
             # Tianyi Hu added to remove slurm.out because it is too big #
         elif self.postproc_vars:
             # Tianyi Hu activate conda environment
@@ -183,8 +183,9 @@ def create_multisite_script(self,sites,scriptdir, walltime='24:00:00'):
             #Do requested postprocessing and plotting
             myfile.write('python manage_postproc.py --case '+self.casename.replace(sites[0],s)+'\n')
             # Tianyi Hu added to remove slurm.out because it is too big #
-            myfile.write('[ $? -eq 0 ] && rm -v '+self.runroot+'/slurm_error_${SLURM_JOB_ID}.out\n')
+            myfile.write('[ $? -eq 0 ] && rm -v '+self.runroot+'/slurm_error_${SLURM_JOB_ID}.*\n')
             # Tianyi Hu added to remove slurm.out because it is too big #
+    
     myfile.close()
     os.system('chmod u+x '+fname)
     return os.path.abspath('./'+fname)
