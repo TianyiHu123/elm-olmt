@@ -14,6 +14,9 @@ from sklearn.model_selection import train_test_split, GridSearchCV
 def train_surrogate(self,myvars):
  self.qoi_bad={}
  self.qoi_bad_meanval={}
+ # Tianyi debug
+ # print(myvars)
+ # print(self.output)
  for var in myvars:
     vname=var
     nparms = self.nparms_ensemble
@@ -52,6 +55,18 @@ def train_surrogate(self,myvars):
 
     # Split data into training and validation sets
     ptrain, pval, ytrain, yval = train_test_split(p, y, test_size=0.2, random_state=42)
+
+    # Tianyi Added information for splitting
+    print("Train test splitting:")
+    print("X training")
+    print(ptrain.shape)
+    print("Y training")
+    print(ytrain.shape)
+    print("X testing")
+    print(pval.shape)
+    print("Y testing")
+    print(yval.shape)
+    
     # Normalize the parameters and outputs
     pscaler      = preprocessing.StandardScaler().fit(ptrain)
     ptrain_norm = pscaler.transform(ptrain)
@@ -80,21 +95,154 @@ def train_surrogate(self,myvars):
     ypredict_train = yscaler.inverse_transform(grid.predict(ptrain_norm)) 
     ypredict_val   = yscaler.inverse_transform(grid.predict(pval_norm))
     print('Correlations for training data: '+vname)
-    for qoi in range(0,nqoi):
-      print(qoi, np.corrcoef(ytrain.astype(float)[:,qoi], ypredict_train.astype(float)[:,qoi])[0,1]**2)
+    print(np.corrcoef( ytrain.astype(float).reshape(-1), 
+                       ypredict_train.astype(float).reshape(-1) )[0,1]**2)
+    #for qoi in range(0,nqoi):
+    #  print(qoi, np.corrcoef(ytrain.astype(float)[:,qoi], ypredict_train.astype(float)[:,qoi])[0,1]**2)
     print()
     print('Correlations for testing data: '+vname)
     UQ_output = './UQ_output/'+self.casename+'/surrogate'
     os.system('mkdir -p '+UQ_output)
-    for qoi in range(0,nqoi):
-      rsq = np.corrcoef(yval.astype(float)[:,qoi], ypredict_val.astype(float)[:,qoi])[0,1]**2
-      print(qoi, rsq)
-      plt.plot(yval.astype(float)[:,qoi],ypredict_val.astype(float)[:,qoi],'ro')
-      plt.title(f'$R^2$: {round(rsq,3)}')
-      plt.xlabel('Original model')
-      plt.ylabel('\nSurrogate model')
-      plt.savefig(UQ_output+'/'+vname+'_surrogate'+str(qoi)+'.png', bbox_inches='tight')
-      plt.close()
+
+    fig, ax = plt.subplots(2,1, figsize=(15,6), sharex=True)
+    ntimes = yval.shape[1]
+    ens_n  = yval.shape[0]
+    ax[0].plot(np.arange(ntimes), 
+                np.mean(yval.astype(float),axis=0),
+                marker=None, linestyle='-',
+                label='Model', color='blue',
+                linewidth=1, markersize=3, alpha=0.3)
+    ax[0].plot(np.arange(ntimes), 
+                np.mean(ypredict_val.astype(float),axis=0),
+                marker=None, linestyle='-',
+                label='Surrogate', color='red',
+                linewidth=1, markersize=3, alpha=0.3)
+    ax[1].plot(np.arange(ntimes), 
+               np.mean(yval.astype(float),axis=0)-\
+               np.mean(ypredict_val.astype(float),axis=0),
+               marker=None, linestyle='-',
+               label='Model-Surrogate', color='red',
+               linewidth=1, markersize=3, alpha=0.6)
+    for ens in range(ens_n):
+        ax[0].plot(np.arange(ntimes), yval.astype(float)[ens,:],
+                marker=None, linestyle='-',
+                label='_nolegend_', color='blue',
+                linewidth=1, markersize=3, alpha=0.1)
+        ax[0].plot(np.arange(ntimes), ypredict_val.astype(float)[ens,:],
+                marker=None, linestyle='-',
+                label='_nolegend_', color='red',
+                linewidth=1, markersize=3, alpha=0.1)
+    ax[0].set_ylabel(var)
+    ax[0].grid()
+    ax[0].legend()
+
+    ax[1].set_ylabel(var)
+    ax[1].set_xlabel('Time')
+    ax[1].grid()
+    ax[1].legend()
+     
+    fig.savefig(UQ_output+'/'+vname+'_surrogate.png', bbox_inches='tight')
+    plt.close(fig)
+
+    # plot seasonal cycle
+    if self.postproc_freq == 'hourly':
+        
+        print("plot daily TS")
+        model_daily = np.mean(yval.astype(float),axis=0)
+        model_daily  = np.mean(model_daily.reshape(-1,24), axis=1)
+        surr_daily = np.mean(ypredict_val.astype(float),axis=0)
+        surr_daily = np.mean(surr_daily.reshape(-1,24), axis=1)
+        print(model_daily.shape)
+        ntimes = yval.shape[1] / 24
+        fig, ax = plt.subplots(2,1, figsize=(15,6), sharex=True)
+        ax[0].plot(np.arange(ntimes), 
+                   model_daily,
+                   marker=None, linestyle='-',
+                   label='Model', color='blue',
+                   linewidth=1, markersize=3, alpha=0.5)
+        ax[0].plot(np.arange(ntimes), 
+                   surr_daily,
+                   marker=None, linestyle='-',
+                   label='Surrogate', color='red',
+                   linewidth=1, markersize=3, alpha=0.5)
+        ax[1].plot(np.arange(ntimes), 
+                   model_daily-surr_daily,
+                   marker=None, linestyle='-',
+                   label='Model-Surrogate', color='red',
+                   linewidth=1, markersize=3, alpha=0.6)
+        for ens in range(ens_n):
+            model_daily = np.mean(yval.astype(float)[ens,:].reshape(-1,24), axis=1)
+            surr_daily  = np.mean(ypredict_val.astype(float)[ens,:].reshape(-1,24), axis=1)
+            ax[0].plot(np.arange(ntimes), model_daily,
+                       marker=None, linestyle='-',
+                       label='_nolegend_', color='blue',
+                       linewidth=1, markersize=3, alpha=0.1)
+            ax[0].plot(np.arange(ntimes), surr_daily,
+                       marker=None, linestyle='-',
+                       label='_nolegend_', color='red',
+                       linewidth=1, markersize=3, alpha=0.1)
+
+        ax[0].set_ylabel(var)
+        ax[0].grid()
+        ax[0].legend()
+    
+        ax[1].set_ylabel(var)
+        ax[1].set_xlabel('Time')
+        ax[1].grid()
+        ax[1].legend()
+         
+        fig.savefig(UQ_output+'/'+vname+'_surrogate_daily.png', bbox_inches='tight')
+        plt.close(fig)
+        
+        
+        Hofyear= 24 * 365
+        fig, ax = plt.subplots(2,1, figsize=(15,6), sharex=True)
+        model_plot = np.mean(yval.astype(float),axis=0)
+        model_plot = np.mean(model_plot.reshape(-1,Hofyear), axis=0)
+        print("plot seasonal cycle: ")
+        print(model_plot.shape)
+        ax[0].plot(np.arange(Hofyear), 
+                   model_plot,
+                   marker=None, linestyle='-',
+                   label='Model', color='blue',
+                   linewidth=1, markersize=3, alpha=0.5)
+        
+        surr_plot = np.mean(ypredict_val.astype(float),axis=0)
+        surr_plot = np.mean(surr_plot.reshape(-1,Hofyear), axis=0)
+        print(surr_plot.shape)
+        ax[0].plot(np.arange(Hofyear), 
+                   surr_plot,
+                   marker=None, linestyle='-',
+                   label='Surrogate', color='red',
+                   linewidth=1, markersize=3, alpha=0.5)
+        
+        ax[1].plot(np.arange(Hofyear), 
+                   model_plot-surr_plot,
+                   marker=None, linestyle='-',
+                   label='Model-Surrogate', color='red',
+                   linewidth=1, markersize=3, alpha=0.6)
+
+        ax[0].set_ylabel(var)
+        ax[0].grid()
+        ax[0].legend()
+    
+        ax[1].set_ylabel(var)
+        ax[1].set_xlabel('Time')
+        ax[1].grid()
+        ax[1].legend()
+         
+        fig.savefig(UQ_output+'/'+vname+'_surrogate_seasonalcycle.png', bbox_inches='tight')
+        plt.close(fig)
+     
+    # for qoi in range(0,nqoi):
+    #   rsq = np.corrcoef(yval.astype(float)[:,qoi], ypredict_val.astype(float)[:,qoi])[0,1]**2
+    #   print(qoi, rsq)
+    #   plt.plot(yval.astype(float)[:,qoi],ypredict_val.astype(float)[:,qoi],'ro')
+    #   plt.title(f'$R^2$: {round(rsq,3)}')
+    #   plt.xlabel('Original model')
+    #   plt.ylabel('\nSurrogate model')
+    #   plt.savefig(UQ_output+'/'+vname+'_surrogate'+str(qoi)+'.png', bbox_inches='tight')
+    #   plt.close()
 
 def run_surrogate(self,parms,myvars):
   surrogate_output={}
