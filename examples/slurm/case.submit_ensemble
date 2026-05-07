@@ -1,0 +1,21 @@
+#!/bin/bash -e
+
+#SBATCH --time=2400:00
+#SBATCH --constraint=cpu
+#SBATCH --qos=shared
+#SBATCH --account=m4803
+#SBATCH -J ABBY_ens3_I20TRCNPRDCTCBC
+#SBATCH --nodes=1
+#SBATCH --ntasks=30
+#SBATCH --output=/pscratch/sd/t/tianyihu/E3SM_out/SOIL_project/ABBY_ens3/slurm_error_%j.out
+#SBATCH --error=/pscratch/sd/t/tianyihu/E3SM_out/SOIL_project/ABBY_ens3/slurm_error_%j.err
+cd /global/homes/t/tianyihu/E3SM_Hu/case_run/SOIL_project/ABBY_ens3/ABBY_ens3_I20TRCNPRDCTCBC
+export LD_LIBRARY_PATH=/opt/intel/oneapi/mkl/2025.3/lib:/opt/intel/oneapi/compiler/2025.3/opt/compiler/lib:/opt/intel/oneapi/compiler/2025.3/lib:/opt/cray/libfabric/1.22.0/lib64
+
+./preview_namelists
+
+ulimit -n 1054
+cd /global/u1/t/tianyihu/elm-olmt
+conda activate OLMT_pm_Tianyi
+./manage_ensemble.py --case ABBY_ens3_I20TRCNPRDCTCBC
+[ $? -eq 0 ] && rm -v /pscratch/sd/t/tianyihu/E3SM_out/SOIL_project/ABBY_ens3/slurm_error_${SLURM_JOB_ID}.*
