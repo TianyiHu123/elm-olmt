@@ -12,3 +12,95 @@ Users can customize the simulations to run single points, a list of lat/lon coor
 Finally, OLMT also has the capability to perform ensemble simulations.  Users can specify a list of parameters, with allowable ranges for each. Random samples can then be created.  Alternatively, the user can provide their own files with different parameter combinations.  When this ensemble option is enabled, the cases will be set up in the same way as above, but then multiple copies of run directories will be created. We then use another MPI-enabled python script to manage the multiple simulations in parallel.  Users can also specify a list of output variables and time frequency for which to postprocess.  A matrix of output values for all ensemble members is then created at the end of the simulation, which can then be used in Uncertainty quantification applications discussed in the other epics.
 
 Please see the wiki page for instructions and examples.
+
+## Standalone Hybrid Forcing Surrogate (New)
+
+A new standalone surrogate training script is available at:
+
+`model_ELM/surrogate_NN_Forcing.py`
+
+This script is designed to train a surrogate for hourly ELM outputs (for example, `GPP`, `SR`) using a hybrid feature set:
+
+- hourly forcing variables (for example `PRECTmms`, `FSDS`, `TBOT`, `QBOT`, `WIND`, `PSRF`)
+- static ensemble parameters (`self.samples`) broadcast across timesteps
+- spinup state features from restart files (`TOTSOMC`, `TOTSOMN` by default), broadcast across timesteps
+- engineered forcing-memory and temporal features:
+  - temperature rolling means: 24h, 7d, 30d
+  - precipitation rolling sums: 24h, 7d, 30d
+  - `sin(hour_of_day)`, `cos(hour_of_day)`
+  - forcing anomalies defined as `forcing_t - rolling_mean_30day_t`
+
+The script is intentionally offline from the ensemble workflow manager (`manage_ensemble.py`) and reads experiment metadata from:
+
+`pklfiles/<case>.pkl`
+
+### Key capabilities
+
+- standalone CLI entry point (`--case`, `--vars`, forcing/spinup options)
+- split modes for validation:
+  - `by_member`
+  - `by_site`
+  - `by_time_block` (continuous time split)
+- parallel hyperparameter search with `MLPRegressor + GridSearchCV`
+- HPC-oriented controls:
+  - `--n-jobs`
+  - `--cv-folds`
+  - `--quick-grid`
+  - `--chunk-size`
+  - `--dtype` (`float32` default)
+- memory-aware training:
+  - dry-run size/memory estimate
+  - disk-backed feature matrix via `numpy.memmap`
+  - warnings for potentially aggressive parallel settings
+- outputs saved to:
+  - `UQ_output/<case>/surrogate_forcing/`
+  - including trained artifacts and diagnostic plots
+
+### Example commands
+
+Dry-run (recommended first):
+
+```bash
+python model_ELM/surrogate_NN_Forcing.py --case <CASE_NAME> --vars GPP,SR --dry-run
+```
+
+Quick test training:
+
+```bash
+python model_ELM/surrogate_NN_Forcing.py \
+  --case <CASE_NAME> \
+  --vars GPP,SR \
+  --quick-grid \
+  --split-mode by_time_block \
+  --train-fraction 0.8 \
+  --n-jobs 8 \
+  --cv-folds 3 \
+  --dtype float32
+```
+
+Full training (example):
+
+```bash
+python model_ELM/surrogate_NN_Forcing.py \
+  --case <CASE_NAME> \
+  --vars GPP,SR \
+  --forcing-vars PRECTmms,FSDS,TBOT,QBOT,WIND,PSRF \
+  --tair-var TBOT \
+  --precip-var PRECTmms \
+  --spinup-vars TOTSOMC,TOTSOMN \
+  --split-mode by_member \
+  --train-fraction 0.8 \
+  --n-jobs 16 \
+  --cv-folds 5 \
+  --dtype float32
+```
+
+One-site continuous time split example:
+
+```bash
+python model_ELM/surrogate_NN_Forcing.py \
+  --case <CASE_NAME> \
+  --vars GPP \
+  --split-mode by_time_block \
+  --train-fraction 0.8
+```
