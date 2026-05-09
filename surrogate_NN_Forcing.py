@@ -235,16 +235,73 @@ def _build_member_time_index(
     return all_idx[train_mask], all_idx[~train_mask]
 
 
-def _save_plot(y_true: np.ndarray, y_pred: np.ndarray, var: str, outdir: Path) -> None:
+def _group_time_stats(
+    time_ids: np.ndarray,
+    y_true: np.ndarray,
+    y_pred: np.ndarray,
+    ntime: int,
+) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    true_mean = np.full(ntime, np.nan, dtype=np.float64)
+    pred_mean = np.full(ntime, np.nan, dtype=np.float64)
+    true_std = np.full(ntime, np.nan, dtype=np.float64)
+    pred_std = np.full(ntime, np.nan, dtype=np.float64)
+
+    for t in range(ntime):
+        mask = time_ids == t
+        if not np.any(mask):
+            continue
+        true_t = y_true[mask]
+        pred_t = y_pred[mask]
+        true_mean[t] = np.mean(true_t)
+        pred_mean[t] = np.mean(pred_t)
+        true_std[t] = np.std(true_t)
+        pred_std[t] = np.std(pred_t)
+    return true_mean, pred_mean, true_std, pred_std
+
+
+def _save_plot(
+    y_true_mean: np.ndarray,
+    y_pred_mean: np.ndarray,
+    y_true_std: np.ndarray,
+    y_pred_std: np.ndarray,
+    var: str,
+    outdir: Path,
+) -> None:
     fig, ax = plt.subplots(2, 1, figsize=(12, 5), sharex=True)
-    ax[0].plot(np.mean(y_true, axis=0), color="blue", label="ELM")
-    ax[0].plot(np.mean(y_pred, axis=0), color="red", label="Surrogate")
+    x = np.arange(y_true_mean.size)
+    ax[0].plot(y_true_mean, color="blue", label="ELM mean")
+    ax[0].plot(y_pred_mean, color="red", label="Surrogate mean")
+    ax[0].fill_between(
+        x,
+        y_true_mean - y_true_std,
+        y_true_mean + y_true_std,
+        color="blue",
+        alpha=0.2,
+        label="ELM spread (+/-1 std)",
+    )
+    ax[0].fill_between(
+        x,
+        y_pred_mean - y_pred_std,
+        y_pred_mean + y_pred_std,
+        color="red",
+        alpha=0.2,
+        label="Surrogate spread (+/-1 std)",
+    )
     ax[0].set_ylabel(var)
     ax[0].grid()
     ax[0].legend()
 
-    diff = np.mean(y_true, axis=0) - np.mean(y_pred, axis=0)
-    ax[1].plot(diff, color="black", label="ELM-Surrogate")
+    diff_mean = y_true_mean - y_pred_mean
+    diff_std = np.sqrt(y_true_std**2 + y_pred_std**2)
+    ax[1].plot(diff_mean, color="black", label="ELM-Surrogate mean")
+    ax[1].fill_between(
+        x,
+        diff_mean - diff_std,
+        diff_mean + diff_std,
+        color="gray",
+        alpha=0.2,
+        label="Difference spread (+/-1 std)",
+    )
     ax[1].set_ylabel(var)
     ax[1].set_xlabel("Time index")
     ax[1].grid()
@@ -478,16 +535,12 @@ def main() -> int:
         y_scaler_store[var] = y_scaler
         stats[var] = {"r2_train": train_r2, "r2_val": val_r2}
 
-        # Plot mean-by-time diagnostics from validation rows grouped by time index.
+        # Plot validation diagnostics with mean + ensemble spread by time index.
         val_time = val_idx % ntime
-        y_true_by_t = np.zeros((1, ntime), dtype=np.float64)
-        y_pred_by_t = np.zeros((1, ntime), dtype=np.float64)
-        for t in range(ntime):
-            mask = val_time == t
-            if np.any(mask):
-                y_true_by_t[0, t] = np.mean(yval_true[mask])
-                y_pred_by_t[0, t] = np.mean(yhat_val[mask])
-        _save_plot(y_true_by_t, y_pred_by_t, var, uq_out)
+        y_true_mean, y_pred_mean, y_true_std, y_pred_std = _group_time_stats(
+            val_time, yval_true, yhat_val, ntime
+        )
+        _save_plot(y_true_mean, y_pred_mean, y_true_std, y_pred_std, var, uq_out)
 
     artifact = {
         "case": case.casename,

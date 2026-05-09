@@ -15,13 +15,15 @@ Please see the wiki page for instructions and examples.
 
 ## Standalone Hybrid Forcing Surrogate (New)
 
-A new standalone surrogate training script is available at:
+A standalone surrogate training script is now available at:
 
-`model_ELM/surrogate_NN_Forcing.py`
+`surrogate_NN_Forcing.py`
+
+(`model_ELM/surrogate_NN_Forcing.py` is still present, but the top-level script is the primary entry point.)
 
 This script is designed to train a surrogate for hourly ELM outputs (for example, `GPP`, `SR`) using a hybrid feature set:
 
-- hourly forcing variables (for example `PRECTmms`, `FSDS`, `TBOT`, `QBOT`, `WIND`, `PSRF`)
+- hourly forcing variables (default: `PRECTmms`, `FSDS`, `FLDS`, `TBOT`, `RH`, `WIND`, `PSRF`)
 - static ensemble parameters (`self.samples`) broadcast across timesteps
 - spinup state features from restart files (`TOTSOMC`, `TOTSOMN` by default), broadcast across timesteps
 - engineered forcing-memory and temporal features:
@@ -33,6 +35,14 @@ This script is designed to train a surrogate for hourly ELM outputs (for example
 The script is intentionally offline from the ensemble workflow manager (`manage_ensemble.py`) and reads experiment metadata from:
 
 `pklfiles/<case>.pkl`
+
+### Recent updates
+
+- forcing is explicitly converted to no-leap calendar using `convert_calendar('noleap')` and coarsened to hourly with `coarsen(time=2).mean()`
+- spinup restart path is resolved using `case.dependcase` and `case.finidat` naming, improving compatibility when restart files are sourced from dependent cases
+- spinup variables support aggregated sums through `SPINUP_VAR_SUM` (for example `TOTSOMC`, `TOTSOMN`)
+- anomaly features skip selected state/meteorology variables (`FLDS`, `QBOT`, `WIND`, `PSRF`, `RH`)
+- output root is configurable with `--outputdir` (default: `/pscratch/sd/t/tianyihu/E3SM_out/SOIL_project`)
 
 ### Key capabilities
 
@@ -53,7 +63,7 @@ The script is intentionally offline from the ensemble workflow manager (`manage_
   - disk-backed feature matrix via `numpy.memmap`
   - warnings for potentially aggressive parallel settings
 - outputs saved to:
-  - `UQ_output/<case>/surrogate_forcing/`
+  - `<outputdir>/UQ_output/<case>/surrogate_forcing/`
   - including trained artifacts and diagnostic plots
 
 ### Example commands
@@ -61,13 +71,13 @@ The script is intentionally offline from the ensemble workflow manager (`manage_
 Dry-run (recommended first):
 
 ```bash
-python model_ELM/surrogate_NN_Forcing.py --case <CASE_NAME> --vars GPP,SR --dry-run
+python surrogate_NN_Forcing.py --case <CASE_NAME> --vars GPP,SR --dry-run
 ```
 
 Quick test training:
 
 ```bash
-python model_ELM/surrogate_NN_Forcing.py \
+python surrogate_NN_Forcing.py \
   --case <CASE_NAME> \
   --vars GPP,SR \
   --quick-grid \
@@ -81,10 +91,10 @@ python model_ELM/surrogate_NN_Forcing.py \
 Full training (example):
 
 ```bash
-python model_ELM/surrogate_NN_Forcing.py \
+python surrogate_NN_Forcing.py \
   --case <CASE_NAME> \
   --vars GPP,SR \
-  --forcing-vars PRECTmms,FSDS,TBOT,QBOT,WIND,PSRF \
+  --forcing-vars PRECTmms,FSDS,FLDS,TBOT,RH,WIND,PSRF \
   --tair-var TBOT \
   --precip-var PRECTmms \
   --spinup-vars TOTSOMC,TOTSOMN \
@@ -92,13 +102,14 @@ python model_ELM/surrogate_NN_Forcing.py \
   --train-fraction 0.8 \
   --n-jobs 16 \
   --cv-folds 5 \
-  --dtype float32
+  --dtype float32 \
+  --outputdir /pscratch/sd/t/tianyihu/E3SM_out/SOIL_project
 ```
 
 One-site continuous time split example:
 
 ```bash
-python model_ELM/surrogate_NN_Forcing.py \
+python surrogate_NN_Forcing.py \
   --case <CASE_NAME> \
   --vars GPP \
   --split-mode by_time_block \
