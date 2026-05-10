@@ -1,13 +1,15 @@
 #!/usr/bin/env python
 from __future__ import annotations
 
-import argparse
 import os
 import pickle
 from pathlib import Path
-from typing import Dict, List, Sequence, Tuple
+from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
 import matplotlib
+
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt
 import numpy as np
 import xarray as xr
 from netCDF4 import Dataset
@@ -15,12 +17,26 @@ from sklearn import preprocessing
 from sklearn.model_selection import GridSearchCV
 from sklearn.neural_network import MLPRegressor
 
-matplotlib.use("Agg")
-import matplotlib.pyplot as plt
-
-
 DEFAULT_SPINUP_VARS = ("TOTSOMC", "TOTSOMN")
-SECONDS_PER_HOUR = 3600.0
+SPINUP_VAR_SUM: Dict[str, List[str]] = {
+    "TOTSOMC": ["totsomc"],
+    "TOTSOMN": [
+        "litr1n",
+        "litr2n",
+        "litr3n",
+        "cwdn",
+        "soil1n",
+        "soil2n",
+        "soil3n",
+        "soil4n",
+    ],
+}
+
+
+def _normalize_var_list(myvars: Union[str, Sequence[str]]) -> List[str]:
+    if isinstance(myvars, str):
+        return [s.strip() for s in myvars.split(",") if s.strip()]
+    return [str(v).strip() for v in myvars if str(v).strip()]
 
 
 def _memory_mb(arr: np.ndarray) -> float:
@@ -77,6 +93,8 @@ def _load_forcing_matrix(
     ntarget: int,
 ) -> Tuple[np.ndarray, List[str]]:
     files = _collect_forcing_files(metdir)
+    print("Find forcing data: ")
+    print([p.name for p in files])
     ds = xr.open_mfdataset([str(p) for p in files], combine="by_coords")
 
     used_vars: List[str] = []
@@ -84,7 +102,8 @@ def _load_forcing_matrix(
     for var in forcing_vars:
         if var not in ds.variables:
             continue
-        arr = np.asarray(ds[var]).squeeze()
+        var_hourly = (ds[var].coarsen(time=2).mean()).convert_calendar("noleap", dim="time")
+        arr = np.asarray(var_hourly).squeeze()
         if arr.ndim > 1:
             arr = np.mean(arr, axis=tuple(range(1, arr.ndim)))
         if arr.ndim != 1:
@@ -141,6 +160,8 @@ def _engineer_forcing_features(
         )
 
     for i, var in enumerate(forcing_var_names):
+        if var in ["FLDS", "QBOT", "WIND", "PSRF", "RH"]:
+            continue
         anom = forcing_raw[:, i] - _rolling_mean(forcing_raw[:, i], 24 * 30)
         feat_list.append(anom[:, None])
         names.append(f"{var}_anom_30d")
@@ -149,14 +170,15 @@ def _engineer_forcing_features(
     return out, names
 
 
-def _restart_file(case, ens_num: int) -> Path:
+def _restart_file(case: Any, ens_num: int) -> Path:
     gst = str(100000 + ens_num)[1:]
-    rundir = Path(case.runroot) / "UQ" / case.casename / f"g{gst}"
-    yst = str(10000 + case.startyear + case.run_n)[1:]
-    return rundir / f"{case.casename}.elm.r.{yst}-01-01-00000.nc"
+    finidat_file_path = os.path.abspath(case.runroot) + "/UQ/" + case.dependcase + "/g" + gst
+    finidat_file_name = case.finidat.split("/")[-1]
+    finidat_file_new = finidat_file_path + "/" + finidat_file_name
+    return Path(finidat_file_new)
 
 
-def _spinup_state(case, ens_num: int, spinup_vars: Sequence[str]) -> np.ndarray:
+def _spinup_state(case: Any, ens_num: int, spinup_vars: Sequence[str]) -> np.ndarray:
     fpath = _restart_file(case, ens_num)
     if not fpath.exists():
         raise FileNotFoundError(f"Missing restart file for ensemble {ens_num}: {fpath}")
@@ -164,10 +186,17 @@ def _spinup_state(case, ens_num: int, spinup_vars: Sequence[str]) -> np.ndarray:
     vals: List[float] = []
     with Dataset(str(fpath), "r") as nc:
         for var in spinup_vars:
-            if var not in nc.variables:
-                raise KeyError(f"Spinup variable '{var}' not found in {fpath}")
-            arr = np.asarray(nc.variables[var][:], dtype=np.float64)
-            vals.append(float(np.nansum(arr)))
+            if var in SPINUP_VAR_SUM.keys():
+                sum_value = 0.0
+                for sum_vars in SPINUP_VAR_SUM[var]:
+                    if sum_vars not in nc.variables:
+                        raise KeyError(f"Spinup variable '{sum_vars}' not found in {fpath}")
+                    sum_value = sum_value + np.nansum(nc.variables[sum_vars][:])
+            else:
+                if var not in nc.variables:
+                    raise KeyError(f"Spinup variable '{var}' not found in {fpath}")
+                sum_value = np.nansum(nc.variables[var][:])
+            vals.append(float(sum_value))
     return np.asarray(vals, dtype=np.float64)
 
 
@@ -176,7 +205,7 @@ def _build_member_time_index(
     ntime: int,
     split_mode: str,
     train_fraction: float,
-    site_labels: np.ndarray | None,
+    site_labels: Optional[np.ndarray],
 ) -> Tuple[np.ndarray, np.ndarray]:
     all_idx = np.arange(nmembers * ntime)
     member_ids = np.repeat(np.arange(nmembers), ntime)
@@ -201,27 +230,149 @@ def _build_member_time_index(
     return all_idx[train_mask], all_idx[~train_mask]
 
 
-def _save_plot(y_true: np.ndarray, y_pred: np.ndarray, var: str, outdir: Path) -> None:
+def _group_time_stats(
+    time_ids: np.ndarray,
+    y_true: np.ndarray,
+    y_pred: np.ndarray,
+    ntime: int,
+) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    true_mean = np.full(ntime, np.nan, dtype=np.float64)
+    pred_mean = np.full(ntime, np.nan, dtype=np.float64)
+    true_std = np.full(ntime, np.nan, dtype=np.float64)
+    pred_std = np.full(ntime, np.nan, dtype=np.float64)
+
+    for t in range(ntime):
+        mask = time_ids == t
+        if not np.any(mask):
+            continue
+        true_t = y_true[mask]
+        pred_t = y_pred[mask]
+        true_mean[t] = np.mean(true_t)
+        pred_mean[t] = np.mean(pred_t)
+        true_std[t] = np.std(true_t)
+        pred_std[t] = np.std(pred_t)
+    return true_mean, pred_mean, true_std, pred_std
+
+
+def _save_plot(
+    train_true_mean: np.ndarray,
+    train_pred_mean: np.ndarray,
+    train_true_std: np.ndarray,
+    train_pred_std: np.ndarray,
+    val_true_mean: np.ndarray,
+    val_pred_mean: np.ndarray,
+    val_true_std: np.ndarray,
+    val_pred_std: np.ndarray,
+    var: str,
+    outdir: Path,
+    r2_train: float,
+    r2_val: float,
+) -> None:
     fig, ax = plt.subplots(2, 1, figsize=(12, 5), sharex=True)
-    ax[0].plot(np.mean(y_true, axis=0), color="blue", label="ELM")
-    ax[0].plot(np.mean(y_pred, axis=0), color="red", label="Surrogate")
+    x = np.arange(train_true_mean.size)
+    ls_train, ls_val = "-", "--"
+
+    ax[0].plot(x, train_true_mean, color="blue", linestyle=ls_train, label="ELM mean (train)")
+    ax[0].plot(x, train_pred_mean, color="red", linestyle=ls_train, label="Surrogate mean (train)")
+    ax[0].plot(x, val_true_mean, color="blue", linestyle=ls_val, label="ELM mean (val)")
+    ax[0].plot(x, val_pred_mean, color="red", linestyle=ls_val, label="Surrogate mean (val)")
+
+    m_t_elm = np.isfinite(train_true_mean) & np.isfinite(train_true_std)
+    m_t_sur = np.isfinite(train_pred_mean) & np.isfinite(train_pred_std)
+    m_v_elm = np.isfinite(val_true_mean) & np.isfinite(val_true_std)
+    m_v_sur = np.isfinite(val_pred_mean) & np.isfinite(val_pred_std)
+    ax[0].fill_between(
+        x,
+        train_true_mean - train_true_std,
+        train_true_mean + train_true_std,
+        where=m_t_elm,
+        color="blue",
+        alpha=0.15,
+        linewidth=0,
+        label="ELM ±1 std (train)",
+    )
+    ax[0].fill_between(
+        x,
+        train_pred_mean - train_pred_std,
+        train_pred_mean + train_pred_std,
+        where=m_t_sur,
+        color="red",
+        alpha=0.15,
+        linewidth=0,
+        label="Surrogate ±1 std (train)",
+    )
+    ax[0].fill_between(
+        x,
+        val_true_mean - val_true_std,
+        val_true_mean + val_true_std,
+        where=m_v_elm,
+        color="blue",
+        alpha=0.08,
+        linewidth=0,
+        label="ELM ±1 std (val)",
+    )
+    ax[0].fill_between(
+        x,
+        val_pred_mean - val_pred_std,
+        val_pred_mean + val_pred_std,
+        where=m_v_sur,
+        color="red",
+        alpha=0.08,
+        linewidth=0,
+        label="Surrogate ±1 std (val)",
+    )
     ax[0].set_ylabel(var)
     ax[0].grid()
-    ax[0].legend()
+    ax[0].legend(loc="best", fontsize=8, ncol=2)
+    ax[0].text(
+        0.02,
+        0.98,
+        f"Train $R^2$ = {r2_train:.4f}\nVal $R^2$ = {r2_val:.4f}",
+        transform=ax[0].transAxes,
+        va="top",
+        ha="left",
+        fontsize=10,
+        bbox={"boxstyle": "round", "facecolor": "white", "alpha": 0.88, "edgecolor": "0.75"},
+    )
 
-    diff = np.mean(y_true, axis=0) - np.mean(y_pred, axis=0)
-    ax[1].plot(diff, color="black", label="ELM-Surrogate")
+    diff_train = train_true_mean - train_pred_mean
+    diff_val = val_true_mean - val_pred_mean
+    diff_train_std = np.sqrt(train_true_std**2 + train_pred_std**2)
+    diff_val_std = np.sqrt(val_true_std**2 + val_pred_std**2)
+    ax[1].plot(x, diff_train, color="black", linestyle=ls_train, label="ELM-Surrogate (train)")
+    ax[1].plot(x, diff_val, color="black", linestyle=ls_val, label="ELM-Surrogate (val)")
+    m_dt = np.isfinite(diff_train) & np.isfinite(diff_train_std)
+    m_dv = np.isfinite(diff_val) & np.isfinite(diff_val_std)
+    ax[1].fill_between(
+        x,
+        diff_train - diff_train_std,
+        diff_train + diff_train_std,
+        where=m_dt,
+        color="gray",
+        alpha=0.18,
+        linewidth=0,
+        label="Diff. ±1 std (train)",
+    )
+    ax[1].fill_between(
+        x,
+        diff_val - diff_val_std,
+        diff_val + diff_val_std,
+        where=m_dv,
+        color="gray",
+        alpha=0.1,
+        linewidth=0,
+        label="Diff. ±1 std (val)",
+    )
     ax[1].set_ylabel(var)
     ax[1].set_xlabel("Time index")
     ax[1].grid()
-    ax[1].legend()
+    ax[1].legend(loc="best", fontsize=8)
     fig.tight_layout()
     fig.savefig(str(outdir / f"{var}_surrogate_forcing.png"))
     plt.close(fig)
 
 
-def _parse_site_labels(case, nsamples: int) -> np.ndarray:
-    # For now default to one-site label unless user stored site labels in case metadata.
+def _parse_site_labels(case: Any, nsamples: int) -> np.ndarray:
     if hasattr(case, "site_labels"):
         labels = np.asarray(case.site_labels).astype(str)
         if labels.size == nsamples:
@@ -244,119 +395,149 @@ def _data_preflight(
     print(f"Configured dtype: {dtype}")
 
 
-def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="Standalone OLMT hybrid forcing surrogate trainer")
-    parser.add_argument("--case", required=True, help="Case name (pklfiles/<case>.pkl)")
-    parser.add_argument(
-        "--vars",
-        required=True,
-        help="Comma-separated output variables (must exist in case.output)",
-    )
-    parser.add_argument(
-        "--forcing-vars",
-        default="PRECTmms,FSDS,TBOT,QBOT,WIND,PSRF",
-        help="Comma-separated forcing variable names in met nc files",
-    )
-    parser.add_argument("--tair-var", default="TBOT", help="Temperature forcing variable name")
-    parser.add_argument("--precip-var", default="PRECTmms", help="Precip forcing variable name")
-    parser.add_argument("--spinup-vars", default="TOTSOMC,TOTSOMN", help="Restart variables for spinup state")
-    parser.add_argument("--split-mode", default="by_time_block", choices=["by_member", "by_site", "by_time_block"])
-    parser.add_argument("--train-fraction", type=float, default=0.8)
-    parser.add_argument("--dtype", default="float32", choices=["float32", "float64"])
-    parser.add_argument("--n-jobs", type=int, default=8)
-    parser.add_argument("--cv-folds", type=int, default=3)
-    parser.add_argument("--quick-grid", action="store_true", help="Smaller parameter grid for faster tests")
-    parser.add_argument("--chunk-size", type=int, default=50000)
-    parser.add_argument("--dry-run", action="store_true", help="Print dimensions and exit before training")
-    parser.add_argument("--workdir", default=".", help="OLMT root directory")
-    return parser
+def _ensure_forcing_surrogate_dicts(case: Any) -> None:
+    if not hasattr(case, "surrogate_forcing") or case.surrogate_forcing is None:
+        case.surrogate_forcing = {}
+    if not hasattr(case, "x_scaler_forcing") or case.x_scaler_forcing is None:
+        case.x_scaler_forcing = {}
+    if not hasattr(case, "y_scaler_forcing") or case.y_scaler_forcing is None:
+        case.y_scaler_forcing = {}
 
 
-def main() -> int:
-    args = build_parser().parse_args()
-    workdir = Path(args.workdir).resolve()
-    pkl_path = workdir / "pklfiles" / f"{args.case}.pkl"
-    if not pkl_path.exists():
-        raise FileNotFoundError(f"Case pkl not found: {pkl_path}")
+def train_surrogate_with_forcing(
+    self: Any,
+    myvars: Union[str, Sequence[str]],
+    forcing_vars: Optional[Sequence[str]] = None,
+    tair_var: str = "TBOT",
+    precip_var: str = "PRECTmms",
+    spinup_vars: Optional[Sequence[str]] = None,
+    split_mode: str = "by_time_block",
+    train_fraction: float = 0.8,
+    dtype: str = "float32",
+    n_jobs: int = 8,
+    cv_folds: int = 3,
+    quick_grid: bool = False,
+    dry_run: bool = False,
+    outputdir: str = ".",
+    chunk_size: int = 50000,
+) -> Optional[Dict[str, Any]]:
+    """
+    Train MLP surrogates mapping [engineered forcing | parameters | spinup] to hourly outputs.
 
-    with open(pkl_path, "rb") as fp:
-        case = pickle.load(fp)
+    Saves plots and ``surrogate_forcing_artifacts.pkl`` under
+    ``<outputdir>/UQ_output/<casename>/surrogate_forcing/``. Populates ``self.surrogate_forcing``,
+    ``self.x_scaler_forcing``, ``self.y_scaler_forcing``, and ``self.forcing_surrogate_training``.
 
-    outvars = [s.strip() for s in args.vars.split(",") if s.strip()]
-    forcing_vars = [s.strip() for s in args.forcing_vars.split(",") if s.strip()]
-    spinup_vars = [s.strip() for s in args.spinup_vars.split(",") if s.strip()]
-    if not spinup_vars:
-        spinup_vars = list(DEFAULT_SPINUP_VARS)
+    Returns the artifact dict (or None if ``dry_run``).
+    """
+    del chunk_size  # reserved for chunked IO; training uses memmap as in the original script
 
-    if not hasattr(case, "samples"):
+    outvars = _normalize_var_list(myvars)
+    if forcing_vars is None:
+        forcing_vars_list = [
+            s.strip()
+            for s in "PRECTmms,FSDS,FLDS,TBOT,RH,WIND,PSRF".split(",")
+            if s.strip()
+        ]
+    else:
+        forcing_vars_list = [str(v).strip() for v in forcing_vars if str(v).strip()]
+
+    if spinup_vars is None:
+        spinup_vars_list = list(DEFAULT_SPINUP_VARS)
+    else:
+        spinup_vars_list = [str(v).strip() for v in spinup_vars if str(v).strip()]
+        if not spinup_vars_list:
+            spinup_vars_list = list(DEFAULT_SPINUP_VARS)
+
+    print("Model output variables:", outvars)
+    print("Raw forcing variables:", forcing_vars_list)
+    print("Spinup vars:", spinup_vars_list)
+
+    if not hasattr(self, "samples"):
         raise AttributeError("Case object missing 'samples'")
-    if not hasattr(case, "output"):
+    if not hasattr(self, "output"):
         raise AttributeError("Case object missing 'output'")
 
-    params = np.asarray(case.samples).transpose().astype(np.float64)
+    params = np.asarray(self.samples).transpose().astype(np.float64)
     nsamples = params.shape[0]
+    print("Load ensemble parameters:")
+    print(f"{nsamples} ensemble members")
+    print(f"{params.shape[1]} parameters")
 
     for var in outvars:
-        if var not in case.output:
+        if var not in self.output:
             raise KeyError(f"Requested output variable not in case.output: {var}")
 
-    y_ref = np.asarray(case.output[outvars[0]]).transpose()
+    print("Load model outputs:")
+    y_ref = np.asarray(self.output[outvars[0]]).transpose()
     ntime = y_ref.shape[1]
-    metdir = Path(case.metdir)
-    forcing_raw, forcing_used = _load_forcing_matrix(metdir, forcing_vars, ntime)
+    print("Number of hours:", ntime)
+
+    metdir = Path(self.metdir)
+    print(f"Loading forcing data from:\n {metdir}")
+    forcing_raw, forcing_used = _load_forcing_matrix(metdir, forcing_vars_list, ntime)
     ntime = forcing_raw.shape[0]
     forcing_features, forcing_feature_names = _engineer_forcing_features(
         forcing_raw,
         forcing_used,
-        args.tair_var,
-        args.precip_var,
+        tair_var,
+        precip_var,
     )
+    print("Forcing data size:")
+    print(forcing_features.shape)
+    print(forcing_feature_names)
 
-    spinup = np.zeros((nsamples, len(spinup_vars)), dtype=np.float64)
+    print("Loading spinup state")
+    spinup = np.zeros((nsamples, len(spinup_vars_list)), dtype=np.float64)
     for ens in range(1, nsamples + 1):
-        spinup[ens - 1, :] = _spinup_state(case, ens, spinup_vars)
+        spinup[ens - 1, :] = _spinup_state(self, ens, spinup_vars_list)
+    print("Spinup array size:")
+    print(spinup.shape)
 
     nfeatures = forcing_features.shape[1] + params.shape[1] + spinup.shape[1]
-    _data_preflight(nsamples, ntime, nfeatures, args.dtype)
-    if args.dry_run:
-        print("Dry-run only. Exiting before training.")
-        return 0
+    _data_preflight(nsamples, ntime, nfeatures, dtype)
+    print(f"Final X will be {nsamples * ntime}x{nfeatures}")
 
-    if args.n_jobs * args.cv_folds > 128:
+    if dry_run:
+        print("Dry-run only. Exiting before training.")
+        return None
+
+    if n_jobs * cv_folds > 128:
         print(
-            "Warning: n_jobs * cv_folds is large; verify Perlmutter node memory "
+            "Warning: n_jobs * cv_folds is large; verify node memory "
             "and consider quick-grid mode."
         )
 
     rows = nsamples * ntime
-    dtype = np.float32 if args.dtype == "float32" else np.float64
-    uq_out = workdir / "UQ_output" / case.casename / "surrogate_forcing"
+    dtype_np = np.float32 if dtype == "float32" else np.float64
+    outdir = Path(outputdir).resolve()
+    uq_out = outdir / "UQ_output" / self.casename / "surrogate_forcing"
     uq_out.mkdir(parents=True, exist_ok=True)
     x_memmap_path = uq_out / "X_forcing_memmap.dat"
-    X = np.memmap(x_memmap_path, mode="w+", dtype=dtype, shape=(rows, nfeatures))
+    X = np.memmap(x_memmap_path, mode="w+", dtype=dtype_np, shape=(rows, nfeatures))
 
-    print("Building feature matrix in chunks...")
+    print("Building feature matrix...")
     col_force_end = forcing_features.shape[1]
     col_param_end = col_force_end + params.shape[1]
     for m in range(nsamples):
         start = m * ntime
         end = (m + 1) * ntime
-        X[start:end, :col_force_end] = forcing_features.astype(dtype, copy=False)
-        X[start:end, col_force_end:col_param_end] = params[m, :].astype(dtype, copy=False)
-        X[start:end, col_param_end:] = spinup[m, :].astype(dtype, copy=False)
+        X[start:end, :col_force_end] = forcing_features.astype(dtype_np, copy=False)
+        X[start:end, col_force_end:col_param_end] = params[m, :].astype(dtype_np, copy=False)
+        X[start:end, col_param_end:] = spinup[m, :].astype(dtype_np, copy=False)
     print(f"Feature matrix memory (mapped): ~{_memory_mb(np.asarray(X)):.1f} MB")
 
-    site_labels = _parse_site_labels(case, nsamples)
+    site_labels = _parse_site_labels(self, nsamples)
     train_idx, val_idx = _build_member_time_index(
         nmembers=nsamples,
         ntime=ntime,
-        split_mode=args.split_mode,
-        train_fraction=args.train_fraction,
+        split_mode=split_mode,
+        train_fraction=train_fraction,
         site_labels=site_labels,
     )
     print(f"Train rows: {train_idx.size}, Val rows: {val_idx.size}")
 
-    if args.quick_grid:
+    if quick_grid:
         param_grid = {
             "hidden_layer_sizes": [(64,), (128,)],
             "activation": ["relu"],
@@ -378,10 +559,12 @@ def main() -> int:
     y_scaler_store: Dict[str, preprocessing.StandardScaler] = {}
     stats: Dict[str, Dict[str, float]] = {}
 
+    _ensure_forcing_surrogate_dicts(self)
+
     for var in outvars:
         print(f"\nTraining variable: {var}")
-        yfull = np.asarray(case.output[var]).transpose()[:, :ntime]
-        y_rows = yfull.reshape(-1, 1).astype(dtype)
+        yfull = np.asarray(self.output[var]).transpose()[:, :ntime]
+        y_rows = yfull.reshape(-1, 1).astype(dtype_np)
 
         if np.any(~np.isfinite(y_rows)):
             bad = int(np.sum(~np.isfinite(y_rows)))
@@ -402,7 +585,7 @@ def main() -> int:
             n_iter_no_change=10,
             random_state=42,
         )
-        grid = GridSearchCV(clf, param_grid, n_jobs=args.n_jobs, cv=args.cv_folds)
+        grid = GridSearchCV(clf, param_grid, n_jobs=n_jobs, cv=cv_folds)
         grid.fit(X_train, y_train)
 
         yhat_train = y_scaler.inverse_transform(grid.predict(X_train).reshape(-1, 1)).ravel()
@@ -419,35 +602,106 @@ def main() -> int:
         y_scaler_store[var] = y_scaler
         stats[var] = {"r2_train": train_r2, "r2_val": val_r2}
 
-        # Plot mean-by-time diagnostics from validation rows grouped by time index.
-        val_time = val_idx % ntime
-        y_true_by_t = np.zeros((1, ntime), dtype=np.float64)
-        y_pred_by_t = np.zeros((1, ntime), dtype=np.float64)
-        for t in range(ntime):
-            mask = val_time == t
-            if np.any(mask):
-                y_true_by_t[0, t] = np.mean(yval_true[mask])
-                y_pred_by_t[0, t] = np.mean(yhat_val[mask])
-        _save_plot(y_true_by_t, y_pred_by_t, var, uq_out)
+        self.surrogate_forcing[var] = grid
+        self.x_scaler_forcing[var] = x_scaler
+        self.y_scaler_forcing[var] = y_scaler
 
-    artifact = {
-        "case": case.casename,
+        train_time = train_idx % ntime
+        tr_tm, tr_pm, tr_ts, tr_ps = _group_time_stats(train_time, ytrain_true, yhat_train, ntime)
+        val_time = val_idx % ntime
+        v_tm, v_pm, v_ts, v_ps = _group_time_stats(val_time, yval_true, yhat_val, ntime)
+        _save_plot(tr_tm, tr_pm, tr_ts, tr_ps, v_tm, v_pm, v_ts, v_ps, var, uq_out, train_r2, val_r2)
+
+    self.forcing_surrogate_training = {
+        "forcing_feature_names": forcing_feature_names,
+        "forcing_vars_used": forcing_used,
+        "spinup_vars": spinup_vars_list,
+        "n_forcing_cols": int(forcing_features.shape[1]),
+        "n_params": int(params.shape[1]),
+        "n_spinup": int(spinup.shape[1]),
+        "tair_var": tair_var,
+        "precip_var": precip_var,
+        "ntime": int(ntime),
+    }
+
+    artifact: Dict[str, Any] = {
+        "case": self.casename,
         "outvars": outvars,
         "forcing_vars_used": forcing_used,
         "forcing_feature_names": forcing_feature_names,
-        "spinup_vars": spinup_vars,
-        "split_mode": args.split_mode,
-        "train_fraction": args.train_fraction,
+        "spinup_vars": spinup_vars_list,
+        "split_mode": split_mode,
+        "train_fraction": train_fraction,
         "models": model_store,
         "x_scaler": x_scaler_store,
         "y_scaler": y_scaler_store,
         "stats": stats,
+        "training_layout": self.forcing_surrogate_training,
     }
     with open(uq_out / "surrogate_forcing_artifacts.pkl", "wb") as fp:
         pickle.dump(artifact, fp)
     print(f"\nSaved surrogate artifacts to: {uq_out}")
-    return 0
+    return artifact
 
 
-if __name__ == "__main__":
-    raise SystemExit(main())
+def run_surrogate_forcing(
+    self: Any,
+    parms: Optional[np.ndarray],
+    myvars: Union[str, Sequence[str]],
+    X: Optional[np.ndarray] = None,
+    forcing_engineered: Optional[np.ndarray] = None,
+    spinup: Optional[np.ndarray] = None,
+) -> Dict[str, np.ndarray]:
+    """
+    Apply trained forcing surrogates. Same pattern as ``run_surrogate``: pass ``parms`` (ensemble
+    parameters) and ``myvars``. Either pass the full design matrix ``X`` (rows =
+    ``[forcing | parms | spinup]``), or pass ``forcing_engineered`` and ``spinup`` together with
+    ``parms`` to build ``X`` for a single member trajectory (one row per hour). When ``X`` is given,
+    ``parms`` may be ``None``.
+    """
+    myvars_list = _normalize_var_list(myvars)
+    _ensure_forcing_surrogate_dicts(self)
+
+    if X is None:
+        meta = getattr(self, "forcing_surrogate_training", None)
+        if meta is None:
+            raise ValueError(
+                "Missing forcing_surrogate_training metadata; train first or pass X explicitly."
+            )
+        if forcing_engineered is None or spinup is None:
+            raise ValueError(
+                "When X is not provided, both forcing_engineered and spinup are required."
+            )
+        if parms is None:
+            raise ValueError("parms is required when building X from forcing_engineered and spinup.")
+        fe = np.asarray(forcing_engineered, dtype=np.float64)
+        pr = np.asarray(parms, dtype=np.float64).ravel()
+        sp = np.asarray(spinup, dtype=np.float64).ravel()
+        nf = int(meta["n_forcing_cols"])
+        nparam = int(meta["n_params"])
+        nsp = int(meta["n_spinup"])
+        if fe.ndim != 2 or fe.shape[1] != nf:
+            raise ValueError(
+                f"forcing_engineered must have shape (nhours, {nf}), got {fe.shape}"
+            )
+        if pr.size != nparam:
+            raise ValueError(f"parms must have length {nparam}, got {pr.size}")
+        if sp.size != nsp:
+            raise ValueError(f"spinup must have length {nsp}, got {sp.size}")
+        nh = fe.shape[0]
+        X = np.empty((nh, nf + nparam + nsp), dtype=np.float64)
+        X[:, :nf] = fe
+        X[:, nf : nf + nparam] = pr
+        X[:, nf + nparam :] = sp
+    else:
+        X = np.asarray(X, dtype=np.float64)
+
+    surrogate_output: Dict[str, np.ndarray] = {}
+    for var in myvars_list:
+        if var not in self.surrogate_forcing:
+            raise KeyError(f"No forcing surrogate trained for variable '{var}'")
+        xn = self.x_scaler_forcing[var].transform(X)
+        pred = self.surrogate_forcing[var].predict(xn)
+        y = self.y_scaler_forcing[var].inverse_transform(np.asarray(pred).reshape(-1, 1))
+        surrogate_output[var] = y.ravel()
+    return surrogate_output

@@ -14,9 +14,10 @@
 cd /global/u1/t/tianyihu/elm-olmt
 conda activate OLMT_pm_Tianyi
 
-python model_ELM/surrogate_NN_Forcing.py \
+python train_surrogate_forcing.py \
   --case ABBY_ens3_I20TRCNPRDCTCBC \
   --vars GPP,SR \
+  --outputdir /pscratch/sd/t/tianyihu/E3SM_out/SOIL_project \
   --split-mode by_time_block \
   --train-fraction 0.8 \
   --quick-grid \

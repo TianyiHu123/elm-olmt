@@ -13,15 +13,19 @@ Finally, OLMT also has the capability to perform ensemble simulations.  Users ca
 
 Please see the wiki page for instructions and examples.
 
-## Standalone Hybrid Forcing Surrogate (New)
+## Standalone Hybrid Forcing Surrogate
 
-A standalone surrogate training script is now available at:
+Training logic lives in [`model_ELM/surrogate_NN_Forcing.py`](model_ELM/surrogate_NN_Forcing.py) and is exposed on the case object as **`train_surrogate_with_forcing`** and **`run_surrogate_forcing`** (same pattern as `train_surrogate` / `run_surrogate` in [`model_ELM/surrogate_NN.py`](model_ELM/surrogate_NN.py), wired through [`model_ELM/main.py`](model_ELM/main.py)).
 
-`surrogate_NN_Forcing.py`
+**Command-line driver** — same idea as [`manage_ensemble.py`](manage_ensemble.py): load `pklfiles/<case>.pkl`, then call the case method.
 
-(`model_ELM/surrogate_NN_Forcing.py` is still present, but the top-level script is the primary entry point.)
+- **`train_surrogate_forcing.py`** — preferred entry point from the OLMT repository root.
 
-This script is designed to train a surrogate for hourly ELM outputs (for example, `GPP`, `SR`) using a hybrid feature set:
+**Backward compatibility:** repo-root **`surrogate_NN_Forcing.py`** is a thin wrapper that forwards to `train_surrogate_forcing.main()`, so existing invocations of `python surrogate_NN_Forcing.py ...` keep working.
+
+**Programmatic use:** after `import model_ELM`, a loaded `ELMcase` instance has `train_surrogate_with_forcing(myvars, ...)` and `run_surrogate_forcing(parms, myvars, ...)` (optional full design matrix `X`, or `forcing_engineered` + `spinup` with `parms`).
+
+The workflow trains a surrogate for hourly ELM outputs (for example, `GPP`, `SR`) using a hybrid feature set:
 
 - hourly forcing variables (default: `PRECTmms`, `FSDS`, `FLDS`, `TBOT`, `RH`, `WIND`, `PSRF`)
 - static ensemble parameters (`self.samples`) broadcast across timesteps
@@ -32,9 +36,11 @@ This script is designed to train a surrogate for hourly ELM outputs (for example
   - `sin(hour_of_day)`, `cos(hour_of_day)`
   - forcing anomalies defined as `forcing_t - rolling_mean_30day_t`
 
-The script is intentionally offline from the ensemble workflow manager (`manage_ensemble.py`) and reads experiment metadata from:
+The CLI is separate from the ensemble workflow manager ([`manage_ensemble.py`](manage_ensemble.py)) but uses the same pickle convention. By default it resolves the case pickle from:
 
-`pklfiles/<case>.pkl`
+`<workdir>/pklfiles/<case>.pkl`
+
+(`--workdir` defaults to the current directory; run from the OLMT root where `pklfiles/` lives.)
 
 ### Recent updates
 
@@ -42,11 +48,11 @@ The script is intentionally offline from the ensemble workflow manager (`manage_
 - spinup restart path is resolved using `case.dependcase` and `case.finidat` naming, improving compatibility when restart files are sourced from dependent cases
 - spinup variables support aggregated sums through `SPINUP_VAR_SUM` (for example `TOTSOMC`, `TOTSOMN`)
 - anomaly features skip selected state/meteorology variables (`FLDS`, `QBOT`, `WIND`, `PSRF`, `RH`)
-- output root is configurable with `--outputdir` (default: `/pscratch/sd/t/tianyihu/E3SM_out/SOIL_project`)
+- output root is configurable with `--outputdir` (default: current directory, i.e. **`./UQ_output/<case>/surrogate_forcing/`** under that base; set an absolute path on HPC when needed)
 
 ### Key capabilities
 
-- standalone CLI entry point (`--case`, `--vars`, forcing/spinup options)
+- standalone CLI via **`train_surrogate_forcing.py`** (`--case`, `--vars`, `--workdir`, forcing/spinup options, and the same flags as before)
 - split modes for validation:
   - `by_member`
   - `by_site`
@@ -64,11 +70,19 @@ The script is intentionally offline from the ensemble workflow manager (`manage_
   - warnings for potentially aggressive parallel settings
 - outputs saved to:
   - `<outputdir>/UQ_output/<case>/surrogate_forcing/`
-  - including trained artifacts and diagnostic plots
+  - including `surrogate_forcing_artifacts.pkl`, diagnostic plots (`*_surrogate_forcing.png`), and the memmap-backed feature matrix used during training
+- after training, the case object holds **`surrogate_forcing`**, **`x_scaler_forcing`**, **`y_scaler_forcing`**, and **`forcing_surrogate_training`** metadata for **`run_surrogate_forcing`**
+- batch example: [`examples/slurm/case.submit_surrogate_forcing`](examples/slurm/case.submit_surrogate_forcing) uses `train_surrogate_forcing.py` with an explicit `--outputdir`
 
 ### Example commands
 
 Dry-run (recommended first):
+
+```bash
+python train_surrogate_forcing.py --case <CASE_NAME> --vars GPP,SR --dry-run
+```
+
+Equivalent backward-compatible invocation:
 
 ```bash
 python surrogate_NN_Forcing.py --case <CASE_NAME> --vars GPP,SR --dry-run
@@ -77,7 +91,7 @@ python surrogate_NN_Forcing.py --case <CASE_NAME> --vars GPP,SR --dry-run
 Quick test training:
 
 ```bash
-python surrogate_NN_Forcing.py \
+python train_surrogate_forcing.py \
   --case <CASE_NAME> \
   --vars GPP,SR \
   --quick-grid \
@@ -88,10 +102,10 @@ python surrogate_NN_Forcing.py \
   --dtype float32
 ```
 
-Full training (example):
+Full training (example with explicit scratch output root):
 
 ```bash
-python surrogate_NN_Forcing.py \
+python train_surrogate_forcing.py \
   --case <CASE_NAME> \
   --vars GPP,SR \
   --forcing-vars PRECTmms,FSDS,FLDS,TBOT,RH,WIND,PSRF \
@@ -109,7 +123,7 @@ python surrogate_NN_Forcing.py \
 One-site continuous time split example:
 
 ```bash
-python surrogate_NN_Forcing.py \
+python train_surrogate_forcing.py \
   --case <CASE_NAME> \
   --vars GPP \
   --split-mode by_time_block \
