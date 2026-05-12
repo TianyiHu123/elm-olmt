@@ -268,14 +268,27 @@ def _save_plot(
     r2_train: float,
     r2_val: float,
 ) -> None:
-    fig, ax = plt.subplots(2, 1, figsize=(12, 5), sharex=True)
+    fig, ax = plt.subplots(2, 1, figsize=(15, 5), sharex=True)
     x = np.arange(train_true_mean.size)
-    ls_train, ls_val = "-", "--"
+    ls_train, ls_val = "None", "--"
+    mk_train, mk_val = "o","v"
 
-    ax[0].plot(x, train_true_mean, color="blue", linestyle=ls_train, label="ELM mean (train)")
-    ax[0].plot(x, train_pred_mean, color="red", linestyle=ls_train, label="Surrogate mean (train)")
-    ax[0].plot(x, val_true_mean, color="blue", linestyle=ls_val, label="ELM mean (val)")
-    ax[0].plot(x, val_pred_mean, color="red", linestyle=ls_val, label="Surrogate mean (val)")
+    ax[0].plot(x, train_true_mean, 
+               color="blue", linestyle=ls_train, linewidth=1,
+               marker=mk_train, markersize=1,
+               label="ELM mean (train)",alpha=0.6)
+    ax[0].plot(x, train_pred_mean, 
+               color="red", linestyle=ls_train, linewidth=1,
+               marker=mk_train, markersize=1,
+               label="Surrogate mean (train)",alpha=0.6)
+    ax[0].plot(x, val_true_mean, 
+               color="blue", linestyle=ls_val, linewidth=1, 
+               marker=mk_val, markersize=1,
+               label="ELM mean (val)",alpha=0.6)
+    ax[0].plot(x, val_pred_mean, 
+               color="red", linestyle=ls_val, linewidth=1,
+               marker=mk_val, markersize=1,
+               label="Surrogate mean (val)",alpha=0.6)
 
     m_t_elm = np.isfinite(train_true_mean) & np.isfinite(train_true_std)
     m_t_sur = np.isfinite(train_pred_mean) & np.isfinite(train_pred_std)
@@ -287,7 +300,7 @@ def _save_plot(
         train_true_mean + train_true_std,
         where=m_t_elm,
         color="blue",
-        alpha=0.15,
+        alpha=0.2,
         linewidth=0,
         label="ELM ±1 std (train)",
     )
@@ -297,7 +310,7 @@ def _save_plot(
         train_pred_mean + train_pred_std,
         where=m_t_sur,
         color="red",
-        alpha=0.15,
+        alpha=0.2,
         linewidth=0,
         label="Surrogate ±1 std (train)",
     )
@@ -307,7 +320,7 @@ def _save_plot(
         val_true_mean + val_true_std,
         where=m_v_elm,
         color="blue",
-        alpha=0.08,
+        alpha=0.2,
         linewidth=0,
         label="ELM ±1 std (val)",
     )
@@ -317,7 +330,7 @@ def _save_plot(
         val_pred_mean + val_pred_std,
         where=m_v_sur,
         color="red",
-        alpha=0.08,
+        alpha=0.2,
         linewidth=0,
         label="Surrogate ±1 std (val)",
     )
@@ -339,8 +352,8 @@ def _save_plot(
     diff_val = val_true_mean - val_pred_mean
     diff_train_std = np.sqrt(train_true_std**2 + train_pred_std**2)
     diff_val_std = np.sqrt(val_true_std**2 + val_pred_std**2)
-    ax[1].plot(x, diff_train, color="black", linestyle=ls_train, label="ELM-Surrogate (train)")
-    ax[1].plot(x, diff_val, color="black", linestyle=ls_val, label="ELM-Surrogate (val)")
+    ax[1].plot(x, diff_train, color="black", linestyle=ls_train, label="ELM-Surrogate (train)",alpha=0.8)
+    ax[1].plot(x, diff_val, color="black", linestyle=ls_val, label="ELM-Surrogate (val)",alpha=0.8)
     m_dt = np.isfinite(diff_train) & np.isfinite(diff_train_std)
     m_dv = np.isfinite(diff_val) & np.isfinite(diff_val_std)
     ax[1].fill_between(
@@ -349,7 +362,7 @@ def _save_plot(
         diff_train + diff_train_std,
         where=m_dt,
         color="gray",
-        alpha=0.18,
+        alpha=0.3,
         linewidth=0,
         label="Diff. ±1 std (train)",
     )
@@ -359,7 +372,7 @@ def _save_plot(
         diff_val + diff_val_std,
         where=m_dv,
         color="gray",
-        alpha=0.1,
+        alpha=0.3,
         linewidth=0,
         label="Diff. ±1 std (val)",
     )
@@ -514,6 +527,8 @@ def train_surrogate_with_forcing(
     uq_out = outdir / "UQ_output" / self.casename / "surrogate_forcing"
     uq_out.mkdir(parents=True, exist_ok=True)
     x_memmap_path = uq_out / "X_forcing_memmap.dat"
+    print("X forcing path is")
+    print(x_memmap_path)
     X = np.memmap(x_memmap_path, mode="w+", dtype=dtype_np, shape=(rows, nfeatures))
 
     print("Building feature matrix...")
