@@ -17,7 +17,7 @@ Please see the wiki page for instructions and examples.
 
 Training logic lives in [`model_ELM/surrogate_NN_Forcing.py`](model_ELM/surrogate_NN_Forcing.py) and is exposed on the case object as **`train_surrogate_with_forcing`** and **`run_surrogate_forcing`** (same pattern as `train_surrogate` / `run_surrogate` in [`model_ELM/surrogate_NN.py`](model_ELM/surrogate_NN.py), wired through [`model_ELM/main.py`](model_ELM/main.py)).
 
-**Command-line driver** — same idea as [`manage_ensemble.py`](manage_ensemble.py): load `pklfiles/<case>.pkl`, then call the case method.
+**Command-line driver** — same idea as [`manage_ensemble.py`](manage_ensemble.py): load one or more `pklfiles/<case>.pkl` files, then call the case method (single case) or the multi-case adapter (merged training).
 
 - **`train_surrogate_forcing.py`** — preferred entry point from the OLMT repository root.
 
@@ -36,11 +36,11 @@ The workflow trains a surrogate for hourly ELM outputs (for example, `GPP`, `SR`
   - `sin(hour_of_day)`, `cos(hour_of_day)`
   - forcing anomalies defined as `forcing_t - rolling_mean_30day_t`
 
-The CLI is separate from the ensemble workflow manager ([`manage_ensemble.py`](manage_ensemble.py)) but uses the same pickle convention. By default it resolves the case pickle from:
+The CLI is separate from the ensemble workflow manager ([`manage_ensemble.py`](manage_ensemble.py)) but uses the same pickle convention. By default it resolves case pickles from:
 
 `<workdir>/pklfiles/<case>.pkl`
 
-(`--workdir` defaults to the current directory; run from the OLMT root where `pklfiles/` lives.)
+(`--workdir` defaults to the current directory; run from the OLMT root where `pklfiles/` lives.) For multi-case training, pass a comma-separated case list to `--case`.
 
 ### Recent updates
 
@@ -49,14 +49,16 @@ The CLI is separate from the ensemble workflow manager ([`manage_ensemble.py`](m
 - spinup variables support aggregated sums through `SPINUP_VAR_SUM` (for example `TOTSOMC`, `TOTSOMN`)
 - anomaly features skip selected state/meteorology variables (`FLDS`, `QBOT`, `WIND`, `PSRF`, `RH`)
 - output root is configurable with `--outputdir` (default: current directory, i.e. **`./UQ_output/<case>/surrogate_forcing/`** under that base; set an absolute path on HPC when needed)
+- multi-case runs can set `--run-name` to choose a short output folder label under `UQ_output/`, which also controls where the merged `X_forcing_memmap.dat` is saved
 
 ### Key capabilities
 
 - standalone CLI via **`train_surrogate_forcing.py`** (`--case`, `--vars`, `--workdir`, forcing/spinup options, and the same flags as before)
+- multi-case training by passing a comma-separated case list to `--case`
 - split modes for validation:
-  - `by_member`
-  - `by_site`
-  - `by_time_block` (continuous time split)
+  - `by_member` — for each case, split across ensemble members inside that case
+  - `by_site` — hold out entire site/case labels for validation
+  - `by_time_block` — for each case, split across the time dimension inside that case
 - parallel hyperparameter search with `MLPRegressor + GridSearchCV`
 - HPC-oriented controls:
   - `--n-jobs`
@@ -69,8 +71,9 @@ The CLI is separate from the ensemble workflow manager ([`manage_ensemble.py`](m
   - disk-backed feature matrix via `numpy.memmap`
   - warnings for potentially aggressive parallel settings
 - outputs saved to:
-  - `<outputdir>/UQ_output/<case>/surrogate_forcing/`
-  - including `surrogate_forcing_artifacts.pkl`, diagnostic plots (`*_surrogate_forcing.png`), and the memmap-backed feature matrix used during training
+  - `<outputdir>/UQ_output/<case-or-run-name>/surrogate_forcing/`
+  - including `surrogate_forcing_artifacts.pkl`, the merged memmap-backed feature matrix `X_forcing_memmap.dat`, and diagnostic plots
+- multi-case diagnostics are saved case by case (one plot set per case/site) under the merged training run output folder
 - after training, the case object holds **`surrogate_forcing`**, **`x_scaler_forcing`**, **`y_scaler_forcing`**, and **`forcing_surrogate_training`** metadata for **`run_surrogate_forcing`**
 - batch example: [`examples/slurm/case.submit_surrogate_forcing`](examples/slurm/case.submit_surrogate_forcing) uses `train_surrogate_forcing.py` with an explicit `--outputdir`
 
@@ -100,6 +103,18 @@ python train_surrogate_forcing.py \
   --n-jobs 8 \
   --cv-folds 3 \
   --dtype float32
+```
+
+Multi-case training with a user-defined output folder label:
+
+```bash
+python train_surrogate_forcing.py \
+  --case <CASE_A>,<CASE_B>,<CASE_C> \
+  --vars GPP,SR \
+  --split-mode by_site \
+  --train-fraction 0.67 \
+  --run-name multicase_flux_sites \
+  --outputdir /pscratch/sd/t/tianyihu/E3SM_out/SOIL_project
 ```
 
 Full training (example with explicit scratch output root):

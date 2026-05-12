@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Load a pickled ELMcase and run train_surrogate_with_forcing (see manage_ensemble.py pattern)."""
+"""Load one or more pickled ELM cases and run forcing-surrogate training."""
 from __future__ import annotations
 
 import argparse
@@ -8,11 +8,16 @@ import sys
 from pathlib import Path
 
 import model_ELM  # noqa: F401 — registers ELMcase for pickle.load
+from model_ELM.surrogate_forcing_multicase import train_multicase_surrogate_with_forcing
 
 
 def _build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="OLMT hybrid forcing surrogate trainer (CLI driver)")
-    parser.add_argument("--case", required=True, help="Case name (pklfiles/<case>.pkl)")
+    parser.add_argument(
+        "--case",
+        required=True,
+        help="Case name or comma-separated case list (pklfiles/<case>.pkl)",
+    )
     parser.add_argument(
         "--vars",
         required=True,
@@ -51,7 +56,12 @@ def _build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--outputdir",
         default=".",
-        help="Base directory for UQ_output/<casename>/surrogate_forcing/",
+        help="Base directory for UQ_output/<case-or-run-name>/surrogate_forcing/",
+    )
+    parser.add_argument(
+        "--run-name",
+        default=None,
+        help="Optional output subfolder name under UQ_output/ (recommended for multi-case runs)",
     )
     return parser
 
@@ -59,33 +69,60 @@ def _build_parser() -> argparse.ArgumentParser:
 def main() -> int:
     args = _build_parser().parse_args()
     workdir = Path(args.workdir).resolve()
-    pkl_path = workdir / "pklfiles" / f"{args.case}.pkl"
-    if not pkl_path.exists():
-        print(f"Error: Case pkl not found: {pkl_path}", file=sys.stderr)
+    case_names = [name.strip() for name in args.case.split(",") if name.strip()]
+    if not case_names:
+        print("Error: at least one case name is required", file=sys.stderr)
         return 1
-
-    with open(pkl_path, "rb") as fp:
-        case = pickle.load(fp)
 
     forcing_vars = [s.strip() for s in args.forcing_vars.split(",") if s.strip()]
     spinup_vars = [s.strip() for s in args.spinup_vars.split(",") if s.strip()]
 
-    case.train_surrogate_with_forcing(
-        args.vars,
-        forcing_vars=forcing_vars,
-        tair_var=args.tair_var,
-        precip_var=args.precip_var,
-        spinup_vars=spinup_vars,
-        split_mode=args.split_mode,
-        train_fraction=args.train_fraction,
-        dtype=args.dtype,
-        n_jobs=args.n_jobs,
-        cv_folds=args.cv_folds,
-        quick_grid=args.quick_grid,
-        dry_run=args.dry_run,
-        outputdir=args.outputdir,
-        chunk_size=args.chunk_size,
-    )
+    if len(case_names) == 1:
+        pkl_path = workdir / "pklfiles" / f"{case_names[0]}.pkl"
+        if not pkl_path.exists():
+            print(f"Error: Case pkl not found: {pkl_path}", file=sys.stderr)
+            return 1
+
+        with open(pkl_path, "rb") as fp:
+            case = pickle.load(fp)
+
+        case.train_surrogate_with_forcing(
+            args.vars,
+            forcing_vars=forcing_vars,
+            tair_var=args.tair_var,
+            precip_var=args.precip_var,
+            spinup_vars=spinup_vars,
+            split_mode=args.split_mode,
+            train_fraction=args.train_fraction,
+            dtype=args.dtype,
+            n_jobs=args.n_jobs,
+            cv_folds=args.cv_folds,
+            quick_grid=args.quick_grid,
+            dry_run=args.dry_run,
+            outputdir=args.outputdir,
+            chunk_size=args.chunk_size,
+            run_name=args.run_name,
+        )
+    else:
+        train_multicase_surrogate_with_forcing(
+            case_names,
+            args.vars,
+            workdir=str(workdir),
+            forcing_vars=forcing_vars,
+            tair_var=args.tair_var,
+            precip_var=args.precip_var,
+            spinup_vars=spinup_vars,
+            split_mode=args.split_mode,
+            train_fraction=args.train_fraction,
+            dtype=args.dtype,
+            n_jobs=args.n_jobs,
+            cv_folds=args.cv_folds,
+            quick_grid=args.quick_grid,
+            dry_run=args.dry_run,
+            outputdir=args.outputdir,
+            chunk_size=args.chunk_size,
+            run_name=args.run_name,
+        )
     return 0
 
 
