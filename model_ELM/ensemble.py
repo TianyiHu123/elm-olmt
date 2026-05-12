@@ -393,20 +393,27 @@ def plot_ensemble(self, myvar, percentiles=[1, 5, 25, 50, 75, 95, 99], factor=1)
     """
     # Percentiles to calculate
     data=self.output[myvar].transpose()
-
+    print("var plot shape ", data.shape)
     # Calculate percentiles along the ensemble axis
-    percentile_values = np.nanpercentile(data, percentiles, axis=0)
+    if getattr(self, 'postproc_freq', None) ==  "hourly":
+        # calculate daily average
+        data_daily = data.reshape((data.shape[0],24,-1),order='F')
+        data_daily = np.nanmean(data_daily, axis=1)
+        print("daily data shape is ", data_daily.shape)
+        percentile_values = np.nanpercentile(data_daily, percentiles, axis=0)
+    else:   
+        percentile_values = np.nanpercentile(data, percentiles, axis=0)
 
     # Define line styles for each percentile
     # (Use the same style for matching pairs: 1/99, 5/95, 25/75, and make 50 bold)
     line_styles = {
-        1:  {'linestyle': '--', 'color': 'black',  'linewidth': 2},
-        99: {'linestyle': '--', 'color': 'black',  'linewidth': 2},
-        5:  {'linestyle': '-.', 'color': 'black', 'linewidth': 2},
-        95: {'linestyle': '-.', 'color': 'black', 'linewidth': 2},
-        25: {'linestyle': ':',  'color': 'black','linewidth': 2},
-        75: {'linestyle': ':',  'color': 'black','linewidth': 2},
-        50: {'linestyle': '-',  'color': 'black',   'linewidth': 3},  # Bold line
+        1:  {'linestyle': '--', 'color': 'black',  'linewidth': 1},
+        99: {'linestyle': '--', 'color': 'black',  'linewidth': 1},
+        5:  {'linestyle': '-.', 'color': 'black', 'linewidth': 1},
+        95: {'linestyle': '-.', 'color': 'black', 'linewidth': 1},
+        25: {'linestyle': ':',  'color': 'black','linewidth': 1},
+        75: {'linestyle': ':',  'color': 'black','linewidth': 1},
+        50: {'linestyle': '-',  'color': 'black',   'linewidth': 1.5},  # Bold line
     }
 
     # Choose x-axis: months if postproc_freq is monthly, else use taxis as is
@@ -414,13 +421,19 @@ def plot_ensemble(self, myvar, percentiles=[1, 5, 25, 50, 75, 95, 99], factor=1)
         months = np.arange(1, len(self.output['taxis']) + 1)
         x_axis = months
         x_label = "Month"
+        figsize = (10,6)
+    elif getattr(self, 'postproc_freq', None) ==  "hourly":
+        x_axis = self.output['taxis'][::24]
+        x_label = "Time Step daily mean"
+        figsize = (20,6)
     else:
         x_axis = self.output['taxis']
         x_label = "Time Step"
+        figsize = (20,6)
 
     y_label = myvar
     # Plot each percentile
-    plt.figure(figsize=(10, 6))
+    plt.figure(figsize=figsize)
     for i, p in enumerate(percentiles):
         style = line_styles[p]
         plt.plot(x_axis,
@@ -428,7 +441,7 @@ def plot_ensemble(self, myvar, percentiles=[1, 5, 25, 50, 75, 95, 99], factor=1)
                  linestyle=style['linestyle'],
                  color=style['color'],
                  linewidth=style['linewidth'],
-                 label=f'{p}th Percentile')
+                 label=f'{p}th Percentile', alpha=0.5)
 
     # Add labels and legend
     plt.xlabel(x_label)
