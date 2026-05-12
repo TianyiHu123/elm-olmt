@@ -181,30 +181,30 @@ if (not options.UQ_only):
 
 #UQ part of code
 
-if (mycase.postproc_vars != []):
-    #Train surrogate models
-    mycase.train_surrogate(mycase.postproc_vars)
+# if (mycase.postproc_vars != []):
+#     #Train surrogate models
+#     mycase.train_surrogate(mycase.postproc_vars)
     
-    #Save postprocessed output
-    mycase.create_pkl(outdir=mycase.OLMTdir+'/pklfiles/')
+#     #Save postprocessed output
+#     mycase.create_pkl(outdir=mycase.OLMTdir+'/pklfiles/')
     
-    #run GSA
-    mycase.GSA(mycase.postproc_vars)
-    mycase.plot_GSA(mycase.postproc_vars)
+#     #run GSA
+#     mycase.GSA(mycase.postproc_vars)
+#     mycase.plot_GSA(mycase.postproc_vars)
 
-    #Save postprocessed output
-    mycase.create_pkl(outdir=mycase.OLMTdir+'/pklfiles/')
+#     #Save postprocessed output
+#     mycase.create_pkl(outdir=mycase.OLMTdir+'/pklfiles/')
 
-    #run MCMC
-    #Set intial values for parameters
-    if (mycase.obs):
-        #parms=((np.array(mycase.ensemble_pmax)+np.array(mycase.ensemble_pmin))/2)
-        #Run MCMC for the observation variables
-        obs_mcmc = [v for v in mycase.postproc_vars if v in mycase.obs.keys()]
-        mycase.MCMC_emcee(obs_mcmc,nwalkers=24,nsteps=10000)
+#     #run MCMC
+#     #Set intial values for parameters
+#     if (mycase.obs):
+#         #parms=((np.array(mycase.ensemble_pmax)+np.array(mycase.ensemble_pmin))/2)
+#         #Run MCMC for the observation variables
+#         obs_mcmc = [v for v in mycase.postproc_vars if v in mycase.obs.keys()]
+#         mycase.MCMC_emcee(obs_mcmc,nwalkers=24,nsteps=10000)
 
-        #Save postprocessed output
-        mycase.create_pkl(outdir=mycase.OLMTdir+'/pklfiles/')
+#         #Save postprocessed output
+#         mycase.create_pkl(outdir=mycase.OLMTdir+'/pklfiles/')
 
 
 
