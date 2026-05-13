@@ -349,9 +349,9 @@ def _save_plot(
         linestyle=ls_train,
         linewidth=1,
         marker=mk_train,
-        markersize=1,
+        markersize=0.1,
         label="ELM mean (train)",
-        alpha=0.6,
+        alpha=0.4,
     )
     ax[0].plot(
         x,
@@ -360,9 +360,9 @@ def _save_plot(
         linestyle=ls_train,
         linewidth=1,
         marker=mk_train,
-        markersize=1,
+        markersize=0.1,
         label="Surrogate mean (train)",
-        alpha=0.6,
+        alpha=0.4,
     )
     ax[0].plot(
         x,
@@ -371,7 +371,7 @@ def _save_plot(
         linestyle=ls_val,
         linewidth=1,
         marker=mk_val,
-        markersize=1,
+        markersize=0.1,
         label="ELM mean (val)",
         alpha=0.6,
     )
@@ -382,7 +382,7 @@ def _save_plot(
         linestyle=ls_val,
         linewidth=1,
         marker=mk_val,
-        markersize=1,
+        markersize=0.1,
         label="Surrogate mean (val)",
         alpha=0.6,
     )
