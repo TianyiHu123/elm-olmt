@@ -7,8 +7,11 @@ from typing import Any, Dict, List, Optional, Sequence, Union
 
 from .surrogate_NN_Forcing import (
     DEFAULT_SPINUP_VARS,
+    _load_forcing_layout_dict,
     _normalize_var_list,
     _prepare_case_training_block,
+    _prepare_case_training_block_targets_only,
+    _resolve_forcing_memmap_paths,
     _resolve_output_label,
     _train_surrogate_with_prepared_blocks,
 )
@@ -50,6 +53,10 @@ def train_multicase_surrogate_with_forcing(
     outputdir: str = ".",
     chunk_size: int = 50000,
     run_name: Optional[str] = None,
+    split_random_state: Optional[int] = None,
+    minimal_output: bool = False,
+    stats_run_id: Optional[str] = None,
+    reuse_x_memmap_path: Optional[Union[str, Path]] = None,
 ) -> Optional[Dict[str, Any]]:
     """
     Load multiple pickled ELM cases, merge their training rows, and fit a single
@@ -87,17 +94,49 @@ def train_multicase_surrogate_with_forcing(
     workdir_path = Path(workdir).resolve()
     print(f"Loading case pickles from: {workdir_path / 'pklfiles'}")
     cases = [_load_pickled_case(workdir_path, case_name) for case_name in names]
-    blocks = [
-        _prepare_case_training_block(
-            case,
-            outvars,
-            forcing_vars_list,
-            tair_var,
-            precip_var,
-            spinup_vars_list,
-        )
-        for case in cases
-    ]
+
+    if reuse_x_memmap_path is not None:
+        _, layout_path = _resolve_forcing_memmap_paths(reuse_x_memmap_path)
+        layout = _load_forcing_layout_dict(layout_path)
+        if list(layout["case_names"]) != names:
+            raise ValueError(
+                "reuse_x_memmap_path: case name list/order must match layout file: "
+                f"layout={layout['case_names']}, requested={names}"
+            )
+        if layout["forcing_vars_used"] != list(forcing_vars_list):
+            raise ValueError(
+                "reuse_x_memmap_path: forcing_vars do not match layout file: "
+                f"layout={layout['forcing_vars_used']}, cli={forcing_vars_list}"
+            )
+        if layout["spinup_vars"] != list(spinup_vars_list):
+            raise ValueError(
+                "reuse_x_memmap_path: spinup_vars do not match layout file: "
+                f"layout={layout['spinup_vars']}, cli={spinup_vars_list}"
+            )
+        blocks = [
+            _prepare_case_training_block_targets_only(
+                case,
+                outvars,
+                spinup_vars_list,
+                layout["n_forcing"],
+                layout["forcing_vars_used"],
+                layout["forcing_feature_names"],
+                layout["n_spinup"],
+            )
+            for case in cases
+        ]
+    else:
+        blocks = [
+            _prepare_case_training_block(
+                case,
+                outvars,
+                forcing_vars_list,
+                tair_var,
+                precip_var,
+                spinup_vars_list,
+            )
+            for case in cases
+        ]
 
     return _train_surrogate_with_prepared_blocks(
         blocks=blocks,
@@ -115,4 +154,8 @@ def train_multicase_surrogate_with_forcing(
         output_label=_resolve_output_label([block.case_name for block in blocks], run_name),
         chunk_size=chunk_size,
         attach_case=None,
+        split_random_state=split_random_state,
+        minimal_output=minimal_output,
+        stats_run_id=stats_run_id,
+        reuse_x_memmap_path=reuse_x_memmap_path,
     )

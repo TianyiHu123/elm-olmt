@@ -1,7 +1,7 @@
 Offline Land Model Testbed (OLMT)
 Contact:  Dan Ricciuto (ricciutodm@ornl.gov)
 
-Updated 2/25/2025
+Updated 5/12/2026
 
 The purpose of the Offline Land Model Testbed (OLMT) is to simplify the workflows for single site, regional and ensemble offline ELM simulations, which are otherwise cumbersome using only CIME. We have been working on a new version with an improved interface.  The user now can run a simulation using a single python run script that will perform the entire workflow.  This usually involves setting up three cases for biogeochemistry-enabled runs: the ad spinup, final spinup and transient simulations.  It is also possible to add additional cases beginning in later years where we apply treatment effects or otherwise modify forcings.  For example, in the SPRUCE study we have 10 experimental treatments (different levels of temperature and CO2 modifications) that begin in 2015.  For those point simulations, we have a single run script that launches and manages 13 cases. 
  
@@ -23,7 +23,7 @@ Training logic lives in [`model_ELM/surrogate_NN_Forcing.py`](model_ELM/surrogat
 
 **Backward compatibility:** repo-root **`surrogate_NN_Forcing.py`** is a thin wrapper that forwards to `train_surrogate_forcing.main()`, so existing invocations of `python surrogate_NN_Forcing.py ...` keep working.
 
-**Programmatic use:** after `import model_ELM`, a loaded `ELMcase` instance has `train_surrogate_with_forcing(myvars, ...)` and `run_surrogate_forcing(parms, myvars, ...)` (optional full design matrix `X`, or `forcing_engineered` + `spinup` with `parms`).
+**Programmatic use:** after `import model_ELM`, a loaded `ELMcase` instance has `train_surrogate_with_forcing(myvars, ...)` and `run_surrogate_forcing(parms, myvars, ...)` (optional full design matrix `X`, or `forcing_engineered` + `spinup` with `parms`). The training method also accepts `split_random_state`, `minimal_output` (stats-only; no models attached to the case), `stats_run_id`, and `reuse_x_memmap_path` with the same semantics as the CLI flags below.
 
 The workflow trains a surrogate for hourly ELM outputs (for example, `GPP`, `SR`) using a hybrid feature set:
 
@@ -50,15 +50,19 @@ The CLI is separate from the ensemble workflow manager ([`manage_ensemble.py`](m
 - anomaly features skip selected state/meteorology variables (`FLDS`, `QBOT`, `WIND`, `PSRF`, `RH`)
 - output root is configurable with `--outputdir` (default: current directory, i.e. **`./UQ_output/<case>/surrogate_forcing/`** under that base; set an absolute path on HPC when needed)
 - multi-case runs can set `--run-name` to choose a short output folder label under `UQ_output/`, which also controls where the merged `X_forcing_memmap.dat` is saved
+- **Train/validation robustness:** `split_mode=random_time_window` draws a random contiguous time window per case (seed with `split_random_state` / `--split-random-state`) so you can study sensitivity to the temporal split
+- **Stats-only runs:** `--stats-only` skips plots and `surrogate_forcing_artifacts.pkl` and writes a small JSON metrics file per run (`surrogate_forcing_stats_*.json`), with filenames keyed off SLURM array/job env vars or `--stats-run-id` so array jobs do not overwrite each other
+- **Reuse of the design matrix:** after one full training run, **`X_forcing_memmap_layout.npz`** is written next to **`X_forcing_memmap.dat`**. Later runs can pass **`--reuse-x-memmap`** to open the memmap read-only and skip met forcing and restart spinup IO; targets are still loaded from the case pickle(s). `--forcing-vars` and `--spinup-vars` must match the original build; multi-case reuse requires the same case list **order** as in the layout file
 
 ### Key capabilities
 
-- standalone CLI via **`train_surrogate_forcing.py`** (`--case`, `--vars`, `--workdir`, forcing/spinup options, and the same flags as before)
+- standalone CLI via **`train_surrogate_forcing.py`** (`--case`, `--vars`, `--workdir`, forcing/spinup options, `--split-random-state`, `--stats-only`, `--stats-run-id`, `--reuse-x-memmap`, and the same flags as before)
 - multi-case training by passing a comma-separated case list to `--case`
 - split modes for validation:
   - `by_member` — for each case, split across ensemble members inside that case
   - `by_site` — hold out entire site/case labels for validation
-  - `by_time_block` — for each case, split across the time dimension inside that case
+  - `by_time_block` — for each case, split across the time dimension inside that case (earlier times train, later times validate)
+  - `random_time_window` — for each case, one **random contiguous** block of time indices is used for training; the rest is validation (use `--split-random-state` for reproducibility across SLURM array tasks)
 - parallel hyperparameter search with `MLPRegressor + GridSearchCV`
 - HPC-oriented controls:
   - `--n-jobs`
@@ -72,9 +76,10 @@ The CLI is separate from the ensemble workflow manager ([`manage_ensemble.py`](m
   - warnings for potentially aggressive parallel settings
 - outputs saved to:
   - `<outputdir>/UQ_output/<case-or-run-name>/surrogate_forcing/`
-  - including `surrogate_forcing_artifacts.pkl`, the merged memmap-backed feature matrix `X_forcing_memmap.dat`, and diagnostic plots
+  - **Full training (default):** `surrogate_forcing_artifacts.pkl`, memmap-backed design matrix `X_forcing_memmap.dat`, companion **`X_forcing_memmap_layout.npz`** (row layout and feature metadata for reuse), and diagnostic plots `*_surrogate_forcing.png`
+  - **`--stats-only`:** `surrogate_forcing_stats_<id>.json` only (no pickle, no plots); the run id defaults from `SLURM_ARRAY_JOB_ID` / `SLURM_ARRAY_TASK_ID` when present, else `SLURM_JOB_ID` or process id, optionally suffixed with `_rs<split_random_state>`
 - multi-case diagnostics are saved case by case (one plot set per case/site) under the merged training run output folder
-- after training, the case object holds **`surrogate_forcing`**, **`x_scaler_forcing`**, **`y_scaler_forcing`**, and **`forcing_surrogate_training`** metadata for **`run_surrogate_forcing`**
+- after a **full** (non-`--stats-only`) training run, the case object holds **`surrogate_forcing`**, **`x_scaler_forcing`**, **`y_scaler_forcing`**, and **`forcing_surrogate_training`** metadata for **`run_surrogate_forcing`**; stats-only runs do not populate the trained models on the case object
 - batch example: [`examples/slurm/case.submit_surrogate_forcing`](examples/slurm/case.submit_surrogate_forcing) uses `train_surrogate_forcing.py` with an explicit `--outputdir`
 
 ### Example commands
@@ -144,3 +149,94 @@ python train_surrogate_forcing.py \
   --split-mode by_time_block \
   --train-fraction 0.8
 ```
+
+### Random time-window split (robustness to train/val choice)
+
+Use a different contiguous training window each run; fix the RNG for reproducible array jobs:
+
+```bash
+python train_surrogate_forcing.py \
+  --case <CASE_NAME> \
+  --vars GPP,SR \
+  --split-mode random_time_window \
+  --train-fraction 0.8 \
+  --split-random-state 10042
+```
+
+### Stats-only jobs (no plots, no surrogate pickle)
+
+Useful when submitting many jobs to sample a distribution of validation metrics:
+
+```bash
+python train_surrogate_forcing.py \
+  --case <CASE_NAME> \
+  --vars GPP,SR \
+  --split-mode random_time_window \
+  --train-fraction 0.8 \
+  --split-random-state 2026 \
+  --stats-only
+```
+
+Optional explicit label for the stats filename (overrides SLURM-based default):
+
+```bash
+python train_surrogate_forcing.py \
+  --case <CASE_NAME> \
+  --vars GPP \
+  --stats-only \
+  --stats-run-id my_batch_run_07
+```
+
+### Reusing `X_forcing_memmap.dat` (skip forcing and spinup IO)
+
+1. Run **one full** training once (no `--stats-only`, no `--reuse-x-memmap`) so the directory contains **`X_forcing_memmap.dat`** and **`X_forcing_memmap_layout.npz`**.
+2. Point **`--reuse-x-memmap`** at that directory (or at the `.dat` file). Use the **same** `--forcing-vars`, `--spinup-vars`, `--vars`, `--dtype`, and case list **order** (multi-case) as the original run. The memmap stores the design matrix **X** only; hourly targets are always read from **`pklfiles/<case>.pkl`** (`case.output`), so the pickle must still match the experiment used to build **X**.
+
+```bash
+MEMMAP_DIR="/path/to/UQ_output/<CASE_OR_RUN_NAME>/surrogate_forcing"
+
+python train_surrogate_forcing.py \
+  --case <CASE_NAME> \
+  --vars GPP,SR \
+  --forcing-vars PRECTmms,FSDS,FLDS,TBOT,RH,WIND,PSRF \
+  --spinup-vars TOTSOMC,TOTSOMN \
+  --dtype float32 \
+  --reuse-x-memmap "${MEMMAP_DIR}" \
+  --split-mode random_time_window \
+  --train-fraction 0.8 \
+  --split-random-state 555 \
+  --stats-only
+```
+
+**Multi-case:** `--case` must list cases in the **same order** as stored in `case_names` inside the layout file from the original merged training run.
+
+### SLURM array example (stats + random split + memmap reuse)
+
+Assume `MEMMAP_DIR` points at the folder from a prior full train. Each array task gets a unique `--split-random-state` (here tied to the array index) and relies on default stats filenames (`array_<SLURM_ARRAY_JOB_ID>_<SLURM_ARRAY_TASK_ID>_rs<seed>.json` when the seed is set):
+
+```bash
+#!/bin/bash
+#SBATCH --array=0-99
+#SBATCH ...
+
+MEMMAP_DIR="/path/to/UQ_output/<CASE_NAME>/surrogate_forcing"
+SEED=$((10000 + SLURM_ARRAY_TASK_ID))
+
+python train_surrogate_forcing.py \
+  --workdir /path/to/elm-olmt \
+  --case <CASE_NAME> \
+  --vars GPP,SR \
+  --forcing-vars PRECTmms,FSDS,FLDS,TBOT,RH,WIND,PSRF \
+  --spinup-vars TOTSOMC,TOTSOMN \
+  --dtype float32 \
+  --outputdir /path/to/scratch \
+  --reuse-x-memmap "${MEMMAP_DIR}" \
+  --split-mode random_time_window \
+  --train-fraction 0.8 \
+  --split-random-state "${SEED}" \
+  --stats-only \
+  --quick-grid \
+  --n-jobs 8
+```
+
+Stats JSON files are written under **`/path/to/scratch/UQ_output/<CASE_NAME>/surrogate_forcing/`** (or under `--run-name` when you use it). Aggregate those JSON files offline to summarize R² distributions.

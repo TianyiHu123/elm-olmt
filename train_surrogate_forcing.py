@@ -38,9 +38,15 @@ def _build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--split-mode",
         default="by_time_block",
-        choices=["by_member", "by_site", "by_time_block"],
+        choices=["by_member", "by_site", "by_time_block", "random_time_window"],
     )
     parser.add_argument("--train-fraction", type=float, default=0.8)
+    parser.add_argument(
+        "--split-random-state",
+        type=int,
+        default=None,
+        help="RNG seed for split_mode=random_time_window (recommended for array jobs)",
+    )
     parser.add_argument("--dtype", default="float32", choices=["float32", "float64"])
     parser.add_argument("--n-jobs", type=int, default=8)
     parser.add_argument("--cv-folds", type=int, default=3)
@@ -62,6 +68,23 @@ def _build_parser() -> argparse.ArgumentParser:
         "--run-name",
         default=None,
         help="Optional output subfolder name under UQ_output/ (recommended for multi-case runs)",
+    )
+    parser.add_argument(
+        "--stats-only",
+        action="store_true",
+        help="Skip plots and surrogate_forcing_artifacts.pkl; write surrogate_forcing_stats_*.json only",
+    )
+    parser.add_argument(
+        "--stats-run-id",
+        default=None,
+        help="Optional basename fragment for stats JSON; default uses SLURM/job env + split-random-state",
+    )
+    parser.add_argument(
+        "--reuse-x-memmap",
+        type=str,
+        default=None,
+        metavar="PATH",
+        help="Directory containing X_forcing_memmap.dat + layout .npz, or path to the .dat file (skip forcing/spinup IO)",
     )
     return parser
 
@@ -102,6 +125,10 @@ def main() -> int:
             outputdir=args.outputdir,
             chunk_size=args.chunk_size,
             run_name=args.run_name,
+            split_random_state=args.split_random_state,
+            minimal_output=args.stats_only,
+            stats_run_id=args.stats_run_id,
+            reuse_x_memmap_path=args.reuse_x_memmap,
         )
     else:
         train_multicase_surrogate_with_forcing(
@@ -122,6 +149,10 @@ def main() -> int:
             outputdir=args.outputdir,
             chunk_size=args.chunk_size,
             run_name=args.run_name,
+            split_random_state=args.split_random_state,
+            minimal_output=args.stats_only,
+            stats_run_id=args.stats_run_id,
+            reuse_x_memmap_path=args.reuse_x_memmap,
         )
     return 0
 

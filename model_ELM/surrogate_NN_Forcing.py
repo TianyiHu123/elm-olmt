@@ -2,9 +2,12 @@
 from __future__ import annotations
 
 import hashlib
+import json
+import math
 import os
 import pickle
 from dataclasses import dataclass
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
@@ -46,6 +49,8 @@ class _PreparedCaseTrainingBlock:
     spinup: np.ndarray
     spinup_vars: List[str]
     targets: Dict[str, np.ndarray]
+    # When reusing X from memmap, forcing_features may be a (1, n_forcing) placeholder; set this to ntime.
+    layout_ntime: Optional[int] = None
 
     @property
     def nsamples(self) -> int:
@@ -53,6 +58,8 @@ class _PreparedCaseTrainingBlock:
 
     @property
     def ntime(self) -> int:
+        if self.layout_ntime is not None:
+            return int(self.layout_ntime)
         return int(self.forcing_features.shape[0])
 
 
@@ -244,13 +251,14 @@ def _build_split_indices(
     row_site_ids: np.ndarray,
     split_mode: str,
     train_fraction: float,
+    split_random_state: Optional[int] = None,
 ) -> Tuple[np.ndarray, np.ndarray]:
     """
     Build train/validation row indices from centralized row metadata.
 
-    The split logic is isolated here so future work can add randomized contiguous
-    time-window selection for repeated robustness experiments without changing the
-    dataset-assembly or model-fitting code.
+    ``random_time_window`` picks one contiguous time window per case (length
+    ``max(1, int(T * train_fraction))`` capped so validation can be non-empty when
+    ``train_fraction < 1``), seeded by ``split_random_state`` when provided.
     """
     all_idx = np.arange(row_case_ids.size)
     train_mask = np.zeros(row_case_ids.size, dtype=bool)
@@ -268,6 +276,21 @@ def _build_split_indices(
             time_ids = np.unique(row_time_ids[case_mask])
             cutoff = max(1, int(len(time_ids) * train_fraction))
             train_times = time_ids[:cutoff]
+            train_mask[case_mask] = np.isin(row_time_ids[case_mask], train_times)
+    elif split_mode == "random_time_window":
+        rng = np.random.default_rng(split_random_state)
+        for case_id in np.unique(row_case_ids):
+            case_mask = row_case_ids == case_id
+            time_ids = np.unique(row_time_ids[case_mask])
+            tcount = int(len(time_ids))
+            ntrain = max(1, int(tcount * train_fraction))
+            if train_fraction < 1.0 and ntrain >= tcount:
+                ntrain = tcount - 1
+            if ntrain < 1:
+                ntrain = 1
+            max_start = tcount - ntrain
+            start = int(rng.integers(0, max_start + 1)) if max_start >= 0 else 0
+            train_times = time_ids[start : start + ntrain]
             train_mask[case_mask] = np.isin(row_time_ids[case_mask], train_times)
     elif split_mode == "by_site":
         sites = np.unique(row_site_ids)
@@ -526,6 +549,170 @@ def _resolve_output_label(case_names: Sequence[str], run_name: Optional[str]) ->
     return f"multicase_{len(case_names)}cases_{digest}"
 
 
+def _resolve_forcing_memmap_paths(reuse_arg: Union[str, Path]) -> Tuple[Path, Path]:
+    """Return ``(X_forcing_memmap.dat, X_forcing_memmap_layout.npz)`` paths."""
+    p = Path(reuse_arg).expanduser().resolve()
+    if p.is_dir():
+        mem = p / "X_forcing_memmap.dat"
+        lay = p / "X_forcing_memmap_layout.npz"
+    elif p.name == "X_forcing_memmap.dat" or p.suffix == ".dat":
+        mem = p
+        lay = p.parent / "X_forcing_memmap_layout.npz"
+    else:
+        raise ValueError(
+            "reuse_x_memmap_path must be a directory containing X_forcing_memmap.dat "
+            f"or a path to that file; got: {p}"
+        )
+    if not mem.is_file():
+        raise FileNotFoundError(f"Memmap file not found: {mem}")
+    return mem, lay
+
+
+def _save_forcing_layout_npz(
+    layout_path: Path,
+    *,
+    rows: int,
+    nfeatures: int,
+    dtype_np: np.dtype,
+    row_case_ids: np.ndarray,
+    row_member_ids: np.ndarray,
+    row_time_ids: np.ndarray,
+    row_site_ids: np.ndarray,
+    site_names: Sequence[str],
+    forcing_feature_names: Sequence[str],
+    forcing_vars_used: Sequence[str],
+    spinup_vars: Sequence[str],
+    case_names: Sequence[str],
+    n_forcing: int,
+    n_params: int,
+    n_spinup: int,
+) -> None:
+    np.savez_compressed(
+        layout_path,
+        rows=np.int64(rows),
+        nfeatures=np.int64(nfeatures),
+        dtype_str=np.array(str(dtype_np), dtype=object),
+        row_case_ids=row_case_ids.astype(np.int32, copy=False),
+        row_member_ids=row_member_ids.astype(np.int32, copy=False),
+        row_time_ids=row_time_ids.astype(np.int32, copy=False),
+        row_site_ids=row_site_ids.astype(np.int32, copy=False),
+        site_names=np.asarray(site_names, dtype=object),
+        forcing_feature_names=np.asarray(list(forcing_feature_names), dtype=object),
+        forcing_vars_used=np.asarray(list(forcing_vars_used), dtype=object),
+        spinup_vars=np.asarray(list(spinup_vars), dtype=object),
+        case_names=np.asarray(list(case_names), dtype=object),
+        n_forcing=np.int32(n_forcing),
+        n_params=np.int32(n_params),
+        n_spinup=np.int32(n_spinup),
+    )
+
+
+def _load_forcing_layout_dict(layout_path: Path) -> Dict[str, Any]:
+    if not layout_path.is_file():
+        raise FileNotFoundError(
+            f"Layout file not found: {layout_path}. Run a full training once to create "
+            "X_forcing_memmap.dat and X_forcing_memmap_layout.npz together."
+        )
+    data = np.load(layout_path, allow_pickle=True)
+    try:
+        dtype_str = str(data["dtype_str"].item())
+        return {
+            "rows": int(data["rows"]),
+            "nfeatures": int(data["nfeatures"]),
+            "dtype_str": dtype_str,
+            "row_case_ids": np.asarray(data["row_case_ids"], dtype=np.int32),
+            "row_member_ids": np.asarray(data["row_member_ids"], dtype=np.int32),
+            "row_time_ids": np.asarray(data["row_time_ids"], dtype=np.int32),
+            "row_site_ids": np.asarray(data["row_site_ids"], dtype=np.int32),
+            "site_names": [str(x) for x in data["site_names"].tolist()],
+            "forcing_feature_names": [str(x) for x in data["forcing_feature_names"].tolist()],
+            "forcing_vars_used": [str(x) for x in data["forcing_vars_used"].tolist()],
+            "spinup_vars": [str(x) for x in data["spinup_vars"].tolist()],
+            "case_names": [str(x) for x in data["case_names"].tolist()],
+            "n_forcing": int(data["n_forcing"]),
+            "n_params": int(data["n_params"]),
+            "n_spinup": int(data["n_spinup"]),
+        }
+    finally:
+        data.close()
+
+
+def _resolve_stats_run_id(stats_run_id: Optional[str], split_random_state: Optional[int]) -> str:
+    if stats_run_id and str(stats_run_id).strip():
+        base = str(stats_run_id).strip()
+    else:
+        aj = os.environ.get("SLURM_ARRAY_JOB_ID")
+        at = os.environ.get("SLURM_ARRAY_TASK_ID")
+        if aj:
+            suf = at if at is not None else "0"
+            base = f"array_{aj}_{suf}"
+        else:
+            jid = os.environ.get("SLURM_JOB_ID")
+            if jid:
+                base = f"job_{jid}"
+            else:
+                base = f"pid_{os.getpid()}"
+    if split_random_state is not None:
+        base = f"{base}_rs{split_random_state}"
+    return base
+
+
+def _slurm_env_metadata() -> Dict[str, Optional[Union[str, int]]]:
+    def _parse_int(key: str) -> Optional[int]:
+        v = os.environ.get(key)
+        if v is None:
+            return None
+        try:
+            return int(v)
+        except ValueError:
+            return None
+
+    return {
+        "slurm_array_job_id": _parse_int("SLURM_ARRAY_JOB_ID"),
+        "slurm_array_task_id": _parse_int("SLURM_ARRAY_TASK_ID"),
+        "slurm_job_id": _parse_int("SLURM_JOB_ID"),
+    }
+
+
+def _sanitize_stats_for_json(stats: Dict[str, Dict[str, float]]) -> Dict[str, Dict[str, Optional[float]]]:
+    out: Dict[str, Dict[str, Optional[float]]] = {}
+    for var, d in stats.items():
+        out[var] = {}
+        for key, val in d.items():
+            if isinstance(val, float) and not math.isfinite(val):
+                out[var][key] = None
+            else:
+                out[var][key] = val
+    return out
+
+
+def _write_surrogate_forcing_stats_json(
+    path: Path,
+    stats: Dict[str, Dict[str, float]],
+    *,
+    split_mode: str,
+    train_fraction: float,
+    split_random_state: Optional[int],
+    output_label: str,
+    case_names: Sequence[str],
+    outvars: Sequence[str],
+    stats_run_id: str,
+) -> None:
+    payload: Dict[str, Any] = {
+        "timestamp_utc": datetime.now(timezone.utc).isoformat(),
+        "stats_run_id": stats_run_id,
+        "split_mode": split_mode,
+        "train_fraction": float(train_fraction),
+        "split_random_state": split_random_state,
+        "output_label": output_label,
+        "case_names": list(case_names),
+        "outvars": list(outvars),
+        "by_variable": _sanitize_stats_for_json(stats),
+    }
+    payload.update(_slurm_env_metadata())
+    path.write_text(json.dumps(payload, indent=2, allow_nan=False), encoding="utf-8")
+
+
 def _prepare_case_training_block(
     case: Any,
     outvars: Sequence[str],
@@ -603,6 +790,72 @@ def _prepare_case_training_block(
         spinup=spinup,
         spinup_vars=list(spinup_vars_list),
         targets=targets,
+        layout_ntime=None,
+    )
+
+
+def _prepare_case_training_block_targets_only(
+    case: Any,
+    outvars: Sequence[str],
+    spinup_vars_list: Sequence[str],
+    n_forcing: int,
+    forcing_vars_used: Sequence[str],
+    forcing_feature_names: Sequence[str],
+    n_spinup: int,
+) -> _PreparedCaseTrainingBlock:
+    """Load targets and ensemble layout only (for reuse of ``X_forcing_memmap.dat``)."""
+    case_name = str(getattr(case, "casename", "case"))
+    print(f"\nPreparing case block (targets only): {case_name}")
+
+    if not hasattr(case, "samples"):
+        raise AttributeError(f"Case '{case_name}' missing 'samples'")
+    if not hasattr(case, "output"):
+        raise AttributeError(f"Case '{case_name}' missing 'output'")
+
+    params = np.asarray(case.samples).transpose().astype(np.float64)
+    if params.ndim != 2:
+        raise ValueError(f"Case '{case_name}' samples must be 2-D after transpose, got {params.shape}")
+    nsamples = params.shape[0]
+    print("Load ensemble parameters:")
+    print(f"{nsamples} ensemble members")
+    print(f"{params.shape[1]} parameters")
+
+    for var in outvars:
+        if var not in case.output:
+            raise KeyError(f"Requested output variable not in case.output for '{case_name}': {var}")
+
+    print("Load model outputs (skipping forcing / spinup IO):")
+    y_ref = np.asarray(case.output[outvars[0]]).transpose()
+    if y_ref.ndim != 2:
+        raise ValueError(
+            f"Case '{case_name}' output for '{outvars[0]}' must be 2-D after transpose, got {y_ref.shape}"
+        )
+    ntime = y_ref.shape[1]
+    print("Number of hours:", ntime)
+
+    spinup = np.zeros((nsamples, n_spinup), dtype=np.float64)
+    placeholder_forcing = np.zeros((1, n_forcing), dtype=np.float64)
+
+    targets: Dict[str, np.ndarray] = {}
+    for var in outvars:
+        yfull = np.asarray(case.output[var]).transpose()
+        if yfull.shape[0] != nsamples:
+            raise ValueError(
+                f"Case '{case_name}' output '{var}' has {yfull.shape[0]} members, expected {nsamples}"
+            )
+        targets[var] = yfull[:, :ntime].astype(np.float64, copy=False)
+
+    return _PreparedCaseTrainingBlock(
+        case_name=case_name,
+        member_site_labels=_parse_site_labels(case, nsamples),
+        params=params,
+        forcing_features=placeholder_forcing,
+        forcing_vars_used=list(forcing_vars_used),
+        forcing_feature_names=list(forcing_feature_names),
+        spinup=spinup,
+        spinup_vars=list(spinup_vars_list),
+        targets=targets,
+        layout_ntime=ntime,
     )
 
 
@@ -737,6 +990,10 @@ def _train_surrogate_with_prepared_blocks(
     output_label: str,
     chunk_size: int = 50000,
     attach_case: Optional[Any] = None,
+    split_random_state: Optional[int] = None,
+    minimal_output: bool = False,
+    stats_run_id: Optional[str] = None,
+    reuse_x_memmap_path: Optional[Union[str, Path]] = None,
 ) -> Optional[Dict[str, Any]]:
     del chunk_size  # reserved for future chunked IO
     _validate_prepared_blocks(blocks, outvars)
@@ -762,43 +1019,130 @@ def _train_surrogate_with_prepared_blocks(
     outdir = Path(outputdir).resolve()
     uq_out = outdir / "UQ_output" / output_label / "surrogate_forcing"
     uq_out.mkdir(parents=True, exist_ok=True)
-    x_memmap_path = uq_out / "X_forcing_memmap.dat"
-    print("X forcing path is")
-    print(x_memmap_path)
-    X = np.memmap(x_memmap_path, mode="w+", dtype=dtype_np, shape=(rows, nfeatures))
 
-    row_case_ids = np.empty(rows, dtype=np.int32)
-    row_member_ids = np.empty(rows, dtype=np.int32)
-    row_time_ids = np.empty(rows, dtype=np.int32)
-    row_site_ids = np.empty(rows, dtype=np.int32)
-    site_name_to_id: Dict[str, int] = {}
-    site_names: List[str] = []
-
-    print("Building feature matrix...")
-    col_force_end = ref.forcing_features.shape[1]
-    col_param_end = col_force_end + ref.params.shape[1]
-    row_offset = 0
-    for case_id, block in enumerate(blocks):
-        forcing_block = block.forcing_features.astype(dtype_np, copy=False)
-        time_index = np.arange(block.ntime, dtype=np.int32)
-        for member_id in range(block.nsamples):
-            start = row_offset
-            end = row_offset + block.ntime
-            X[start:end, :col_force_end] = forcing_block
-            X[start:end, col_force_end:col_param_end] = block.params[member_id, :].astype(
-                dtype_np, copy=False
+    reuse_mem: Optional[Path] = None
+    layout_from_disk: Optional[Dict[str, Any]] = None
+    if reuse_x_memmap_path is not None:
+        reuse_mem, layout_path = _resolve_forcing_memmap_paths(reuse_x_memmap_path)
+        layout_from_disk = _load_forcing_layout_dict(layout_path)
+        if layout_from_disk["rows"] != rows:
+            raise ValueError(
+                f"Memmap layout rows ({layout_from_disk['rows']}) != prepared targets rows ({rows}). "
+                "Check case pickles, vars, and case order match the original memmap build."
             )
-            X[start:end, col_param_end:] = block.spinup[member_id, :].astype(dtype_np, copy=False)
-            row_case_ids[start:end] = case_id
-            row_member_ids[start:end] = member_id
-            row_time_ids[start:end] = time_index
-            site_label = str(block.member_site_labels[member_id])
-            if site_label not in site_name_to_id:
-                site_name_to_id[site_label] = len(site_names)
-                site_names.append(site_label)
-            row_site_ids[start:end] = site_name_to_id[site_label]
-            row_offset = end
-    print(f"Feature matrix memory (mapped): ~{_memory_mb(np.asarray(X)):.1f} MB")
+        if layout_from_disk["nfeatures"] != nfeatures:
+            raise ValueError(
+                f"Memmap layout nfeatures ({layout_from_disk['nfeatures']}) != prepared layout "
+                f"({nfeatures})."
+            )
+        if layout_from_disk["n_params"] != ref.params.shape[1]:
+            raise ValueError(
+                f"Layout n_params ({layout_from_disk['n_params']}) != case params "
+                f"({ref.params.shape[1]})."
+            )
+        if layout_from_disk["n_spinup"] != ref.spinup.shape[1]:
+            raise ValueError(
+                f"Layout n_spinup ({layout_from_disk['n_spinup']}) != prepared spinup columns "
+                f"({ref.spinup.shape[1]})."
+            )
+        if layout_from_disk["n_forcing"] != ref.forcing_features.shape[1]:
+            raise ValueError(
+                f"Layout n_forcing ({layout_from_disk['n_forcing']}) != prepared forcing width "
+                f"({ref.forcing_features.shape[1]})."
+            )
+        if np.dtype(layout_from_disk["dtype_str"]) != dtype_np:
+            raise ValueError(
+                f"Memmap dtype {layout_from_disk['dtype_str']} does not match requested dtype {dtype_np}."
+            )
+        if list(layout_from_disk["case_names"]) != [b.case_name for b in blocks]:
+            raise ValueError(
+                "Case names / order differ from layout file: "
+                f"layout={layout_from_disk['case_names']}, blocks={[b.case_name for b in blocks]}."
+            )
+
+    if not minimal_output and attach_case is not None:
+        _ensure_forcing_surrogate_dicts(attach_case)
+
+    site_names: List[str] = []
+    if reuse_mem is not None:
+        assert layout_from_disk is not None
+        x_memmap_path = reuse_mem
+        print("Reusing X memmap (read-only):")
+        print(x_memmap_path)
+        X = np.memmap(
+            x_memmap_path,
+            mode="r",
+            dtype=dtype_np,
+            shape=(layout_from_disk["rows"], layout_from_disk["nfeatures"]),
+        )
+        row_case_ids = np.asarray(layout_from_disk["row_case_ids"], dtype=np.int32)
+        row_member_ids = np.asarray(layout_from_disk["row_member_ids"], dtype=np.int32)
+        row_time_ids = np.asarray(layout_from_disk["row_time_ids"], dtype=np.int32)
+        row_site_ids = np.asarray(layout_from_disk["row_site_ids"], dtype=np.int32)
+        site_names = list(layout_from_disk["site_names"])
+        if row_case_ids.size != rows:
+            raise ValueError(
+                f"Layout row metadata length {row_case_ids.size} != expected rows {rows}."
+            )
+        print(f"Feature matrix memory (mapped, reused): ~{_memory_mb(np.asarray(X)):.1f} MB")
+    else:
+        x_memmap_path = uq_out / "X_forcing_memmap.dat"
+        print("X forcing path is")
+        print(x_memmap_path)
+        X = np.memmap(x_memmap_path, mode="w+", dtype=dtype_np, shape=(rows, nfeatures))
+
+        row_case_ids = np.empty(rows, dtype=np.int32)
+        row_member_ids = np.empty(rows, dtype=np.int32)
+        row_time_ids = np.empty(rows, dtype=np.int32)
+        row_site_ids = np.empty(rows, dtype=np.int32)
+        site_name_to_id: Dict[str, int] = {}
+
+        print("Building feature matrix...")
+        col_force_end = ref.forcing_features.shape[1]
+        col_param_end = col_force_end + ref.params.shape[1]
+        row_offset = 0
+        for case_id, block in enumerate(blocks):
+            forcing_block = block.forcing_features.astype(dtype_np, copy=False)
+            time_index = np.arange(block.ntime, dtype=np.int32)
+            for member_id in range(block.nsamples):
+                start = row_offset
+                end = row_offset + block.ntime
+                X[start:end, :col_force_end] = forcing_block
+                X[start:end, col_force_end:col_param_end] = block.params[member_id, :].astype(
+                    dtype_np, copy=False
+                )
+                X[start:end, col_param_end:] = block.spinup[member_id, :].astype(dtype_np, copy=False)
+                row_case_ids[start:end] = case_id
+                row_member_ids[start:end] = member_id
+                row_time_ids[start:end] = time_index
+                site_label = str(block.member_site_labels[member_id])
+                if site_label not in site_name_to_id:
+                    site_name_to_id[site_label] = len(site_names)
+                    site_names.append(site_label)
+                row_site_ids[start:end] = site_name_to_id[site_label]
+                row_offset = end
+        X.flush()
+        layout_npz_path = uq_out / "X_forcing_memmap_layout.npz"
+        _save_forcing_layout_npz(
+            layout_npz_path,
+            rows=rows,
+            nfeatures=nfeatures,
+            dtype_np=dtype_np,
+            row_case_ids=row_case_ids,
+            row_member_ids=row_member_ids,
+            row_time_ids=row_time_ids,
+            row_site_ids=row_site_ids,
+            site_names=site_names,
+            forcing_feature_names=ref.forcing_feature_names,
+            forcing_vars_used=ref.forcing_vars_used,
+            spinup_vars=ref.spinup_vars,
+            case_names=[b.case_name for b in blocks],
+            n_forcing=int(ref.forcing_features.shape[1]),
+            n_params=int(ref.params.shape[1]),
+            n_spinup=int(ref.spinup.shape[1]),
+        )
+        print(f"Saved layout metadata to: {layout_npz_path}")
+        print(f"Feature matrix memory (mapped): ~{_memory_mb(np.asarray(X)):.1f} MB")
 
     train_idx, val_idx = _build_split_indices(
         row_case_ids=row_case_ids,
@@ -807,6 +1151,7 @@ def _train_surrogate_with_prepared_blocks(
         row_site_ids=row_site_ids,
         split_mode=split_mode,
         train_fraction=train_fraction,
+        split_random_state=split_random_state,
     )
     print(f"Train rows: {train_idx.size}, Val rows: {val_idx.size}")
 
@@ -831,9 +1176,6 @@ def _train_surrogate_with_prepared_blocks(
     x_scaler_store: Dict[str, preprocessing.StandardScaler] = {}
     y_scaler_store: Dict[str, preprocessing.StandardScaler] = {}
     stats: Dict[str, Dict[str, float]] = {}
-
-    if attach_case is not None:
-        _ensure_forcing_surrogate_dicts(attach_case)
 
     for var in outvars:
         print(f"\nTraining variable: {var}")
@@ -870,21 +1212,34 @@ def _train_surrogate_with_prepared_blocks(
         val_r2 = _safe_r2(yval_true, yhat_val)
         print(f"R2 train={_format_metric(train_r2)}, val={_format_metric(val_r2)}")
 
-        model_store[var] = grid
-        x_scaler_store[var] = x_scaler
-        y_scaler_store[var] = y_scaler
+        if not minimal_output:
+            model_store[var] = grid
+            x_scaler_store[var] = x_scaler
+            y_scaler_store[var] = y_scaler
+
         stats[var] = {"r2_train": train_r2, "r2_val": val_r2}
 
-        if attach_case is not None:
+        if attach_case is not None and not minimal_output:
             attach_case.surrogate_forcing[var] = grid
             attach_case.x_scaler_forcing[var] = x_scaler
             attach_case.y_scaler_forcing[var] = y_scaler
 
-        y_true_full = y_rows.ravel().astype(np.float64, copy=False)
-        y_pred_full = np.full(rows, np.nan, dtype=np.float64)
-        y_pred_full[train_idx] = yhat_train
-        y_pred_full[val_idx] = yhat_val
-        _save_case_plots(blocks, row_case_ids, row_time_ids, train_idx, val_idx, y_true_full, y_pred_full, uq_out, var)
+        if not minimal_output:
+            y_true_full = y_rows.ravel().astype(np.float64, copy=False)
+            y_pred_full = np.full(rows, np.nan, dtype=np.float64)
+            y_pred_full[train_idx] = yhat_train
+            y_pred_full[val_idx] = yhat_val
+            _save_case_plots(
+                blocks,
+                row_case_ids,
+                row_time_ids,
+                train_idx,
+                val_idx,
+                y_true_full,
+                y_pred_full,
+                uq_out,
+                var,
+            )
 
     training_layout = {
         "forcing_feature_names": ref.forcing_feature_names,
@@ -906,8 +1261,41 @@ def _train_surrogate_with_prepared_blocks(
         },
     }
 
-    if attach_case is not None:
+    if attach_case is not None and not minimal_output:
         attach_case.forcing_surrogate_training = training_layout
+
+    resolved_stats_id = _resolve_stats_run_id(stats_run_id, split_random_state)
+    safe_id = "".join(ch if ch.isalnum() or ch in "._-" else "_" for ch in resolved_stats_id)
+
+    if minimal_output:
+        stats_path = uq_out / f"surrogate_forcing_stats_{safe_id}.json"
+        _write_surrogate_forcing_stats_json(
+            stats_path,
+            stats,
+            split_mode=split_mode,
+            train_fraction=train_fraction,
+            split_random_state=split_random_state,
+            output_label=output_label,
+            case_names=[block.case_name for block in blocks],
+            outvars=outvars,
+            stats_run_id=resolved_stats_id,
+        )
+        print(f"\nSaved training statistics to: {stats_path}")
+        return {
+            "case": output_label,
+            "case_names": [block.case_name for block in blocks],
+            "outvars": list(outvars),
+            "forcing_vars_used": ref.forcing_vars_used,
+            "forcing_feature_names": ref.forcing_feature_names,
+            "spinup_vars": ref.spinup_vars,
+            "split_mode": split_mode,
+            "train_fraction": train_fraction,
+            "split_random_state": split_random_state,
+            "stats": stats,
+            "training_layout": training_layout,
+            "stats_path": str(stats_path),
+            "minimal_output": True,
+        }
 
     artifact: Dict[str, Any] = {
         "case": output_label,
@@ -918,6 +1306,7 @@ def _train_surrogate_with_prepared_blocks(
         "spinup_vars": ref.spinup_vars,
         "split_mode": split_mode,
         "train_fraction": train_fraction,
+        "split_random_state": split_random_state,
         "models": model_store,
         "x_scaler": x_scaler_store,
         "y_scaler": y_scaler_store,
@@ -947,14 +1336,19 @@ def train_surrogate_with_forcing(
     outputdir: str = ".",
     chunk_size: int = 50000,
     run_name: Optional[str] = None,
+    split_random_state: Optional[int] = None,
+    minimal_output: bool = False,
+    stats_run_id: Optional[str] = None,
+    reuse_x_memmap_path: Optional[Union[str, Path]] = None,
 ) -> Optional[Dict[str, Any]]:
     """
     Train MLP surrogates mapping [engineered forcing | parameters | spinup] to hourly outputs.
 
     Saves plots and ``surrogate_forcing_artifacts.pkl`` under
-    ``<outputdir>/UQ_output/<run_name-or-casename>/surrogate_forcing/``. Populates
-    ``self.surrogate_forcing``, ``self.x_scaler_forcing``, ``self.y_scaler_forcing``,
-    and ``self.forcing_surrogate_training``.
+    ``<outputdir>/UQ_output/<run_name-or-casename>/surrogate_forcing/`` unless
+    ``minimal_output`` is True (then writes ``surrogate_forcing_stats_*.json`` only).
+    Populates ``self.surrogate_forcing``, ``self.x_scaler_forcing``, ``self.y_scaler_forcing``,
+    and ``self.forcing_surrogate_training`` when not ``minimal_output``.
 
     Returns the artifact dict (or None if ``dry_run``).
     """
@@ -979,14 +1373,40 @@ def train_surrogate_with_forcing(
     print("Raw forcing variables:", forcing_vars_list)
     print("Spinup vars:", spinup_vars_list)
 
-    block = _prepare_case_training_block(
-        self,
-        outvars,
-        forcing_vars_list,
-        tair_var,
-        precip_var,
-        spinup_vars_list,
-    )
+    if reuse_x_memmap_path is not None:
+        _, layout_path = _resolve_forcing_memmap_paths(reuse_x_memmap_path)
+        layout = _load_forcing_layout_dict(layout_path)
+        if layout["forcing_vars_used"] != list(forcing_vars_list):
+            raise ValueError(
+                "reuse_x_memmap_path: forcing_vars do not match layout file: "
+                f"layout={layout['forcing_vars_used']}, cli={forcing_vars_list}"
+            )
+        if layout["spinup_vars"] != list(spinup_vars_list):
+            raise ValueError(
+                "reuse_x_memmap_path: spinup_vars do not match layout file: "
+                f"layout={layout['spinup_vars']}, cli={spinup_vars_list}"
+            )
+        block = _prepare_case_training_block_targets_only(
+            self,
+            outvars,
+            spinup_vars_list,
+            layout["n_forcing"],
+            layout["forcing_vars_used"],
+            layout["forcing_feature_names"],
+            layout["n_spinup"],
+        )
+    else:
+        block = _prepare_case_training_block(
+            self,
+            outvars,
+            forcing_vars_list,
+            tair_var,
+            precip_var,
+            spinup_vars_list,
+        )
+
+    output_label = _resolve_output_label([block.case_name], run_name)
+
     return _train_surrogate_with_prepared_blocks(
         blocks=[block],
         outvars=outvars,
@@ -1000,9 +1420,13 @@ def train_surrogate_with_forcing(
         quick_grid=quick_grid,
         dry_run=dry_run,
         outputdir=outputdir,
-        output_label=_resolve_output_label([block.case_name], run_name),
+        output_label=output_label,
         chunk_size=chunk_size,
-        attach_case=self,
+        attach_case=None if minimal_output else self,
+        split_random_state=split_random_state,
+        minimal_output=minimal_output,
+        stats_run_id=stats_run_id,
+        reuse_x_memmap_path=reuse_x_memmap_path,
     )
 
 
