@@ -456,7 +456,7 @@ def _save_plot(
     )
     ax[0].set_ylabel(var)
     ax[0].grid()
-    ax[0].legend(loc="best", fontsize=8, ncol=2)
+    ax[0].legend(loc="upper right", fontsize=8, ncol=2, frameon=False)
     ax[0].text(
         0.02,
         0.98,
