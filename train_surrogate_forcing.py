@@ -109,7 +109,7 @@ def main() -> int:
         with open(pkl_path, "rb") as fp:
             case = pickle.load(fp)
 
-        case.train_surrogate_with_forcing(
+        case.train_singlecase_surrogate_with_forcing(
             args.vars,
             forcing_vars=forcing_vars,
             tair_var=args.tair_var,

@@ -15,7 +15,7 @@ Please see the wiki page for instructions and examples.
 
 ## Standalone Hybrid Forcing Surrogate
 
-Training logic lives in [`model_ELM/surrogate_NN_Forcing.py`](model_ELM/surrogate_NN_Forcing.py) and is exposed on the case object as **`train_surrogate_with_forcing`** and **`run_surrogate_forcing`** (same pattern as `train_surrogate` / `run_surrogate` in [`model_ELM/surrogate_NN.py`](model_ELM/surrogate_NN.py), wired through [`model_ELM/main.py`](model_ELM/main.py)).
+Single-case training lives in [`model_ELM/surrogate_forcing_singlecase.py`](model_ELM/surrogate_forcing_singlecase.py); multi-case training in [`model_ELM/surrogate_forcing_multicase.py`](model_ELM/surrogate_forcing_multicase.py); shared preparation, training, and inference in [`model_ELM/surrogate_NN_Forcing.py`](model_ELM/surrogate_NN_Forcing.py). On the case object, **`train_singlecase_surrogate_with_forcing`** and **`run_surrogate_forcing`** are wired through [`model_ELM/main.py`](model_ELM/main.py) (same pattern as `train_surrogate` / `run_surrogate` in [`model_ELM/surrogate_NN.py`](model_ELM/surrogate_NN.py)).
 
 **Command-line driver** — same idea as [`manage_ensemble.py`](manage_ensemble.py): load one or more `pklfiles/<case>.pkl` files, then call the case method (single case) or the multi-case adapter (merged training).
 
@@ -23,7 +23,7 @@ Training logic lives in [`model_ELM/surrogate_NN_Forcing.py`](model_ELM/surrogat
 
 **Backward compatibility:** repo-root **`surrogate_NN_Forcing.py`** is a thin wrapper that forwards to `train_surrogate_forcing.main()`, so existing invocations of `python surrogate_NN_Forcing.py ...` keep working.
 
-**Programmatic use:** after `import model_ELM`, a loaded `ELMcase` instance has `train_surrogate_with_forcing(myvars, ...)` and `run_surrogate_forcing(parms, myvars, ...)` (optional full design matrix `X`, or `forcing_engineered` + `spinup` with `parms`). The training method also accepts `split_random_state`, `minimal_output` (stats-only; no models attached to the case), `stats_run_id`, and `reuse_x_memmap_path` with the same semantics as the CLI flags below.
+**Programmatic use:** after `import model_ELM`, a loaded `ELMcase` instance has `train_singlecase_surrogate_with_forcing(myvars, ...)` and `run_surrogate_forcing(parms, myvars, ...)` (optional full design matrix `X`, or `forcing_engineered` + `spinup` with `parms`). The training method also accepts `split_random_state`, `minimal_output` (stats-only; no models attached to the case), `stats_run_id`, and `reuse_x_memmap_path` with the same semantics as the CLI flags below.
 
 The workflow trains a surrogate for hourly ELM outputs (for example, `GPP`, `SR`) using a hybrid feature set:
 

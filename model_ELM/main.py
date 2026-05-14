@@ -1122,7 +1122,7 @@ def _add_methods_from_module(module):
 
 # Import modules and add their functions as methods to CLMcase
 from . import ensemble, makepointdata, netcdf4_functions, set_histvars, postprocess, get_fluxnet_obs, \
-        surrogate_NN, surrogate_NN_Forcing, run_GSA, MCMC
+        surrogate_NN, surrogate_NN_Forcing, surrogate_forcing_singlecase, run_GSA, MCMC
 
 _add_methods_from_module(ensemble)
 _add_methods_from_module(makepointdata)
@@ -1132,6 +1132,7 @@ _add_methods_from_module(postprocess)
 _add_methods_from_module(get_fluxnet_obs)
 _add_methods_from_module(surrogate_NN)
 _add_methods_from_module(surrogate_NN_Forcing)
+_add_methods_from_module(surrogate_forcing_singlecase)
 _add_methods_from_module(run_GSA)
 _add_methods_from_module(MCMC)
 
