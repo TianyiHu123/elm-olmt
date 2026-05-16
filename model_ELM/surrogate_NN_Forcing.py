@@ -421,7 +421,7 @@ def _save_plot(
         where=m_t_elm,
         color="blue",
         alpha=0.2,
-        linewidth=0,
+        linewidth=0.1,
         label="ELM ±1 std (train)",
     )
     ax[0].fill_between(
@@ -431,7 +431,7 @@ def _save_plot(
         where=m_t_sur,
         color="red",
         alpha=0.2,
-        linewidth=0,
+        linewidth=0.1,
         label="Surrogate ±1 std (train)",
     )
     ax[0].fill_between(
@@ -441,7 +441,7 @@ def _save_plot(
         where=m_v_elm,
         color="blue",
         alpha=0.2,
-        linewidth=0,
+        linewidth=0.1,
         label="ELM ±1 std (val)",
     )
     ax[0].fill_between(
@@ -451,7 +451,7 @@ def _save_plot(
         where=m_v_sur,
         color="red",
         alpha=0.2,
-        linewidth=0,
+        linewidth=0.1,
         label="Surrogate ±1 std (val)",
     )
     ax[0].set_ylabel(var)
@@ -1025,6 +1025,7 @@ def _train_surrogate_with_prepared_blocks(
     if reuse_x_memmap_path is not None:
         reuse_mem, layout_path = _resolve_forcing_memmap_paths(reuse_x_memmap_path)
         layout_from_disk = _load_forcing_layout_dict(layout_path)
+        
         if layout_from_disk["rows"] != rows:
             raise ValueError(
                 f"Memmap layout rows ({layout_from_disk['rows']}) != prepared targets rows ({rows}). "
@@ -1050,7 +1051,7 @@ def _train_surrogate_with_prepared_blocks(
                 f"Layout n_forcing ({layout_from_disk['n_forcing']}) != prepared forcing width "
                 f"({ref.forcing_features.shape[1]})."
             )
-        if np.dtype(layout_from_disk["dtype_str"]) != dtype_np:
+        if layout_from_disk["dtype_str"] != str(dtype_np):
             raise ValueError(
                 f"Memmap dtype {layout_from_disk['dtype_str']} does not match requested dtype {dtype_np}."
             )
