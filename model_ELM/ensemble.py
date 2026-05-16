@@ -380,7 +380,7 @@ def ensemble_copy(self, ens_num):
   #  ierr = self.putncvar(myfile, 'fates_seed_alloc', param)      
   #  ierr = self.putncvar(myfile, 'fates_seed_alloc_mature', param2)
 
-def plot_ensemble(self, myvar, percentiles=[1, 5, 25, 50, 75, 95, 99], factor=1):
+def plot_ensemble(self, myvar, percentiles=[1, 5, 25, 50, 75, 95, 99], factor=1, plot_param=False):
     UQ_output = './UQ_output/' + self.casename + '/ensemble'
     os.makedirs(UQ_output, exist_ok=True)  # Ensures the directory exists
     """
@@ -455,5 +455,32 @@ def plot_ensemble(self, myvar, percentiles=[1, 5, 25, 50, 75, 95, 99], factor=1)
     plt.savefig(UQ_output+f'/{myvar}_percentiles.png', bbox_inches='tight')
     plt.close()
 
-
+    if plot_param:
+        
+        # plot parameters
+        print(f"Plot {self.samples.shape[0]} parameters and {self.samples.shape[1]} ensembles")
+        fontsize=6
+        plt.rc('font', size=fontsize)          # Default text size
+        plt.rc('axes', titlesize=fontsize)     # Fontsize of the axes title
+        plt.rc('axes', labelsize=fontsize)     # Fontsize of the x and y labels
+        plt.rc('xtick', labelsize=fontsize)    # Fontsize of the x-tick labels
+        plt.rc('ytick', labelsize=fontsize)    # Fontsize of the y-tick labels
+        plt.rc('legend', fontsize=fontsize)    # Legend fontsize
+        plt.rc('figure', titlesize=fontsize)
+        
+        fig, ax = plt.subplots(1,self.samples.shape[0],figsize=(self.samples.shape[0],3))
+        for i in range(self.samples.shape[0]):
+            print("Plot ", self.ensemble_parms[i])
+            print(f"Max is {self.ensemble_pmax[i]:.5f}, Min is {self.ensemble_pmin[i]:.5f}\n")
+            ax[i].plot(np.ones(self.samples.shape[1]),
+                    self.samples[i,:],
+                    marker='o',linestyle="None",color='red',
+                    markersize=1.5, alpha=0.3)
+            ax[i].axhline(y=self.ensemble_pmax[i], color='b', linestyle='-')
+            ax[i].axhline(y=self.ensemble_pmin[i], color='b', linestyle='-')
+            ax[i].grid()
+            ax[i].set_title(self.ensemble_parms[i])
+        plt.tight_layout()
+        fig.savefig(UQ_output+f'/parameter_ens.png', bbox_inches='tight', dpi=600)
+        plt.close(fig)
 ### END ###

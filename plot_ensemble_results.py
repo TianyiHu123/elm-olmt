@@ -37,4 +37,7 @@ print(mycase.samples.transpose().shape)
 
 for var_string in mycase.postproc_vars:
     print("Plot ", var_string)
-    mycase.plot_ensemble(var_string)
+    if var_string == "SR":
+        mycase.plot_ensemble(var_string, plot_param=True)
+    else:
+        mycase.plot_ensemble(var_string, plot_param=False)
