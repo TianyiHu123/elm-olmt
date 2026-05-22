@@ -17,6 +17,8 @@ parser.add_option("--plot_spinup", dest="spinup", default=False, \
 # Tianyi Hu added ad spinup
 parser.add_option("--plot_adspinup", dest="adspinup", default=False, \
                   action="store_true")
+parser.add_option("--adspinup_ensemble", dest="adspinup_ensemble", default=False, \
+                  action="store_true")
 (options, args) = parser.parse_args()
 
 #Post-process and plot variables (non-ensemble mode)
@@ -33,7 +35,10 @@ mycase = pickle.load(myfile)
 if options.spinup:
     mycase.plot_spinup()
 elif options.adspinup:
-    mycase.plot_adspinup()
+    if options.adspinup_ensemble:
+        mycase.plot_adspinup_ensemble()
+    else:
+        mycase.plot_adspinup()
 else:
     for v in mycase.postproc_vars:
         if ('_pft' in v):

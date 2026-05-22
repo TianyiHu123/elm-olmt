@@ -149,6 +149,83 @@ def plot_adspinup(self, plotvars=[]):
         os.system('mkdir -p '+self.rundir+'/../diagnostics')
         plt.savefig(self.rundir+'/../diagnostics/ad_spinup_plot_'+v+'.png')
 
+# Tianyi Hu added for ensemble spinup
+def plot_adspinup_ensemble(self, plotvars=[]):
+    if not plotvars:
+        plotvars = ['NEE','TOTSOMC','TOTSOMN','GPP','NPP']
+    percentiles=[1, 5, 25, 50, 75, 95, 99]
+    line_styles = {
+        1:  {'linestyle': '--', 'color': 'black',  'linewidth': 1},
+        99: {'linestyle': '--', 'color': 'black',  'linewidth': 1},
+        5:  {'linestyle': '-.', 'color': 'black', 'linewidth': 1},
+        95: {'linestyle': '-.', 'color': 'black', 'linewidth': 1},
+        25: {'linestyle': ':',  'color': 'black','linewidth': 1},
+        75: {'linestyle': ':',  'color': 'black','linewidth': 1},
+        50: {'linestyle': '-',  'color': 'black',   'linewidth': 1.5},  # Bold line
+    }
+    data_var = {}
+    for ens in range(self.np_ensemble):
+        
+        gst=str(100000+int(ens+1))
+        ad_dir = str(os.path.abspath(self.runroot)+'/UQ/'+self.casename+'/g'+gst[1:])
+        print(ad_dir)
+        files1 = sorted_h0_files(ad_dir)[1:]
+
+        ds1 = xr.open_mfdataset(files1, combine='nested', concat_dim='time')
+        years1 = [int(re.search(r'\.(\d+)-01-01-00000\.nc', f).group(1)) for f in files1]
+        ds1 = ds1.assign_coords(time=years1)
+
+        for v in plotvars:
+            vals_mean = ds1[v].mean(dim=('lndgrid'))
+            if (v == 'NEE' or v == 'GPP' or v == 'NPP'):
+                #Convert to gC/m2/yr
+                vals_mean=abs(vals_mean)*24*3600*365
+            if (v == 'NEE'):
+                #Log scale
+                vals_mean = np.log10(vals_mean)
+                ylabel = "log10(NEE)"
+            if ens == 0:
+                data_var[v] = [vals_mean]
+            else:
+                data_var[v].append(vals_mean)
+
+        ds1.close()
+
+    for v in plotvars:
+
+        data_ens = xr.concat(data_var[v], dim="ensemble")
+        print(data_ens.shape)
+        
+        percentile_values = np.nanpercentile(data_ens.values, percentiles, axis=0)
+        # -- Plotting --
+        plt.figure(figsize=(10, 5))
+        # for i, p in enumerate(percentiles):
+        #     style = line_styles[p]
+        #     plt.plot(data_ens['time'],
+        #              percentile_values[i, :],
+        #              linestyle=style['linestyle'],
+        #              color=style['color'],
+        #              linewidth=style['linewidth'],
+        #              label=f'{p}th Percentile', alpha=0.5)
+        for p in range(data_ens.shape[0]):
+            plt.plot(data_ens['time'],
+                     data_ens.values[p, :],
+                     marker='o',
+                     color='blue',
+                     linewidth=1,
+                     alpha=0.5)
+        plt.title(v+" during spinup")
+        plt.xlabel("Year")
+        plt.ylabel(v)
+        # Horizontal line at y=0
+        if (v == 'NEE'):
+            plt.axhline(0, color='red', linestyle='--', label='NEE threshold (1 gC/m2/yr)')
+        plt.legend(frameon=False)
+        plt.grid(True)
+        os.system('mkdir -p '+self.rundir+'/../diagnostics')
+        plt.savefig(self.rundir+'/../diagnostics/ad_spinup_ens_plot_'+v+'.png')
+        
+
 def postprocess(self, var, index=0, gindex=0, startyear=-1, endyear=9999, hnum=0, \
         dailytomonthly=False, annualmean=False,  meanseasonalcycle=False, \
         xindex=0,yindex=0, ens_num=0, plot=False):

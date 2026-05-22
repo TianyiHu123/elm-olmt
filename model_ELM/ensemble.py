@@ -301,7 +301,14 @@ def ensemble_copy(self, ens_num):
 
   fates_seed_zeroed=[False,False]
   pnum=0
-  parm_values = self.samples[:,ens_num-1]
+  # Tianyi added for 1 parameter ensemble
+  if self.samples.ndim > 1:
+      parm_values = self.samples[:,ens_num-1]
+  else:
+      parm_values = np.array([self.samples[ens_num-1]])
+      print("Param values is: ")
+      print(parm_values)
+      
   parm_indices = self.ensemble_pfts
   for p in self.ensemble_parms:
     if ('INI' in p):
