@@ -1380,3 +1380,107 @@ def run_surrogate_forcing(
         y = self.y_scaler_forcing[var].inverse_transform(np.asarray(pred).reshape(-1, 1))
         surrogate_output[var] = y.ravel()
     return surrogate_output
+
+
+def load_surrogate_forcing_artifacts(case: Any, artifact_path: Union[str, Path]) -> Dict[str, Any]:
+    """Load forcing surrogate artifact pickle and attach model/scaler/metadata to a case."""
+    path = Path(artifact_path).expanduser().resolve()
+    if path.is_dir():
+        path = path / "surrogate_forcing_artifacts.pkl"
+    if not path.is_file():
+        raise FileNotFoundError(f"Forcing surrogate artifacts not found: {path}")
+
+    with open(path, "rb") as fp:
+        artifact = pickle.load(fp)
+
+    if "models" not in artifact or "x_scaler" not in artifact or "y_scaler" not in artifact:
+        raise ValueError(f"Artifact is missing required model/scaler keys: {path}")
+    training_layout = artifact.get("training_layout", {})
+    n_params = int(training_layout.get("n_params", -1))
+    if n_params <= 0:
+        raise ValueError("Artifact is missing training_layout['n_params']")
+    if int(case.nparms_ensemble) != n_params:
+        raise ValueError(
+            f"Parameter count mismatch between case ({case.nparms_ensemble}) "
+            f"and artifact ({n_params})"
+        )
+
+    _ensure_forcing_surrogate_dicts(case)
+    case.surrogate_forcing = artifact["models"]
+    case.x_scaler_forcing = artifact["x_scaler"]
+    case.y_scaler_forcing = artifact["y_scaler"]
+    case.forcing_surrogate_training = training_layout
+    return artifact
+
+
+def mean_spinup_state(case: Any, spinup_vars: Sequence[str]) -> np.ndarray:
+    """Compute mean spinup state across all ensemble members."""
+    if not hasattr(case, "nsamples"):
+        raise AttributeError("Case is missing nsamples needed for mean spinup state.")
+    n_members = int(case.nsamples)
+    if n_members <= 0:
+        raise ValueError(f"Invalid nsamples={n_members} for spinup mean.")
+    spinup = np.zeros((n_members, len(spinup_vars)), dtype=np.float64)
+    for ens in range(1, n_members + 1):
+        spinup[ens - 1, :] = _spinup_state(case, ens, spinup_vars)
+    return np.mean(spinup, axis=0)
+
+
+def _inference_target_ntime(case: Any, training_layout: Dict[str, Any]) -> int:
+    ntime_map = training_layout.get("ntime_per_case", {})
+    cname = str(getattr(case, "casename", ""))
+    if cname in ntime_map:
+        return int(ntime_map[cname])
+    if not hasattr(case, "output") or not isinstance(case.output, dict):
+        raise AttributeError("Case must provide output dict to infer forcing target length.")
+    for key, values in case.output.items():
+        if key == "taxis":
+            continue
+        arr = np.asarray(values).transpose()
+        if arr.ndim == 2:
+            return int(arr.shape[1])
+    raise ValueError("Unable to infer ntarget from case.output.")
+
+
+def build_forcing_inference_inputs(
+    case: Any, training_layout: Dict[str, Any], spinup_member: Optional[int] = None
+) -> Dict[str, Any]:
+    """Build forcing-engineered matrix and spinup vector for forcing-surrogate inference."""
+    forcing_vars_used = list(training_layout.get("forcing_vars_used", []))
+    spinup_vars = list(training_layout.get("spinup_vars", []))
+    tair_var = str(training_layout.get("tair_var", "TBOT"))
+    precip_var = str(training_layout.get("precip_var", "PRECTmms"))
+    n_forcing = int(training_layout.get("n_forcing_cols", -1))
+    if not forcing_vars_used or not spinup_vars or n_forcing <= 0:
+        raise ValueError("training_layout is missing forcing/spinup metadata for inference.")
+
+    ntarget = _inference_target_ntime(case, training_layout)
+    forcing_raw, forcing_used = _load_forcing_matrix(Path(case.metdir), forcing_vars_used, ntarget)
+    forcing_engineered, feature_names = _engineer_forcing_features(
+        forcing_raw, forcing_used, tair_var, precip_var
+    )
+    if forcing_engineered.shape[1] != n_forcing:
+        raise ValueError(
+            f"Forcing feature count mismatch: expected {n_forcing}, got {forcing_engineered.shape[1]}"
+        )
+
+    expected_features = list(training_layout.get("forcing_feature_names", []))
+    if expected_features and expected_features != list(feature_names):
+        raise ValueError(
+            "Forcing feature names do not match training artifact metadata. "
+            f"Expected {expected_features}, got {feature_names}"
+        )
+
+    if spinup_member is None:
+        spinup = mean_spinup_state(case, spinup_vars)
+    else:
+        spinup = _spinup_state(case, int(spinup_member), spinup_vars)
+
+    return {
+        "ntime": int(forcing_engineered.shape[0]),
+        "forcing_engineered": forcing_engineered,
+        "spinup": np.asarray(spinup, dtype=np.float64).ravel(),
+        "forcing_vars_used": forcing_used,
+        "forcing_feature_names": feature_names,
+        "spinup_vars": spinup_vars,
+    }

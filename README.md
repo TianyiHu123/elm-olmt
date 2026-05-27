@@ -240,3 +240,94 @@ python train_surrogate_forcing.py \
 ```
 
 Stats JSON files are written under **`/path/to/scratch/UQ_output/<CASE_NAME>/surrogate_forcing/`** (or under `--run-name` when you use it). Aggregate those JSON files offline to summarize R² distributions.
+
+## Forcing Surrogate MCMC Optimization
+
+After training a forcing surrogate (which saves `surrogate_forcing_artifacts.pkl` under `UQ_output/<case-or-run-name>/surrogate_forcing/`), you can optimize (calibrate) parameters with MCMC against hourly observations stored in a NetCDF file.
+
+### CLI: `optimize_surrogate_forcing.py`
+
+This driver will:
+
+- load `pklfiles/<case>.pkl` to get parameter bounds and case metadata
+- load a trained forcing surrogate from `surrogate_forcing_artifacts.pkl`
+- rebuild the forcing-engineered inputs from `case.metdir` using the artifact metadata
+- compute spinup features from restart files (default: **mean across ensemble members**; or choose one member)
+- read observations from a NetCDF file (`--obs`) and align length to the forcing input
+- run MCMC using the forcing surrogate forward model
+- write outputs to `./UQ_output/<casename>/MCMC_forcing_output/`:
+  - `best_params.txt`
+  - `clm_params_best.nc`
+  - posterior PDFs, posterior predictive plots, and a corner plot (same post-processing style as `model_ELM/MCMC.py`)
+
+#### Single-site example
+
+```bash
+# Paths
+WORKDIR="/path/to/elm-olmt"
+CASE="<CASE_NAME>"
+
+# Artifact from forcing-surrogate training
+ARTIFACT="/path/to/UQ_output/<CASE_OR_RUN_NAME>/surrogate_forcing/surrogate_forcing_artifacts.pkl"
+
+# Observations (NetCDF): variables must match --vars (e.g., GPP, SR)
+OBS_NC="/path/to/obs_${CASE}.nc"
+
+python optimize_surrogate_forcing.py \
+  --workdir "${WORKDIR}" \
+  --case "${CASE}" \
+  --artifact "${ARTIFACT}" \
+  --vars GPP,SR \
+  --obs "${OBS_NC}" \
+  --obs-err-vars "GPP:GPP_SE,SR:SR_SE" \
+  --nwalkers 32 \
+  --nsteps 100 \
+  --spinup-member 1
+```
+
+Notes:
+- If an error variable is not provided (or missing in the file), observation uncertainty defaults to **10% of |obs|**.
+- Missing/invalid observations should be encoded as `-9999` (they are masked during likelihood evaluation).
+
+#### Multi-site example (shared artifact, per-site obs paths)
+
+If `case.all_sites` contains multiple sites, the optimizer will loop over them. You can pass one observation file for all sites, or provide a per-site/per-case mapping:
+
+```bash
+python optimize_surrogate_forcing.py \
+  --workdir "${WORKDIR}" \
+  --case "<CASE_SITEA>" \
+  --artifact "${ARTIFACT}" \
+  --vars SR \
+  --obs "US-UMB:/path/to/obs_US-UMB.nc,US-MOz:/path/to/obs_US-MOz.nc" \
+  --obs-err-vars "SR:SR_SE" \
+  --nwalkers 48 \
+  --nsteps 200
+```
+
+### Choosing CPUs and walkers (practical guidance)
+
+MCMC cost scales roughly with:
+
+- \(n_{walkers} \\times n_{steps} \\times n_{sites} \\times n_{vars} \\times n_{time}\)
+
+Key points:
+
+- **Walkers**: For `emcee` ensemble sampling, a safe minimum is **\(2 \\times n_{dim}\)** where \(n_{dim} = n_{params} (+ n_{vars} \\text{ if fitting } \\sigma_{var})\). In practice, start with:
+  - **32 walkers** for smaller problems (tens of parameters)
+  - **48–128 walkers** for higher-dimensional calibration
+- **CPUs / processes**: This implementation can parallelize `emcee` log-prob evaluations via a multiprocessing pool (use `--n-processes`, defaulting to `SLURM_CPUS_PER_TASK` when set). Scaling is typically best up to ~`min(nwalkers, n-processes)`, and can be limited by surrogate inference cost and per-site/time-series length.
+- **Avoid oversubscription**: If your environment uses threaded BLAS/OpenMP, set:
+
+```bash
+export OMP_NUM_THREADS=1
+export OPENBLAS_NUM_THREADS=1
+export MKL_NUM_THREADS=1
+export NUMEXPR_NUM_THREADS=1
+export BLIS_NUM_THREADS=1
+```
+
+Suggested starting point on HPC:
+- **`--cpus-per-task=1` to `4`** (unless you have a specific reason to allocate more)
+- **increase `--nwalkers` first** if you need better mixing or higher effective sample size
+- do a short smoke test (`--nsteps 20`) before longer runs
