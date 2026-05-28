@@ -116,24 +116,49 @@ def MCMC_forcing(
     site_data_by_site: Dict[str, Dict[str, Any]] = {}
 
     for s in sites:
-        if s == sites[0]:
-            case_obj = self
-        else:
-            from model_ELM import ELMcase
-
-            case_obj = ELMcase(casename=self.casename.replace(self.site, s))
-            _attach_forcing_surrogate_from_primary(self, case_obj)
-
         if s not in forcing_context:
             raise KeyError(f"Missing forcing_context for site '{s}'")
         fctx = forcing_context[s]
         if "forcing_engineered" not in fctx or "spinup" not in fctx:
             raise KeyError(f"forcing_context[{s}] must include forcing_engineered and spinup")
 
+        # Prefer explicit surrogate payload from forcing_context.
+        surrogate_forcing = fctx.get("surrogate_forcing")
+        x_scaler_forcing = fctx.get("x_scaler_forcing")
+        y_scaler_forcing = fctx.get("y_scaler_forcing")
+        meta = fctx.get("training_layout")
+        case_obj = None
+        if (
+            surrogate_forcing is None
+            or x_scaler_forcing is None
+            or y_scaler_forcing is None
+            or meta is None
+        ):
+            # Backward-compatible fallback: derive case object from the legacy primary-site workflow.
+            if s == sites[0]:
+                case_obj = self
+            else:
+                from model_ELM import ELMcase
+
+                case_obj = ELMcase(casename=self.casename.replace(self.site, s))
+                _attach_forcing_surrogate_from_primary(self, case_obj)
+            surrogate_forcing = case_obj.surrogate_forcing
+            x_scaler_forcing = case_obj.x_scaler_forcing
+            y_scaler_forcing = case_obj.y_scaler_forcing
+            meta = getattr(case_obj, "forcing_surrogate_training", None)
+            if meta is None:
+                raise ValueError(
+                    f"Missing forcing_surrogate_training metadata on case for site '{s}'. Train forcing first."
+                )
+
         if "obs" in fctx and "obs_err" in fctx:
             obs[s] = fctx["obs"]
             obs_err[s] = fctx["obs_err"]
         else:
+            if case_obj is None:
+                raise KeyError(
+                    f"forcing_context[{s}] must include obs and obs_err when no case object is available."
+                )
             if not hasattr(case_obj, "obs") or not hasattr(case_obj, "obs_err"):
                 raise AttributeError(
                     f"Site {s} has no obs/obs_err; pass obs and obs_err in forcing_context."
@@ -143,21 +168,47 @@ def MCMC_forcing(
 
         fe = np.asarray(fctx["forcing_engineered"], dtype=np.float64)
         sp = np.asarray(fctx["spinup"], dtype=np.float64).ravel()
-        meta = getattr(case_obj, "forcing_surrogate_training", None)
-        if meta is None:
+        n_forcing_cols = int(meta.get("n_forcing_cols", -1))
+        n_params_expected = int(meta.get("n_params", -1))
+        n_spinup_expected = int(meta.get("n_spinup", -1))
+        if n_forcing_cols <= 0 or n_params_expected <= 0 or n_spinup_expected <= 0:
             raise ValueError(
-                f"Missing forcing_surrogate_training metadata on case for site '{s}'. Train forcing first."
+                f"forcing metadata is incomplete for site '{s}': "
+                f"n_forcing_cols={n_forcing_cols}, n_params={n_params_expected}, n_spinup={n_spinup_expected}"
+            )
+        if n_params_expected != int(self.nparms_ensemble):
+            raise ValueError(
+                f"Parameter count mismatch for site '{s}': "
+                f"case has {self.nparms_ensemble} parameters, surrogate expects {n_params_expected}."
+            )
+        if fe.ndim != 2 or fe.shape[1] != n_forcing_cols:
+            raise ValueError(
+                f"forcing_engineered shape mismatch for site '{s}': "
+                f"expected (*, {n_forcing_cols}), got {fe.shape}"
+            )
+        if sp.size != n_spinup_expected:
+            raise ValueError(
+                f"spinup length mismatch for site '{s}': "
+                f"expected {n_spinup_expected}, got {sp.size}"
+            )
+
+        expected_features = list(meta.get("forcing_feature_names", []))
+        input_features = [str(x) for x in fctx.get("forcing_feature_names", [])]
+        if expected_features and input_features and expected_features != input_features:
+            raise ValueError(
+                f"Forcing feature names mismatch for site '{s}': "
+                f"expected {expected_features}, got {input_features}"
             )
 
         site_data_by_site[s] = {
             "forcing_engineered": fe,
             "spinup": sp,
-            "n_forcing_cols": int(meta["n_forcing_cols"]),
-            "n_params": int(meta["n_params"]),
-            "n_spinup": int(meta["n_spinup"]),
-            "surrogate_forcing": case_obj.surrogate_forcing,
-            "x_scaler_forcing": case_obj.x_scaler_forcing,
-            "y_scaler_forcing": case_obj.y_scaler_forcing,
+            "n_forcing_cols": n_forcing_cols,
+            "n_params": n_params_expected,
+            "n_spinup": n_spinup_expected,
+            "surrogate_forcing": surrogate_forcing,
+            "x_scaler_forcing": x_scaler_forcing,
+            "y_scaler_forcing": y_scaler_forcing,
         }
 
     # Add parameters to estimate observation error stddev

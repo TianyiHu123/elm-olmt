@@ -25,14 +25,18 @@ scontrol show job $SLURM_JOB_ID
 OLMT_ROOT="/global/u1/t/tianyihu/elm-olmt"
 CONDA_ENV="OLMT_pm_Tianyi"
 
-CASE="ABBY_ens3_I20TRCNPRDCTCBC"
+# Explicit optimization target case(s). Use comma-separated values for multi-case runs.
+CASE_LIST="ABBY_ens3_I20TRCNPRDCTCBC"
 OUTPUTDIR="/pscratch/sd/t/tianyihu/E3SM_out/SOIL_project"
 
-# Artifact produced by train_surrogate_forcing.py (or multi-case training)
-ARTIFACT="${OUTPUTDIR}/UQ_output/${CASE}/surrogate_forcing/surrogate_forcing_artifacts.pkl"
+# Artifact produced by train_surrogate_forcing.py (or multi-case training).
+# Keep artifact metadata (training_layout) available; model/scaler-only payloads are not sufficient.
+ARTIFACT="${OUTPUTDIR}/UQ_output/ABBY_ens3_I20TRCNPRDCTCBC/surrogate_forcing/surrogate_forcing_artifacts.pkl"
 
-# Observation NetCDF (variables must match --vars below)
-OBS_NC="/path/to/${CASE}_obs.nc"
+# Observation NetCDF:
+# - Single file for all cases/sites: OBS_NC="/path/to/all_sites_obs.nc"
+# - Per-site/per-case mapping:      OBS_NC="US-UMB:/path/to/obs_US-UMB.nc,US-MOz:/path/to/obs_US-MOz.nc"
+OBS_NC="/path/to/ABBY_ens3_I20TRCNPRDCTCBC_obs.nc"
 
 VARS="GPP,SR"
 OBS_ERR_VARS="GPP:GPP_SE,SR:SR_SE"
@@ -68,7 +72,7 @@ export BLIS_NUM_THREADS=1
 python optimize_surrogate_forcing.py \
   --workdir "${OLMT_ROOT}" \
   --outputdir "${OUTPUTDIR}" \
-  --case "${CASE}" \
+  --case "${CASE_LIST}" \
   --artifact "${ARTIFACT}" \
   --vars "${VARS}" \
   --obs "${OBS_NC}" \

@@ -249,9 +249,10 @@ After training a forcing surrogate (which saves `surrogate_forcing_artifacts.pkl
 
 This driver will:
 
-- load `pklfiles/<case>.pkl` to get parameter bounds and case metadata
+- load the explicit optimization target cases from `--case` (`pklfiles/<case>.pkl`)
 - load a trained forcing surrogate from `surrogate_forcing_artifacts.pkl`
-- rebuild the forcing-engineered inputs from `case.metdir` using the artifact metadata
+- use artifact `training_layout` metadata as the schema contract (forcing features, spinup vars, parameter count)
+- rebuild forcing-engineered inputs from each target `case.metdir` using that artifact metadata
 - compute spinup features from restart files (default: **mean across ensemble members**; or choose one member)
 - read observations from a NetCDF file (`--obs`) with their time axis
 - collocate forcing and observations by **overlapping hourly timestamps** before likelihood evaluation
@@ -309,14 +310,14 @@ python optimize_surrogate_forcing.py \
 
 This mode performs all per-site loading and time-overlap collocation, prints a summary, and exits without sampling.
 
-#### Multi-site example (shared artifact, per-site obs paths)
+#### Multi-site / multi-case example (shared artifact, per-site obs paths)
 
-If `case.all_sites` contains multiple sites, the optimizer will loop over them. You can pass one observation file for all sites, or provide a per-site/per-case mapping:
+The optimizer treats the `--case` list as the authoritative optimization targets. You can pass one observation file for all cases/sites, or provide a per-site/per-case mapping:
 
 ```bash
 python optimize_surrogate_forcing.py \
   --workdir "${WORKDIR}" \
-  --case "<CASE_SITEA>" \
+  --case "<CASE_SITEA>,<CASE_SITEB>" \
   --artifact "${ARTIFACT}" \
   --vars SR \
   --obs "US-UMB:/path/to/obs_US-UMB.nc,US-MOz:/path/to/obs_US-MOz.nc" \
@@ -324,6 +325,10 @@ python optimize_surrogate_forcing.py \
   --nwalkers 48 \
   --nsteps 200
 ```
+
+Notes:
+- Artifact metadata in `training_layout` must remain available; model/scaler-only payloads are not sufficient for rebuilding inputs.
+- Each case in `--case` should map to a unique site label (via `case.site`) for per-site diagnostics and outputs.
 
 ### Choosing CPUs and walkers (practical guidance)
 

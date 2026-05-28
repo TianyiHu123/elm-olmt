@@ -6,7 +6,7 @@ import os
 import pickle
 import sys
 from pathlib import Path
-from typing import Dict, List
+from typing import Any, Dict, List, Tuple
 
 import model_ELM  # noqa: F401 - needed for pickle.load to resolve ELMcase
 import numpy as np
@@ -25,7 +25,10 @@ def _build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--case",
         required=True,
-        help="Primary case name (or comma-separated case list for validation only) in pklfiles/<case>.pkl",
+        help=(
+            "Case name(s) in pklfiles/<case>.pkl used for optimization targets. "
+            "Provide a comma-separated list to optimize multiple explicit cases/sites."
+        ),
     )
     parser.add_argument(
         "--artifact",
@@ -112,26 +115,11 @@ def _load_case(workdir: Path, case_name: str):
         return pickle.load(fp)
 
 
-def _resolve_site_case_name(primary, site: str, case_names: List[str]) -> str:
-    primary_case = str(getattr(primary, "casename", case_names[0]))
-    primary_site = str(getattr(primary, "site", site))
-    if site == primary_site:
-        return primary_case
-
-    explicit_guess = primary_case.replace(primary_site, site)
-    if explicit_guess in case_names:
-        return explicit_guess
-
-    candidates = [name for name in case_names if site in name]
-    if len(candidates) == 1:
-        return candidates[0]
-
-    if len(case_names) > 1:
-        raise ValueError(
-            f"Unable to resolve case name for site '{site}'. "
-            f"Provide an explicit --case list including this site. Candidates: {candidates}"
-        )
-    return explicit_guess
+def _site_key_from_case(case_obj: Any) -> str:
+    site = str(getattr(case_obj, "site", "")).strip()
+    if site:
+        return site
+    return str(getattr(case_obj, "casename", "unknown_case"))
 
 
 def main() -> int:
@@ -153,27 +141,32 @@ def main() -> int:
     obs_map = _parse_obs_spec(args.obs)
     obs_err_vars = _parse_obs_err_vars(args.obs_err_vars)
 
-    primary = _load_case(workdir, case_names[0])
+    case_objs: List[Tuple[str, Any]] = []
+    for cname in case_names:
+        case_objs.append((cname, _load_case(workdir, cname)))
+    primary = case_objs[0][1]
     artifact = load_surrogate_forcing_artifacts(primary, args.artifact)
     training_layout = artifact["training_layout"]
-    artifact_case_names = set(str(c) for c in artifact.get("case_names", []))
-    if training_layout.get("multi_case") and artifact_case_names:
-        missing = sorted([c for c in case_names if c not in artifact_case_names])
-        if missing:
-            raise ValueError(f"Cases missing from artifact case_names: {missing}")
+    for _, case_obj in case_objs[1:]:
+        load_surrogate_forcing_artifacts(case_obj, args.artifact)
 
-    sites: List[str] = list(getattr(primary, "all_sites", []))
-    if not sites:
-        sites = [str(getattr(primary, "site", case_names[0]))]
-        primary.all_sites = sites
+    cases_by_site: Dict[str, Tuple[str, Any]] = {}
+    for cname, case_obj in case_objs:
+        skey = _site_key_from_case(case_obj)
+        if skey in cases_by_site:
+            raise ValueError(
+                f"Duplicate site key '{skey}' from cases "
+                f"'{cases_by_site[skey][0]}' and '{cname}'. "
+                "Provide cases with unique site labels."
+            )
+        cases_by_site[skey] = (cname, case_obj)
+    sites: List[str] = list(cases_by_site.keys())
+    primary.all_sites = sites
 
     forcing_context = {}
     overlap_report = {}
     for s in sites:
-        site_case_name = _resolve_site_case_name(primary, s, case_names)
-        case_obj = primary if s == sites[0] else _load_case(workdir, site_case_name)
-        if s != sites[0]:
-            load_surrogate_forcing_artifacts(case_obj, args.artifact)
+        site_case_name, case_obj = cases_by_site[s]
 
         finputs = build_forcing_inference_inputs(
             case_obj,
@@ -210,12 +203,18 @@ def main() -> int:
             "forcing_time_source": finputs.get("forcing_time_source", "unknown"),
         }
         forcing_context[s] = {
+            "case_name": site_case_name,
             "forcing_engineered": forcing_overlap,
             "spinup": finputs["spinup"],
+            "forcing_feature_names": list(finputs.get("forcing_feature_names", [])),
             "obs": obs,
             "obs_err": obs_err,
             "forcing_time": forcing_time_overlap,
             "forcing_time_source": finputs.get("forcing_time_source", "unknown"),
+            "surrogate_forcing": case_obj.surrogate_forcing,
+            "x_scaler_forcing": case_obj.x_scaler_forcing,
+            "y_scaler_forcing": case_obj.y_scaler_forcing,
+            "training_layout": dict(case_obj.forcing_surrogate_training),
             "overlap_diagnostics": {
                 k: v for k, v in overlap.items() if k != "forcing_overlap_indices"
             },
