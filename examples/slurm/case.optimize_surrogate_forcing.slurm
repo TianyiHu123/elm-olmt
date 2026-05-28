@@ -47,6 +47,14 @@ SPINUP_MEMBER=1
 # Parallel worker processes for emcee pool (cap to allocated CPUs)
 N_PROCS="${SLURM_CPUS_PER_TASK:-4}"
 
+# Set to 1 to run overlap diagnostics only (no MCMC sampling).
+DRY_RUN_COLLOCATION=1
+
+DRY_RUN_FLAG=""
+if [ "${DRY_RUN_COLLOCATION}" = "1" ]; then
+  DRY_RUN_FLAG="--dry-run-collocation"
+fi
+
 cd "${OLMT_ROOT}"
 conda activate "${CONDA_ENV}"
 
@@ -68,5 +76,6 @@ python optimize_surrogate_forcing.py \
   --nwalkers "${NWALKERS}" \
   --nsteps "${NSTEPS}" \
   --n-processes "${N_PROCS}" \
-  --spinup-member "${SPINUP_MEMBER}"
+  --spinup-member "${SPINUP_MEMBER}" \
+  ${DRY_RUN_FLAG}
 

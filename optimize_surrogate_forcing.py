@@ -9,7 +9,11 @@ from pathlib import Path
 from typing import Dict, List
 
 import model_ELM  # noqa: F401 - needed for pickle.load to resolve ELMcase
-from model_ELM.load_obs_nc import load_observations_from_nc
+import numpy as np
+from model_ELM.load_obs_nc import (
+    collocate_obs_to_forcing_time,
+    load_observations_with_time_from_nc,
+)
 from model_ELM.surrogate_NN_Forcing import (
     build_forcing_inference_inputs,
     load_surrogate_forcing_artifacts,
@@ -55,6 +59,11 @@ def _build_parser() -> argparse.ArgumentParser:
         "--outputdir",
         default=".",
         help="Base directory where UQ_output will be written (script changes cwd to this path).",
+    )
+    parser.add_argument(
+        "--dry-run-collocation",
+        action="store_true",
+        help="Load forcing/spinup/obs for each site, run time-overlap collocation, print diagnostics, and exit without MCMC.",
     )
     return parser
 
@@ -103,6 +112,28 @@ def _load_case(workdir: Path, case_name: str):
         return pickle.load(fp)
 
 
+def _resolve_site_case_name(primary, site: str, case_names: List[str]) -> str:
+    primary_case = str(getattr(primary, "casename", case_names[0]))
+    primary_site = str(getattr(primary, "site", site))
+    if site == primary_site:
+        return primary_case
+
+    explicit_guess = primary_case.replace(primary_site, site)
+    if explicit_guess in case_names:
+        return explicit_guess
+
+    candidates = [name for name in case_names if site in name]
+    if len(candidates) == 1:
+        return candidates[0]
+
+    if len(case_names) > 1:
+        raise ValueError(
+            f"Unable to resolve case name for site '{site}'. "
+            f"Provide an explicit --case list including this site. Candidates: {candidates}"
+        )
+    return explicit_guess
+
+
 def main() -> int:
     args = _build_parser().parse_args()
     workdir = Path(args.workdir).expanduser().resolve()
@@ -137,8 +168,9 @@ def main() -> int:
         primary.all_sites = sites
 
     forcing_context = {}
+    overlap_report = {}
     for s in sites:
-        site_case_name = primary.casename if s == sites[0] else primary.casename.replace(primary.site, s)
+        site_case_name = _resolve_site_case_name(primary, s, case_names)
         case_obj = primary if s == sites[0] else _load_case(workdir, site_case_name)
         if s != sites[0]:
             load_surrogate_forcing_artifacts(case_obj, args.artifact)
@@ -149,18 +181,57 @@ def main() -> int:
             spinup_member=args.spinup_member,
         )
         obs_path = _resolve_obs_path(obs_map, s, site_case_name)
-        obs, obs_err = load_observations_from_nc(
+        obs_payload = load_observations_with_time_from_nc(
             obs_path=obs_path,
             myvars=myvars,
-            ntarget=finputs["ntime"],
             obs_err_vars=obs_err_vars,
         )
+        obs, obs_err, overlap = collocate_obs_to_forcing_time(
+            forcing_time=finputs["forcing_time"],
+            obs_time=obs_payload["time"],
+            obs=obs_payload["obs"],
+            obs_err=obs_payload["obs_err"],
+            myvars=myvars,
+        )
+        overlap_idx = overlap["forcing_overlap_indices"]
+        forcing_overlap = np.asarray(finputs["forcing_engineered"], dtype=float)[overlap_idx, :]
+        forcing_time_overlap = np.asarray(finputs["forcing_time"]).reshape(-1)[overlap_idx]
+        print(
+            f"Site '{s}': forcing rows={overlap['n_forcing']}, obs rows={overlap['n_obs']}, "
+            f"overlap rows={overlap['n_overlap']}, "
+            f"window={overlap['first_overlap_time']} -> {overlap['last_overlap_time']}"
+        )
+        overlap_report[s] = {
+            "forcing_rows": int(overlap["n_forcing"]),
+            "obs_rows": int(overlap["n_obs"]),
+            "overlap_rows": int(overlap["n_overlap"]),
+            "first_overlap_time": overlap["first_overlap_time"],
+            "last_overlap_time": overlap["last_overlap_time"],
+            "forcing_time_source": finputs.get("forcing_time_source", "unknown"),
+        }
         forcing_context[s] = {
-            "forcing_engineered": finputs["forcing_engineered"],
+            "forcing_engineered": forcing_overlap,
             "spinup": finputs["spinup"],
             "obs": obs,
             "obs_err": obs_err,
+            "forcing_time": forcing_time_overlap,
+            "forcing_time_source": finputs.get("forcing_time_source", "unknown"),
+            "overlap_diagnostics": {
+                k: v for k, v in overlap.items() if k != "forcing_overlap_indices"
+            },
         }
+
+    if args.dry_run_collocation:
+        print("\nDry-run collocation summary:")
+        for s in sites:
+            info = overlap_report[s]
+            print(
+                f"  - {s}: forcing={info['forcing_rows']}, obs={info['obs_rows']}, "
+                f"overlap={info['overlap_rows']}, source={info['forcing_time_source']}, "
+                f"window={info['first_overlap_time']} -> {info['last_overlap_time']}"
+            )
+        print("\nDry-run requested; skipping MCMC sampling.")
+        return 0
 
     primary.MCMC_forcing(
         myvars=myvars,

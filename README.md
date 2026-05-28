@@ -253,7 +253,8 @@ This driver will:
 - load a trained forcing surrogate from `surrogate_forcing_artifacts.pkl`
 - rebuild the forcing-engineered inputs from `case.metdir` using the artifact metadata
 - compute spinup features from restart files (default: **mean across ensemble members**; or choose one member)
-- read observations from a NetCDF file (`--obs`) and align length to the forcing input
+- read observations from a NetCDF file (`--obs`) with their time axis
+- collocate forcing and observations by **overlapping hourly timestamps** before likelihood evaluation
 - run MCMC using the forcing surrogate forward model
 - write outputs to `./UQ_output/<casename>/MCMC_forcing_output/`:
   - `best_params.txt`
@@ -288,6 +289,25 @@ python optimize_surrogate_forcing.py \
 Notes:
 - If an error variable is not provided (or missing in the file), observation uncertainty defaults to **10% of |obs|**.
 - Missing/invalid observations should be encoded as `-9999` (they are masked during likelihood evaluation).
+- The optimizer prints per-site overlap diagnostics (`forcing rows`, `obs rows`, `overlap rows`, overlap time window).
+
+#### Dry-run collocation check (recommended)
+
+Use `--dry-run-collocation` to verify forcing/obs overlap sizes and windows before launching MCMC:
+
+```bash
+python optimize_surrogate_forcing.py \
+  --workdir "${WORKDIR}" \
+  --case "${CASE}" \
+  --artifact "${ARTIFACT}" \
+  --vars GPP,SR \
+  --obs "${OBS_NC}" \
+  --obs-err-vars "GPP:GPP_SE,SR:SR_SE" \
+  --spinup-member 1 \
+  --dry-run-collocation
+```
+
+This mode performs all per-site loading and time-overlap collocation, prints a summary, and exits without sampling.
 
 #### Multi-site example (shared artifact, per-site obs paths)
 

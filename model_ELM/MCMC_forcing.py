@@ -76,7 +76,7 @@ def log_posterior_forcing(
             for v in myvars:
                 myoutput = np.asarray(output[v]).flatten()
                 myobs = np.asarray(obs[s][v]).flatten()
-                myerr = np.asarray(obs_err[s][v]).flatten()
+                myerr = np.asarray(obs_err[s][v]).flatten().copy()
                 mask = (myobs > -9000) & (myerr > 0)
                 if nerr_parms > 0:
                     myerr[mask] = parms[-len(myvars) + myvars.index(v)]

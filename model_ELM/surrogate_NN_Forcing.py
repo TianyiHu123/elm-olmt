@@ -117,11 +117,57 @@ def _collect_forcing_files(metdir: Path) -> List[Path]:
     return files
 
 
-def _load_forcing_matrix(
+def _time_to_hour_keys(time_values: Sequence[Any]) -> np.ndarray:
+    tarr = np.asarray(time_values).reshape(-1)
+    if tarr.size == 0:
+        return np.asarray([], dtype=str)
+    try:
+        tda = xr.DataArray(tarr, dims=("time",), coords={"time": tarr})
+        keys = tda.dt.strftime("%Y-%m-%dT%H").astype(str).values
+        return np.asarray(keys, dtype=str).reshape(-1)
+    except Exception:
+        out = []
+        for value in tarr:
+            sval = str(value).replace(" ", "T")
+            out.append(sval[:13])
+        return np.asarray(out, dtype=str)
+
+
+def _forcing_time_from_case_output(case: Any, nhours: int) -> np.ndarray:
+    if hasattr(case, "output") and isinstance(case.output, dict) and "taxis" in case.output:
+        taxis = np.asarray(case.output["taxis"]).reshape(-1)
+        if taxis.size >= nhours and nhours > 0:
+            return taxis[:nhours]
+    return np.arange(nhours, dtype=np.int64)
+
+
+def _resolve_inference_forcing_time_axis(
+    forcing_time_raw: np.ndarray, case: Any, nhours: int
+) -> Tuple[np.ndarray, str]:
+    """
+    Prefer absolute forcing timestamps when available; otherwise fall back to case output taxis.
+    """
+    if forcing_time_raw.size >= nhours and nhours > 0:
+        keys = _time_to_hour_keys(forcing_time_raw[:nhours])
+        if np.any(keys):
+            return forcing_time_raw[:nhours], "forcing_nc_time"
+    return _forcing_time_from_case_output(case, nhours), "case_output_taxis"
+
+
+def _load_forcing_matrix_without_time(
     metdir: Path,
     forcing_vars: Sequence[str],
     ntarget: int,
 ) -> Tuple[np.ndarray, List[str]]:
+    forcing, used_vars, _ = _load_forcing_matrix(metdir, forcing_vars, ntarget)
+    return forcing, used_vars
+
+
+def _load_forcing_matrix(
+    metdir: Path,
+    forcing_vars: Sequence[str],
+    ntarget: int,
+) -> Tuple[np.ndarray, List[str], np.ndarray]:
     files = _collect_forcing_files(metdir)
     print("Find forcing data: ")
     print([p.name for p in files])
@@ -129,17 +175,23 @@ def _load_forcing_matrix(
 
     used_vars: List[str] = []
     features: List[np.ndarray] = []
-    for var in forcing_vars:
-        if var not in ds.variables:
-            continue
-        var_hourly = (ds[var].coarsen(time=2).mean()).convert_calendar("noleap", dim="time")
-        arr = np.asarray(var_hourly).squeeze()
-        if arr.ndim > 1:
-            arr = np.mean(arr, axis=tuple(range(1, arr.ndim)))
-        if arr.ndim != 1:
-            continue
-        used_vars.append(var)
-        features.append(arr.astype(np.float64))
+    forcing_time: Optional[np.ndarray] = None
+    try:
+        for var in forcing_vars:
+            if var not in ds.variables:
+                continue
+            var_hourly = (ds[var].coarsen(time=2).mean()).convert_calendar("noleap", dim="time")
+            arr = np.asarray(var_hourly).squeeze()
+            if arr.ndim > 1:
+                arr = np.mean(arr, axis=tuple(range(1, arr.ndim)))
+            if arr.ndim != 1:
+                continue
+            used_vars.append(var)
+            features.append(arr.astype(np.float64))
+            if forcing_time is None and "time" in var_hourly.coords:
+                forcing_time = np.asarray(var_hourly["time"].values).reshape(-1)
+    finally:
+        ds.close()
 
     if not features:
         raise ValueError(
@@ -147,15 +199,22 @@ def _load_forcing_matrix(
             f"Requested: {forcing_vars}"
         )
 
+    if forcing_time is None:
+        forcing_time = np.arange(features[0].size, dtype=np.int64)
+
     forcing = np.column_stack(features)
-    nhours = min(ntarget, forcing.shape[0])
+    nhours = min(ntarget, forcing.shape[0], forcing_time.shape[0])
     if forcing.shape[0] != ntarget:
         print(
             f"Warning: forcing rows ({forcing.shape[0]}) != target rows ({ntarget}); "
             f"truncating to {nhours}"
         )
-    ds.close()
-    return forcing[:nhours, :], used_vars
+    elif forcing_time.shape[0] != forcing.shape[0]:
+        print(
+            f"Warning: forcing time rows ({forcing_time.shape[0]}) != forcing rows ({forcing.shape[0]}); "
+            f"truncating to {nhours}"
+        )
+    return forcing[:nhours, :], used_vars, forcing_time[:nhours]
 
 
 def _engineer_forcing_features(
@@ -752,7 +811,7 @@ def _prepare_case_training_block(
 
     metdir = Path(case.metdir)
     print(f"Loading forcing data from:\n {metdir}")
-    forcing_raw, forcing_used = _load_forcing_matrix(metdir, forcing_vars_list, ntime)
+    forcing_raw, forcing_used = _load_forcing_matrix_without_time(metdir, forcing_vars_list, ntime)
     ntime = forcing_raw.shape[0]
     forcing_features, forcing_feature_names = _engineer_forcing_features(
         forcing_raw,
@@ -1455,7 +1514,9 @@ def build_forcing_inference_inputs(
         raise ValueError("training_layout is missing forcing/spinup metadata for inference.")
 
     ntarget = _inference_target_ntime(case, training_layout)
-    forcing_raw, forcing_used = _load_forcing_matrix(Path(case.metdir), forcing_vars_used, ntarget)
+    forcing_raw, forcing_used, forcing_time_raw = _load_forcing_matrix(
+        Path(case.metdir), forcing_vars_used, ntarget
+    )
     forcing_engineered, feature_names = _engineer_forcing_features(
         forcing_raw, forcing_used, tair_var, precip_var
     )
@@ -1476,10 +1537,16 @@ def build_forcing_inference_inputs(
     else:
         spinup = _spinup_state(case, int(spinup_member), spinup_vars)
 
+    forcing_time_axis, forcing_time_source = _resolve_inference_forcing_time_axis(
+        forcing_time_raw, case, int(forcing_engineered.shape[0])
+    )
+
     return {
         "ntime": int(forcing_engineered.shape[0]),
         "forcing_engineered": forcing_engineered,
         "spinup": np.asarray(spinup, dtype=np.float64).ravel(),
+        "forcing_time": np.asarray(forcing_time_axis).reshape(-1),
+        "forcing_time_source": forcing_time_source,
         "forcing_vars_used": forcing_used,
         "forcing_feature_names": feature_names,
         "spinup_vars": spinup_vars,
