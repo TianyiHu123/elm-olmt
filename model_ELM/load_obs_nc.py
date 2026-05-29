@@ -81,19 +81,23 @@ def load_observations_with_time_from_nc(
                 pass
 
         for var in myvars:
+            print("Load Obs variable:", var, "from ", path)
+            
             if var not in ds.variables:
                 raise KeyError(f"Observation variable '{var}' not found in {path}")
 
-            da_obs = _to_hourly(ds[var]).squeeze()
+            da_obs = _to_hourly(ds[var]).squeeze() * 3600 * 24 # temporally convert unit
             obs_raw = np.asarray(da_obs, dtype=np.float64).reshape(-1)
             if obs_time is None and "time" in da_obs.coords:
                 obs_time = np.asarray(da_obs["time"].values).reshape(-1)
 
             err_var = obs_err_vars.get(var)
             if err_var and err_var in ds.variables:
-                da_err = _to_hourly(ds[err_var]).squeeze()
+                print("Obs error variable exist:", err_var)
+                da_err = _to_hourly(ds[err_var]).squeeze() * 3600 * 24 # temporally convert unit
                 err_raw = np.asarray(da_err, dtype=np.float64).reshape(-1)
             else:
+                print("Obs error variable not exist, use 10% error")
                 err_raw = _obs_err_fallback(obs_raw)
 
             n = min(obs_raw.size, err_raw.size)

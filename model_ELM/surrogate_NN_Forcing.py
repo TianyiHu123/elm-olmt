@@ -122,8 +122,8 @@ def _time_to_hour_keys(time_values: Sequence[Any]) -> np.ndarray:
     if tarr.size == 0:
         return np.asarray([], dtype=str)
     try:
-        tda = xr.DataArray(tarr, dims=("time",), coords={"time": tarr})
-        keys = tda.dt.strftime("%Y-%m-%dT%H").astype(str).values
+        # tda = xr.DataArray(tarr, dims=("time",), coords={"time": tarr})
+        keys = [time_tarr.strftime("%Y-%m-%dT%H").astype(str) for time_tarr in tarr]
         return np.asarray(keys, dtype=str).reshape(-1)
     except Exception:
         out = []
@@ -149,7 +149,7 @@ def _resolve_inference_forcing_time_axis(
     """
     if forcing_time_raw.size >= nhours and nhours > 0:
         keys = _time_to_hour_keys(forcing_time_raw[:nhours])
-        if np.any(keys):
+        if np.size(keys)>0:
             return forcing_time_raw[:nhours], "forcing_nc_time"
     return _forcing_time_from_case_output(case, nhours), "case_output_taxis"
 
@@ -189,7 +189,10 @@ def _load_forcing_matrix(
             used_vars.append(var)
             features.append(arr.astype(np.float64))
             if forcing_time is None and "time" in var_hourly.coords:
-                forcing_time = np.asarray(var_hourly["time"].values).reshape(-1)
+                var_hourly = var_hourly.convert_calendar("standard", use_cftime=False)
+                var_hourly['time'] = var_hourly.time.dt.floor("h")
+                forcing_time = var_hourly.time.values
+                
     finally:
         ds.close()
 
@@ -1517,9 +1520,22 @@ def build_forcing_inference_inputs(
     forcing_raw, forcing_used, forcing_time_raw = _load_forcing_matrix(
         Path(case.metdir), forcing_vars_used, ntarget
     )
+    print("Forcing time raw is")
+    print(forcing_time_raw)
+    print(forcing_time_raw.shape)
+    print("Forcing raw vars are")
+    print(forcing_used)
+    print("Forcing raw size is")
+    print(forcing_raw.shape)
+    
     forcing_engineered, feature_names = _engineer_forcing_features(
         forcing_raw, forcing_used, tair_var, precip_var
     )
+    print("Loaded Forcing feature names are")
+    print(feature_names)
+    print("Final forcing size")
+    print(forcing_engineered.shape)
+    
     if forcing_engineered.shape[1] != n_forcing:
         raise ValueError(
             f"Forcing feature count mismatch: expected {n_forcing}, got {forcing_engineered.shape[1]}"

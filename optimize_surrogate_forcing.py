@@ -167,7 +167,10 @@ def main() -> int:
     overlap_report = {}
     for s in sites:
         site_case_name, case_obj = cases_by_site[s]
-
+        print("**************************************************")
+        print("Site: ", s)
+        print("Case: ", site_case_name)
+        
         finputs = build_forcing_inference_inputs(
             case_obj,
             training_layout=training_layout,
@@ -186,6 +189,7 @@ def main() -> int:
             obs_err=obs_payload["obs_err"],
             myvars=myvars,
         )
+        
         overlap_idx = overlap["forcing_overlap_indices"]
         forcing_overlap = np.asarray(finputs["forcing_engineered"], dtype=float)[overlap_idx, :]
         forcing_time_overlap = np.asarray(finputs["forcing_time"]).reshape(-1)[overlap_idx]
@@ -219,7 +223,7 @@ def main() -> int:
                 k: v for k, v in overlap.items() if k != "forcing_overlap_indices"
             },
         }
-
+        print("**************************************************")
     if args.dry_run_collocation:
         print("\nDry-run collocation summary:")
         for s in sites:
