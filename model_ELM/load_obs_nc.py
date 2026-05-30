@@ -7,6 +7,18 @@ import numpy as np
 import xarray as xr
 
 
+def _floor_hour(time_da: xr.DataArray) -> xr.DataArray:
+    """Floor a time DataArray to the hour, tolerant of xarray/pandas frequency-alias changes.
+
+    Newer xarray/pandas (>= 2.2) use lowercase ``"h"``; older xarray cftime offsets only
+    accept uppercase ``"H"``. Try the modern alias first, then fall back.
+    """
+    try:
+        return time_da.dt.floor("h")
+    except (ValueError, AttributeError):
+        return time_da.dt.floor("H")
+
+
 def _to_hourly(da: xr.DataArray) -> xr.DataArray:
     if "time" not in da.dims:
         raise ValueError("Observation variable must have a time dimension.")
@@ -73,7 +85,7 @@ def load_observations_with_time_from_nc(
             da_obs = _to_hourly(ds[var]).squeeze() * 3600 * 24 # temporally convert unit
             obs_raw = np.asarray(da_obs, dtype=np.float64).reshape(-1)
             if obs_time is None and "time" in da_obs.coords:
-                obs_time = np.asarray(da_obs["time"].dt.floor("h").values).reshape(-1)
+                obs_time = np.asarray(_floor_hour(da_obs["time"]).values).reshape(-1)
 
             err_var = obs_err_vars.get(var)
             if err_var and err_var in ds.variables:

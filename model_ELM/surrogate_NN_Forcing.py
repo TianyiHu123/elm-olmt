@@ -22,6 +22,8 @@ from sklearn import preprocessing
 from sklearn.model_selection import GridSearchCV
 from sklearn.neural_network import MLPRegressor
 
+from .load_obs_nc import _floor_hour
+
 DEFAULT_SPINUP_VARS = ("TOTSOMC", "TOTSOMN")
 SPINUP_VAR_SUM: Dict[str, List[str]] = {
     "TOTSOMC": ["totsomc"],
@@ -177,7 +179,7 @@ def _load_forcing_matrix(
             used_vars.append(var)
             features.append(arr.astype(np.float64))
             if forcing_time is None and "time" in var_hourly.coords:
-                forcing_time = var_hourly["time"].dt.floor("h").values  # noleap cftime
+                forcing_time = _floor_hour(var_hourly["time"]).values  # noleap cftime
     finally:
         ds.close()
 
