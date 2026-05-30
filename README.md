@@ -53,6 +53,7 @@ The CLI is separate from the ensemble workflow manager ([`manage_ensemble.py`](m
 - multi-case runs can set `--run-name` to choose a short output folder label under `UQ_output/`, which also controls where the merged `X_forcing_memmap.dat` is saved
 - **Train/validation robustness:** `split_mode=random_time_window` draws a random contiguous time window per case (seed with `split_random_state` / `--split-random-state`) so you can study sensitivity to the temporal split
 - **Stats-only runs:** `--stats-only` skips plots and `surrogate_forcing_artifacts.pkl` and writes a small JSON metrics file per run (`surrogate_forcing_stats_*.json`), with filenames keyed off SLURM array/job env vars or `--stats-run-id` so array jobs do not overwrite each other
+- **Observation unit conversion:** NetCDF observations loaded by [`model_ELM/load_obs_nc.py`](model_ELM/load_obs_nc.py) are converted to daily flux units (`gC/m^2/day`, `gN/m^2/day`, `gP/m^2/day`, or `mm/day`) to match postprocessed surrogate training targets; see [Observation NetCDF units](#observation-netcdf-units) below
 - **Reuse of the design matrix:** after one full training run, **`X_forcing_memmap_layout.npz`** is written next to **`X_forcing_memmap.dat`**. Later runs can pass **`--reuse-x-memmap`** to open the memmap read-only and skip met forcing and restart spinup IO; targets are still loaded from the case pickle(s). `--forcing-vars` and `--spinup-vars` must match the original build; multi-case reuse requires the same case list **order** as in the layout file
 
 ### Key capabilities
@@ -244,7 +245,24 @@ Stats JSON files are written under **`/path/to/scratch/UQ_output/<CASE_NAME>/sur
 
 ## Forcing Surrogate MCMC Optimization
 
-After training a forcing surrogate (which saves `surrogate_forcing_artifacts.pkl` under `UQ_output/<case-or-run-name>/surrogate_forcing/`), you can optimize (calibrate) parameters with MCMC against hourly observations stored in a NetCDF file.
+After training a forcing surrogate (which saves `surrogate_forcing_artifacts.pkl` under `UQ_output/<case-or-run-name>/surrogate_forcing/`), you can optimize (calibrate) parameters with MCMC against observations stored in a NetCDF file. Observations are collocated to the surrogate's hourly time axis before likelihood evaluation.
+
+### Observation NetCDF units
+
+Observations are loaded by [`model_ELM/load_obs_nc.py`](model_ELM/load_obs_nc.py). Flux variables are converted to **daily units** to match surrogate training targets (the same daily flux units produced by ELM postprocessing, e.g. `gC/m^2/day` for carbon fluxes such as `GPP`/`NEE`/`NPP`, and `mm/day` for water fluxes such as `QRUNOFF`).
+
+Each observation variable (and its error variable, if provided) should include a NetCDF **`units`** attribute. Conversion rules:
+
+| `units` attribute | Behavior |
+|---|---|
+| `gC/m^2/s`, `gN/m^2/s`, `gP/m^2/s`, `mm/s` (and common CF variants) | multiply by 86400 → daily units |
+| `gC/m^2/day`, `g.C/m2/day`, `mm/day`, etc. | no scaling (already daily) |
+| missing / empty | assume per-second flux, multiply by 86400, and print a warning |
+| unrecognized (e.g. `umol/m2/s`) | print a warning and raise `ValueError` |
+
+Sub-hourly data are averaged to hourly before unit conversion. Error variables use the same conversion path as their paired observation variable.
+
+When preparing observation files, set `units` explicitly rather than relying on the missing-units default.
 
 ### CLI: `optimize_surrogate_forcing.py`
 
@@ -289,6 +307,7 @@ python optimize_surrogate_forcing.py \
 ```
 
 Notes:
+- Observation variables must use `units` compatible with the table above so values match surrogate training outputs in daily flux units.
 - If an error variable is not provided (or missing in the file), observation uncertainty defaults to **10% of |obs|**.
 - Missing/invalid observations should be encoded as `-9999` (they are masked during likelihood evaluation).
 - The optimizer prints per-site overlap diagnostics (`forcing rows`, `obs rows`, `overlap rows`, overlap time window).

@@ -6,6 +6,88 @@ from typing import Any, Dict, Optional, Sequence, Tuple
 import numpy as np
 import xarray as xr
 
+SECONDS_PER_DAY = 24 * 3600
+
+_PER_SECOND_FLUX = {
+    "gc/m2/s": "gC/m^2/day",
+    "gn/m2/s": "gN/m^2/day",
+    "gp/m2/s": "gP/m^2/day",
+    "mm/s": "mm/day",
+}
+
+_ALREADY_DAILY = {
+    "gc/m2/day": "gC/m^2/day",
+    "gn/m2/day": "gN/m^2/day",
+    "gp/m2/day": "gP/m^2/day",
+    "g.c/m2/day": "gC/m^2/day",
+    "mm/day": "mm/day",
+}
+
+_WATER_FLUX_VARS = frozenset(
+    {
+        "QRUNOFF",
+        "QDRAI",
+        "QINFL",
+        "RAIN",
+        "PRECTmms",
+        "SNOW",
+        "QOVER",
+        "QSNRUNOFF",
+    }
+)
+
+
+def _canonical_units(units: str) -> str:
+    u = str(units or "").strip().lower()
+    u = u.replace("^", "")
+    u = u.replace("m-2", "m2").replace("s-1", "s")
+    u = u.replace(" ", "")
+    u = u.replace("µmol", "umol")
+    return u
+
+
+def _default_daily_target(var_name: str) -> str:
+    if var_name.upper() in _WATER_FLUX_VARS:
+        return "mm/day"
+    return "gC/m^2/day"
+
+
+def _daily_flux_conversion(source_units: Optional[str], var_name: str) -> Tuple[float, str]:
+    if not source_units or not str(source_units).strip():
+        target = _default_daily_target(var_name)
+        print(
+            f"Warning: variable '{var_name}' has no units attribute; "
+            f"assuming per-second flux and converting to {target}."
+        )
+        return SECONDS_PER_DAY, target
+
+    key = _canonical_units(source_units)
+    if key in _ALREADY_DAILY:
+        return 1.0, _ALREADY_DAILY[key]
+    if key in _PER_SECOND_FLUX:
+        return SECONDS_PER_DAY, _PER_SECOND_FLUX[key]
+
+    print(
+        f"Warning: variable '{var_name}' has unrecognized units {source_units!r}; "
+        f"cannot convert to daily flux units."
+    )
+    raise ValueError(
+        f"variable '{var_name}' has unrecognized units {source_units!r}; "
+        f"cannot convert to daily flux units."
+    )
+
+
+def _convert_obs_to_daily(da: xr.DataArray, var_name: str) -> xr.DataArray:
+    src_units = da.attrs.get("units")
+    factor, target_units = _daily_flux_conversion(src_units, var_name)
+    if factor != 1.0:
+        print(f"Unit convert {var_name}: {src_units!r} -> {target_units!r} (×{factor:g})")
+    out = da * factor
+    out = out.copy(deep=False)
+    out.attrs = dict(da.attrs)
+    out.attrs["units"] = target_units
+    return out
+
 
 def _floor_hour(time_da: xr.DataArray) -> xr.DataArray:
     """Floor a time DataArray to the hour, tolerant of xarray/pandas frequency-alias changes.
@@ -59,6 +141,9 @@ def load_observations_with_time_from_nc(
 ) -> Dict[str, Any]:
     """
     Load observations and uncertainty arrays and preserve hourly time axis.
+
+    Flux variables are converted to daily units (``gC/m^2/day``, ``gN/m^2/day``,
+    ``gP/m^2/day``, or ``mm/day``) to match surrogate model training outputs.
     """
     path = Path(obs_path).expanduser().resolve()
     if not path.is_file():
@@ -82,7 +167,7 @@ def load_observations_with_time_from_nc(
             if var not in ds.variables:
                 raise KeyError(f"Observation variable '{var}' not found in {path}")
 
-            da_obs = _to_hourly(ds[var]).squeeze() * 3600 * 24 # temporally convert unit
+            da_obs = _convert_obs_to_daily(_to_hourly(ds[var]).squeeze(), var)
             obs_raw = np.asarray(da_obs, dtype=np.float64).reshape(-1)
             if obs_time is None and "time" in da_obs.coords:
                 obs_time = np.asarray(_floor_hour(da_obs["time"]).values).reshape(-1)
@@ -90,7 +175,7 @@ def load_observations_with_time_from_nc(
             err_var = obs_err_vars.get(var)
             if err_var and err_var in ds.variables:
                 print("Obs error variable exist:", err_var)
-                da_err = _to_hourly(ds[err_var]).squeeze() * 3600 * 24 # temporally convert unit
+                da_err = _convert_obs_to_daily(_to_hourly(ds[err_var]).squeeze(), err_var)
                 err_raw = np.asarray(da_err, dtype=np.float64).reshape(-1)
             else:
                 print("Obs error variable not exist, use 10% error")
