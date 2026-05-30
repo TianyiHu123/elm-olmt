@@ -117,22 +117,6 @@ def _collect_forcing_files(metdir: Path) -> List[Path]:
     return files
 
 
-def _time_to_hour_keys(time_values: Sequence[Any]) -> np.ndarray:
-    tarr = np.asarray(time_values).reshape(-1)
-    if tarr.size == 0:
-        return np.asarray([], dtype=str)
-    try:
-        # tda = xr.DataArray(tarr, dims=("time",), coords={"time": tarr})
-        keys = [time_tarr.strftime("%Y-%m-%dT%H").astype(str) for time_tarr in tarr]
-        return np.asarray(keys, dtype=str).reshape(-1)
-    except Exception:
-        out = []
-        for value in tarr:
-            sval = str(value).replace(" ", "T")
-            out.append(sval[:13])
-        return np.asarray(out, dtype=str)
-
-
 def _forcing_time_from_case_output(case: Any, nhours: int) -> np.ndarray:
     if hasattr(case, "output") and isinstance(case.output, dict) and "taxis" in case.output:
         taxis = np.asarray(case.output["taxis"]).reshape(-1)
@@ -141,16 +125,20 @@ def _forcing_time_from_case_output(case: Any, nhours: int) -> np.ndarray:
     return np.arange(nhours, dtype=np.int64)
 
 
+def _is_datetime_like(arr: np.ndarray) -> bool:
+    if np.issubdtype(arr.dtype, np.datetime64):
+        return True
+    return arr.dtype == object and arr.size > 0 and hasattr(arr.reshape(-1)[0], "strftime")
+
+
 def _resolve_inference_forcing_time_axis(
     forcing_time_raw: np.ndarray, case: Any, nhours: int
 ) -> Tuple[np.ndarray, str]:
     """
     Prefer absolute forcing timestamps when available; otherwise fall back to case output taxis.
     """
-    if forcing_time_raw.size >= nhours and nhours > 0:
-        keys = _time_to_hour_keys(forcing_time_raw[:nhours])
-        if np.size(keys)>0:
-            return forcing_time_raw[:nhours], "forcing_nc_time"
+    if nhours > 0 and forcing_time_raw.size >= nhours and _is_datetime_like(forcing_time_raw):
+        return forcing_time_raw[:nhours], "forcing_nc_time"
     return _forcing_time_from_case_output(case, nhours), "case_output_taxis"
 
 
@@ -189,10 +177,7 @@ def _load_forcing_matrix(
             used_vars.append(var)
             features.append(arr.astype(np.float64))
             if forcing_time is None and "time" in var_hourly.coords:
-                var_hourly = var_hourly.convert_calendar("standard", use_cftime=False)
-                var_hourly['time'] = var_hourly.time.dt.floor("h")
-                forcing_time = var_hourly.time.values
-                
+                forcing_time = var_hourly["time"].dt.floor("h").values  # noleap cftime
     finally:
         ds.close()
 

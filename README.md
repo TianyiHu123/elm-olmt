@@ -45,6 +45,7 @@ The CLI is separate from the ensemble workflow manager ([`manage_ensemble.py`](m
 ### Recent updates
 
 - forcing is explicitly converted to no-leap calendar using `convert_calendar('noleap')` and coarsened to hourly with `coarsen(time=2).mean()`
+- **Time collocation simplified:** forcing and observation time axes are both kept on the no-leap `cftime` calendar floored to the hour, so collocation is a direct match on overlapping hourly timestamps (the previous `"%Y-%m-%dT%H"` string-key workaround and the forcing `noleap -> standard` round-trip were removed); leap-day observations are excluded, consistent with the model's 365-day calendar
 - spinup restart path is resolved using `case.dependcase` and `case.finidat` naming, improving compatibility when restart files are sourced from dependent cases
 - spinup variables support aggregated sums through `SPINUP_VAR_SUM` (for example `TOTSOMC`, `TOTSOMN`)
 - anomaly features skip selected state/meteorology variables (`FLDS`, `QBOT`, `WIND`, `PSRF`, `RH`)
@@ -255,7 +256,7 @@ This driver will:
 - rebuild forcing-engineered inputs from each target `case.metdir` using that artifact metadata
 - compute spinup features from restart files (default: **mean across ensemble members**; or choose one member)
 - read observations from a NetCDF file (`--obs`) with their time axis
-- collocate forcing and observations by **overlapping hourly timestamps** before likelihood evaluation
+- collocate forcing and observations by **exact overlapping hourly timestamps** (both axes on the no-leap calendar, floored to the hour) before likelihood evaluation
 - run MCMC using the forcing surrogate forward model
 - write outputs to `./UQ_output/<casename>/MCMC_forcing_output/`:
   - `best_params.txt`

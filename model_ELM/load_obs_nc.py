@@ -40,22 +40,6 @@ def _obs_err_fallback(obs_values: np.ndarray) -> np.ndarray:
     return err
 
 
-def _time_to_hour_keys(time_values: Sequence[Any]) -> np.ndarray:
-    tarr = np.asarray(time_values).reshape(-1)
-    if tarr.size == 0:
-        return np.asarray([], dtype=str)
-    try:
-        tda = xr.DataArray(tarr, dims=("time",), coords={"time": tarr})
-        keys = tda.dt.strftime("%Y-%m-%dT%H").astype(str).values
-        return np.asarray(keys, dtype=str).reshape(-1)
-    except Exception:
-        out = []
-        for value in tarr:
-            sval = str(value).replace(" ", "T")
-            out.append(sval[:13])
-        return np.asarray(out, dtype=str)
-
-
 def load_observations_with_time_from_nc(
     obs_path: str,
     myvars: Sequence[str],
@@ -89,7 +73,7 @@ def load_observations_with_time_from_nc(
             da_obs = _to_hourly(ds[var]).squeeze() * 3600 * 24 # temporally convert unit
             obs_raw = np.asarray(da_obs, dtype=np.float64).reshape(-1)
             if obs_time is None and "time" in da_obs.coords:
-                obs_time = np.asarray(da_obs["time"].values).reshape(-1)
+                obs_time = np.asarray(da_obs["time"].dt.floor("h").values).reshape(-1)
 
             err_var = obs_err_vars.get(var)
             if err_var and err_var in ds.variables:
@@ -146,11 +130,9 @@ def collocate_obs_to_forcing_time(
     """
     ftime = np.asarray(forcing_time).reshape(-1)
     otime = np.asarray(obs_time).reshape(-1)
-    fkeys = _time_to_hour_keys(ftime)
-    okeys = _time_to_hour_keys(otime)
-    obs_idx_by_key = {k: i for i, k in enumerate(okeys)}
-    overlap_idx = np.asarray([i for i, k in enumerate(fkeys) if k in obs_idx_by_key], dtype=np.int64)
-    obs_match_idx = np.asarray([obs_idx_by_key[fkeys[i]] for i in overlap_idx], dtype=np.int64)
+    obs_idx_by_key = {t: i for i, t in enumerate(otime)}
+    overlap_idx = np.asarray([i for i, t in enumerate(ftime) if t in obs_idx_by_key], dtype=np.int64)
+    obs_match_idx = np.asarray([obs_idx_by_key[ftime[i]] for i in overlap_idx], dtype=np.int64)
 
     if overlap_idx.size == 0:
         raise ValueError(
@@ -164,8 +146,8 @@ def collocate_obs_to_forcing_time(
     for v in myvars:
         obs_arr = np.asarray(obs[v], dtype=np.float64).reshape(-1)
         err_arr = np.asarray(obs_err[v], dtype=np.float64).reshape(-1)
-        if obs_arr.size != okeys.size or err_arr.size != okeys.size:
-            n = min(obs_arr.size, err_arr.size, okeys.size)
+        if obs_arr.size != otime.size or err_arr.size != otime.size:
+            n = min(obs_arr.size, err_arr.size, otime.size)
             if n <= 0:
                 raise ValueError(f"No valid observation rows available for variable '{v}'.")
             obs_arr = obs_arr[:n]
