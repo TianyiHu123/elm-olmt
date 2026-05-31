@@ -12,6 +12,66 @@ import numpy as np
 matplotlib.use("Agg")
 
 
+def _extract_elm_baseline_series(case_obj, var):
+    """Return 1-D pre-calibration ELM output from case.output, or None if unavailable."""
+    if not hasattr(case_obj, "output") or not isinstance(case_obj.output, dict):
+        return None
+    if var not in case_obj.output:
+        return None
+    y = np.asarray(case_obj.output[var])
+    if y.ndim == 1:
+        return y.flatten()
+    if y.ndim == 2:
+        if y.shape[1] == 1:
+            return y[:, 0].flatten()
+        print(
+            f"Warning: case.output['{var}'] has {y.shape[1]} ensemble members; "
+            "cannot identify pre-calibration ELM baseline. Skipping baseline overlay."
+        )
+        return None
+    print(f"Warning: unexpected shape for case.output['{var}']: {y.shape}; skipping baseline overlay.")
+    return None
+
+
+def _mask_invalid_output(series):
+    out = np.asarray(series, dtype=float).flatten().copy()
+    out[out < -9000] = np.nan
+    return out
+
+
+def _align_to_plot_length(series, n_plot, context=""):
+    if series is None:
+        return None
+    if len(series) != n_plot:
+        print(
+            f"Warning: baseline length {len(series)} != plot length {n_plot}{context}; "
+            "skipping baseline overlay."
+        )
+        return None
+    return series
+
+
+def _baseline_series_for_plot(case_obj, var, explicit=None):
+    if explicit is not None:
+        return _mask_invalid_output(explicit)
+    series = _extract_elm_baseline_series(case_obj, var)
+    if series is None:
+        return None
+    return _mask_invalid_output(series)
+
+
+def _resolve_cases_by_site(self, sites):
+    case_by_site = {}
+    for s in sites:
+        if s == sites[0]:
+            case_by_site[s] = self
+        else:
+            from model_ELM import ELMcase
+
+            case_by_site[s] = ELMcase(casename=self.casename.replace(self.site, s))
+    return case_by_site
+
+
 def sample_from_prior(pmin, pmax, nsamples):
     nparms = len(pmin)
     # Uniform priors
@@ -62,6 +122,8 @@ def _mcmc_write_outputs(
     run_predict_fn,
     fit_error,
     outdir_name="MCMC_output",
+    baseline_output=None,
+    plot_best_fit=True,
 ):
     # Get summary statistics and best parameters
     n_model_parms = len(ensemble_parms) - nerr_parms
@@ -91,6 +153,9 @@ def _mcmc_write_outputs(
         plt.close()
 
     n_samples = samples.shape[0]
+    case_by_site = _resolve_cases_by_site(self, sites)
+    if baseline_output is None:
+        baseline_output = {}
     for s in sites:
         output_dict = {v: [] for v in myvars}
         for i in range(n_samples):
@@ -103,9 +168,13 @@ def _mcmc_write_outputs(
         for v in myvars:
             output_dict[v] = np.array(output_dict[v])
 
+        best_out = run_predict_fn[s](best_parms)
+
         # Plot predictions with 95% confidence intervals
         outdir_pred = "./UQ_output/" + self.casename.replace(self.site, s) + "/" + outdir_name + "/plots/predictions"
         os.makedirs(outdir_pred, exist_ok=True)
+        case_obj = case_by_site[s]
+        site_baseline = baseline_output.get(s, {})
         for v in myvars:
             lower = np.percentile(output_dict[v], 2.5, axis=0)
             upper = np.percentile(output_dict[v], 97.5, axis=0)
@@ -122,6 +191,21 @@ def _mcmc_write_outputs(
             plt.figure()
             plt.fill_between(x, lower, upper, color="gray", alpha=0.5, label="95% CI")
             plt.plot(x, median, "r", label="Model median")
+            if plot_best_fit:
+                plt.plot(
+                    x,
+                    np.asarray(best_out[v]).flatten(),
+                    color="darkred",
+                    linewidth=2,
+                    label="Best fit",
+                )
+            explicit_baseline = site_baseline.get(v)
+            baseline = _baseline_series_for_plot(case_obj, v, explicit=explicit_baseline)
+            baseline = _align_to_plot_length(
+                baseline, len(median), context=f" for site={s}, var={v}"
+            )
+            if baseline is not None:
+                plt.plot(x, baseline, color="C0", linestyle="--", label="ELM (pre-calibration)")
             plt.errorbar(x, obs_plot, yerr=obs_err_plot, fmt="o", label="Observations")
             plt.xlabel("Time")
             plt.ylabel(v)

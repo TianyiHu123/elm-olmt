@@ -113,6 +113,7 @@ def MCMC_forcing(
     nparms_ensemble = int(self.nparms_ensemble)
     obs = {}
     obs_err = {}
+    baseline_output: Dict[str, Dict[str, np.ndarray]] = {}
     site_data_by_site: Dict[str, Dict[str, Any]] = {}
 
     for s in sites:
@@ -210,6 +211,11 @@ def MCMC_forcing(
             "x_scaler_forcing": x_scaler_forcing,
             "y_scaler_forcing": y_scaler_forcing,
         }
+        if "baseline_output" in fctx:
+            baseline_output[s] = {
+                str(var): np.asarray(fctx["baseline_output"][var]).flatten()
+                for var in fctx["baseline_output"]
+            }
 
     # Add parameters to estimate observation error stddev
     nerr_parms = 0
@@ -305,4 +311,5 @@ def MCMC_forcing(
         run_predict_fn=run_predict_fn,
         fit_error=fit_error,
         outdir_name="MCMC_forcing_output",
+        baseline_output=baseline_output if baseline_output else None,
     )

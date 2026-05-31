@@ -281,6 +281,11 @@ This driver will:
   - `clm_params_best.nc`
   - posterior PDFs, posterior predictive plots, and a corner plot (same post-processing style as `model_ELM/MCMC.py`)
 
+Posterior predictive plots also overlay **pre-calibration ELM** output when available:
+
+- **`MCMC()` (parameter surrogate):** reads `case.output[var]` from the case pickle. The baseline series must have the **same length** as `obs[var]` used in MCMC (same postprocessing/averaging). Use a non-ensemble baseline run saved in the pickle before ensemble postprocessing fills `output` with multiple members.
+- **`MCMC_forcing()`:** collocated hourly `obs` often differ in length from typical annual/monthly `case.output`. Pass pre-aligned baseline fluxes in `forcing_context[site]["baseline_output"]` as a dict `{var: 1d_array}` with one value per collocated time step. If lengths do not match, the plot skips the baseline curve and prints a warning.
+
 #### Single-site example
 
 ```bash
@@ -311,6 +316,7 @@ Notes:
 - If an error variable is not provided (or missing in the file), observation uncertainty defaults to **10% of |obs|**.
 - Missing/invalid observations should be encoded as `-9999` (they are masked during likelihood evaluation).
 - The optimizer prints per-site overlap diagnostics (`forcing rows`, `obs rows`, `overlap rows`, overlap time window).
+- To show the pre-calibration ELM curve on forcing MCMC plots, include `baseline_output` in each site's `forcing_context` entry (see above).
 
 #### Dry-run collocation check (recommended)
 
