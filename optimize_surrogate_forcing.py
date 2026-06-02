@@ -193,6 +193,7 @@ def main() -> int:
         overlap_idx = overlap["forcing_overlap_indices"]
         forcing_overlap = np.asarray(finputs["forcing_engineered"], dtype=float)[overlap_idx, :]
         forcing_time_overlap = np.asarray(finputs["forcing_time"]).reshape(-1)[overlap_idx]
+
         print(
             f"Site '{s}': forcing rows={overlap['n_forcing']}, obs rows={overlap['n_obs']}, "
             f"overlap rows={overlap['n_overlap']}, "
@@ -220,9 +221,11 @@ def main() -> int:
             "y_scaler_forcing": case_obj.y_scaler_forcing,
             "training_layout": dict(case_obj.forcing_surrogate_training),
             "overlap_diagnostics": {
-                k: v for k, v in overlap.items() if k != "forcing_overlap_indices"
+                k: v for k, v in overlap.items() # if k != "forcing_overlap_indices"
             },
+            "baseline_output": case_obj.output,
         }
+        print("baseline output variables are:", forcing_context[s]["baseline_output"].keys())
         print("**************************************************")
     if args.dry_run_collocation:
         print("\nDry-run collocation summary:")
@@ -233,12 +236,16 @@ def main() -> int:
                 f"overlap={info['overlap_rows']}, source={info['forcing_time_source']}, "
                 f"window={info['first_overlap_time']} -> {info['last_overlap_time']}"
             )
+            print(f"Overlap idx are \
+                   {forcing_context[s]['overlap_diagnostics']['forcing_overlap_indices'][[0,-1]]}")
+            print("baseline output variables are:", forcing_context[s]["baseline_output"].keys())
         print("\nDry-run requested; skipping MCMC sampling.")
         return 0
 
     primary.MCMC_forcing(
         myvars=myvars,
         forcing_context=forcing_context,
+        workdir=workdir,
         nwalkers=args.nwalkers,
         nsteps=args.nsteps,
         fit_error=args.fit_error,

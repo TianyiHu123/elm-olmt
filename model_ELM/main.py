@@ -30,9 +30,9 @@ class ELMcase():
 
       if (casename != ''):
         #get case information from pre-existing pkl file:
-        print('Loading '+casename)
+        print('Loading '+casename + ' from ', str(olmtdir))
         #Load case object
-        case_file=open('pklfiles/'+casename+'.pkl','rb')
+        case_file=open(str(olmtdir)+'/pklfiles/'+casename+'.pkl','rb')
         myinstance=pickle.load(case_file)
         for k in myinstance.__dict__.keys():
           setattr(self, k, getattr(myinstance, k))

@@ -24,11 +24,10 @@ def _extract_elm_baseline_series(case_obj, var):
     if y.ndim == 2:
         if y.shape[1] == 1:
             return y[:, 0].flatten()
-        print(
-            f"Warning: case.output['{var}'] has {y.shape[1]} ensemble members; "
-            "cannot identify pre-calibration ELM baseline. Skipping baseline overlay."
-        )
-        return None
+        else:
+            print(
+            f"Warning: case.output['{var}'] has {y.shape[1]} ensemble members; Use ensemble mean for ELM baseline")
+            return y.mean(axis=1)
     print(f"Warning: unexpected shape for case.output['{var}']: {y.shape}; skipping baseline overlay.")
     return None
 
@@ -60,7 +59,7 @@ def _baseline_series_for_plot(case_obj, var, explicit=None):
     return _mask_invalid_output(series)
 
 
-def _resolve_cases_by_site(self, sites):
+def _resolve_cases_by_site(self, sites, olmtdir):
     case_by_site = {}
     for s in sites:
         if s == sites[0]:
@@ -68,7 +67,7 @@ def _resolve_cases_by_site(self, sites):
         else:
             from model_ELM import ELMcase
 
-            case_by_site[s] = ELMcase(casename=self.casename.replace(self.site, s))
+            case_by_site[s] = ELMcase(casename=self.casename.replace(self.site, s), olmtdir=olmtdir)
     return case_by_site
 
 
@@ -124,7 +123,8 @@ def _mcmc_write_outputs(
     outdir_name="MCMC_output",
     baseline_output=None,
     plot_best_fit=True,
-):
+    olmtdir="/global/u1/t/tianyihu/elm-olmt", 
+    ):
     # Get summary statistics and best parameters
     n_model_parms = len(ensemble_parms) - nerr_parms
     best_idx = np.argmax(log_probs)
@@ -153,7 +153,7 @@ def _mcmc_write_outputs(
         plt.close()
 
     n_samples = samples.shape[0]
-    case_by_site = _resolve_cases_by_site(self, sites)
+    case_by_site = _resolve_cases_by_site(self, sites, olmtdir)
     if baseline_output is None:
         baseline_output = {}
     for s in sites:
@@ -188,16 +188,17 @@ def _mcmc_write_outputs(
                 err_idx = ensemble_parms.index("sigma_" + v)
                 obs_err_plot[obs_err_plot > -9000] = best_err_parms[err_idx - n_model_parms]
 
-            plt.figure()
-            plt.fill_between(x, lower, upper, color="gray", alpha=0.5, label="95% CI")
-            plt.plot(x, median, "r", label="Model median")
+            plt.figure(figsize=(15,3))
+            plt.fill_between(x, lower, upper, color="gray", alpha=0.3, label="95% CI")
+            plt.plot(x, median, color="red", linewidth=0.5, alpha=0.5, label="Model median")
             if plot_best_fit:
                 plt.plot(
                     x,
                     np.asarray(best_out[v]).flatten(),
                     color="darkred",
-                    linewidth=2,
+                    linewidth=0.5,
                     label="Best fit",
+                    alpha=0.5,
                 )
             explicit_baseline = site_baseline.get(v)
             baseline = _baseline_series_for_plot(case_obj, v, explicit=explicit_baseline)
@@ -205,8 +206,10 @@ def _mcmc_write_outputs(
                 baseline, len(median), context=f" for site={s}, var={v}"
             )
             if baseline is not None:
-                plt.plot(x, baseline, color="C0", linestyle="--", label="ELM (pre-calibration)")
-            plt.errorbar(x, obs_plot, yerr=obs_err_plot, fmt="o", label="Observations")
+                plt.plot(x, baseline, color="darkgreen", linewidth=0.5, linestyle="--", label="ELM (pre-calibration)",alpha=0.5,)
+            # plt.errorbar(x, obs_plot, yerr=obs_err_plot, fmt="o", label="Observations")
+            plt.plot(x, obs_plot, color="blue", linewidth=0.5, label="Observations", alpha=0.5)
+            plt.fill_between(x, obs_plot-obs_err_plot, obs_plot+obs_err_plot, color="blue", alpha=0.3)
             plt.xlabel("Time")
             plt.ylabel(v)
             plt.title(f"Posterior predictive for {v}")

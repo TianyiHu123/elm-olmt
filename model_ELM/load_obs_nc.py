@@ -197,6 +197,11 @@ def load_observations_with_time_from_nc(
             obs_aligned[invalid] = -9999.0
             err_aligned[invalid] = -9999.0
 
+            if var != "NEE":
+                print(f"Set negative flux to -9999 for {var}")
+                err_aligned[obs_aligned < 0] = -9999.0
+                obs_aligned[obs_aligned < 0] = -9999.0
+
             invalid_err = ~np.isfinite(err_aligned) | (err_aligned <= 0)
             fallback = _obs_err_fallback(obs_aligned)
             err_aligned[invalid_err & (obs_aligned > -9000)] = fallback[invalid_err & (obs_aligned > -9000)]
@@ -204,6 +209,8 @@ def load_observations_with_time_from_nc(
 
             obs[var] = obs_aligned
             obs_err[var] = err_aligned
+
+            print(f"Valid timesteps of {var} observation are ", np.count_nonzero(obs[var] > 0))
 
     if obs_time is None:
         raise ValueError(f"Observation file {path} does not expose a usable time axis.")

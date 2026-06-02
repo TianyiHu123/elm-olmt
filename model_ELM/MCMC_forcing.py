@@ -102,10 +102,12 @@ def MCMC_forcing(
     self,
     myvars,
     forcing_context,
+    workdir,
     nwalkers=32,
     nsteps=100,
     fit_error=True,
     n_processes: Optional[int] = None,
+    
 ):
     sites = self.all_sites
     pmin = np.array(self.ensemble_pmin, dtype=float)
@@ -212,9 +214,11 @@ def MCMC_forcing(
             "y_scaler_forcing": y_scaler_forcing,
         }
         if "baseline_output" in fctx:
+            for var in fctx["baseline_output"]:
+                print(fctx["baseline_output"][var].shape)
             baseline_output[s] = {
-                str(var): np.asarray(fctx["baseline_output"][var]).flatten()
-                for var in fctx["baseline_output"]
+                str(var): np.asarray(fctx["baseline_output"][var].mean(axis=1)).flatten()[fctx['overlap_diagnostics']['forcing_overlap_indices']]
+                for var in fctx["baseline_output"] if var != "taxis"
             }
 
     # Add parameters to estimate observation error stddev
@@ -293,9 +297,13 @@ def MCMC_forcing(
             ),
         )
         sampler.run_mcmc(p0, nsteps, progress=True)
-
+    
+    print("run_mcmc done")
     samples = sampler.get_chain(discard=nsteps // 5, thin=5, flat=True)
+    print("Flat samples size ", samples.shape)
     log_probs = sampler.get_log_prob(discard=nsteps // 5, thin=5, flat=True)
+    print("Log probability size ", log_probs.shape)
+    
     n_model_parms = len(ensemble_parms) - nerr_parms
     _mcmc_write_outputs(
         self,
@@ -312,4 +320,5 @@ def MCMC_forcing(
         fit_error=fit_error,
         outdir_name="MCMC_forcing_output",
         baseline_output=baseline_output if baseline_output else None,
+        olmtdir=workdir
     )
