@@ -46,7 +46,7 @@ def create_samples(self,sampletype='monte_carlo',nsamples=100,parm_list=''):
     os.system('mkdir -p parm_samples')
     np.savetxt(self.ensemble_file,np.transpose(self.samples))
 
-def create_ensemble_script(self, walltime=24):
+def create_ensemble_script(self, walltime=12):
     #Create the PBS script we will submit to run the ensemble
     os.chdir(self.casedir)
     #Get the LD_LIBRARY_PATH from software environment
@@ -62,7 +62,7 @@ def create_ensemble_script(self, walltime=24):
     if (self.queue == 'debug'):
         walltime=2
     if ('pm-cpu' in self.machine):
-        myfile.write('#SBATCH --time='+str(walltime)+'00:00\n')
+        myfile.write('#SBATCH --time='+str(walltime)+':00:00\n')
         myfile.write('#SBATCH --constraint=cpu\n')
         myfile.write('#SBATCH --qos='+self.queue+'\n')
         myfile.write('#SBATCH --account='+self.project+'\n')

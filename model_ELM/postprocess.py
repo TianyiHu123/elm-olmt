@@ -196,7 +196,7 @@ def plot_adspinup_ensemble(self, plotvars=[]):
         data_ens = xr.concat(data_var[v], dim="ensemble")
         print(data_ens.shape)
         
-        percentile_values = np.nanpercentile(data_ens.values, percentiles, axis=0)
+        # percentile_values = np.nanpercentile(data_ens.values, percentiles, axis=0)
         # -- Plotting --
         plt.figure(figsize=(10, 5))
         # for i, p in enumerate(percentiles):
@@ -223,6 +223,7 @@ def plot_adspinup_ensemble(self, plotvars=[]):
         plt.legend(frameon=False)
         plt.grid(True)
         os.system('mkdir -p '+self.rundir+'/../diagnostics')
+        print(self.rundir)
         plt.savefig(self.rundir+'/../diagnostics/ad_spinup_ens_plot_'+v+'.png')
         
 

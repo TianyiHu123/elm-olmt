@@ -124,7 +124,7 @@ class ELMcase():
     else:
       self.ensemble_file = ensemble_file
       self.samples = np.transpose(smart_loadtxt(ensemble_file))
-      self.nsamples = np.shape(self.samples)[0]
+      self.nsamples = nsamples #np.shape(self.samples)[1]
     self.np_ensemble=np_ensemble
     create_ensemble_script(self)
     #Variables for surrogate model
