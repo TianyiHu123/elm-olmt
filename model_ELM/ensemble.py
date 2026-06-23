@@ -32,19 +32,54 @@ def read_parm_list(self, parm_list=''):
 #    parms_def=[]
 #    for p in self.ensemble_parms:
 #        parms_def.append(parm_file[p][
-    
 
-#Create the samples file
-def create_samples(self,sampletype='monte_carlo',nsamples=100,parm_list=''):
-    self.nsamples=nsamples
-    self.samples=np.zeros((self.nparms_ensemble,self.nsamples), float)
-    for i in range(0,self.nsamples):
-        for j in range(0,self.nparms_ensemble):
-            self.samples[j,i] = self.ensemble_pmin[j]+(self.ensemble_pmax[j]- \
-                    self.ensemble_pmin[j])*np.random.rand(1)
-    self.ensemble_file = 'parm_samples/mcsamples_'+self.caseid+'_'+str(self.nsamples)+'.txt'
-    os.system('mkdir -p parm_samples')
-    np.savetxt(self.ensemble_file,np.transpose(self.samples))
+# #Create the samples file
+# def create_samples(self,sampletype='monte_carlo',nsamples=100,parm_list=''):
+#     self.nsamples=nsamples
+#     self.samples=np.zeros((self.nparms_ensemble,self.nsamples), float)
+#     for i in range(0,self.nsamples):
+#         for j in range(0,self.nparms_ensemble):
+#             # Tianyi added for logrithm sampling
+#             soil_decomp_params = ['k_l1','k_l2','k_l3','k_s1','k_s1','k_s2','k_s3','k_s4','k_frag']
+#             if self.ensemble_parms[j] in soil_decomp_params:
+#                 print(f"Log sampling for parameter {self.ensemble_parms[j]}")
+#                 self.samples[j,i] = 10 ** ( np.random.uniform(np.log10(self.ensemble_pmin[j]), 
+#                                                               np.log10(self.ensemble_pmax[j]), size=1) )
+#             else:
+#                 self.samples[j,i] = self.ensemble_pmin[j]+(self.ensemble_pmax[j]- \
+#                                                            self.ensemble_pmin[j])*np.random.rand(1)
+#     self.ensemble_file = 'parm_samples/mcsamples_'+self.caseid+'_'+str(self.nsamples)+'.txt'
+#     os.system('mkdir -p parm_samples')
+#     np.savetxt(self.ensemble_file,np.transpose(self.samples))
+    
+#Create the samples file  
+def create_samples(self, sampletype='monte_carlo', nsamples=100, parm_list=''):
+    self.nsamples = nsamples
+    self.samples = np.zeros((self.nparms_ensemble, self.nsamples), float)
+    
+    soil_decomp_params = {'k_l1', 'k_l2', 'k_l3', 'k_s1', 'k_s2', 'k_s3', 'k_s4', 'k_frag'}
+    
+    # We only need to loop through the parameters (j). 
+    # NumPy will handle the (i) loop natively by generating all samples at once.
+    for j in range(self.nparms_ensemble):
+        p_name = self.ensemble_parms[j]
+        p_min = self.ensemble_pmin[j]
+        p_max = self.ensemble_pmax[j]
+        if p_name in soil_decomp_params:
+            print(f"Log sampling for parameter: {p_name}")
+            # Generate all nsamples for this parameter in one vectorized step
+            log_min = np.log10(p_min)
+            log_max = np.log10(p_max)
+            self.samples[j, :] = 10 ** np.random.uniform(log_min, log_max, size=self.nsamples)
+        else:
+            # Use np.random.uniform directly instead of manual math
+            self.samples[j, :] = np.random.uniform(p_min, p_max, size=self.nsamples)
+    # File handling
+    self.ensemble_file = f"parm_samples/mcsamples_{self.caseid}_{self.nsamples}.txt"
+    # Cross-platform way to create a directory without crashing if it already exists
+    os.makedirs('parm_samples', exist_ok=True)
+    # .T is the NumPy shorthand for np.transpose()
+    np.savetxt(self.ensemble_file, self.samples.T)
 
 def create_ensemble_script(self, walltime=12):
     #Create the PBS script we will submit to run the ensemble

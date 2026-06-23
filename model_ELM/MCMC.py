@@ -152,6 +152,9 @@ def _mcmc_write_outputs(
         plt.savefig(f"{outdir}/{ensemble_parms[i]}.png")
         plt.close()
 
+        # Tianyi Hu added to output samples
+        np.savetxt(f"{outdir}/{ensemble_parms[i]}.txt", samples[:, i])
+
     n_samples = samples.shape[0]
     case_by_site = _resolve_cases_by_site(self, sites, olmtdir)
     if baseline_output is None:

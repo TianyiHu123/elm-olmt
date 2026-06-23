@@ -155,11 +155,13 @@ def load_observations_with_time_from_nc(
     obs_time: Optional[np.ndarray] = None
 
     with xr.open_dataset(path) as ds:
-        if "time" in ds.coords:
+        if ("time" in ds.coords) and ds['time'].dt.calendar != "noleap":
             try:
                 ds = ds.convert_calendar("noleap", dim="time")
             except Exception:
                 pass
+        else:
+            print(f"Calendar is already {ds['time'].dt.calendar}")
 
         for var in myvars:
             print("Load Obs variable:", var, "from ", path)
@@ -169,9 +171,10 @@ def load_observations_with_time_from_nc(
 
             da_obs = _convert_obs_to_daily(_to_hourly(ds[var]).squeeze(), var)
             obs_raw = np.asarray(da_obs, dtype=np.float64).reshape(-1)
+
             if obs_time is None and "time" in da_obs.coords:
                 obs_time = np.asarray(_floor_hour(da_obs["time"]).values).reshape(-1)
-
+            
             err_var = obs_err_vars.get(var)
             if err_var and err_var in ds.variables:
                 print("Obs error variable exist:", err_var)
@@ -234,6 +237,8 @@ def collocate_obs_to_forcing_time(
     """
     ftime = np.asarray(forcing_time).reshape(-1)
     otime = np.asarray(obs_time).reshape(-1)
+    print(f"Forcing     time steps: {ftime.shape} from {ftime[0]} to {ftime[-1]}")
+    print(f"Observation time steps: {otime.shape} from {otime[0]} to {otime[-1]}")
     obs_idx_by_key = {t: i for i, t in enumerate(otime)}
     overlap_idx = np.asarray([i for i, t in enumerate(ftime) if t in obs_idx_by_key], dtype=np.int64)
     obs_match_idx = np.asarray([obs_idx_by_key[ftime[i]] for i in overlap_idx], dtype=np.int64)
