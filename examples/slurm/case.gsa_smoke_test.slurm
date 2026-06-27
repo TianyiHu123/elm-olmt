@@ -1,0 +1,43 @@
+#!/bin/bash -e
+#
+# Run lightweight GSA smoke test on Perlmutter.
+# Default smoke script location: ~/gsa_smoke_test.py
+#
+#SBATCH --time=00:30:00
+#SBATCH --constraint=cpu
+#SBATCH --qos=shared
+#SBATCH --account=m4803
+#SBATCH -J gsa_smoke
+#SBATCH --nodes=1
+#SBATCH --ntasks=1
+#SBATCH --cpus-per-task=4
+#SBATCH --mem=16GB
+#SBATCH --output=gsa_smoke_%j.out
+#SBATCH --error=gsa_smoke_%j.err
+
+scontrol show job "$SLURM_JOB_ID"
+
+# --- User settings ---
+OLMT_ROOT="/global/u1/t/tianyihu/elm-olmt"
+CONDA_ENV="OLMT_pm_Tianyi"
+SMOKE_SCRIPT="$HOME/gsa_smoke_test.py"
+
+# Optional handoff for script-level parallel settings.
+export SLURM_GSA_NJOBS="${SLURM_CPUS_PER_TASK:-1}"
+
+# Avoid BLAS/OpenMP oversubscription.
+export OMP_NUM_THREADS=1
+export OPENBLAS_NUM_THREADS=1
+export MKL_NUM_THREADS=1
+export NUMEXPR_NUM_THREADS=1
+export BLIS_NUM_THREADS=1
+
+if [ ! -f "$SMOKE_SCRIPT" ]; then
+  echo "Missing smoke script: $SMOKE_SCRIPT"
+  echo "Create it first, then resubmit."
+  exit 2
+fi
+
+cd "$OLMT_ROOT"
+conda activate "$CONDA_ENV"
+python "$SMOKE_SCRIPT"

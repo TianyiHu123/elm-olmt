@@ -243,6 +243,41 @@ python train_surrogate_forcing.py \
 
 Stats JSON files are written under **`/path/to/scratch/UQ_output/<CASE_NAME>/surrogate_forcing/`** (or under `--run-name` when you use it). Aggregate those JSON files offline to summarize R² distributions.
 
+### Perlmutter GSA smoke test (new GSA functions)
+
+Use this quick flow to validate:
+- given-data PAWN (`GSA_given_data_pawn`)
+- forcing-fixed, params+spinup Sobol (`GSA_forcing_timeseries`)
+
+1) Copy the smoke script to your home directory and edit placeholders:
+
+```bash
+cd /global/u1/t/tianyihu/elm-olmt
+cp examples/gsa_smoke_test.py ~/gsa_smoke_test.py
+```
+
+Edit in `~/gsa_smoke_test.py`:
+- `repo`
+- `case_name`
+- `test_vars` (recommend 1-2 vars for smoke test)
+
+2) Interactive run:
+
+```bash
+cd /global/u1/t/tianyihu/elm-olmt
+conda activate OLMT_pm_Tianyi
+python ~/gsa_smoke_test.py
+```
+
+3) Batch run (Slurm):
+
+```bash
+cd /global/u1/t/tianyihu/elm-olmt
+sbatch examples/slurm/case.gsa_smoke_test.slurm
+```
+
+The script writes outputs to `~/gsa_test_output/<case_name>/` by default and prints shape/finite-value checks for quick pass/fail.
+
 ## Forcing Surrogate MCMC Optimization
 
 After training a forcing surrogate (which saves `surrogate_forcing_artifacts.pkl` under `UQ_output/<case-or-run-name>/surrogate_forcing/`), you can optimize (calibrate) parameters with MCMC against observations stored in a NetCDF file. Observations are collocated to the surrogate's hourly time axis before likelihood evaluation.
