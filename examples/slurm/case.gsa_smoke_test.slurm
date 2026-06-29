@@ -1,6 +1,6 @@
 #!/bin/bash -e
 #
-# Run lightweight GSA smoke test on Perlmutter.
+# Run lightweight aggregated-metric GSA smoke test on Perlmutter.
 # Default smoke script location: ~/gsa_smoke_test.py
 #
 #SBATCH --time=02:00:00
@@ -23,6 +23,7 @@ CONDA_ENV="OLMT_pm_Tianyi"
 SMOKE_SCRIPT="/pscratch/sd/t/tianyihu/elm-olmt/gsa_smoke_test.py"
 
 # Optional handoff for script-level parallel settings.
+# The smoke script prints per-metric checks (mean/accumulated/std or user-selected subset).
 export SLURM_GSA_NJOBS="${SLURM_CPUS_PER_TASK:-1}"
 
 # Avoid BLAS/OpenMP oversubscription.

@@ -23,6 +23,7 @@ case_name = "JERC_ppe1_I20TRCNPRDCTCBC"
 surrogate_artifact = "/pscratch/sd/t/tianyihu/E3SM_out/SOIL_project/UQ_output/multisite_test1/surrogate_forcing"
 test_vars = ["SR"]  # Keep 1-2 vars for quick smoke test
 saltelli_n = 256
+metrics = ["mean", "accumulated", "std"]
 
 # Optional: use Slurm-provided CPU count
 n_jobs = int(os.environ.get("SLURM_GSA_NJOBS", "2"))
@@ -43,6 +44,7 @@ print(f"Output dir: {home_out}")
 case.GSA_given_data_pawn(
     test_vars,
     include_spinup=False,
+    metrics=metrics,
     n_jobs=n_jobs,
     output_dir=str(home_out / "given_data_pawn_no_spinup"),
 )
@@ -53,6 +55,7 @@ case.GSA_given_data_pawn(
     test_vars,
     include_spinup=True,
     spinup_vars=["TOTSOMC", "TOTSOMN"],
+    metrics=metrics,
     n_jobs=n_jobs,
     output_dir=str(home_out / "given_data_pawn_with_spinup"),
 )
@@ -63,6 +66,7 @@ case.GSA_forcing_timeseries(
     test_vars,
     n_saltelli=saltelli_n,
     spinup_vars=["TOTSOMC", "TOTSOMN"],
+    metrics=metrics,
     n_jobs=n_jobs,
     output_dir=str(home_out / "forcing_sobol"),
     artifact_path=surrogate_artifact,
@@ -73,13 +77,28 @@ print("Forcing Sobol done")
 # 4) Minimal checks
 for v in test_vars:
     if hasattr(case, "sens_pawn") and v in case.sens_pawn:
-        arr = np.asarray(case.sens_pawn[v])
-        print(f"PAWN {v} shape={arr.shape}, finite={np.isfinite(arr).mean():.3f}")
+        for metric in metrics:
+            if metric not in case.sens_pawn[v]:
+                continue
+            arr = np.asarray(case.sens_pawn[v][metric])
+            print(
+                f"PAWN {v} [{metric}] shape={arr.shape}, ndim={arr.ndim}, finite={np.isfinite(arr).mean():.3f}"
+            )
     if hasattr(case, "sens_forcing_main") and v in case.sens_forcing_main:
-        arr = np.asarray(case.sens_forcing_main[v])
-        print(f"Forcing S1 {v} shape={arr.shape}, finite={np.isfinite(arr).mean():.3f}")
+        for metric in metrics:
+            if metric not in case.sens_forcing_main[v]:
+                continue
+            arr = np.asarray(case.sens_forcing_main[v][metric])
+            print(
+                f"Forcing S1 {v} [{metric}] shape={arr.shape}, ndim={arr.ndim}, finite={np.isfinite(arr).mean():.3f}"
+            )
     if hasattr(case, "sens_forcing_tot") and v in case.sens_forcing_tot:
-        arr = np.asarray(case.sens_forcing_tot[v])
-        print(f"Forcing ST {v} shape={arr.shape}, finite={np.isfinite(arr).mean():.3f}")
+        for metric in metrics:
+            if metric not in case.sens_forcing_tot[v]:
+                continue
+            arr = np.asarray(case.sens_forcing_tot[v][metric])
+            print(
+                f"Forcing ST {v} [{metric}] shape={arr.shape}, ndim={arr.ndim}, finite={np.isfinite(arr).mean():.3f}"
+            )
 
 print("Smoke test complete.")

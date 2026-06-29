@@ -25,6 +25,9 @@ except ImportError:  # pragma: no cover
     )
 
 
+SUPPORTED_AGG_METRICS = ("mean", "accumulated", "std")
+
+
 def _normalize_var_list(myvars):
     if isinstance(myvars, str):
         return [v.strip() for v in myvars.split(",") if v.strip() and v.strip() != "taxis"]
@@ -67,6 +70,46 @@ def _collect_spinup_matrix(case, spinup_vars):
     return spinup
 
 
+def _normalize_metric_list(metrics):
+    if metrics is None:
+        requested = list(SUPPORTED_AGG_METRICS)
+    elif isinstance(metrics, str):
+        requested = [m.strip().lower() for m in metrics.split(",") if m.strip()]
+    else:
+        requested = [str(m).strip().lower() for m in metrics if str(m).strip()]
+
+    unknown = sorted(set(requested).difference(SUPPORTED_AGG_METRICS))
+    if unknown:
+        known = ", ".join(SUPPORTED_AGG_METRICS)
+        raise ValueError(f"Unknown metrics {unknown}. Supported metrics are: {known}.")
+
+    selected = []
+    requested_set = set(requested)
+    for metric in SUPPORTED_AGG_METRICS:
+        if metric in requested_set:
+            selected.append(metric)
+    if not selected:
+        known = ", ".join(SUPPORTED_AGG_METRICS)
+        raise ValueError(f"No valid metrics requested. Supported metrics are: {known}.")
+    return selected
+
+
+def _aggregate_outputs(y2d, metrics):
+    y2d_arr = np.asarray(y2d, dtype=np.float64)
+    if y2d_arr.ndim != 2:
+        raise ValueError(f"Expected 2D response matrix, got shape {y2d_arr.shape}.")
+
+    out = {}
+    for metric in metrics:
+        if metric == "mean":
+            out[metric] = np.nanmean(y2d_arr, axis=1, keepdims=True)
+        elif metric == "accumulated":
+            out[metric] = np.nansum(y2d_arr, axis=1, keepdims=True)
+        elif metric == "std":
+            out[metric] = np.nanstd(y2d_arr, axis=1, keepdims=True)
+    return out
+
+
 def _parallel_map(work, indices, n_jobs):
     if int(n_jobs) <= 1:
         return [work(i) for i in indices]
@@ -98,6 +141,35 @@ def _run_pawn_timeseries(problem, x, y2d, n_jobs=1, pawn_s=10):
     return np.column_stack(rows)
 
 
+def _run_pawn_aggregated(problem, x, y2d, metrics, n_jobs=1, pawn_s=10):
+    aggregated = _aggregate_outputs(y2d, metrics)
+
+    def _worker(metric):
+        out = pawn.analyze(problem, x, aggregated[metric][:, 0], S=pawn_s, print_to_console=False)
+        return metric, np.asarray(out["median"], dtype=np.float64)
+
+    rows = _parallel_map(_worker, metrics, n_jobs)
+    return {metric: values for metric, values in rows}
+
+
+def _run_sobol_aggregated(problem, y2d, metrics, n_jobs=1):
+    aggregated = _aggregate_outputs(y2d, metrics)
+
+    def _worker(metric):
+        si = sobol.analyze(problem, aggregated[metric][:, 0], print_to_console=False)
+        s1 = np.asarray(si["S1"], dtype=np.float64)
+        st = np.asarray(si["ST"], dtype=np.float64)
+        return metric, s1, st
+
+    rows = _parallel_map(_worker, metrics, n_jobs)
+    s1 = {}
+    st = {}
+    for metric, s1_val, st_val in rows:
+        s1[metric] = s1_val
+        st[metric] = st_val
+    return s1, st
+
+
 def _plot_heatmap(matrix, row_labels, title, fname):
     arr = np.asarray(matrix, dtype=np.float64)
     fig_h = max(4.0, min(12.0, 0.35 * arr.shape[0] + 2.0))
@@ -110,6 +182,22 @@ def _plot_heatmap(matrix, row_labels, title, fname):
     ax.set_yticks(np.arange(len(row_labels)))
     ax.set_yticklabels(row_labels)
     fig.colorbar(im, ax=ax, label="Sensitivity")
+    fig.tight_layout()
+    fig.savefig(fname, bbox_inches="tight")
+    plt.close(fig)
+
+
+def _plot_metric_bars(values, row_labels, title, fname):
+    arr = np.asarray(values, dtype=np.float64).ravel()
+    fig_h = max(4.0, min(12.0, 0.35 * len(row_labels) + 2.0))
+    fig, ax = plt.subplots(figsize=(10, fig_h))
+    ypos = np.arange(len(row_labels))
+    ax.barh(ypos, arr, color="tab:blue")
+    ax.set_yticks(ypos)
+    ax.set_yticklabels(row_labels)
+    ax.set_xlabel("Sensitivity")
+    ax.set_ylabel("Input")
+    ax.set_title(title)
     fig.tight_layout()
     fig.savefig(fname, bbox_inches="tight")
     plt.close(fig)
@@ -138,11 +226,13 @@ def GSA_given_data_pawn(
     myvars,
     include_spinup=False,
     spinup_vars=None,
+    metrics=None,
     n_jobs=1,
     pawn_s=10,
     output_dir=None,
 ):
     myvars_list = _normalize_var_list(myvars)
+    metric_list = _normalize_metric_list(metrics)
     x = np.asarray(self.samples, dtype=np.float64).transpose()
     names = _base_param_labels(self)
 
@@ -157,13 +247,21 @@ def GSA_given_data_pawn(
 
     self.sens_pawn = {}
     self.sens_pawn_names = names
+    self.sens_pawn_metrics = metric_list
     for v in myvars_list:
         y2d = np.asarray(self.output[v], dtype=np.float64).transpose()
         if y2d.shape[0] != x.shape[0]:
             raise ValueError(
                 f"Sample mismatch for {v}: X has {x.shape[0]} rows, output has {y2d.shape[0]} rows."
             )
-        self.sens_pawn[v] = _run_pawn_timeseries(problem, x, y2d, n_jobs=n_jobs, pawn_s=int(pawn_s))
+        self.sens_pawn[v] = _run_pawn_aggregated(
+            problem,
+            x,
+            y2d,
+            metric_list,
+            n_jobs=n_jobs,
+            pawn_s=int(pawn_s),
+        )
 
     plot_GSA_pawn(self, myvars_list, output_dir=output_dir)
 
@@ -173,6 +271,7 @@ def GSA_forcing_timeseries(
     myvars,
     n_saltelli=1024,
     spinup_vars=None,
+    metrics=None,
     n_jobs=1,
     output_dir=None,
     artifact_path=None,
@@ -185,6 +284,7 @@ def GSA_forcing_timeseries(
         )
 
     myvars_list = _normalize_var_list(myvars)
+    metric_list = _normalize_metric_list(metrics)
     spinup_names = list(DEFAULT_SPINUP_VARS if spinup_vars is None else spinup_vars)
     forcing_ctx = build_forcing_inference_inputs(self, self.forcing_surrogate_training, spinup_member=1)
     forcing_fixed = np.asarray(forcing_ctx["forcing_engineered"], dtype=np.float64)
@@ -221,9 +321,13 @@ def GSA_forcing_timeseries(
     self.sens_forcing_main = {}
     self.sens_forcing_tot = {}
     self.sens_forcing_names = all_names
+    self.sens_forcing_metrics = metric_list
     for v in myvars_list:
-        self.sens_forcing_main[v], self.sens_forcing_tot[v] = _run_sobol_timeseries(
-            problem, pred[v], n_jobs=n_jobs
+        self.sens_forcing_main[v], self.sens_forcing_tot[v] = _run_sobol_aggregated(
+            problem,
+            pred[v],
+            metric_list,
+            n_jobs=n_jobs,
         )
 
     plot_GSA_forcing(self, myvars_list, output_dir=output_dir)
@@ -247,20 +351,29 @@ def plot_GSA_pawn(self, myvars, output_dir=None):
     outdir = _resolve_output_dir(self, output_dir)
     myvars_list = _normalize_var_list(myvars)
     names = list(getattr(self, "sens_pawn_names", _base_param_labels(self)))
+    metrics = _normalize_metric_list(getattr(self, "sens_pawn_metrics", None))
     for v in myvars_list:
         if v not in self.sens_pawn:
             continue
-        pawn_median = np.asarray(self.sens_pawn[v], dtype=np.float64)
+        metric_payload = {}
+        metric_written = []
+        for metric in metrics:
+            if metric not in self.sens_pawn[v]:
+                continue
+            values = np.asarray(self.sens_pawn[v][metric], dtype=np.float64)
+            metric_payload[f"median_{metric}"] = values
+            metric_written.append(metric)
+            _plot_metric_bars(
+                values,
+                names,
+                f"PAWN median index ({metric}) - {v}",
+                os.path.join(outdir, f"pawn_median_{v}_{metric}.png"),
+            )
         np.savez(
             os.path.join(outdir, f"pawn_{v}.npz"),
-            median=pawn_median,
             names=np.asarray(names, dtype=object),
-        )
-        _plot_heatmap(
-            pawn_median,
-            names,
-            f"PAWN median index - {v}",
-            os.path.join(outdir, f"pawn_median_{v}.png"),
+            metrics=np.asarray(metric_written, dtype=object),
+            **metric_payload,
         )
 
 
@@ -268,26 +381,35 @@ def plot_GSA_forcing(self, myvars, output_dir=None):
     outdir = _resolve_output_dir(self, output_dir)
     myvars_list = _normalize_var_list(myvars)
     names = list(getattr(self, "sens_forcing_names", _base_param_labels(self)))
+    metrics = _normalize_metric_list(getattr(self, "sens_forcing_metrics", None))
     for v in myvars_list:
         if v not in self.sens_forcing_main:
             continue
-        main = np.asarray(self.sens_forcing_main[v], dtype=np.float64)
-        tot = np.asarray(self.sens_forcing_tot[v], dtype=np.float64)
+        metric_payload = {}
+        metric_written = []
+        for metric in metrics:
+            if metric not in self.sens_forcing_main[v] or metric not in self.sens_forcing_tot[v]:
+                continue
+            main = np.asarray(self.sens_forcing_main[v][metric], dtype=np.float64)
+            tot = np.asarray(self.sens_forcing_tot[v][metric], dtype=np.float64)
+            metric_payload[f"S1_{metric}"] = main
+            metric_payload[f"ST_{metric}"] = tot
+            metric_written.append(metric)
+            _plot_metric_bars(
+                main,
+                names,
+                f"Forcing surrogate Sobol S1 ({metric}) - {v}",
+                os.path.join(outdir, f"forcing_sens_main_{v}_{metric}.png"),
+            )
+            _plot_metric_bars(
+                tot,
+                names,
+                f"Forcing surrogate Sobol ST ({metric}) - {v}",
+                os.path.join(outdir, f"forcing_sens_tot_{v}_{metric}.png"),
+            )
         np.savez(
             os.path.join(outdir, f"forcing_sobol_{v}.npz"),
-            S1=main,
-            ST=tot,
             names=np.asarray(names, dtype=object),
-        )
-        _plot_heatmap(
-            main,
-            names,
-            f"Forcing surrogate Sobol S1 - {v}",
-            os.path.join(outdir, f"forcing_sens_main_{v}.png"),
-        )
-        _plot_heatmap(
-            tot,
-            names,
-            f"Forcing surrogate Sobol ST - {v}",
-            os.path.join(outdir, f"forcing_sens_tot_{v}.png"),
+            metrics=np.asarray(metric_written, dtype=object),
+            **metric_payload,
         )

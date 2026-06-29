@@ -246,8 +246,8 @@ Stats JSON files are written under **`/path/to/scratch/UQ_output/<CASE_NAME>/sur
 ### Perlmutter GSA smoke test (new GSA functions)
 
 Use this quick flow to validate:
-- given-data PAWN (`GSA_given_data_pawn`)
-- forcing-fixed, params+spinup Sobol (`GSA_forcing_timeseries`)
+- given-data PAWN on aggregated metrics (`GSA_given_data_pawn`)
+- forcing-fixed, params+spinup Sobol on aggregated metrics (`GSA_forcing_timeseries`)
 
 1) Copy the smoke script to your home directory and edit placeholders:
 
@@ -260,6 +260,7 @@ Edit in `~/gsa_smoke_test.py`:
 - `repo`
 - `case_name`
 - `test_vars` (recommend 1-2 vars for smoke test)
+- `metrics` (for example `["mean"]` or `["accumulated", "std"]`)
 
 2) Interactive run:
 
@@ -276,7 +277,7 @@ cd /global/u1/t/tianyihu/elm-olmt
 sbatch examples/slurm/case.gsa_smoke_test.slurm
 ```
 
-The script writes outputs to `~/gsa_test_output/<case_name>/` by default and prints shape/finite-value checks for quick pass/fail.
+The script writes outputs to `~/gsa_test_output/<case_name>/` by default and prints metric-by-metric shape/finite-value checks for quick pass/fail.
 
 ## Forcing Surrogate MCMC Optimization
 
