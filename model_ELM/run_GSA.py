@@ -196,6 +196,10 @@ def GSA_forcing_timeseries(
     all_names = _base_param_labels(self) + [f"spinup_{v}" for v in spinup_names]
 
     problem = {"num_vars": int(all_bounds.shape[0]), "names": all_names, "bounds": all_bounds.tolist()}
+    print("GSA forcing problem is:")
+    print(problem)
+    print()
+    
     samples = saltelli.sample(problem, int(n_saltelli))
     n_param = int(self.nparms_ensemble)
     n_eval = samples.shape[0]

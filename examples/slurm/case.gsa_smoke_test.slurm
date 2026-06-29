@@ -3,7 +3,7 @@
 # Run lightweight GSA smoke test on Perlmutter.
 # Default smoke script location: ~/gsa_smoke_test.py
 #
-#SBATCH --time=00:30:00
+#SBATCH --time=02:00:00
 #SBATCH --constraint=cpu
 #SBATCH --qos=shared
 #SBATCH --account=m4803
@@ -11,16 +11,16 @@
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=4
-#SBATCH --mem=16GB
+#SBATCH --mem=4GB
 #SBATCH --output=gsa_smoke_%j.out
 #SBATCH --error=gsa_smoke_%j.err
 
 scontrol show job "$SLURM_JOB_ID"
 
 # --- User settings ---
-OLMT_ROOT="/global/u1/t/tianyihu/elm-olmt"
+OLMT_ROOT="/pscratch/sd/t/tianyihu/elm-olmt"
 CONDA_ENV="OLMT_pm_Tianyi"
-SMOKE_SCRIPT="$HOME/gsa_smoke_test.py"
+SMOKE_SCRIPT="/pscratch/sd/t/tianyihu/elm-olmt/gsa_smoke_test.py"
 
 # Optional handoff for script-level parallel settings.
 export SLURM_GSA_NJOBS="${SLURM_CPUS_PER_TASK:-1}"

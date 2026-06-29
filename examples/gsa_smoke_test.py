@@ -18,15 +18,18 @@ import numpy as np
 
 
 # User edits
-repo = Path("/global/homes/<first_letter>/<username>/elm-olmt")
-case_name = "<CASE_NAME>"
-test_vars = ["GPP"]  # Keep 1-2 vars for quick smoke test
+repo = Path("/pscratch/sd/t/tianyihu/elm-olmt")
+case_name = "JERC_ppe1_I20TRCNPRDCTCBC"
+surrogate_artifact = "/pscratch/sd/t/tianyihu/E3SM_out/SOIL_project/UQ_output/multisite_test1/surrogate_forcing"
+test_vars = ["SR"]  # Keep 1-2 vars for quick smoke test
 saltelli_n = 256
 
 # Optional: use Slurm-provided CPU count
 n_jobs = int(os.environ.get("SLURM_GSA_NJOBS", "2"))
 
-home_out = Path.home() / "gsa_test_output" / case_name
+# home_out = Path.home() / "gsa_test_output" / case_name
+# home_out.mkdir(parents=True, exist_ok=True)
+home_out = Path("/pscratch/sd/t/tianyihu/E3SM_out/SOIL_project/GSA/smktest")
 home_out.mkdir(parents=True, exist_ok=True)
 
 pkl_path = repo / "pklfiles" / f"{case_name}.pkl"
@@ -40,7 +43,7 @@ print(f"Output dir: {home_out}")
 case.GSA_given_data_pawn(
     test_vars,
     include_spinup=False,
-    n_jobs=1,
+    n_jobs=n_jobs,
     output_dir=str(home_out / "given_data_pawn_no_spinup"),
 )
 print("PAWN no-spinup done")
@@ -62,7 +65,9 @@ case.GSA_forcing_timeseries(
     spinup_vars=["TOTSOMC", "TOTSOMN"],
     n_jobs=n_jobs,
     output_dir=str(home_out / "forcing_sobol"),
+    artifact_path=surrogate_artifact,
 )
+
 print("Forcing Sobol done")
 
 # 4) Minimal checks
