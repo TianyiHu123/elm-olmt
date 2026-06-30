@@ -48,7 +48,7 @@ def _base_param_labels(case):
     labels = []
     for i, p in enumerate(case.ensemble_parms):
         if hasattr(case, "ensemble_pfts") and len(case.ensemble_pfts) > i:
-            labels.append(f"{p}{case.ensemble_pfts[i]}")
+            labels.append(f"{p}_pft{case.ensemble_pfts[i]}")
         else:
             labels.append(str(p))
     return labels

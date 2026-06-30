@@ -3,7 +3,7 @@
 # Run lightweight aggregated-metric GSA smoke test on Perlmutter.
 # Default smoke script location: ~/gsa_smoke_test.py
 #
-#SBATCH --time=02:00:00
+#SBATCH --time=01:00:00
 #SBATCH --constraint=cpu
 #SBATCH --qos=shared
 #SBATCH --account=m4803
@@ -11,7 +11,7 @@
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=4
-#SBATCH --mem=4GB
+#SBATCH --mem=8GB
 #SBATCH --output=gsa_smoke_%j.out
 #SBATCH --error=gsa_smoke_%j.err
 

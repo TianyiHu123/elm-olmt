@@ -41,14 +41,14 @@ print(f"Loaded case: {case_name}")
 print(f"Output dir: {home_out}")
 
 # 1) Given-data PAWN (no spinup)
-case.GSA_given_data_pawn(
-    test_vars,
-    include_spinup=False,
-    metrics=metrics,
-    n_jobs=n_jobs,
-    output_dir=str(home_out / "given_data_pawn_no_spinup"),
-)
-print("PAWN no-spinup done")
+#case.GSA_given_data_pawn(
+#    test_vars,
+#    include_spinup=False,
+#    metrics=metrics,
+#    n_jobs=n_jobs,
+#    output_dir=str(home_out / "given_data_pawn_no_spinup"),
+#)
+#print("PAWN no-spinup done")
 
 # 2) Given-data PAWN (with spinup)
 case.GSA_given_data_pawn(
