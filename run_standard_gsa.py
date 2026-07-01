@@ -15,6 +15,7 @@ import numpy as np
 
 from model_ELM.run_GSA import (
     SUPPORTED_AGG_METRICS,
+    SUPPORTED_EXECUTORS,
     _normalize_metric_list,
     _normalize_var_list,
 )
@@ -68,6 +69,36 @@ def _build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--pawn-s", type=int, default=10, help="PAWN conditioning intervals for existing mode")
     parser.add_argument("--seed", type=int, default=42, help="Random seed for reproducibility")
     parser.add_argument("--n-jobs", type=int, default=1, help="Parallel workers for PAWN/Sobol analysis")
+    parser.add_argument(
+        "--forcing-executor",
+        default="thread",
+        choices=list(SUPPORTED_EXECUTORS),
+        help="Executor for forcing surrogate sample evaluation",
+    )
+    parser.add_argument(
+        "--sobol-executor",
+        default="thread",
+        choices=list(SUPPORTED_EXECUTORS),
+        help="Executor for Sobol analysis over aggregated metrics",
+    )
+    parser.add_argument(
+        "--forcing-chunk-size",
+        type=int,
+        default=None,
+        help="Optional chunk size for forcing surrogate sample evaluation",
+    )
+    parser.add_argument(
+        "--pawn-executor",
+        default="thread",
+        choices=list(SUPPORTED_EXECUTORS),
+        help="Executor for PAWN aggregated metric analysis",
+    )
+    parser.add_argument(
+        "--pawn-var-executor",
+        default="serial",
+        choices=list(SUPPORTED_EXECUTORS),
+        help="Executor for parallelizing PAWN across output variables",
+    )
     parser.add_argument("--workdir", default=".", help="OLMT root directory containing pklfiles/")
     return parser
 
@@ -101,6 +132,8 @@ def _run_existing_output_pawn(
     spinup_vars: List[str],
     pawn_s: int,
     n_jobs: int,
+    pawn_executor: str,
+    pawn_var_executor: str,
     outdir: Path,
 ) -> Dict[str, Any]:
     case.GSA_given_data_pawn(
@@ -110,6 +143,8 @@ def _run_existing_output_pawn(
         metrics=metrics,
         n_jobs=int(n_jobs),
         pawn_s=int(pawn_s),
+        executor=str(pawn_executor),
+        var_executor=str(pawn_var_executor),
         output_dir=str(outdir),
     )
 
@@ -142,6 +177,9 @@ def _run_surrogate_sobol(
     spinup_vars: List[str],
     n_saltelli: int,
     n_jobs: int,
+    forcing_executor: str,
+    sobol_executor: str,
+    forcing_chunk_size: int | None,
     artifact_path: str,
     outdir: Path,
 ) -> Dict[str, Any]:
@@ -151,6 +189,9 @@ def _run_surrogate_sobol(
         spinup_vars=spinup_vars,
         metrics=metrics,
         n_jobs=int(n_jobs),
+        executor=str(forcing_executor),
+        sobol_executor=str(sobol_executor),
+        chunk_size=forcing_chunk_size,
         output_dir=str(outdir),
         artifact_path=artifact_path,
     )
@@ -220,8 +261,14 @@ def main() -> int:
         "saltelli_n": int(args.saltelli_n),
         "seed": int(args.seed),
         "n_jobs": int(args.n_jobs),
+        "forcing_executor": str(args.forcing_executor),
+        "sobol_executor": str(args.sobol_executor),
+        "forcing_chunk_size": None if args.forcing_chunk_size is None else int(args.forcing_chunk_size),
+        "pawn_executor": str(args.pawn_executor),
+        "pawn_var_executor": str(args.pawn_var_executor),
         "output_root": str(out_root),
         "supported_metrics": list(SUPPORTED_AGG_METRICS),
+        "supported_executors": list(SUPPORTED_EXECUTORS),
     }
 
     if args.mode in ("existing", "both"):
@@ -234,6 +281,8 @@ def main() -> int:
                 spinup_vars=spinup_vars,
                 pawn_s=int(args.pawn_s),
                 n_jobs=int(args.n_jobs),
+                pawn_executor=str(args.pawn_executor),
+                pawn_var_executor=str(args.pawn_var_executor),
                 outdir=existing_out,
             )
         except Exception as exc:
@@ -249,6 +298,9 @@ def main() -> int:
                 spinup_vars=spinup_vars,
                 n_saltelli=int(args.saltelli_n),
                 n_jobs=int(args.n_jobs),
+                forcing_executor=str(args.forcing_executor),
+                sobol_executor=str(args.sobol_executor),
+                forcing_chunk_size=args.forcing_chunk_size,
                 artifact_path=str(args.artifact),
                 outdir=surrogate_out,
             )

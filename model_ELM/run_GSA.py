@@ -1,5 +1,6 @@
 import os
-from concurrent.futures import ThreadPoolExecutor
+import time
+from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 
 import matplotlib
 import matplotlib.pyplot as plt
@@ -26,6 +27,12 @@ except ImportError:  # pragma: no cover
 
 
 SUPPORTED_AGG_METRICS = ("mean", "accumulated", "std")
+SUPPORTED_EXECUTORS = ("serial", "thread", "process")
+
+try:
+    import resource
+except ImportError:  # pragma: no cover
+    resource = None
 
 
 def _normalize_var_list(myvars):
@@ -94,6 +101,59 @@ def _normalize_metric_list(metrics):
     return selected
 
 
+def _normalize_executor_mode(executor):
+    mode = "thread" if executor is None else str(executor).strip().lower()
+    if mode not in SUPPORTED_EXECUTORS:
+        known = ", ".join(SUPPORTED_EXECUTORS)
+        raise ValueError(f"Unknown executor mode '{executor}'. Supported modes are: {known}.")
+    return mode
+
+
+def _analysis_executor_mode(executor, context):
+    mode = _normalize_executor_mode(executor)
+    if mode == "process":
+        print(f"[GSA] {context}: process mode not supported for this path; using thread.")
+        return "thread"
+    return mode
+
+
+def _resolve_worker_count(n_jobs, n_items):
+    n_items_int = int(n_items)
+    if n_items_int <= 0:
+        return 1
+    requested = max(1, int(n_jobs))
+    cpu = os.cpu_count() or 1
+    return max(1, min(requested, cpu, n_items_int))
+
+
+def _resolve_chunk_size(chunk_size, total_items, workers):
+    total = max(1, int(total_items))
+    if chunk_size is None:
+        return max(1, min(256, int(np.ceil(total / max(1, int(workers))))))
+    return max(1, int(chunk_size))
+
+
+def _current_rss_gb():
+    if resource is None:
+        return None
+    usage = resource.getrusage(resource.RUSAGE_SELF)
+    rss = float(usage.ru_maxrss)
+    if os.name == "posix":
+        rss /= 1024.0 * 1024.0
+    else:  # pragma: no cover
+        rss /= 1024.0 * 1024.0 * 1024.0
+    return rss
+
+
+def _log_checkpoint(label, start_time):
+    elapsed = time.perf_counter() - float(start_time)
+    rss_gb = _current_rss_gb()
+    if rss_gb is None:
+        print(f"[GSA] {label}: elapsed={elapsed:.2f}s")
+    else:
+        print(f"[GSA] {label}: elapsed={elapsed:.2f}s rss_max={rss_gb:.2f}GB")
+
+
 def _aggregate_outputs(y2d, metrics):
     y2d_arr = np.asarray(y2d, dtype=np.float64)
     if y2d_arr.ndim != 2:
@@ -110,50 +170,57 @@ def _aggregate_outputs(y2d, metrics):
     return out
 
 
-def _parallel_map(work, indices, n_jobs):
-    if int(n_jobs) <= 1:
+def _parallel_map(work, indices, n_jobs, executor="thread"):
+    mode = _normalize_executor_mode(executor)
+    if mode == "serial" or int(n_jobs) <= 1:
         return [work(i) for i in indices]
-    with ThreadPoolExecutor(max_workers=int(n_jobs)) as exe:
+    max_workers = _resolve_worker_count(n_jobs, len(indices))
+    executor_cls = ProcessPoolExecutor if mode == "process" else ThreadPoolExecutor
+    with executor_cls(max_workers=max_workers) as exe:
         return list(exe.map(work, indices))
 
 
-def _run_sobol_timeseries(problem, y2d, n_jobs=1):
+def _run_sobol_timeseries(problem, y2d, n_jobs=1, executor="thread"):
     ntime = y2d.shape[1]
+    mode = _analysis_executor_mode(executor, "_run_sobol_timeseries")
 
     def _worker(i):
         si = sobol.analyze(problem, y2d[:, i], print_to_console=False)
         return np.asarray(si["S1"], dtype=np.float64), np.asarray(si["ST"], dtype=np.float64)
 
-    rows = _parallel_map(_worker, range(ntime), n_jobs)
+    rows = _parallel_map(_worker, range(ntime), n_jobs, executor=mode)
     s1 = np.column_stack([r[0] for r in rows])
     st = np.column_stack([r[1] for r in rows])
     return s1, st
 
 
-def _run_pawn_timeseries(problem, x, y2d, n_jobs=1, pawn_s=10):
+def _run_pawn_timeseries(problem, x, y2d, n_jobs=1, pawn_s=10, executor="thread"):
     ntime = y2d.shape[1]
+    mode = _analysis_executor_mode(executor, "_run_pawn_timeseries")
 
     def _worker(i):
         out = pawn.analyze(problem, x, y2d[:, i], S=pawn_s, print_to_console=False)
         return np.asarray(out["median"], dtype=np.float64)
 
-    rows = _parallel_map(_worker, range(ntime), n_jobs)
+    rows = _parallel_map(_worker, range(ntime), n_jobs, executor=mode)
     return np.column_stack(rows)
 
 
-def _run_pawn_aggregated(problem, x, y2d, metrics, n_jobs=1, pawn_s=10):
+def _run_pawn_aggregated(problem, x, y2d, metrics, n_jobs=1, pawn_s=10, executor="thread"):
     aggregated = _aggregate_outputs(y2d, metrics)
+    mode = _analysis_executor_mode(executor, "_run_pawn_aggregated")
 
     def _worker(metric):
         out = pawn.analyze(problem, x, aggregated[metric][:, 0], S=pawn_s, print_to_console=False)
         return metric, np.asarray(out["median"], dtype=np.float64)
 
-    rows = _parallel_map(_worker, metrics, n_jobs)
+    rows = _parallel_map(_worker, metrics, n_jobs, executor=mode)
     return {metric: values for metric, values in rows}
 
 
-def _run_sobol_aggregated(problem, y2d, metrics, n_jobs=1):
+def _run_sobol_aggregated(problem, y2d, metrics, n_jobs=1, executor="thread"):
     aggregated = _aggregate_outputs(y2d, metrics)
+    mode = _analysis_executor_mode(executor, "_run_sobol_aggregated")
 
     def _worker(metric):
         si = sobol.analyze(problem, aggregated[metric][:, 0], print_to_console=False)
@@ -161,13 +228,62 @@ def _run_sobol_aggregated(problem, y2d, metrics, n_jobs=1):
         st = np.asarray(si["ST"], dtype=np.float64)
         return metric, s1, st
 
-    rows = _parallel_map(_worker, metrics, n_jobs)
+    rows = _parallel_map(_worker, metrics, n_jobs, executor=mode)
     s1 = {}
     st = {}
     for metric, s1_val, st_val in rows:
         s1[metric] = s1_val
         st[metric] = st_val
     return s1, st
+
+
+def _run_sobol_from_metric_vectors(problem, metric_vectors, metrics, n_jobs=1, executor="thread"):
+    mode = _analysis_executor_mode(executor, "_run_sobol_from_metric_vectors")
+
+    def _worker(metric):
+        si = sobol.analyze(problem, np.asarray(metric_vectors[metric], dtype=np.float64), print_to_console=False)
+        return (
+            metric,
+            np.asarray(si["S1"], dtype=np.float64),
+            np.asarray(si["ST"], dtype=np.float64),
+        )
+
+    rows = _parallel_map(_worker, metrics, n_jobs, executor=mode)
+    s1 = {}
+    st = {}
+    for metric, s1_val, st_val in rows:
+        s1[metric] = s1_val
+        st[metric] = st_val
+    return s1, st
+
+
+def _forcing_eval_chunk(self, samples_chunk, myvars_list, forcing_fixed, n_param, metrics):
+    chunk_payload = {v: {m: [] for m in metrics} for v in myvars_list}
+    samples_arr = np.asarray(samples_chunk, dtype=np.float64)
+    for row in samples_arr:
+        parm_i = row[:n_param]
+        spinup_i = row[n_param:]
+        out_i = self.run_surrogate_forcing(
+            parm_i,
+            myvars_list,
+            forcing_engineered=forcing_fixed,
+            spinup=spinup_i,
+        )
+        for v in myvars_list:
+            arr = np.asarray(out_i[v], dtype=np.float64).ravel()
+            if "mean" in metrics:
+                chunk_payload[v]["mean"].append(float(np.nanmean(arr)))
+            if "accumulated" in metrics:
+                chunk_payload[v]["accumulated"].append(float(np.nansum(arr)))
+            if "std" in metrics:
+                chunk_payload[v]["std"].append(float(np.nanstd(arr)))
+    return chunk_payload
+
+
+def _merge_metric_payload(global_payload, chunk_payload):
+    for v in chunk_payload:
+        for metric, values in chunk_payload[v].items():
+            global_payload[v][metric].extend(values)
 
 
 def _plot_heatmap(matrix, row_labels, title, fname):
@@ -203,7 +319,7 @@ def _plot_metric_bars(values, row_labels, title, fname):
     plt.close(fig)
 
 
-def GSA(self, myvars, n_saltelli=8192, n_jobs=1, output_dir=None):
+def GSA(self, myvars, n_saltelli=8192, n_jobs=1, output_dir=None, executor="thread"):
     pbounds = _base_param_bounds(self)
     problem = {"num_vars": int(self.nparms_ensemble), "names": list(self.ensemble_parms), "bounds": pbounds}
     psamples = saltelli.sample(problem, int(n_saltelli))
@@ -215,7 +331,9 @@ def GSA(self, myvars, n_saltelli=8192, n_jobs=1, output_dir=None):
 
     for v in myvars_list:
         y2d = np.asarray(surrogate_output[v], dtype=np.float64)
-        self.sens_main[v], self.sens_tot[v] = _run_sobol_timeseries(problem, y2d, n_jobs=n_jobs)
+        self.sens_main[v], self.sens_tot[v] = _run_sobol_timeseries(
+            problem, y2d, n_jobs=n_jobs, executor=executor
+        )
 
     if output_dir is not None:
         plot_GSA(self, myvars_list, output_dir=output_dir)
@@ -229,12 +347,20 @@ def GSA_given_data_pawn(
     metrics=None,
     n_jobs=1,
     pawn_s=10,
+    executor="thread",
+    var_executor=None,
     output_dir=None,
 ):
+    t0 = time.perf_counter()
     myvars_list = _normalize_var_list(myvars)
     metric_list = _normalize_metric_list(metrics)
     x = np.asarray(self.samples, dtype=np.float64).transpose()
     names = _base_param_labels(self)
+    if int(n_jobs) > 1:
+        print(
+            f"[GSA] PAWN parallelism note: {len(myvars_list)} vars x {len(metric_list)} metrics; "
+            "speedup scales mainly when multiple vars are requested."
+        )
 
     if include_spinup:
         spinup_names = list(DEFAULT_SPINUP_VARS if spinup_vars is None else spinup_vars)
@@ -248,20 +374,32 @@ def GSA_given_data_pawn(
     self.sens_pawn = {}
     self.sens_pawn_names = names
     self.sens_pawn_metrics = metric_list
-    for v in myvars_list:
+    var_mode = _normalize_executor_mode("serial" if var_executor is None else var_executor)
+    if var_mode == "process":
+        print("[GSA] GSA_given_data_pawn var_executor=process not supported; using thread.")
+        var_mode = "thread"
+    analysis_mode = _analysis_executor_mode(executor, "GSA_given_data_pawn")
+
+    def _var_worker(v):
         y2d = np.asarray(self.output[v], dtype=np.float64).transpose()
         if y2d.shape[0] != x.shape[0]:
             raise ValueError(
                 f"Sample mismatch for {v}: X has {x.shape[0]} rows, output has {y2d.shape[0]} rows."
             )
-        self.sens_pawn[v] = _run_pawn_aggregated(
+        return v, _run_pawn_aggregated(
             problem,
             x,
             y2d,
             metric_list,
             n_jobs=n_jobs,
             pawn_s=int(pawn_s),
+            executor=analysis_mode,
         )
+
+    rows = _parallel_map(_var_worker, myvars_list, n_jobs=n_jobs, executor=var_mode)
+    for v, payload in rows:
+        self.sens_pawn[v] = payload
+    _log_checkpoint("PAWN analysis complete", t0)
 
     plot_GSA_pawn(self, myvars_list, output_dir=output_dir)
 
@@ -273,6 +411,9 @@ def GSA_forcing_timeseries(
     spinup_vars=None,
     metrics=None,
     n_jobs=1,
+    executor="thread",
+    sobol_executor=None,
+    chunk_size=None,
     output_dir=None,
     artifact_path=None,
 ):
@@ -299,36 +440,90 @@ def GSA_forcing_timeseries(
     print("GSA forcing problem is:")
     print(problem)
     print()
-    
+    t0 = time.perf_counter()
+    run_mode = _normalize_executor_mode(executor)
+    sobol_mode = _normalize_executor_mode(run_mode if sobol_executor is None else sobol_executor)
+
     samples = saltelli.sample(problem, int(n_saltelli))
     n_param = int(self.nparms_ensemble)
     n_eval = samples.shape[0]
-    ntime = forcing_fixed.shape[0]
+    worker_count = _resolve_worker_count(n_jobs, n_eval)
+    eff_chunk = _resolve_chunk_size(chunk_size, n_eval, worker_count)
+    _log_checkpoint("forcing setup complete", t0)
 
-    pred = {v: np.zeros((n_eval, ntime), dtype=np.float64) for v in myvars_list}
-    for i in range(n_eval):
-        parm_i = samples[i, :n_param]
-        spinup_i = samples[i, n_param:]
-        out_i = self.run_surrogate_forcing(
-            parm_i,
-            myvars_list,
-            forcing_engineered=forcing_fixed,
-            spinup=spinup_i,
-        )
-        for v in myvars_list:
-            pred[v][i, :] = np.asarray(out_i[v], dtype=np.float64).ravel()
+    aggregated_values = {v: {m: [] for m in metric_list} for v in myvars_list}
+    if run_mode == "serial" or worker_count <= 1:
+        for start in range(0, n_eval, eff_chunk):
+            stop = min(start + eff_chunk, n_eval)
+            chunk_payload = _forcing_eval_chunk(
+                self,
+                samples[start:stop, :],
+                myvars_list,
+                forcing_fixed,
+                n_param,
+                metric_list,
+            )
+            _merge_metric_payload(aggregated_values, chunk_payload)
+    else:
+        executor_cls = ProcessPoolExecutor if run_mode == "process" else ThreadPoolExecutor
+        try:
+            with executor_cls(max_workers=worker_count) as pool:
+                futures = []
+                for start in range(0, n_eval, eff_chunk):
+                    stop = min(start + eff_chunk, n_eval)
+                    futures.append(
+                        pool.submit(
+                            _forcing_eval_chunk,
+                            self,
+                            samples[start:stop, :],
+                            myvars_list,
+                            forcing_fixed,
+                            n_param,
+                            metric_list,
+                        )
+                    )
+                for fut in futures:
+                    _merge_metric_payload(aggregated_values, fut.result())
+        except Exception:
+            if run_mode != "process":
+                raise
+            print("[GSA] forcing process mode failed; retrying with thread executor.")
+            with ThreadPoolExecutor(max_workers=worker_count) as pool:
+                futures = []
+                for start in range(0, n_eval, eff_chunk):
+                    stop = min(start + eff_chunk, n_eval)
+                    futures.append(
+                        pool.submit(
+                            _forcing_eval_chunk,
+                            self,
+                            samples[start:stop, :],
+                            myvars_list,
+                            forcing_fixed,
+                            n_param,
+                            metric_list,
+                        )
+                    )
+                for fut in futures:
+                    _merge_metric_payload(aggregated_values, fut.result())
+    _log_checkpoint("forcing sample evaluation complete", t0)
 
     self.sens_forcing_main = {}
     self.sens_forcing_tot = {}
     self.sens_forcing_names = all_names
     self.sens_forcing_metrics = metric_list
     for v in myvars_list:
-        self.sens_forcing_main[v], self.sens_forcing_tot[v] = _run_sobol_aggregated(
+        metric_vectors = {
+            metric: np.asarray(aggregated_values[v][metric], dtype=np.float64)
+            for metric in metric_list
+        }
+        self.sens_forcing_main[v], self.sens_forcing_tot[v] = _run_sobol_from_metric_vectors(
             problem,
-            pred[v],
+            metric_vectors,
             metric_list,
             n_jobs=n_jobs,
+            executor=sobol_mode,
         )
+    _log_checkpoint("forcing Sobol analysis complete", t0)
 
     plot_GSA_forcing(self, myvars_list, output_dir=output_dir)
 

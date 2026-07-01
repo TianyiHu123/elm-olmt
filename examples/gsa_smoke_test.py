@@ -27,6 +27,11 @@ metrics = ["mean", "accumulated", "std"]
 
 # Optional: use Slurm-provided CPU count
 n_jobs = int(os.environ.get("SLURM_GSA_NJOBS", "2"))
+pawn_executor = os.environ.get("SLURM_GSA_PAWN_EXECUTOR", "thread")
+pawn_var_executor = os.environ.get("SLURM_GSA_PAWN_VAR_EXECUTOR", "serial")
+forcing_executor = os.environ.get("SLURM_GSA_FORCING_EXECUTOR", "thread")
+sobol_executor = os.environ.get("SLURM_GSA_SOBOL_EXECUTOR", "thread")
+forcing_chunk_size = int(os.environ.get("SLURM_GSA_CHUNK", "128"))
 
 # home_out = Path.home() / "gsa_test_output" / case_name
 # home_out.mkdir(parents=True, exist_ok=True)
@@ -57,6 +62,8 @@ case.GSA_given_data_pawn(
     spinup_vars=["TOTSOMC", "TOTSOMN"],
     metrics=metrics,
     n_jobs=n_jobs,
+    executor=pawn_executor,
+    var_executor=pawn_var_executor,
     output_dir=str(home_out / "given_data_pawn_with_spinup"),
 )
 print("PAWN with-spinup done")
@@ -68,6 +75,9 @@ case.GSA_forcing_timeseries(
     spinup_vars=["TOTSOMC", "TOTSOMN"],
     metrics=metrics,
     n_jobs=n_jobs,
+    executor=forcing_executor,
+    sobol_executor=sobol_executor,
+    chunk_size=forcing_chunk_size,
     output_dir=str(home_out / "forcing_sobol"),
     artifact_path=surrogate_artifact,
 )

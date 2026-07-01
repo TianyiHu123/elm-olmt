@@ -29,6 +29,11 @@ saltelli_n = 256
 
 # Optional: use Slurm-provided CPU count
 n_jobs = int(os.environ.get("SLURM_GSA_NJOBS", "2"))
+forcing_executor = os.environ.get("SLURM_GSA_FORCING_EXECUTOR", "thread")
+sobol_executor = os.environ.get("SLURM_GSA_SOBOL_EXECUTOR", "thread")
+pawn_executor = os.environ.get("SLURM_GSA_PAWN_EXECUTOR", "thread")
+pawn_var_executor = os.environ.get("SLURM_GSA_PAWN_VAR_EXECUTOR", "serial")
+forcing_chunk_size = int(os.environ.get("SLURM_GSA_CHUNK", "128"))
 
 home_out = Path("/pscratch/sd/t/tianyihu/E3SM_out/SOIL_project/GSA/standard_smktest")
 home_out.mkdir(parents=True, exist_ok=True)
@@ -52,6 +57,16 @@ cmd = [
     str(saltelli_n),
     "--n-jobs",
     str(n_jobs),
+    "--forcing-executor",
+    forcing_executor,
+    "--sobol-executor",
+    sobol_executor,
+    "--pawn-executor",
+    pawn_executor,
+    "--pawn-var-executor",
+    pawn_var_executor,
+    "--forcing-chunk-size",
+    str(forcing_chunk_size),
     "--output-folder",
     str(home_out),
 ]

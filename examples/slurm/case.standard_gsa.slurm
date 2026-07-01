@@ -28,6 +28,11 @@ GSA_OUTPUT_DIR="/pscratch/sd/t/tianyihu/E3SM_out/SOIL_project/GSA/standard"
 SALTELLI_N=1024
 SPINUP_VARS="TOTSOMC,TOTSOMN"
 SEED=42
+FORCING_EXECUTOR="thread"   # thread | process | serial
+SOBOL_EXECUTOR="thread"     # thread | process | serial (process falls back to thread in analysis helpers)
+PAWN_EXECUTOR="thread"      # thread | process | serial (process falls back to thread in analysis helpers)
+PAWN_VAR_EXECUTOR="serial"  # serial | thread | process (process falls back to thread)
+FORCING_CHUNK_SIZE=128      # tune upward for throughput, downward for memory spikes
 
 # Match joblib/SALib parallelism to Slurm allocation.
 N_JOBS="${SLURM_CPUS_ON_NODE:-${SLURM_CPUS_PER_TASK:-1}}"
@@ -53,6 +58,11 @@ CMD=(
   --saltelli-n "$SALTELLI_N"
   --seed "$SEED"
   --n-jobs "$N_JOBS"
+  --forcing-executor "$FORCING_EXECUTOR"
+  --sobol-executor "$SOBOL_EXECUTOR"
+  --pawn-executor "$PAWN_EXECUTOR"
+  --pawn-var-executor "$PAWN_VAR_EXECUTOR"
+  --forcing-chunk-size "$FORCING_CHUNK_SIZE"
   --output-folder "$GSA_OUTPUT_DIR"
 )
 
@@ -64,3 +74,7 @@ echo "Running standard GSA:"
 printf ' %q' "${CMD[@]}"
 echo
 "${CMD[@]}"
+
+# Memory guidance:
+# - If job nears OOM, lower SALTELLI_N and/or FORCING_CHUNK_SIZE.
+# - If CPU utilization is low, increase --cpus-per-task and keep N_JOBS aligned.
