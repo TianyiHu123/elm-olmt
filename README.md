@@ -243,6 +243,92 @@ python train_surrogate_forcing.py \
 
 Stats JSON files are written under **`/path/to/scratch/UQ_output/<CASE_NAME>/surrogate_forcing/`** (or under `--run-name` when you use it). Aggregate those JSON files offline to summarize R² distributions.
 
+### Perlmutter GSA smoke test (new GSA functions)
+
+Use this quick flow to validate:
+- given-data PAWN on aggregated metrics (`GSA_given_data_pawn`)
+- forcing-fixed, params+spinup Sobol on aggregated metrics (`GSA_forcing_timeseries`)
+
+1) Copy the smoke script to your home directory and edit placeholders:
+
+```bash
+cd /global/u1/t/tianyihu/elm-olmt
+cp examples/gsa_smoke_test.py ~/gsa_smoke_test.py
+```
+
+Edit in `~/gsa_smoke_test.py`:
+- `repo`
+- `case_name`
+- `test_vars` (recommend 1-2 vars for smoke test)
+- `metrics` (for example `["mean"]` or `["accumulated", "std"]`)
+
+2) Interactive run:
+
+```bash
+cd /global/u1/t/tianyihu/elm-olmt
+conda activate OLMT_pm_Tianyi
+python ~/gsa_smoke_test.py
+```
+
+3) Batch run (Slurm):
+
+```bash
+cd /global/u1/t/tianyihu/elm-olmt
+sbatch examples/slurm/case.gsa_smoke_test.slurm
+```
+
+The script writes outputs to `~/gsa_test_output/<case_name>/` by default and prints metric-by-metric shape/finite-value checks for quick pass/fail.
+
+### Standard GSA CLI (`run_standard_gsa.py`)
+
+Use this CLI to run standardized GSA with a unified interface for:
+- existing model outputs using PAWN (`--mode existing`)
+- forcing surrogate outputs using Sobol (`--mode surrogate`)
+- both (`--mode both`)
+
+By default, spinup variables are included (`--spinup-vars TOTSOMC,TOTSOMN`).
+
+Required inputs:
+- `--case`
+- `--vars`
+- `--mode`
+- `--artifact` when mode is `surrogate` or `both`
+
+Outputs are written under:
+- `<output-folder>/existing/` (existing-output PAWN files, e.g. `pawn_<var>.npz`)
+- `<output-folder>/surrogate/` (forcing-surrogate Sobol files)
+- `<output-folder>/run_metadata.json` (run configuration + summary)
+
+If `--output-folder` is omitted, the default is `./UQ_output/<case>/GSA/`.
+
+Single command example:
+
+```bash
+python run_standard_gsa.py \
+  --workdir /global/u1/t/tianyihu/elm-olmt \
+  --case JERC_ppe1_I20TRCNPRDCTCBC \
+  --vars SR \
+  --metrics mean,accumulated,std \
+  --mode both \
+  --artifact /pscratch/sd/t/tianyihu/E3SM_out/SOIL_project/UQ_output/multisite_test1/surrogate_forcing \
+  --spinup-vars TOTSOMC,TOTSOMN \
+  --saltelli-n 1024 \
+  --n-jobs 8 \
+  --output-folder /pscratch/sd/t/tianyihu/E3SM_out/SOIL_project/GSA/standard
+```
+
+Smoke test helper:
+
+```bash
+python examples/gsa_standard_smoke_test.py
+```
+
+Batch (Slurm) example:
+
+```bash
+sbatch examples/slurm/case.standard_gsa.slurm
+```
+
 ## Forcing Surrogate MCMC Optimization
 
 After training a forcing surrogate (which saves `surrogate_forcing_artifacts.pkl` under `UQ_output/<case-or-run-name>/surrogate_forcing/`), you can optimize (calibrate) parameters with MCMC against observations stored in a NetCDF file. Observations are collocated to the surrogate's hourly time axis before likelihood evaluation.
