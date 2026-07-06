@@ -25,6 +25,9 @@ CONDA_ENV="OLMT_pm_Tianyi"
 
 # Single case or comma-separated multi-case list
 CASE_LIST="ABBY_ens3_I20TRCNPRDCTCBC"
+# Optional: dedicated spinup case(s) used to read met_startyear/met_endyear_spinup.
+# If unset, CASE_LIST is used.
+SPINUP_CASE_LIST="${CASE_LIST}"
 
 OUTPUTDIR="/pscratch/sd/t/tianyihu/E3SM_out/SOIL_project"
 RUN_NAME="spinup_surrogate_test"
@@ -61,6 +64,7 @@ N_JOBS="${SLURM_CPUS_ON_NODE:-${SLURM_CPUS_PER_TASK:-1}}"
 python train_surrogate_spinup.py \
   --workdir "${OLMT_ROOT}" \
   --case "${CASE_LIST}" \
+  --spinup-case "${SPINUP_CASE_LIST}" \
   --spinup-vars "${SPINUP_VARS}" \
   --surface-vars "${SURFACE_VARS}" \
   --forcing-vars "${FORCING_VARS}" \

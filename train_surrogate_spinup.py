@@ -18,6 +18,15 @@ def _build_parser() -> argparse.ArgumentParser:
         help="Case name or comma-separated case list (pklfiles/<case>.pkl)",
     )
     parser.add_argument(
+        "--spinup-case",
+        default=None,
+        help=(
+            "Optional spinup case name(s) for forcing-cycle years. "
+            "Provide one name to reuse for all --case entries, or a comma-separated list "
+            "matching --case order."
+        ),
+    )
+    parser.add_argument(
         "--spinup-vars",
         default="TOTSOMC,TOTSOMN",
         help="Comma-separated spinup target variables (default: TOTSOMC,TOTSOMN)",
@@ -87,6 +96,22 @@ def _load_cases(workdir: Path, case_names: list[str]) -> list[object]:
     return cases
 
 
+def _resolve_spinup_case_names(case_names: list[str], spinup_case_arg: str | None) -> list[str]:
+    if spinup_case_arg is None:
+        return list(case_names)
+    names = [name.strip() for name in spinup_case_arg.split(",") if name.strip()]
+    if not names:
+        return list(case_names)
+    if len(names) == 1:
+        return names * len(case_names)
+    if len(names) != len(case_names):
+        raise ValueError(
+            "--spinup-case must be a single case name or match the number of --case entries. "
+            f"Got len(--case)={len(case_names)}, len(--spinup-case)={len(names)}."
+        )
+    return names
+
+
 def main() -> int:
     args = _build_parser().parse_args()
     case_names = [name.strip() for name in args.case.split(",") if name.strip()]
@@ -110,12 +135,15 @@ def main() -> int:
     workdir = Path(args.workdir).resolve()
     try:
         cases = _load_cases(workdir, case_names)
+        spinup_case_names = _resolve_spinup_case_names(case_names, args.spinup_case)
+        spinup_cases = _load_cases(workdir, spinup_case_names)
     except Exception as exc:
         print(f"Error while loading cases: {exc}", file=sys.stderr)
         return 1
 
     train_surrogate_spinup_from_cases(
         cases,
+        spinup_cases=spinup_cases,
         spinup_vars=spinup_vars,
         surface_vars=surface_vars,
         forcing_vars=forcing_vars,

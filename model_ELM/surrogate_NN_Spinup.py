@@ -167,17 +167,19 @@ def _extract_year(values: np.ndarray) -> np.ndarray:
     return np.asarray(years, dtype=np.int32)
 
 
-def _spinup_cycle_year_bounds(case: Any) -> Tuple[int, int]:
-    if not hasattr(case, "met_startyear"):
+def _spinup_cycle_year_bounds(case: Any, spinup_case: Optional[Any] = None) -> Tuple[int, int]:
+    source_case = case if spinup_case is None else spinup_case
+    source_name = str(getattr(source_case, "casename", "spinup_case"))
+    if not hasattr(source_case, "met_startyear"):
         raise AttributeError("Case is missing 'met_startyear' needed for spinup-cycle climatology.")
-    if not hasattr(case, "met_endyear_spinup"):
+    if not hasattr(source_case, "met_endyear_spinup"):
         raise AttributeError("Case is missing 'met_endyear_spinup' needed for spinup-cycle climatology.")
-    start_year = int(getattr(case, "met_startyear"))
-    end_year = int(getattr(case, "met_endyear_spinup"))
+    start_year = int(getattr(source_case, "met_startyear"))
+    end_year = int(getattr(source_case, "met_endyear_spinup"))
     if end_year < start_year:
         raise ValueError(
             f"Invalid forcing cycle year range: met_startyear={start_year}, "
-            f"met_endyear_spinup={end_year}"
+            f"met_endyear_spinup={end_year} in '{source_name}'"
         )
     return start_year, end_year
 
@@ -186,8 +188,9 @@ def _subset_forcing_to_spinup_cycle(
     case: Any,
     forcing_raw: np.ndarray,
     forcing_time: np.ndarray,
+    spinup_case: Optional[Any] = None,
 ) -> Tuple[np.ndarray, np.ndarray]:
-    start_year, end_year = _spinup_cycle_year_bounds(case)
+    start_year, end_year = _spinup_cycle_year_bounds(case, spinup_case=spinup_case)
     years = _extract_year(np.asarray(forcing_time))
     if years.size != forcing_raw.shape[0]:
         raise ValueError(
@@ -270,6 +273,7 @@ def _prepare_case_spinup_block(
     spinup_vars: Sequence[str],
     surface_vars: Sequence[str],
     forcing_vars: Sequence[str],
+    spinup_case: Optional[Any] = None,
 ) -> _PreparedSpinupCaseBlock:
     case_name = str(getattr(case, "casename", "case"))
     if not hasattr(case, "samples"):
@@ -290,7 +294,9 @@ def _prepare_case_spinup_block(
     forcing_raw, forcing_vars_used, forcing_time = _load_forcing_matrix(
         Path(case.metdir), forcing_vars, ntime_ref
     )
-    forcing_cycle_raw, forcing_cycle_time = _subset_forcing_to_spinup_cycle(case, forcing_raw, forcing_time)
+    forcing_cycle_raw, forcing_cycle_time = _subset_forcing_to_spinup_cycle(
+        case, forcing_raw, forcing_time, spinup_case=spinup_case
+    )
     clim_vec, clim_names = _climatology_features(forcing_cycle_raw, forcing_vars_used, forcing_cycle_time)
     climatology = np.tile(clim_vec.reshape(1, -1), (nsamples, 1))
 
@@ -478,6 +484,7 @@ def _build_design_matrix(
 
 def train_surrogate_spinup_from_cases(
     cases: Sequence[Any],
+    spinup_cases: Optional[Sequence[Any]] = None,
     *,
     spinup_vars: Optional[Sequence[str]] = None,
     surface_vars: Optional[Sequence[str]] = None,
@@ -496,6 +503,15 @@ def train_surrogate_spinup_from_cases(
 ) -> Optional[Dict[str, Any]]:
     if not cases:
         raise ValueError("At least one case object is required.")
+    if spinup_cases is None:
+        spinup_cases_resolved = [None] * len(cases)
+    else:
+        spinup_cases_resolved = list(spinup_cases)
+        if len(spinup_cases_resolved) != len(cases):
+            raise ValueError(
+                "spinup_cases must be omitted or have the same length/order as cases. "
+                f"Got len(cases)={len(cases)}, len(spinup_cases)={len(spinup_cases_resolved)}."
+            )
     spinup_vars_list = list(DEFAULT_SPINUP_VARS if spinup_vars is None else [str(v).strip() for v in spinup_vars if str(v).strip()])
     if not spinup_vars_list:
         spinup_vars_list = list(DEFAULT_SPINUP_VARS)
@@ -514,8 +530,9 @@ def train_surrogate_spinup_from_cases(
             spinup_vars=spinup_vars_list,
             surface_vars=surface_vars_list,
             forcing_vars=forcing_vars_list,
+            spinup_case=spinup_case,
         )
-        for case in cases
+        for case, spinup_case in zip(cases, spinup_cases_resolved)
     ]
     _validate_spinup_blocks(blocks)
     case_names = [b.case_name for b in blocks]
@@ -644,6 +661,10 @@ def train_surrogate_spinup_from_cases(
         "multi_case": len(blocks) > 1,
         "output_label": output_label,
         "case_names": case_names,
+        "spinup_case_names": [
+            str(getattr(sc if sc is not None else c, "casename", ""))
+            for c, sc in zip(cases, spinup_cases_resolved)
+        ],
         "nsamples_per_case": {block.case_name: int(block.nsamples) for block in blocks},
     }
 
@@ -728,6 +749,7 @@ def load_surrogate_spinup_artifacts(case: Any, artifact_path: Union[str, Path]) 
 def build_spinup_inference_features(
     case: Any,
     training_layout: Dict[str, Any],
+    spinup_case: Optional[Any] = None,
     surface_vars: Optional[Sequence[str]] = None,
     forcing_vars: Optional[Sequence[str]] = None,
     surface_member: Optional[int] = None,
@@ -746,7 +768,9 @@ def build_spinup_inference_features(
 
     ntime_ref = _inference_target_ntime(case)
     forcing_raw, forcing_used, forcing_time = _load_forcing_matrix(Path(case.metdir), forcing_vars_used, ntime_ref)
-    forcing_cycle_raw, forcing_cycle_time = _subset_forcing_to_spinup_cycle(case, forcing_raw, forcing_time)
+    forcing_cycle_raw, forcing_cycle_time = _subset_forcing_to_spinup_cycle(
+        case, forcing_raw, forcing_time, spinup_case=spinup_case
+    )
     clim_vec, clim_names = _climatology_features(forcing_cycle_raw, forcing_used, forcing_cycle_time)
     if n_clim > 0 and clim_vec.size != n_clim:
         raise ValueError(
