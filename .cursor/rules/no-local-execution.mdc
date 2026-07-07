@@ -1,0 +1,21 @@
+---
+description: Prevent local execution; use HPC-only runtime
+alwaysApply: true
+---
+
+# HPC-Only Execution Policy
+
+- Never execute this repository's code, tests, training scripts, or workflows on the local PC.
+- Assume the runnable environment exists only on HPC (dependencies, data paths, and scheduler setup are HPC-only).
+- If execution is requested, provide HPC-ready commands/scripts instead of running locally.
+- If a local run is attempted, stop and explain that execution must happen on HPC.
+
+# Examples
+
+```bash
+# ❌ Do not run locally
+python train_surrogate_spinup.py --case ABBY_ppe6_I20TRCNPRDCTCBC
+
+# ✅ Provide HPC usage instead
+sbatch examples/slurm/case.train_surrogate_spinup_quick.slurm
+```

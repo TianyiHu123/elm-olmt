@@ -42,6 +42,12 @@ def _build_parser() -> argparse.ArgumentParser:
         help="Comma-separated forcing variables used to build spinup climatology features",
     )
     parser.add_argument(
+        "--clim-feature-mode",
+        default="compact",
+        choices=["full", "compact"],
+        help="Climatology feature mode: full (with monthly features) or compact (no monthly features).",
+    )
+    parser.add_argument(
         "--split-mode",
         default="by_member",
         choices=["by_member", "by_site", "by_case", "random"],
@@ -147,6 +153,7 @@ def main() -> int:
         spinup_vars=spinup_vars,
         surface_vars=surface_vars,
         forcing_vars=forcing_vars,
+        clim_feature_mode=args.clim_feature_mode,
         split_mode=args.split_mode,
         train_fraction=args.train_fraction,
         split_random_state=args.split_random_state,

@@ -210,6 +210,7 @@ def _climatology_features(
     forcing_raw: np.ndarray,
     forcing_var_names: Sequence[str],
     forcing_time: np.ndarray,
+    clim_feature_mode: str = "full",
     month_count: int = DEFAULT_MONTH_COUNT,
 ) -> Tuple[np.ndarray, List[str]]:
     if forcing_raw.ndim != 2:
@@ -218,6 +219,10 @@ def _climatology_features(
         raise ValueError(
             f"forcing_raw column count {forcing_raw.shape[1]} does not match variable count {len(forcing_var_names)}"
         )
+
+    mode = str(clim_feature_mode).strip().lower()
+    if mode not in ("full", "compact"):
+        raise ValueError(f"Unsupported clim_feature_mode='{clim_feature_mode}'. Use 'full' or 'compact'.")
 
     months = _extract_month(np.asarray(forcing_time))
     use_monthly = months.size == forcing_raw.shape[0]
@@ -240,7 +245,7 @@ def _climatology_features(
                 f"{var}_clim_max",
             ]
         )
-        if use_monthly:
+        if use_monthly and mode == "full":
             month_means = np.full(month_count, np.nan, dtype=np.float64)
             for m in range(1, month_count + 1):
                 mmask = months == m
@@ -250,6 +255,16 @@ def _climatology_features(
                     month_means[m - 1] = float(np.nanmean(x))
                 feats.append(float(month_means[m - 1]))
                 names.append(f"{var}_clim_m{m:02d}")
+            feats.append(float(np.nanmax(month_means) - np.nanmin(month_means)))
+            names.append(f"{var}_clim_seasonal_amp")
+        elif use_monthly and mode == "compact":
+            month_means = np.full(month_count, np.nan, dtype=np.float64)
+            for m in range(1, month_count + 1):
+                mmask = months == m
+                if np.any(mmask):
+                    month_means[m - 1] = float(np.nanmean(x[mmask]))
+                else:
+                    month_means[m - 1] = float(np.nanmean(x))
             feats.append(float(np.nanmax(month_means) - np.nanmin(month_means)))
             names.append(f"{var}_clim_seasonal_amp")
 
@@ -273,6 +288,7 @@ def _prepare_case_spinup_block(
     spinup_vars: Sequence[str],
     surface_vars: Sequence[str],
     forcing_vars: Sequence[str],
+    clim_feature_mode: str = "compact",
     spinup_case: Optional[Any] = None,
 ) -> _PreparedSpinupCaseBlock:
     case_name = str(getattr(case, "casename", "case"))
@@ -297,7 +313,12 @@ def _prepare_case_spinup_block(
     forcing_cycle_raw, forcing_cycle_time = _subset_forcing_to_spinup_cycle(
         case, forcing_raw, forcing_time, spinup_case=spinup_case
     )
-    clim_vec, clim_names = _climatology_features(forcing_cycle_raw, forcing_vars_used, forcing_cycle_time)
+    clim_vec, clim_names = _climatology_features(
+        forcing_cycle_raw,
+        forcing_vars_used,
+        forcing_cycle_time,
+        clim_feature_mode=clim_feature_mode,
+    )
     climatology = np.tile(clim_vec.reshape(1, -1), (nsamples, 1))
 
     return _PreparedSpinupCaseBlock(
@@ -489,6 +510,7 @@ def train_surrogate_spinup_from_cases(
     spinup_vars: Optional[Sequence[str]] = None,
     surface_vars: Optional[Sequence[str]] = None,
     forcing_vars: Optional[Sequence[str]] = None,
+    clim_feature_mode: str = "compact",
     split_mode: str = "by_member",
     train_fraction: float = 0.8,
     split_random_state: Optional[int] = None,
@@ -519,6 +541,9 @@ def train_surrogate_spinup_from_cases(
     forcing_vars_list = list(
         DEFAULT_CLIM_FORCING_VARS if forcing_vars is None else [str(v).strip() for v in forcing_vars if str(v).strip()]
     )
+    clim_feature_mode_norm = str(clim_feature_mode).strip().lower()
+    if clim_feature_mode_norm not in ("full", "compact"):
+        raise ValueError(f"Unsupported clim_feature_mode='{clim_feature_mode}'. Use 'full' or 'compact'.")
     if not surface_vars_list:
         raise ValueError("surface_vars must not be empty.")
     if not forcing_vars_list:
@@ -530,6 +555,7 @@ def train_surrogate_spinup_from_cases(
             spinup_vars=spinup_vars_list,
             surface_vars=surface_vars_list,
             forcing_vars=forcing_vars_list,
+            clim_feature_mode=clim_feature_mode_norm,
             spinup_case=spinup_case,
         )
         for case, spinup_case in zip(cases, spinup_cases_resolved)
@@ -566,19 +592,19 @@ def train_surrogate_spinup_from_cases(
 
     if quick_grid:
         param_grid = {
-            "hidden_layer_sizes": [(32,), (64,)],
-            "activation": ["relu"],
-            "solver": ["adam"],
-            "alpha": [1e-4, 1e-3],
-            "learning_rate": ["adaptive"],
+            "hidden_layer_sizes": [(8,), (16,)],
+            "activation": ["tanh"],
+            "solver": ["lbfgs"],
+            "alpha": [1e-2, 1e-1, 1.0],
+            "learning_rate": ["constant"],
         }
     else:
         param_grid = {
-            "hidden_layer_sizes": [(32,), (64,), (64, 32)],
-            "activation": ["tanh", "relu"],
-            "solver": ["adam", "lbfgs"],
-            "alpha": [1e-4, 1e-3, 1e-2],
-            "learning_rate": ["constant", "adaptive"],
+            "hidden_layer_sizes": [(8,), (16,), (16, 8)],
+            "activation": ["tanh"],
+            "solver": ["lbfgs"],
+            "alpha": [1e-2, 5e-2, 1e-1, 3e-1, 1.0],
+            "learning_rate": ["constant"],
         }
 
     model_store: Dict[str, GridSearchCV] = {}
@@ -655,6 +681,7 @@ def train_surrogate_spinup_from_cases(
         "climatology_feature_names": list(ref.climatology_feature_names),
         "spinup_vars": list(spinup_vars_list),
         "forcing_vars_for_climatology": list(forcing_vars_list),
+        "clim_feature_mode": clim_feature_mode_norm,
         "n_params": int(ref.params.shape[1]),
         "n_surface": int(ref.surface.shape[1]),
         "n_climatology": int(ref.climatology.shape[1]),
@@ -703,6 +730,7 @@ def train_surrogate_spinup_from_cases(
         "spinup_vars": list(spinup_vars_list),
         "surface_vars": list(surface_vars_list),
         "forcing_vars_for_climatology": list(forcing_vars_list),
+        "clim_feature_mode": clim_feature_mode_norm,
         "split_mode": split_mode,
         "train_fraction": train_fraction,
         "split_random_state": split_random_state,
@@ -752,6 +780,7 @@ def build_spinup_inference_features(
     spinup_case: Optional[Any] = None,
     surface_vars: Optional[Sequence[str]] = None,
     forcing_vars: Optional[Sequence[str]] = None,
+    clim_feature_mode: Optional[str] = None,
     surface_member: Optional[int] = None,
 ) -> Dict[str, Any]:
     surface_vars_used = list(
@@ -765,13 +794,25 @@ def build_spinup_inference_features(
     )
     n_surface = int(training_layout.get("n_surface", len(surface_vars_used)))
     n_clim = int(training_layout.get("n_climatology", -1))
+    mode = (
+        str(clim_feature_mode).strip().lower()
+        if clim_feature_mode is not None
+        else str(training_layout.get("clim_feature_mode", "full")).strip().lower()
+    )
+    if mode not in ("full", "compact"):
+        raise ValueError(f"Unsupported clim_feature_mode='{mode}'. Use 'full' or 'compact'.")
 
     ntime_ref = _inference_target_ntime(case)
     forcing_raw, forcing_used, forcing_time = _load_forcing_matrix(Path(case.metdir), forcing_vars_used, ntime_ref)
     forcing_cycle_raw, forcing_cycle_time = _subset_forcing_to_spinup_cycle(
         case, forcing_raw, forcing_time, spinup_case=spinup_case
     )
-    clim_vec, clim_names = _climatology_features(forcing_cycle_raw, forcing_used, forcing_cycle_time)
+    clim_vec, clim_names = _climatology_features(
+        forcing_cycle_raw,
+        forcing_used,
+        forcing_cycle_time,
+        clim_feature_mode=mode,
+    )
     if n_clim > 0 and clim_vec.size != n_clim:
         raise ValueError(
             f"Climatology feature count mismatch: expected {n_clim}, built {clim_vec.size}. "
@@ -801,6 +842,7 @@ def build_spinup_inference_features(
         "climatology": np.asarray(clim_vec, dtype=np.float64).ravel(),
         "surface_feature_names": list(surface_vars_used),
         "climatology_feature_names": list(clim_names),
+        "clim_feature_mode": mode,
     }
 
 

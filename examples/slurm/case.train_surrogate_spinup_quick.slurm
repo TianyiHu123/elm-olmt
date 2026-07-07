@@ -5,7 +5,7 @@
 # This script trains model_ELM/surrogate_NN_Spinup.py via train_surrogate_spinup.py
 # using quick-grid settings for testing.
 #
-#SBATCH --time=00:45:00
+#SBATCH --time=00:10:00
 #SBATCH --constraint=cpu
 #SBATCH --qos=shared
 #SBATCH --account=m4803
@@ -13,24 +13,22 @@
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=8
-#SBATCH --mem=24GB
+#SBATCH --mem=8GB
 #SBATCH --output=spinup_surr_%j.out
 #SBATCH --error=spinup_surr_%j.err
 
 scontrol show job $SLURM_JOB_ID
 
 # --- User settings ---
-OLMT_ROOT="/global/u1/t/tianyihu/elm-olmt"
+OLMT_ROOT="/pscratch/sd/t/tianyihu/elm-olmt"
 CONDA_ENV="OLMT_pm_Tianyi"
 
 # Single case or comma-separated multi-case list
-CASE_LIST="ABBY_ens3_I20TRCNPRDCTCBC"
-# Optional: dedicated spinup case(s) used to read met_startyear/met_endyear_spinup.
-# If unset, CASE_LIST is used.
-SPINUP_CASE_LIST="${CASE_LIST}"
+CASE_LIST="ABBY_ppe6_I20TRCNPRDCTCBC"
+SPINUP_CASE_LIST="ABBY_ppe6_I1850CNPRDCTCBC"
 
 OUTPUTDIR="/pscratch/sd/t/tianyihu/E3SM_out/SOIL_project"
-RUN_NAME="spinup_surrogate_test"
+RUN_NAME="spinup_surrogate_test1"
 
 SPINUP_VARS="TOTSOMC,TOTSOMN"
 SURFACE_VARS="PCT_SAND,PCT_CLAY,ORGANIC"
@@ -70,6 +68,7 @@ python train_surrogate_spinup.py \
   --forcing-vars "${FORCING_VARS}" \
   --split-mode "${SPLIT_MODE}" \
   --train-fraction "${TRAIN_FRACTION}" \
+  --clim-feature-mode compact \
   --quick-grid \
   --cv-folds 3 \
   --n-jobs "${N_JOBS}" \
