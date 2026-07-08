@@ -58,11 +58,21 @@ def _build_parser() -> argparse.ArgumentParser:
         "--split-random-state",
         type=int,
         default=None,
-        help="RNG seed for split_mode=random",
+        help="RNG seed for randomized split modes (by_member/by_site/by_case/random)",
+    )
+    parser.add_argument(
+        "--model-type",
+        default="nn",
+        choices=["nn", "random_forest"],
+        help="Surrogate backend to train (default: nn)",
     )
     parser.add_argument("--n-jobs", type=int, default=8)
     parser.add_argument("--cv-folds", type=int, default=3)
-    parser.add_argument("--quick-grid", action="store_true", help="Smaller hyperparameter grid")
+    parser.add_argument(
+        "--quick-grid",
+        action="store_true",
+        help="Use smaller hyperparameter grid (mainly affects random_forest; nn is already compact)",
+    )
     parser.add_argument("--dry-run", action="store_true", help="Print data dimensions and exit before training")
     parser.add_argument("--workdir", default=".", help="OLMT root directory (for pklfiles path)")
     parser.add_argument(
@@ -160,6 +170,7 @@ def main() -> int:
         n_jobs=args.n_jobs,
         cv_folds=args.cv_folds,
         quick_grid=args.quick_grid,
+        model_type=args.model_type,
         dry_run=args.dry_run,
         outputdir=args.outputdir,
         run_name=args.run_name,

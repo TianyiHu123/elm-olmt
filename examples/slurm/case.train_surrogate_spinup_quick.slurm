@@ -33,6 +33,7 @@ RUN_NAME="spinup_surrogate_test1"
 SPINUP_VARS="TOTSOMC,TOTSOMN"
 SURFACE_VARS="PCT_SAND,PCT_CLAY,ORGANIC"
 FORCING_VARS="PRECTmms,FSDS,FLDS,TBOT,RH,WIND,PSRF"
+MODEL_TYPE="nn"  # nn | random_forest
 
 # Split strategy for member-level spinup targets
 SPLIT_MODE="by_member"
@@ -66,6 +67,7 @@ python train_surrogate_spinup.py \
   --spinup-vars "${SPINUP_VARS}" \
   --surface-vars "${SURFACE_VARS}" \
   --forcing-vars "${FORCING_VARS}" \
+  --model-type "${MODEL_TYPE}" \
   --split-mode "${SPLIT_MODE}" \
   --train-fraction "${TRAIN_FRACTION}" \
   --clim-feature-mode compact \

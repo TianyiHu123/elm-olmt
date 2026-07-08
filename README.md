@@ -243,6 +243,72 @@ python train_surrogate_forcing.py \
 
 Stats JSON files are written under **`/path/to/scratch/UQ_output/<CASE_NAME>/surrogate_forcing/`** (or under `--run-name` when you use it). Aggregate those JSON files offline to summarize R² distributions.
 
+## Standalone Spinup Surrogate
+
+Standalone spinup-state surrogate training is provided by [`train_surrogate_spinup.py`](train_surrogate_spinup.py) and implemented in [`model_ELM/surrogate_NN_Spinup.py`](model_ELM/surrogate_NN_Spinup.py).
+
+### Key points
+
+- selectable backend with `--model-type`:
+  - `nn` (default, `MLPRegressor`)
+  - `random_forest` (`RandomForestRegressor`)
+- MLP now uses one compact hyperparameter grid for spinup training (the previous larger full-grid path is removed)
+- split modes `by_member`, `by_site`, and `by_case` now randomize group selection by `--train-fraction`
+- set `--split-random-state` to make those randomized splits reproducible
+- training prints a warning when potential overfitting is detected from train-vs-validation metric gaps
+
+### Typical commands
+
+Dry-run (shape/IO check only):
+
+```bash
+python train_surrogate_spinup.py \
+  --case <CASE_NAME> \
+  --spinup-case <SPINUP_CASE_NAME> \
+  --split-mode by_member \
+  --train-fraction 0.8 \
+  --split-random-state 2026 \
+  --model-type nn \
+  --dry-run
+```
+
+Random-forest training example:
+
+```bash
+python train_surrogate_spinup.py \
+  --case <CASE_NAME> \
+  --spinup-case <SPINUP_CASE_NAME> \
+  --spinup-vars TOTSOMC,TOTSOMN \
+  --surface-vars PCT_SAND,PCT_CLAY,ORGANIC \
+  --forcing-vars PRECTmms,FSDS,FLDS,TBOT,RH,WIND,PSRF \
+  --split-mode by_member \
+  --train-fraction 0.8 \
+  --split-random-state 2026 \
+  --model-type random_forest \
+  --quick-grid \
+  --n-jobs 8 \
+  --cv-folds 3 \
+  --outputdir /pscratch/sd/t/tianyihu/E3SM_out/SOIL_project \
+  --run-name spinup_surrogate_rf_test
+```
+
+Batch template: [`examples/slurm/case.train_surrogate_spinup_quick.slurm`](examples/slurm/case.train_surrogate_spinup_quick.slurm)
+
+### HPC validation checklist
+
+1. Dry-run shape/IO checks for both model backends:
+   - `--model-type nn --dry-run`
+   - `--model-type random_forest --dry-run`
+2. Split reproducibility checks:
+   - run the same command twice with fixed `--split-random-state` and verify matching `split_details` in `surrogate_spinup_stats_*.json`
+   - rerun with a different seed and verify changed split group IDs
+3. Overfitting warning checks:
+   - inspect stdout/stderr for `Warning: potential overfitting ...`
+   - confirm `overfit_warning`, `r2_gap`, and `rmse_ratio` fields in stats JSON
+4. Inference compatibility:
+   - load `surrogate_spinup_artifacts.pkl` with `load_surrogate_spinup_artifacts(...)`
+   - run `predict_spinup_state(...)` and confirm finite predictions for each requested spinup variable
+
 ### Perlmutter GSA smoke test (new GSA functions)
 
 Use this quick flow to validate:

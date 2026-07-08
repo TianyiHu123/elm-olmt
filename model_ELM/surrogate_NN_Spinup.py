@@ -17,6 +17,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from netCDF4 import Dataset
 from sklearn import preprocessing
+from sklearn.ensemble import RandomForestRegressor
 from sklearn.model_selection import GridSearchCV
 from sklearn.neural_network import MLPRegressor
 
@@ -31,6 +32,8 @@ from .surrogate_NN_Forcing import (
 DEFAULT_CLIM_FORCING_VARS = ("PRECTmms", "FSDS", "FLDS", "TBOT", "RH", "WIND", "PSRF")
 DEFAULT_SURFACE_VARS = ("PCT_SAND", "PCT_CLAY", "ORGANIC")
 DEFAULT_MONTH_COUNT = 12
+OVERFIT_R2_GAP_THRESHOLD = 0.15
+OVERFIT_RMSE_RATIO_THRESHOLD = 1.5
 
 
 @dataclass
@@ -86,16 +89,129 @@ def _format_metric(v: float) -> str:
     return "nan" if not np.isfinite(v) else f"{v:.4f}"
 
 
-def _sanitize_stats_for_json(stats: Dict[str, Dict[str, float]]) -> Dict[str, Dict[str, Optional[float]]]:
-    out: Dict[str, Dict[str, Optional[float]]] = {}
+def _sanitize_json_value(value: Any) -> Any:
+    if isinstance(value, dict):
+        return {str(k): _sanitize_json_value(v) for k, v in value.items()}
+    if isinstance(value, (list, tuple)):
+        return [_sanitize_json_value(v) for v in value]
+    if isinstance(value, np.ndarray):
+        return [_sanitize_json_value(v) for v in value.tolist()]
+    if isinstance(value, (np.bool_, bool)):
+        return bool(value)
+    if isinstance(value, (np.integer, int)):
+        return int(value)
+    if isinstance(value, (np.floating, float)):
+        fval = float(value)
+        return None if not math.isfinite(fval) else fval
+    if value is None:
+        return None
+    if isinstance(value, str):
+        return value
+    return str(value)
+
+
+def _sanitize_stats_for_json(stats: Dict[str, Dict[str, Any]]) -> Dict[str, Dict[str, Any]]:
+    out: Dict[str, Dict[str, Any]] = {}
     for var, dct in stats.items():
         out[var] = {}
         for key, value in dct.items():
-            if isinstance(value, float) and not math.isfinite(value):
-                out[var][key] = None
-            else:
-                out[var][key] = float(value)
+            out[var][key] = _sanitize_json_value(value)
     return out
+
+
+def _normalize_model_type(model_type: str) -> str:
+    mt = str(model_type).strip().lower()
+    if mt in ("nn", "mlp", "mlpregressor"):
+        return "nn"
+    if mt in ("random_forest", "rf", "randomforest"):
+        return "random_forest"
+    raise ValueError(f"Unsupported model_type='{model_type}'. Use 'nn' or 'random_forest'.")
+
+
+def _build_spinup_estimator_and_grid(model_type: str, quick_grid: bool) -> Tuple[Any, Dict[str, List[Any]]]:
+    mt = _normalize_model_type(model_type)
+    if mt == "nn":
+        # Keep one compact MLP grid for spinup; no full-grid branch.
+        estimator = MLPRegressor(
+            max_iter=500,
+            early_stopping=True,
+            validation_fraction=0.1,
+            n_iter_no_change=10,
+            random_state=42,
+        )
+        param_grid = {
+            "hidden_layer_sizes": [(8,), (16,)],
+            "activation": ["tanh"],
+            "solver": ["lbfgs"],
+            "alpha": [1.0, 10.0, 50.0],
+            "learning_rate": ["constant"],
+        }
+        return estimator, param_grid
+
+    estimator = RandomForestRegressor(random_state=42, n_jobs=1)
+    if quick_grid:
+        param_grid = {
+            "n_estimators": [100, 200],
+            "max_depth": [None, 12],
+            "min_samples_leaf": [1, 2],
+        }
+    else:
+        param_grid = {
+            "n_estimators": [100, 200, 400],
+            "max_depth": [None, 12, 20],
+            "min_samples_leaf": [1, 2, 4],
+        }
+    return estimator, param_grid
+
+
+def _random_group_partition(
+    group_ids: np.ndarray,
+    train_fraction: float,
+    rng: np.random.Generator,
+    *,
+    mode_label: str,
+    allow_single_group: bool = False,
+) -> Tuple[np.ndarray, np.ndarray]:
+    unique_groups = np.asarray(np.unique(group_ids))
+    if unique_groups.size < 2:
+        if allow_single_group and unique_groups.size == 1:
+            if float(train_fraction) >= 0.5:
+                return unique_groups.copy(), np.asarray([], dtype=unique_groups.dtype)
+            return np.asarray([], dtype=unique_groups.dtype), unique_groups.copy()
+        raise ValueError(f"{mode_label} requires at least 2 unique groups to build train/validation split.")
+    shuffled = unique_groups.copy()
+    rng.shuffle(shuffled)
+    ntrain = int(np.floor(shuffled.size * float(train_fraction)))
+    ntrain = max(1, min(int(shuffled.size) - 1, ntrain))
+    train_groups = np.sort(shuffled[:ntrain])
+    val_groups = np.sort(shuffled[ntrain:])
+    return train_groups, val_groups
+
+
+def _compute_overfitting_diagnostics(
+    train_r2: float,
+    val_r2: float,
+    train_rmse: float,
+    val_rmse: float,
+) -> Dict[str, Any]:
+    r2_gap = float(train_r2 - val_r2) if np.isfinite(train_r2) and np.isfinite(val_r2) else float("nan")
+    if np.isfinite(train_rmse) and train_rmse > 0.0 and np.isfinite(val_rmse):
+        rmse_ratio = float(val_rmse / train_rmse)
+    else:
+        rmse_ratio = float("nan")
+
+    reasons: List[str] = []
+    if np.isfinite(r2_gap) and r2_gap > OVERFIT_R2_GAP_THRESHOLD and train_r2 > 0.6:
+        reasons.append(f"r2_gap={r2_gap:.3f}>{OVERFIT_R2_GAP_THRESHOLD:.2f}")
+    if np.isfinite(rmse_ratio) and rmse_ratio > OVERFIT_RMSE_RATIO_THRESHOLD:
+        reasons.append(f"rmse_ratio={rmse_ratio:.3f}>{OVERFIT_RMSE_RATIO_THRESHOLD:.2f}")
+
+    return {
+        "r2_gap": r2_gap,
+        "rmse_ratio": rmse_ratio,
+        "overfit_warning": bool(reasons),
+        "overfit_reason": "; ".join(reasons),
+    }
 
 
 def _resolve_output_label(case_names: Sequence[str], run_name: Optional[str]) -> str:
@@ -365,34 +481,57 @@ def _build_split_indices(
     split_mode: str,
     train_fraction: float,
     split_random_state: Optional[int] = None,
-) -> Tuple[np.ndarray, np.ndarray]:
+) -> Tuple[np.ndarray, np.ndarray, Dict[str, Any]]:
+    if not (0.0 < float(train_fraction) < 1.0):
+        raise ValueError(f"train_fraction must be in (0, 1), got {train_fraction}.")
     nrows = row_case_ids.size
     all_idx = np.arange(nrows)
     train_mask = np.zeros(nrows, dtype=bool)
+    rng = np.random.default_rng(split_random_state)
+    split_details: Dict[str, Any] = {"mode": split_mode}
 
     if split_mode == "by_member":
+        per_case: Dict[str, Dict[str, List[int]]] = {}
         for case_id in np.unique(row_case_ids):
             case_mask = row_case_ids == case_id
             members = np.unique(row_member_ids[case_mask])
-            ntrain = max(1, int(len(members) * train_fraction))
-            train_members = members[:ntrain]
+            train_members, val_members = _random_group_partition(
+                members,
+                train_fraction,
+                rng,
+                mode_label=f"split_mode={split_mode} (case_id={int(case_id)})",
+                allow_single_group=True,
+            )
             train_mask[case_mask] = np.isin(row_member_ids[case_mask], train_members)
+            per_case[str(int(case_id))] = {
+                "train_groups": [int(v) for v in train_members.tolist()],
+                "val_groups": [int(v) for v in val_members.tolist()],
+            }
+        split_details["per_case_group_ids"] = per_case
     elif split_mode == "by_site":
-        sites = np.unique(row_site_ids)
-        ntrain = max(1, int(len(sites) * train_fraction))
-        train_sites = sites[:ntrain]
+        sites = np.asarray(np.unique(row_site_ids))
+        train_sites, val_sites = _random_group_partition(
+            sites, train_fraction, rng, mode_label=f"split_mode={split_mode}"
+        )
         train_mask = np.isin(row_site_ids, train_sites)
+        split_details["train_groups"] = [int(v) for v in train_sites.tolist()]
+        split_details["val_groups"] = [int(v) for v in val_sites.tolist()]
     elif split_mode == "by_case":
-        cases = np.unique(row_case_ids)
-        ntrain = max(1, int(len(cases) * train_fraction))
-        train_cases = cases[:ntrain]
+        cases = np.asarray(np.unique(row_case_ids))
+        train_cases, val_cases = _random_group_partition(
+            cases, train_fraction, rng, mode_label=f"split_mode={split_mode}"
+        )
         train_mask = np.isin(row_case_ids, train_cases)
+        split_details["train_groups"] = [int(v) for v in train_cases.tolist()]
+        split_details["val_groups"] = [int(v) for v in val_cases.tolist()]
     elif split_mode == "random":
-        rng = np.random.default_rng(split_random_state)
         idx = np.arange(nrows)
         rng.shuffle(idx)
-        cutoff = max(1, int(nrows * train_fraction))
+        cutoff = int(np.floor(nrows * float(train_fraction)))
+        cutoff = max(1, min(nrows - 1, cutoff))
         train_mask[idx[:cutoff]] = True
+        split_details["train_row_count"] = int(cutoff)
+        split_details["val_row_count"] = int(nrows - cutoff)
     else:
         raise ValueError(f"Unsupported split_mode: {split_mode}")
 
@@ -402,7 +541,7 @@ def _build_split_indices(
         raise ValueError(
             f"split_mode={split_mode} with train_fraction={train_fraction} produced empty train/val split."
         )
-    return train_idx, val_idx
+    return train_idx, val_idx, split_details
 
 
 def _save_scatter_plot(
@@ -443,8 +582,9 @@ def _save_scatter_plot(
 
 def _write_stats_json(
     path: Path,
-    stats: Dict[str, Dict[str, float]],
+    stats: Dict[str, Dict[str, Any]],
     *,
+    model_type: str,
     split_mode: str,
     train_fraction: float,
     split_random_state: Optional[int],
@@ -453,10 +593,12 @@ def _write_stats_json(
     spinup_vars: Sequence[str],
     stats_run_id: str,
     feature_names: Sequence[str],
+    split_details: Optional[Dict[str, Any]] = None,
 ) -> None:
     payload: Dict[str, Any] = {
         "timestamp_utc": datetime.now(timezone.utc).isoformat(),
         "stats_run_id": stats_run_id,
+        "model_type": model_type,
         "split_mode": split_mode,
         "train_fraction": float(train_fraction),
         "split_random_state": split_random_state,
@@ -466,6 +608,8 @@ def _write_stats_json(
         "input_feature_names": list(feature_names),
         "by_variable": _sanitize_stats_for_json(stats),
     }
+    if split_details is not None:
+        payload["split_details"] = _sanitize_json_value(split_details)
     path.write_text(json.dumps(payload, indent=2, allow_nan=False), encoding="utf-8")
 
 
@@ -517,6 +661,7 @@ def train_surrogate_spinup_from_cases(
     n_jobs: int = 8,
     cv_folds: int = 3,
     quick_grid: bool = False,
+    model_type: str = "nn",
     dry_run: bool = False,
     outputdir: str = ".",
     run_name: Optional[str] = None,
@@ -548,6 +693,7 @@ def train_surrogate_spinup_from_cases(
         raise ValueError("surface_vars must not be empty.")
     if not forcing_vars_list:
         raise ValueError("forcing_vars must not be empty.")
+    model_type_norm = _normalize_model_type(model_type)
 
     blocks = [
         _prepare_case_spinup_block(
@@ -580,7 +726,7 @@ def train_surrogate_spinup_from_cases(
         print("Dry-run only. Exiting before model fitting.")
         return None
 
-    train_idx, val_idx = _build_split_indices(
+    train_idx, val_idx, split_details = _build_split_indices(
         row_case_ids=row_case_ids,
         row_member_ids=row_member_ids,
         row_site_ids=row_site_ids,
@@ -589,28 +735,13 @@ def train_surrogate_spinup_from_cases(
         split_random_state=split_random_state,
     )
     print(f"Train rows: {train_idx.size}, Val rows: {val_idx.size}")
+    if model_type_norm == "nn" and not quick_grid:
+        print("Info: MLP spinup surrogate uses a compact grid by default; --quick-grid has no extra effect.")
 
-    if quick_grid:
-        param_grid = {
-            "hidden_layer_sizes": [(8,), (16,)],
-            "activation": ["tanh"],
-            "solver": ["lbfgs"],
-            "alpha": [1e-2, 1e-1, 1.0],
-            "learning_rate": ["constant"],
-        }
-    else:
-        param_grid = {
-            "hidden_layer_sizes": [(8,), (16,), (16, 8)],
-            "activation": ["tanh"],
-            "solver": ["lbfgs"],
-            "alpha": [1e-2, 5e-2, 1e-1, 3e-1, 1.0],
-            "learning_rate": ["constant"],
-        }
-
-    model_store: Dict[str, GridSearchCV] = {}
+    model_store: Dict[str, Any] = {}
     x_scaler_store: Dict[str, preprocessing.StandardScaler] = {}
     y_scaler_store: Dict[str, preprocessing.StandardScaler] = {}
-    stats: Dict[str, Dict[str, float]] = {}
+    stats: Dict[str, Dict[str, Any]] = {}
 
     for ivar, var in enumerate(spinup_vars_list):
         print(f"\nTraining spinup variable: {var}")
@@ -626,14 +757,8 @@ def train_surrogate_spinup_from_cases(
         y_train = y_scaler.transform(y[train_idx, :]).ravel()
         y_val = y_scaler.transform(y[val_idx, :]).ravel()
 
-        clf = MLPRegressor(
-            max_iter=500,
-            early_stopping=True,
-            validation_fraction=0.1,
-            n_iter_no_change=10,
-            random_state=42,
-        )
-        grid = GridSearchCV(clf, param_grid, n_jobs=n_jobs, cv=cv_folds)
+        estimator, param_grid = _build_spinup_estimator_and_grid(model_type_norm, quick_grid)
+        grid = GridSearchCV(estimator, param_grid, n_jobs=n_jobs, cv=cv_folds)
         grid.fit(X_train, y_train)
 
         yhat_train = y_scaler.inverse_transform(grid.predict(X_train).reshape(-1, 1)).ravel()
@@ -650,12 +775,22 @@ def train_surrogate_spinup_from_cases(
             f"R2(train={_format_metric(train_r2)}, val={_format_metric(val_r2)}), "
             f"RMSE(train={_format_metric(train_rmse)}, val={_format_metric(val_rmse)})"
         )
+        overfit = _compute_overfitting_diagnostics(train_r2, val_r2, train_rmse, val_rmse)
+        if bool(overfit["overfit_warning"]):
+            print(
+                f"Warning: potential overfitting for {var} with model={model_type_norm}. "
+                f"{overfit['overfit_reason']}"
+            )
 
         stats[var] = {
             "r2_train": train_r2,
             "r2_val": val_r2,
             "rmse_train": train_rmse,
             "rmse_val": val_rmse,
+            "r2_gap": overfit["r2_gap"],
+            "rmse_ratio": overfit["rmse_ratio"],
+            "overfit_warning": overfit["overfit_warning"],
+            "overfit_reason": overfit["overfit_reason"],
         }
         model_store[var] = grid
         x_scaler_store[var] = x_scaler
@@ -680,6 +815,7 @@ def train_surrogate_spinup_from_cases(
         "surface_feature_names": list(ref.surface_feature_names),
         "climatology_feature_names": list(ref.climatology_feature_names),
         "spinup_vars": list(spinup_vars_list),
+        "model_type": model_type_norm,
         "forcing_vars_for_climatology": list(forcing_vars_list),
         "clim_feature_mode": clim_feature_mode_norm,
         "n_params": int(ref.params.shape[1]),
@@ -701,6 +837,7 @@ def train_surrogate_spinup_from_cases(
     _write_stats_json(
         stats_path,
         stats,
+        model_type=model_type_norm,
         split_mode=split_mode,
         train_fraction=train_fraction,
         split_random_state=split_random_state,
@@ -709,6 +846,7 @@ def train_surrogate_spinup_from_cases(
         spinup_vars=spinup_vars_list,
         stats_run_id=resolved_stats_id,
         feature_names=input_feature_names,
+        split_details=split_details,
     )
 
     if minimal_output:
@@ -716,10 +854,12 @@ def train_surrogate_spinup_from_cases(
         return {
             "case_names": case_names,
             "spinup_vars": list(spinup_vars_list),
+            "model_type": model_type_norm,
             "split_mode": split_mode,
             "train_fraction": train_fraction,
             "split_random_state": split_random_state,
             "stats": stats,
+            "split_details": split_details,
             "training_layout": training_layout,
             "stats_path": str(stats_path),
             "minimal_output": True,
@@ -728,6 +868,7 @@ def train_surrogate_spinup_from_cases(
     artifact: Dict[str, Any] = {
         "case_names": case_names,
         "spinup_vars": list(spinup_vars_list),
+        "model_type": model_type_norm,
         "surface_vars": list(surface_vars_list),
         "forcing_vars_for_climatology": list(forcing_vars_list),
         "clim_feature_mode": clim_feature_mode_norm,
@@ -738,6 +879,7 @@ def train_surrogate_spinup_from_cases(
         "x_scaler": x_scaler_store,
         "y_scaler": y_scaler_store,
         "stats": stats,
+        "split_details": split_details,
         "training_layout": training_layout,
         "stats_path": str(stats_path),
     }
@@ -758,7 +900,10 @@ def load_surrogate_spinup_artifacts(case: Any, artifact_path: Union[str, Path]) 
 
     if "models" not in artifact or "x_scaler" not in artifact or "y_scaler" not in artifact:
         raise ValueError(f"Spinup artifact missing required model/scaler keys: {path}")
-    layout = artifact.get("training_layout", {})
+    layout = dict(artifact.get("training_layout", {}))
+    model_type = _normalize_model_type(layout.get("model_type", artifact.get("model_type", "nn")))
+    layout.setdefault("model_type", model_type)
+    artifact["model_type"] = model_type
     n_params = int(layout.get("n_params", -1))
     if n_params <= 0:
         raise ValueError("Spinup artifact missing training_layout['n_params']")
