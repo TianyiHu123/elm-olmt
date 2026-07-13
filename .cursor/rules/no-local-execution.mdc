@@ -1,21 +1,27 @@
 ---
-description: Prevent local execution; use HPC-only runtime
+description: Confirm HPC status and ask permission before execution
 alwaysApply: true
 ---
 
-# HPC-Only Execution Policy
+# Execution Permission Gate
 
-- Never execute this repository's code, tests, training scripts, or workflows on the local PC.
-- Assume the runnable environment exists only on HPC (dependencies, data paths, and scheduler setup are HPC-only).
-- If execution is requested, provide HPC-ready commands/scripts instead of running locally.
-- If a local run is attempted, stop and explain that execution must happen on HPC.
+- Before any repository/script execution, ask:
+  1) whether the current workspace/session is on HPC, and
+  2) whether the user gives permission to execute now.
+- If HPC is not confirmed, do not execute repository scripts.
+- If HPC is confirmed but permission is not granted, do not execute scripts.
+- Only execute when both are true: HPC confirmed and explicit user permission.
 
 # Examples
 
 ```bash
-# ❌ Do not run locally
+# Ask first:
+# "Is this workspace/session on HPC?"
+# "Do you want me to execute this now?"
+
+# ❌ If not HPC or no permission, do not run
 python train_surrogate_spinup.py --case ABBY_ppe6_I20TRCNPRDCTCBC
 
-# ✅ Provide HPC usage instead
-sbatch examples/slurm/case.train_surrogate_spinup_quick.slurm
+# ✅ Only if HPC is confirmed and user approved execution
+python train_surrogate_spinup.py --case ABBY_ppe6_I20TRCNPRDCTCBC
 ```

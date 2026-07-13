@@ -252,10 +252,20 @@ Standalone spinup-state surrogate training is provided by [`train_surrogate_spin
 - selectable backend with `--model-type`:
   - `nn` (default, `MLPRegressor`)
   - `random_forest` (`RandomForestRegressor`)
-- MLP now uses one compact hyperparameter grid for spinup training (the previous larger full-grid path is removed)
+- conservative default hyperparameter grids are used for both `nn` and `random_forest` to reduce overfitting risk on small spinup datasets
 - split modes `by_member`, `by_site`, and `by_case` now randomize group selection by `--train-fraction`
 - set `--split-random-state` to make those randomized splits reproducible
 - training prints a warning when potential overfitting is detected from train-vs-validation metric gaps
+- feature ablation and diagnostics controls:
+  - `--feature-set all|params_only|params_surface|params_clim`
+  - `--clim-feature-include <glob1,glob2,...>` to keep a climatology subset
+  - `--apply-variance-filter --variance-threshold <v>`
+  - `--apply-corr-filter --corr-threshold <r>`
+  - permutation importance written in stats JSON via `--permutation-repeats`
+- stats JSON now includes:
+  - selected input feature list and full feature list
+  - `feature_diagnostics` (variance/correlation/filter decisions)
+  - per-target `permutation_importance_rmse`
 
 ### Typical commands
 
@@ -292,7 +302,55 @@ python train_surrogate_spinup.py \
   --run-name spinup_surrogate_rf_test
 ```
 
-Batch template: [`examples/slurm/case.train_surrogate_spinup_quick.slurm`](examples/slurm/case.train_surrogate_spinup_quick.slurm)
+Feature-ablation / diagnostics example (`params+surface`, no climatology block):
+
+```bash
+python train_surrogate_spinup.py \
+  --case <CASE_NAME> \
+  --spinup-case <SPINUP_CASE_NAME> \
+  --model-type nn \
+  --feature-set params_surface \
+  --apply-variance-filter \
+  --variance-threshold 1.0e-10 \
+  --apply-corr-filter \
+  --corr-threshold 0.98 \
+  --permutation-repeats 8 \
+  --split-mode by_member \
+  --train-fraction 0.8 \
+  --split-random-state 2026 \
+  --stats-only \
+  --run-name spinup_surrogate_ablation_ps
+```
+
+Reduced-climatology example (keep only mean/std/seasonal amplitude metrics):
+
+```bash
+python train_surrogate_spinup.py \
+  --case <CASE_NAME> \
+  --spinup-case <SPINUP_CASE_NAME> \
+  --model-type nn \
+  --feature-set all \
+  --clim-feature-include "*_clim_mean,*_clim_std,*_clim_seasonal_amp" \
+  --apply-corr-filter \
+  --corr-threshold 0.98 \
+  --permutation-repeats 8 \
+  --split-random-state 2026 \
+  --stats-only \
+  --run-name spinup_surrogate_reduced_clim
+```
+
+Batch templates:
+- [`examples/slurm/case.train_surrogate_spinup_quick.slurm`](examples/slurm/case.train_surrogate_spinup_quick.slurm)
+- [`examples/slurm/case.train_surrogate_spinup_iter1.slurm`](examples/slurm/case.train_surrogate_spinup_iter1.slurm) (seed-array + variant-driven overfitting diagnostics)
+
+Stats aggregation helper:
+
+```bash
+python summarize_spinup_stats.py \
+  --stats-dir /pscratch/sd/t/tianyihu/E3SM_out/SOIL_project/UQ_output/<RUN_NAME>/surrogate_spinup \
+  --glob "surrogate_spinup_stats_seed*.json" \
+  --output-json /pscratch/sd/t/tianyihu/E3SM_out/SOIL_project/UQ_output/<RUN_NAME>/surrogate_spinup/summary.json
+```
 
 ### HPC validation checklist
 

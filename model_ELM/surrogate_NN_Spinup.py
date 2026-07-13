@@ -5,6 +5,7 @@ import hashlib
 import json
 import math
 import pickle
+from fnmatch import fnmatch
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
@@ -34,6 +35,8 @@ DEFAULT_SURFACE_VARS = ("PCT_SAND", "PCT_CLAY", "ORGANIC")
 DEFAULT_MONTH_COUNT = 12
 OVERFIT_R2_GAP_THRESHOLD = 0.15
 OVERFIT_RMSE_RATIO_THRESHOLD = 1.5
+DEFAULT_CORR_THRESHOLD = 0.98
+DEFAULT_VARIANCE_THRESHOLD = 1.0e-12
 
 
 @dataclass
@@ -131,35 +134,48 @@ def _normalize_model_type(model_type: str) -> str:
 def _build_spinup_estimator_and_grid(model_type: str, quick_grid: bool) -> Tuple[Any, Dict[str, List[Any]]]:
     mt = _normalize_model_type(model_type)
     if mt == "nn":
-        # Keep one compact MLP grid for spinup; no full-grid branch.
+        # Use a conservative MLP search to reduce overfitting risk on small spinup datasets.
         estimator = MLPRegressor(
-            max_iter=500,
+            max_iter=800,
             early_stopping=True,
-            validation_fraction=0.1,
-            n_iter_no_change=10,
+            validation_fraction=0.15,
+            n_iter_no_change=20,
             random_state=42,
         )
-        param_grid = {
-            "hidden_layer_sizes": [(8,), (16,)],
-            "activation": ["tanh"],
-            "solver": ["lbfgs"],
-            "alpha": [1.0, 10.0, 50.0],
-            "learning_rate": ["constant"],
-        }
+        if quick_grid:
+            param_grid = {
+                "hidden_layer_sizes": [(8,), (16,)],
+                "activation": ["tanh"],
+                "solver": ["adam"],
+                "alpha": [10.0, 50.0, 100.0],
+                "learning_rate_init": [1.0e-3],
+            }
+        else:
+            param_grid = {
+                "hidden_layer_sizes": [(4,), (8,), (16,)],
+                "activation": ["tanh"],
+                "solver": ["adam"],
+                "alpha": [1.0, 10.0, 50.0, 100.0],
+                "learning_rate_init": [5.0e-4, 1.0e-3],
+            }
         return estimator, param_grid
 
     estimator = RandomForestRegressor(random_state=42, n_jobs=1)
     if quick_grid:
         param_grid = {
-            "n_estimators": [100, 200],
-            "max_depth": [None, 12],
-            "min_samples_leaf": [1, 2],
+            "n_estimators": [200, 400],
+            "max_depth": [8, 12],
+            "min_samples_split": [4, 8],
+            "min_samples_leaf": [2, 4],
+            "max_features": ["sqrt"],
         }
     else:
         param_grid = {
-            "n_estimators": [100, 200, 400],
-            "max_depth": [None, 12, 20],
-            "min_samples_leaf": [1, 2, 4],
+            "n_estimators": [200, 400, 600],
+            "max_depth": [8, 12, 16],
+            "min_samples_split": [4, 8],
+            "min_samples_leaf": [2, 4, 8],
+            "max_features": ["sqrt"],
         }
     return estimator, param_grid
 
@@ -594,6 +610,8 @@ def _write_stats_json(
     stats_run_id: str,
     feature_names: Sequence[str],
     split_details: Optional[Dict[str, Any]] = None,
+    feature_diagnostics: Optional[Dict[str, Any]] = None,
+    input_feature_names_all: Optional[Sequence[str]] = None,
 ) -> None:
     payload: Dict[str, Any] = {
         "timestamp_utc": datetime.now(timezone.utc).isoformat(),
@@ -608,8 +626,12 @@ def _write_stats_json(
         "input_feature_names": list(feature_names),
         "by_variable": _sanitize_stats_for_json(stats),
     }
+    if input_feature_names_all is not None:
+        payload["input_feature_names_all"] = list(input_feature_names_all)
     if split_details is not None:
         payload["split_details"] = _sanitize_json_value(split_details)
+    if feature_diagnostics is not None:
+        payload["feature_diagnostics"] = _sanitize_json_value(feature_diagnostics)
     path.write_text(json.dumps(payload, indent=2, allow_nan=False), encoding="utf-8")
 
 
@@ -647,6 +669,213 @@ def _build_design_matrix(
     return X, row_case_ids, row_member_ids, row_site_ids
 
 
+def _normalize_feature_set(feature_set: str) -> str:
+    mode = str(feature_set).strip().lower()
+    allowed = {"all", "params_only", "params_surface", "params_clim"}
+    if mode not in allowed:
+        raise ValueError(f"Unsupported feature_set='{feature_set}'. Use one of {sorted(allowed)}.")
+    return mode
+
+
+def _normalize_glob_patterns(patterns: Optional[Sequence[str]]) -> List[str]:
+    if patterns is None:
+        return ["*"]
+    out = [str(p).strip() for p in patterns if str(p).strip()]
+    return out if out else ["*"]
+
+
+def _collect_high_corr_pairs(
+    X_train: np.ndarray,
+    feature_idx: np.ndarray,
+    feature_names: Sequence[str],
+    corr_threshold: float,
+) -> List[Dict[str, Any]]:
+    if feature_idx.size < 2:
+        return []
+    corr = np.corrcoef(X_train[:, feature_idx], rowvar=False)
+    corr = np.nan_to_num(corr, nan=0.0, posinf=0.0, neginf=0.0)
+    pairs: List[Dict[str, Any]] = []
+    for i in range(corr.shape[0]):
+        for j in range(i + 1, corr.shape[1]):
+            cval = float(corr[i, j])
+            if abs(cval) >= float(corr_threshold):
+                pairs.append(
+                    {
+                        "feature_i": str(feature_names[int(feature_idx[i])]),
+                        "feature_j": str(feature_names[int(feature_idx[j])]),
+                        "corr": cval,
+                    }
+                )
+    pairs.sort(key=lambda d: abs(float(d["corr"])), reverse=True)
+    return pairs
+
+
+def _select_feature_columns(
+    X: np.ndarray,
+    train_idx: np.ndarray,
+    input_feature_names: Sequence[str],
+    *,
+    n_params: int,
+    n_surface: int,
+    n_climatology: int,
+    feature_set: str,
+    clim_feature_include: Optional[Sequence[str]] = None,
+    apply_variance_filter: bool = False,
+    variance_threshold: float = DEFAULT_VARIANCE_THRESHOLD,
+    apply_corr_filter: bool = False,
+    corr_threshold: float = DEFAULT_CORR_THRESHOLD,
+) -> Tuple[np.ndarray, Dict[str, Any]]:
+    mode = _normalize_feature_set(feature_set)
+    n_total = X.shape[1]
+    names = [str(v) for v in input_feature_names]
+    if n_total != len(names):
+        raise ValueError(
+            f"Feature-name length mismatch: matrix has {n_total} columns, names have {len(names)}."
+        )
+    if n_total != (n_params + n_surface + n_climatology):
+        raise ValueError(
+            "Feature block length mismatch: "
+            f"n_total={n_total}, n_params={n_params}, n_surface={n_surface}, n_climatology={n_climatology}."
+        )
+    train_X = X[train_idx, :]
+    keep = np.zeros(n_total, dtype=bool)
+    p_end = n_params
+    s_end = n_params + n_surface
+    clim_idx = np.arange(s_end, n_total, dtype=np.int32)
+
+    if mode == "all":
+        keep[:] = True
+    elif mode == "params_only":
+        keep[:p_end] = True
+    elif mode == "params_surface":
+        keep[:s_end] = True
+    elif mode == "params_clim":
+        keep[:p_end] = True
+        keep[s_end:] = True
+    else:
+        raise ValueError(f"Unsupported feature_set='{feature_set}'")
+
+    dropped_by_feature_set = [
+        str(names[i]) for i in range(n_total) if not keep[i]
+    ]
+
+    clim_patterns = _normalize_glob_patterns(clim_feature_include)
+    dropped_by_clim_include: List[str] = []
+    if keep[clim_idx].any() and not (len(clim_patterns) == 1 and clim_patterns[0] == "*"):
+        for idx in clim_idx.tolist():
+            if not keep[idx]:
+                continue
+            fname = str(names[idx])
+            matched = any(fnmatch(fname, pattern) for pattern in clim_patterns)
+            if not matched:
+                keep[idx] = False
+                dropped_by_clim_include.append(fname)
+
+    dropped_by_variance: List[Dict[str, Any]] = []
+    if apply_variance_filter:
+        candidate = np.where(keep)[0]
+        variances = np.nanvar(train_X[:, candidate], axis=0)
+        for local_i, idx in enumerate(candidate.tolist()):
+            v = float(variances[local_i])
+            if (not np.isfinite(v)) or (v <= float(variance_threshold)):
+                keep[idx] = False
+                dropped_by_variance.append({"feature": str(names[idx]), "variance": v})
+
+    high_corr_pairs: List[Dict[str, Any]] = []
+    dropped_by_correlation: List[str] = []
+    if apply_corr_filter:
+        candidate = np.where(keep)[0]
+        high_corr_pairs = _collect_high_corr_pairs(
+            train_X,
+            candidate,
+            names,
+            corr_threshold=float(corr_threshold),
+        )
+        name_to_idx = {name: idx for idx, name in enumerate(names)}
+        dropped = set()
+        for pair in high_corr_pairs:
+            name_j = str(pair["feature_j"])
+            idx_j = int(name_to_idx[name_j])
+            if idx_j in dropped:
+                continue
+            dropped.add(idx_j)
+        for idx in sorted(dropped):
+            if keep[idx]:
+                keep[idx] = False
+                dropped_by_correlation.append(str(names[idx]))
+
+    selected_idx = np.where(keep)[0].astype(np.int32)
+    if selected_idx.size == 0:
+        raise ValueError(
+            "Feature selection removed all features. "
+            "Relax feature_set / clim_feature_include / variance / correlation filters."
+        )
+    selected_names = [str(names[i]) for i in selected_idx.tolist()]
+    diagnostics: Dict[str, Any] = {
+        "feature_set": mode,
+        "n_total_features": int(n_total),
+        "n_selected_features": int(selected_idx.size),
+        "selected_feature_names": selected_names,
+        "selected_feature_indices": [int(v) for v in selected_idx.tolist()],
+        "clim_feature_include": list(clim_patterns),
+        "apply_variance_filter": bool(apply_variance_filter),
+        "variance_threshold": float(variance_threshold),
+        "apply_corr_filter": bool(apply_corr_filter),
+        "corr_threshold": float(corr_threshold),
+        "dropped_by_feature_set": dropped_by_feature_set,
+        "dropped_by_clim_include": dropped_by_clim_include,
+        "dropped_by_variance": dropped_by_variance,
+        "high_corr_pairs": high_corr_pairs,
+        "dropped_by_correlation": dropped_by_correlation,
+        "n_params": int(n_params),
+        "n_surface": int(n_surface),
+        "n_climatology": int(n_climatology),
+    }
+    return selected_idx, diagnostics
+
+
+def _permutation_importance_rmse(
+    model: Any,
+    X_val_scaled: np.ndarray,
+    y_scaler: preprocessing.StandardScaler,
+    y_val_true: np.ndarray,
+    feature_names: Sequence[str],
+    *,
+    n_repeats: int = 5,
+    random_state: Optional[int] = None,
+) -> List[Dict[str, Any]]:
+    if int(n_repeats) <= 0 or X_val_scaled.shape[0] < 2 or X_val_scaled.shape[1] == 0:
+        return []
+    baseline_pred = y_scaler.inverse_transform(model.predict(X_val_scaled).reshape(-1, 1)).ravel()
+    baseline_rmse = _rmse(y_val_true, baseline_pred)
+    baseline_r2 = _safe_r2(y_val_true, baseline_pred)
+    rng = np.random.default_rng(random_state)
+    out: List[Dict[str, Any]] = []
+    nrows = X_val_scaled.shape[0]
+    for j in range(X_val_scaled.shape[1]):
+        rmse_deltas: List[float] = []
+        r2_deltas: List[float] = []
+        for _ in range(int(n_repeats)):
+            X_perm = X_val_scaled.copy()
+            perm_idx = rng.permutation(nrows)
+            X_perm[:, j] = X_val_scaled[perm_idx, j]
+            pred = y_scaler.inverse_transform(model.predict(X_perm).reshape(-1, 1)).ravel()
+            rmse_deltas.append(float(_rmse(y_val_true, pred) - baseline_rmse))
+            score = _safe_r2(y_val_true, pred)
+            r2_deltas.append(float(baseline_r2 - score) if np.isfinite(score) and np.isfinite(baseline_r2) else float("nan"))
+        out.append(
+            {
+                "feature": str(feature_names[j]),
+                "mean_rmse_increase": float(np.nanmean(rmse_deltas)),
+                "std_rmse_increase": float(np.nanstd(rmse_deltas)),
+                "mean_r2_drop": float(np.nanmean(r2_deltas)),
+                "std_r2_drop": float(np.nanstd(r2_deltas)),
+            }
+        )
+    out.sort(key=lambda d: float(d["mean_rmse_increase"]), reverse=True)
+    return out
+
+
 def train_surrogate_spinup_from_cases(
     cases: Sequence[Any],
     spinup_cases: Optional[Sequence[Any]] = None,
@@ -667,6 +896,14 @@ def train_surrogate_spinup_from_cases(
     run_name: Optional[str] = None,
     minimal_output: bool = False,
     stats_run_id: Optional[str] = None,
+    feature_set: str = "all",
+    clim_feature_include: Optional[Sequence[str]] = None,
+    apply_variance_filter: bool = False,
+    variance_threshold: float = DEFAULT_VARIANCE_THRESHOLD,
+    apply_corr_filter: bool = False,
+    corr_threshold: float = DEFAULT_CORR_THRESHOLD,
+    permutation_repeats: int = 5,
+    permutation_random_state: Optional[int] = None,
 ) -> Optional[Dict[str, Any]]:
     if not cases:
         raise ValueError("At least one case object is required.")
@@ -694,6 +931,11 @@ def train_surrogate_spinup_from_cases(
     if not forcing_vars_list:
         raise ValueError("forcing_vars must not be empty.")
     model_type_norm = _normalize_model_type(model_type)
+    feature_set_norm = _normalize_feature_set(feature_set)
+    if float(corr_threshold) < 0.0 or float(corr_threshold) > 1.0:
+        raise ValueError(f"corr_threshold must be in [0, 1], got {corr_threshold}")
+    if int(permutation_repeats) < 0:
+        raise ValueError(f"permutation_repeats must be >= 0, got {permutation_repeats}")
 
     blocks = [
         _prepare_case_spinup_block(
@@ -714,17 +956,13 @@ def train_surrogate_spinup_from_cases(
 
     X, row_case_ids, row_member_ids, row_site_ids = _build_design_matrix(blocks)
     ref = blocks[0]
-    input_feature_names = (
+    all_input_feature_names = (
         [f"parm_{i}" for i in range(ref.params.shape[1])]
         + list(ref.surface_feature_names)
         + list(ref.climatology_feature_names)
     )
-    print(f"Final spinup design matrix: {X.shape}")
+    print(f"Final spinup design matrix (full): {X.shape}")
     print(f"Cases: {case_names}")
-
-    if dry_run:
-        print("Dry-run only. Exiting before model fitting.")
-        return None
 
     train_idx, val_idx, split_details = _build_split_indices(
         row_case_ids=row_case_ids,
@@ -735,8 +973,31 @@ def train_surrogate_spinup_from_cases(
         split_random_state=split_random_state,
     )
     print(f"Train rows: {train_idx.size}, Val rows: {val_idx.size}")
-    if model_type_norm == "nn" and not quick_grid:
-        print("Info: MLP spinup surrogate uses a compact grid by default; --quick-grid has no extra effect.")
+
+    selected_idx, feature_diagnostics = _select_feature_columns(
+        X,
+        train_idx,
+        all_input_feature_names,
+        n_params=int(ref.params.shape[1]),
+        n_surface=int(ref.surface.shape[1]),
+        n_climatology=int(ref.climatology.shape[1]),
+        feature_set=feature_set_norm,
+        clim_feature_include=clim_feature_include,
+        apply_variance_filter=apply_variance_filter,
+        variance_threshold=float(variance_threshold),
+        apply_corr_filter=apply_corr_filter,
+        corr_threshold=float(corr_threshold),
+    )
+    input_feature_names = [all_input_feature_names[i] for i in selected_idx.tolist()]
+    X_selected = X[:, selected_idx]
+    print(
+        f"Feature selection: kept {X_selected.shape[1]}/{X.shape[1]} columns "
+        f"(feature_set={feature_set_norm})"
+    )
+
+    if dry_run:
+        print("Dry-run only. Exiting before model fitting.")
+        return None
 
     model_store: Dict[str, Any] = {}
     x_scaler_store: Dict[str, preprocessing.StandardScaler] = {}
@@ -750,10 +1011,10 @@ def train_surrogate_spinup_from_cases(
             bad = int(np.sum(~np.isfinite(y)))
             raise ValueError(f"Target {var} contains {bad} non-finite values")
 
-        x_scaler = preprocessing.StandardScaler().fit(X[train_idx, :])
+        x_scaler = preprocessing.StandardScaler().fit(X_selected[train_idx, :])
         y_scaler = preprocessing.StandardScaler().fit(y[train_idx, :])
-        X_train = x_scaler.transform(X[train_idx, :])
-        X_val = x_scaler.transform(X[val_idx, :])
+        X_train = x_scaler.transform(X_selected[train_idx, :])
+        X_val = x_scaler.transform(X_selected[val_idx, :])
         y_train = y_scaler.transform(y[train_idx, :]).ravel()
         y_val = y_scaler.transform(y[val_idx, :]).ravel()
 
@@ -782,6 +1043,21 @@ def train_surrogate_spinup_from_cases(
                 f"{overfit['overfit_reason']}"
             )
 
+        perm_seed = (
+            int(permutation_random_state)
+            if permutation_random_state is not None
+            else (int(split_random_state) if split_random_state is not None else 42)
+        ) + int(ivar)
+        permutation_importance = _permutation_importance_rmse(
+            grid,
+            X_val,
+            y_scaler,
+            yval_true,
+            input_feature_names,
+            n_repeats=int(permutation_repeats),
+            random_state=perm_seed,
+        )
+
         stats[var] = {
             "r2_train": train_r2,
             "r2_val": val_r2,
@@ -791,6 +1067,8 @@ def train_surrogate_spinup_from_cases(
             "rmse_ratio": overfit["rmse_ratio"],
             "overfit_warning": overfit["overfit_warning"],
             "overfit_reason": overfit["overfit_reason"],
+            "permutation_repeats": int(permutation_repeats),
+            "permutation_importance_rmse": permutation_importance,
         }
         model_store[var] = grid
         x_scaler_store[var] = x_scaler
@@ -812,10 +1090,18 @@ def train_surrogate_spinup_from_cases(
 
     training_layout = {
         "input_feature_names": input_feature_names,
+        "input_feature_names_all": list(all_input_feature_names),
+        "selected_feature_indices": [int(v) for v in selected_idx.tolist()],
         "surface_feature_names": list(ref.surface_feature_names),
         "climatology_feature_names": list(ref.climatology_feature_names),
         "spinup_vars": list(spinup_vars_list),
         "model_type": model_type_norm,
+        "feature_set": feature_set_norm,
+        "clim_feature_include": _normalize_glob_patterns(clim_feature_include),
+        "apply_variance_filter": bool(apply_variance_filter),
+        "variance_threshold": float(variance_threshold),
+        "apply_corr_filter": bool(apply_corr_filter),
+        "corr_threshold": float(corr_threshold),
         "forcing_vars_for_climatology": list(forcing_vars_list),
         "clim_feature_mode": clim_feature_mode_norm,
         "n_params": int(ref.params.shape[1]),
@@ -829,6 +1115,7 @@ def train_surrogate_spinup_from_cases(
             for c, sc in zip(cases, spinup_cases_resolved)
         ],
         "nsamples_per_case": {block.case_name: int(block.nsamples) for block in blocks},
+        "feature_diagnostics": feature_diagnostics,
     }
 
     resolved_stats_id = _resolve_stats_run_id(stats_run_id, split_random_state)
@@ -847,6 +1134,8 @@ def train_surrogate_spinup_from_cases(
         stats_run_id=resolved_stats_id,
         feature_names=input_feature_names,
         split_details=split_details,
+        feature_diagnostics=feature_diagnostics,
+        input_feature_names_all=all_input_feature_names,
     )
 
     if minimal_output:
@@ -860,6 +1149,7 @@ def train_surrogate_spinup_from_cases(
             "split_random_state": split_random_state,
             "stats": stats,
             "split_details": split_details,
+            "feature_diagnostics": feature_diagnostics,
             "training_layout": training_layout,
             "stats_path": str(stats_path),
             "minimal_output": True,
@@ -880,6 +1170,7 @@ def train_surrogate_spinup_from_cases(
         "y_scaler": y_scaler_store,
         "stats": stats,
         "split_details": split_details,
+        "feature_diagnostics": feature_diagnostics,
         "training_layout": training_layout,
         "stats_path": str(stats_path),
     }
@@ -1013,6 +1304,14 @@ def predict_spinup_state(
     n_params = int(meta["n_params"])
     n_surface = int(meta["n_surface"])
     n_clim = int(meta["n_climatology"])
+    selected_idx_raw = meta.get("selected_feature_indices", None)
+    selected_idx: Optional[np.ndarray]
+    if selected_idx_raw is None:
+        selected_idx = None
+    else:
+        selected_idx = np.asarray(selected_idx_raw, dtype=np.int32).reshape(-1)
+    expected_full_cols = n_params + n_surface + n_clim
+    expected_model_cols = int(selected_idx.size) if selected_idx is not None else expected_full_cols
 
     if X is None:
         pr = np.asarray(parms, dtype=np.float64)
@@ -1028,15 +1327,23 @@ def predict_spinup_state(
             raise ValueError(f"surface vector must have length {n_surface}, got {sfc.size}")
         if clim.size != n_clim:
             raise ValueError(f"climatology vector must have length {n_clim}, got {clim.size}")
-        X = np.empty((pr.shape[0], n_params + n_surface + n_clim), dtype=np.float64)
+        X = np.empty((pr.shape[0], expected_full_cols), dtype=np.float64)
         X[:, :n_params] = pr
         X[:, n_params : n_params + n_surface] = sfc
         X[:, n_params + n_surface :] = clim
+        if selected_idx is not None:
+            X = X[:, selected_idx]
     else:
         X = np.asarray(X, dtype=np.float64)
-        expected_cols = n_params + n_surface + n_clim
-        if X.ndim != 2 or X.shape[1] != expected_cols:
-            raise ValueError(f"X must have shape (n, {expected_cols}), got {X.shape}")
+        if X.ndim != 2:
+            raise ValueError(f"X must be 2-D, got {X.shape}")
+        if X.shape[1] == expected_full_cols and selected_idx is not None:
+            X = X[:, selected_idx]
+        elif X.shape[1] not in (expected_full_cols, expected_model_cols):
+            raise ValueError(
+                f"X must have shape (n, {expected_full_cols}) full features "
+                f"or (n, {expected_model_cols}) selected features, got {X.shape}"
+            )
 
     out: Dict[str, np.ndarray] = {}
     for var in myvars:

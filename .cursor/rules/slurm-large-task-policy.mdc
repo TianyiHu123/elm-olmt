@@ -1,0 +1,21 @@
+---
+description: Require Slurm scripts for large CPU or memory tasks
+alwaysApply: true
+---
+
+# Large-Task Slurm Policy
+
+- In both local and HPC sessions, if a task is large (needs multiple CPUs, high memory, long runtime, or batch sweeps), do not run it directly on a login node.
+- For large tasks, provide and use a Slurm submission path (`sbatch <script>.slurm`) with clear resource requests.
+- If the user asks to run a large task directly, explain why it should be scheduled and provide the Slurm command/script instead.
+- Small, quick checks can still run interactively when allowed by the execution-permission rule.
+
+# Examples
+
+```bash
+# ❌ Large training directly on login node
+python train_surrogate_spinup.py --case ABBY_ppe6_I20TRCNPRDCTCBC --n-jobs 32
+
+# ✅ Schedule large task with Slurm
+sbatch examples/slurm/case.train_surrogate_spinup_iter1.slurm
+```

@@ -66,12 +66,60 @@ def _build_parser() -> argparse.ArgumentParser:
         choices=["nn", "random_forest"],
         help="Surrogate backend to train (default: nn)",
     )
+    parser.add_argument(
+        "--feature-set",
+        default="all",
+        choices=["all", "params_only", "params_surface", "params_clim"],
+        help="Feature group selection before model fit (default: all)",
+    )
+    parser.add_argument(
+        "--clim-feature-include",
+        default="*",
+        help=(
+            "Comma-separated glob patterns for climatology features to keep "
+            "(for example '*_mean,*_std,*_seasonal_amp')."
+        ),
+    )
+    parser.add_argument(
+        "--apply-variance-filter",
+        action="store_true",
+        help="Drop selected features with train variance <= --variance-threshold",
+    )
+    parser.add_argument(
+        "--variance-threshold",
+        type=float,
+        default=1.0e-12,
+        help="Variance threshold used by --apply-variance-filter",
+    )
+    parser.add_argument(
+        "--apply-corr-filter",
+        action="store_true",
+        help="Greedy drop of highly correlated selected features using --corr-threshold",
+    )
+    parser.add_argument(
+        "--corr-threshold",
+        type=float,
+        default=0.98,
+        help="Absolute correlation threshold used by --apply-corr-filter",
+    )
+    parser.add_argument(
+        "--permutation-repeats",
+        type=int,
+        default=5,
+        help="Permutation-importance repeats per feature on validation rows",
+    )
+    parser.add_argument(
+        "--permutation-random-state",
+        type=int,
+        default=None,
+        help="Optional base seed for permutation importance (defaults to split seed when set)",
+    )
     parser.add_argument("--n-jobs", type=int, default=8)
     parser.add_argument("--cv-folds", type=int, default=3)
     parser.add_argument(
         "--quick-grid",
         action="store_true",
-        help="Use smaller hyperparameter grid (mainly affects random_forest; nn is already compact)",
+        help="Use smaller hyperparameter grid for faster seed-sweep diagnostics",
     )
     parser.add_argument("--dry-run", action="store_true", help="Print data dimensions and exit before training")
     parser.add_argument("--workdir", default=".", help="OLMT root directory (for pklfiles path)")
@@ -138,6 +186,7 @@ def main() -> int:
     spinup_vars = [s.strip() for s in args.spinup_vars.split(",") if s.strip()]
     surface_vars = [s.strip() for s in args.surface_vars.split(",") if s.strip()]
     forcing_vars = [s.strip() for s in args.forcing_vars.split(",") if s.strip()]
+    clim_feature_include = [s.strip() for s in args.clim_feature_include.split(",") if s.strip()]
     if not spinup_vars:
         print("Error: --spinup-vars cannot be empty", file=sys.stderr)
         return 1
@@ -171,6 +220,14 @@ def main() -> int:
         cv_folds=args.cv_folds,
         quick_grid=args.quick_grid,
         model_type=args.model_type,
+        feature_set=args.feature_set,
+        clim_feature_include=clim_feature_include,
+        apply_variance_filter=args.apply_variance_filter,
+        variance_threshold=args.variance_threshold,
+        apply_corr_filter=args.apply_corr_filter,
+        corr_threshold=args.corr_threshold,
+        permutation_repeats=args.permutation_repeats,
+        permutation_random_state=args.permutation_random_state,
         dry_run=args.dry_run,
         outputdir=args.outputdir,
         run_name=args.run_name,
