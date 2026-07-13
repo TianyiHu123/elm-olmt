@@ -22,4 +22,7 @@ slurm-*.out
 mcsamples*.txt
 create_newcase.log
 
+# notebook checkpoints
+**/.ipynb_checkpoints/
+
 # user defined files
