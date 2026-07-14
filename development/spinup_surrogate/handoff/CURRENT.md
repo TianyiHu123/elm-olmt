@@ -44,7 +44,7 @@ For `TOTSOMC` medians:
    - `multi_params_only` (`feature_set=params_only`)
 5. Use canonical script path `development/spinup_surrogate/slurm/iter002/` and default scratch run roots `.../spinup_surrogate_iter2_<VARIANT>`.
 6. Compare retained-feature diagnostics + permutation importance and standard validation metrics (including `IQR = p75 - p25`).
-7. Apply fail-fast policy: if any variant blocks after retry, terminate iter002 as failed and switch to debug handoff.
+7. Apply fail-fast policy: if any variant blocks after retry, cancel remaining active/pending iter002 jobs, mark iter002 failed, and switch to debug handoff.
 
 ## Next Session Start Protocol
 
@@ -53,6 +53,8 @@ For `TOTSOMC` medians:
 3. Create and review `development/spinup_surrogate/slurm/iter002/case.train_surrogate_spinup_iter2_multicase.slurm`.
 4. Create/update `development/spinup_surrogate/iterations/iter002.md` before first submission.
 5. Before each submit, checksum-check canonical vs submitted script and log provenance (`commit hash`, checksums, job IDs/states).
+6. Submit variant jobs in parallel by default and monitor all variant jobs concurrently.
+7. If any variant is blocked after one retry, cancel remaining active/pending iteration jobs and produce debug handoff.
 
 ## Ready/Blocked Status for Next Iteration
 
@@ -81,6 +83,7 @@ Reference used:
 - `.cursor/skills/spinup-surrogate-iteration/SKILL.md`
 - `.cursor/skills/spinup-surrogate-handoff/SKILL.md`
 - `.cursor/skills/perlmutter-slurm-jobops/SKILL.md`
+- `development/spinup_surrogate/iteration_loop.md`
 
 ## Failure Debug Bundle Reference (required when latest iteration status is `failed`)
 

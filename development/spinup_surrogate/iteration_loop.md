@@ -82,17 +82,19 @@ Repeat for each round until stop condition is met.
    - copy canonical script to default scratch path unless user overrides:
      `/pscratch/sd/t/tianyihu/E3SM_out/SOIL_project/UQ_output/spinup_surrogate_iterXXX_<VARIANT>/`
    - verify canonical/submitted script sync with checksum
-   - log provenance in `iterXXX.md`:
+   - log pre-submit provenance in `iterXXX.md`:
      - variant name
      - canonical/submitted script paths
      - checksums
      - source commit hash
-2. Invoke `/perlmutter-slurm-jobops` for submit+monitor.
-3. Record `job_id`, state, and diagnostics in `iterXXX.md`.
+2. Submit all prepared variants (parallel by default unless user explicitly requests sequential) via `/perlmutter-slurm-jobops`.
+3. Record each variant `job_id` in `iterXXX.md` immediately after submit.
+4. Monitor all submitted variant jobs concurrently via `/perlmutter-slurm-jobops` until terminal state.
+5. Record final per-variant state/exit diagnostics in `iterXXX.md`.
 
 Resource adaptation rule:
 
-- If a job fails due to memory or walltime pressure and retry is allowed, increase only the failing resource conservatively within user caps before retry.
+- If a job fails due to memory or walltime pressure and retry is allowed, increase only the failing resource conservatively within user caps before retry (for the failed variant only).
 - Always record resource change rationale in `iterXXX.md`.
 
 ### Round C: fail-fast handling
@@ -100,16 +102,17 @@ Resource adaptation rule:
 If any variant is blocked after one retry:
 
 1. Mark iteration status `failed` in `iterXXX.md` and `registry.csv`.
-2. Terminate this iteration immediately (no remaining variants).
-3. Do not aggregate or select a winner.
-4. Write failure debug bundle in `iterXXX.md` with:
+2. Cancel all remaining active/pending variant jobs for this iteration and log cancellation evidence.
+3. Terminate this iteration immediately (no remaining variants).
+4. Do not aggregate or select a winner.
+5. Write failure debug bundle in `iterXXX.md` with:
    - blocked variant
    - paths/checksums/commit hash
    - job state/exit code/reason
    - key `squeue`/`sacct` snippets
    - next debug hypothesis
-5. Invoke `/spinup-surrogate-handoff` to produce debug handoff in `CURRENT.md`.
-6. Stop loop with failure unless user explicitly restarts with a debug objective.
+6. Invoke `/spinup-surrogate-handoff` to produce debug handoff in `CURRENT.md`.
+7. Stop loop with failure unless user explicitly restarts with a debug objective.
 
 ### Round D: aggregation and comparison (success path only)
 

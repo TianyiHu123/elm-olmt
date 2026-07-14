@@ -57,6 +57,12 @@ After submit:
 - record submit timestamp, script path, exports, and command used
 - record script checksum(s) and source commit hash when available
 
+For variant matrices, default to batched submission:
+
+- submit one job per variant (parallel is preferred)
+- maintain a variant-to-job_id mapping
+- record mapping immediately in iteration tracking notes
+
 ## Monitoring Pattern
 
 Use these commands:
@@ -67,6 +73,13 @@ Use these commands:
   `squeue -j <job_id>`
 - Final state and exit code:
   `sacct -j <job_id> --format=JobID,JobName,Partition,Account,AllocTRES,State,ExitCode,Elapsed`
+
+For concurrent monitoring of multiple jobs:
+
+- use a comma-separated list for queue/accounting checks:
+  - `squeue -j <job_id1>,<job_id2>,<job_id3>`
+  - `sacct -j <job_id1>,<job_id2>,<job_id3> --format=...`
+- keep polling until all jobs are terminal, then produce per-job final state table
 
 ## Failure Triage
 
@@ -87,6 +100,7 @@ Retry policy:
 - If second run fails, mark the job `blocked` and escalate to user with evidence and options.
 - Do not make higher-level experiment decisions; caller workflow must request user decision when blocked jobs exist.
 - On blocked jobs, return a debug bundle suitable for next-session troubleshooting.
+- In multi-job batches with fail-fast policy, recommend cancelling other active/pending jobs once one variant is blocked after retry.
 
 ## Return Format
 
@@ -102,3 +116,9 @@ Always report:
 - `blocked` (true/false)
 - recommended next step
 - debug bundle fields (when blocked): `job_id`, `state`, `exit_code`, reason, script paths, checksums, key `squeue`/`sacct` output snippets
+
+For multi-job operations, also report:
+
+- full submitted set (`variant -> job_id`)
+- per-job terminal states
+- whether all jobs completed successfully (`all_completed`: true/false)

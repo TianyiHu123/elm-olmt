@@ -64,9 +64,9 @@ Inside `iterations/iterXXX.md`, keep a per-variant run ledger with:
   `/pscratch/sd/t/tianyihu/E3SM_out/SOIL_project/UQ_output/spinup_surrogate_iterXXX_<VARIANT>`
 - Replace `iterXXX` with the active iteration and `<VARIANT>` with variant name.
 
-## Required Submission Procedure (Per Variant)
+## Required Submission Procedure (Parallel Default)
 
-For each variant in the matrix:
+Phase A - Prepare each variant in the matrix:
 
 1. Ensure the canonical script exists in
    `development/spinup_surrogate/slurm/iterXXX/`.
@@ -74,8 +74,18 @@ For each variant in the matrix:
    `/pscratch/sd/t/tianyihu/E3SM_out/SOIL_project/UQ_output/spinup_surrogate_iterXXX_<VARIANT>/`.
 3. Verify canonical and submitted scripts are in sync via checksum compare.
 4. Record checksums and source commit hash in `iterations/iterXXX.md` before submit.
-5. Submit exactly one job for that variant with `VARIANT=<name>`.
-6. Record the submitted script path and job ID in `iterations/iterXXX.md`.
+
+Phase B - Submit all variants:
+
+5. Submit exactly one job per variant with `VARIANT=<name>`, in parallel by default.
+6. Record submitted script path and job ID per variant in `iterations/iterXXX.md` immediately after submit.
+
+Phase C - Monitor all variants concurrently:
+
+7. Monitor all submitted job IDs as one active set until every job reaches terminal state.
+8. Record terminal `state`/`exit_code` and diagnostics per variant in `iterations/iterXXX.md`.
+
+If the user explicitly asks for sequential execution, sequential submission/monitoring is allowed as an override.
 
 Command pattern (example):
 
@@ -85,7 +95,7 @@ Sync-check example:
 
 `sha256sum development/spinup_surrogate/slurm/iterXXX/case.train_surrogate_spinup_iterXXX.slurm /pscratch/sd/t/tianyihu/E3SM_out/SOIL_project/UQ_output/spinup_surrogate_iterXXX_<VARIANT>/case.train_surrogate_spinup_iterXXX.slurm`
 
-Use `.cursor/skills/perlmutter-slurm-jobops/SKILL.md` for submission and monitoring operations.
+Use `.cursor/skills/perlmutter-slurm-jobops/SKILL.md` for batched submission and concurrent monitoring operations.
 
 ## Failed Job Handling
 
@@ -94,16 +104,17 @@ If `perlmutter-slurm-jobops` reports a variant job failure:
 1. Record `job_id`, `state`, `exit_code`, and reason in `iterations/iterXXX.md`.
 2. Do not aggregate that variant yet.
 3. Apply one minimal fix (resources/script option/runtime command) and resubmit once.
-4. If the retry still fails, mark that variant `blocked` and terminate the iteration loop immediately.
+4. If the retry still fails, mark that variant `blocked`.
 5. Mark iteration status as `failed` in `iterations/iterXXX.md` and `registry.csv`.
-6. Do not continue remaining variants, do not aggregate/compare, and do not select a winner.
-7. Write a failure debug bundle in `iterations/iterXXX.md` containing:
+6. Cancel all remaining active/pending variant jobs for the same iteration and log cancellation evidence.
+7. Do not continue remaining variants, do not aggregate/compare, and do not select a winner.
+8. Write a failure debug bundle in `iterations/iterXXX.md` containing:
    - blocked variant name
    - canonical/submitted script paths + checksums
    - source commit hash
    - job ID(s), `state`, `exit_code`, pending/failure reason
    - last `squeue`/`sacct` diagnostic snippets and next debug hypothesis
-8. Update `handoff/CURRENT.md` with the failed status and debug entry point for next session.
+9. Update `handoff/CURRENT.md` with the failed status and debug entry point for next session.
 
 ## Required Aggregation Procedure (Per Variant)
 
@@ -139,7 +150,8 @@ Copy this checklist into `development/spinup_surrogate/iterations/iterXXX.md` an
 - [ ] Copy script to default scratch variant directory unless user overrides path
 - [ ] Verify canonical/submitted script sync with checksum compare
 - [ ] Record per-variant provenance (`commit hash`, checksums, job IDs/states) in `iterations/iterXXX.md`
-- [ ] Invoke `perlmutter-slurm-jobops` to submit/monitor one job per variant (`VARIANT=<name>`)
+- [ ] Invoke `perlmutter-slurm-jobops` to submit one job per variant (`VARIANT=<name>`) with parallel default
+- [ ] Monitor all variant job IDs concurrently until terminal states are known
 - [ ] Log submitted script path, job ID, and final state in `development/spinup_surrogate/iterations/iterXXX.md`
 - [ ] For failed variants, follow Failed Job Handling section before aggregation
 - [ ] If any variant is blocked after retry, terminate iteration as `failed` and write failure debug bundle
