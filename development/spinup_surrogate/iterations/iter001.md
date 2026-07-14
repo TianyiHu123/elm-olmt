@@ -45,12 +45,20 @@ Use parameter-only NN as the main direction for next iteration. Keep RF out of p
 
 ## Next Iteration Plan (iter002)
 
-1. Parameter-only NN regularization sweep (small targeted grid).
-2. Optional baseline control run for drift check.
-3. Keep same seed range for direct comparability.
-4. Re-check warning fraction and validation tails.
+1. Move to multi-case setup (9 cases) with `by_member` split to recover variance in surface and forcing-derived climatology features.
+2. Run seeds `10001-10030` for iter002 (30 seeds).
+3. Use NN-only attribution matrix:
+   - `multi_all` (`feature_set=all`)
+   - `multi_params_surface` (`feature_set=params_surface`)
+   - `multi_params_clim` (`feature_set=params_clim`)
+   - `multi_params_only` (`feature_set=params_only`)
+4. Keep `train_fraction=0.8`, targets `TOTSOMC,TOTSOMN`, and permutation diagnostics enabled.
+5. Compare feature retention + permutation importance and validation metrics (`r2_val`, `r2_gap`, `rmse_ratio`, warning fraction, tails, `IQR=p75-p25`).
+6. Apply fail-fast rule: if any variant blocks after one retry, terminate iter002 as `failed` and hand off as debug session.
 
 ## Artifacts
 
 - Scratch outputs: `/pscratch/sd/t/tianyihu/E3SM_out/SOIL_project/UQ_output/spinup_surrogate_iter1_*`
 - Aggregated summaries copied to: `development/spinup_surrogate/summaries/iter001/`
+- Iter002 canonical script location: `development/spinup_surrogate/slurm/iter002/`
+- Iter002 planned scratch root: `/pscratch/sd/t/tianyihu/E3SM_out/SOIL_project/UQ_output/spinup_surrogate_iter2_<VARIANT>`
