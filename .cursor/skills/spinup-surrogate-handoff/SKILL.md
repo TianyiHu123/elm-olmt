@@ -8,8 +8,8 @@ disable-model-invocation: true
 
 ## Use When
 
-- Session context is getting high and a handoff is needed
-- Finishing a run batch and capturing the next action
+- Iteration closeout is complete and a handoff is needed
+- Session context is getting high after iteration work is documented
 - User asks for a concise current status
 
 ## Source of Truth
@@ -17,6 +17,32 @@ disable-model-invocation: true
 Always keep this file current:
 
 - `development/spinup_surrogate/handoff/CURRENT.md`
+
+## Workflow Sequence
+
+Use handoff only after the current iteration is documented:
+
+1. Finish iteration tracking artifacts (`iterations/iterXXX.md`, summaries, registry updates).
+2. Save current session context into `development/spinup_surrogate/handoff/CURRENT.md`.
+3. Apply commit policy (default one checkpoint commit for finished iteration; split only if needed for clarity).
+4. End current session.
+5. Start a new session for the next iteration and run the New Session Bootstrap steps.
+
+If the iteration ended in `failed` status, handoff becomes a debug handoff:
+
+- clearly mark iteration as failed
+- include blocked variant and failure bundle pointer from `iterations/iterXXX.md`
+- set next session objective to debug and unblock before any new iteration runs
+
+## New Session Bootstrap (Required)
+
+At the start of the next session:
+
+1. Load `development/spinup_surrogate/handoff/CURRENT.md`.
+2. Load the last three iteration reports from `development/spinup_surrogate/iterations/iterXXX.md` (if fewer than three exist, load all available).
+3. Read the latest iteration report in full.
+4. From the previous one or two reports, at minimum extract: objective, variant matrix, key metrics, winner/blocked status, and decision rationale.
+5. Use this combined context to plan the next iteration before any execution.
 
 ## Required Sections in `CURRENT.md`
 
@@ -26,9 +52,12 @@ Always keep this file current:
 4. What changed in latest iteration
 5. Open risks / unknowns
 6. Next iteration plan
-7. Exact commands to run next
-8. Artifact paths (repo summaries + `/pscratch/.../UQ_output/...`)
-9. Files modified in repo
+7. Next session start protocol (what to read/check first)
+8. Ready/blocked status for next iteration
+9. Required user decisions before execution (if any)
+10. Artifact paths (repo summaries + `/pscratch/.../UQ_output/...`)
+11. Files modified in repo
+12. Failure debug bundle reference (required when latest iteration status is `failed`)
 
 ## Quality Rules
 
@@ -37,12 +66,16 @@ Always keep this file current:
 - Include split mode and seed range used in comparisons.
 - Include clear stop/go criteria for the next iteration.
 - Include the iteration ID (for example `iter002`) in the handoff title/summary text.
+- Do not require runnable commands in handoff; commands belong in iteration artifacts or Slurm execution workflow.
+- In `Next session start protocol`, list the exact iteration report files to load.
+- If latest iteration is `failed`, next session plan must start with debug/unblock steps, not a new variant sweep.
 
-## Commit Checkpoint Before Handoff
+## Commit Policy During Handoff
 
-- If meaningful workflow artifacts are uncommitted, create one checkpoint commit before finalizing handoff.
+- Default: create one checkpoint commit per finished iteration after `CURRENT.md` is updated.
+- Optional: split into two commits only when it improves review clarity (for example code changes vs tracking/docs updates).
+- If an iteration is aborted without meaningful tracked updates, skip creating a checkpoint commit.
 - Use a commit message that includes the iteration ID (`iterXXX`) for traceability.
-- Prefer one coherent commit per iteration milestone, not one commit per run.
 
 ## Guardrails
 

@@ -26,10 +26,105 @@ disable-model-invocation: true
 - Ask user permission before execution, even when on HPC.
 - For large tasks (multi-CPU, high-memory, long runs, seed arrays), use Slurm (`sbatch`).
 
+## Iteration ID and Naming
+
+- Iteration IDs must be zero-padded and sequential: `iter001`, `iter002`, ..., `iterXXX`.
+- Use the current `iterXXX` consistently across iteration notes, Slurm paths, run naming, and summaries.
+
+## Iteration Report Policy
+
+- Every iteration must have a report at `development/spinup_surrogate/iterations/iterXXX.md`.
+- Create/update that report from iteration start through closeout (not only at the end).
+- At minimum, record: objective, controls/variants, submitted job IDs + states, summary metrics, decision, blockers, and next action.
+- Include iteration status: `success` or `failed`.
+- An iteration is not considered complete until `iterXXX.md` is updated and finalized.
+
+## Variant Provenance Log (Required)
+
+Inside `iterations/iterXXX.md`, keep a per-variant run ledger with:
+
+- variant name
+- canonical script path
+- submitted script path
+- canonical script checksum
+- submitted script checksum
+- source commit hash (`git rev-parse HEAD`)
+- job ID(s) and final state
+- retry notes (if any)
+
+## Canonical Slurm Script Location
+
+- For each new iteration, create/update scripts under `development/spinup_surrogate/slurm/iterXXX/`.
+- Treat `development/spinup_surrogate/slurm/iterXXX/` as the source of truth for that iteration.
+- If a script is copied elsewhere for execution convenience, keep the canonical copy in sync.
+
+## Default Scratch Output Location
+
+- Unless the user specifies otherwise, use:
+  `/pscratch/sd/t/tianyihu/E3SM_out/SOIL_project/UQ_output/spinup_surrogate_iterXXX_<VARIANT>`
+- Replace `iterXXX` with the active iteration and `<VARIANT>` with variant name.
+
+## Required Submission Procedure (Per Variant)
+
+For each variant in the matrix:
+
+1. Ensure the canonical script exists in
+   `development/spinup_surrogate/slurm/iterXXX/`.
+2. If the user does not specify another submit location, copy the script to
+   `/pscratch/sd/t/tianyihu/E3SM_out/SOIL_project/UQ_output/spinup_surrogate_iterXXX_<VARIANT>/`.
+3. Verify canonical and submitted scripts are in sync via checksum compare.
+4. Record checksums and source commit hash in `iterations/iterXXX.md` before submit.
+5. Submit exactly one job for that variant with `VARIANT=<name>`.
+6. Record the submitted script path and job ID in `iterations/iterXXX.md`.
+
+Command pattern (example):
+
+`sbatch --export=ALL,VARIANT=<VARIANT> /pscratch/sd/t/tianyihu/E3SM_out/SOIL_project/UQ_output/spinup_surrogate_iterXXX_<VARIANT>/case.train_surrogate_spinup_iterXXX.slurm`
+
+Sync-check example:
+
+`sha256sum development/spinup_surrogate/slurm/iterXXX/case.train_surrogate_spinup_iterXXX.slurm /pscratch/sd/t/tianyihu/E3SM_out/SOIL_project/UQ_output/spinup_surrogate_iterXXX_<VARIANT>/case.train_surrogate_spinup_iterXXX.slurm`
+
+Use `.cursor/skills/perlmutter-slurm-jobops/SKILL.md` for submission and monitoring operations.
+
+## Failed Job Handling
+
+If `perlmutter-slurm-jobops` reports a variant job failure:
+
+1. Record `job_id`, `state`, `exit_code`, and reason in `iterations/iterXXX.md`.
+2. Do not aggregate that variant yet.
+3. Apply one minimal fix (resources/script option/runtime command) and resubmit once.
+4. If the retry still fails, mark that variant `blocked` and terminate the iteration loop immediately.
+5. Mark iteration status as `failed` in `iterations/iterXXX.md` and `registry.csv`.
+6. Do not continue remaining variants, do not aggregate/compare, and do not select a winner.
+7. Write a failure debug bundle in `iterations/iterXXX.md` containing:
+   - blocked variant name
+   - canonical/submitted script paths + checksums
+   - source commit hash
+   - job ID(s), `state`, `exit_code`, pending/failure reason
+   - last `squeue`/`sacct` diagnostic snippets and next debug hypothesis
+8. Update `handoff/CURRENT.md` with the failed status and debug entry point for next session.
+
+## Required Aggregation Procedure (Per Variant)
+
+For each variant:
+
+1. Run `summarize_spinup_stats.py` using the variant's `surrogate_spinup` stats directory.
+2. Use `--glob "surrogate_spinup_stats_seed*.json"`.
+3. Write aggregate output to the variant run directory as `summary.json`.
+4. Copy that `summary.json` to
+   `development/spinup_surrogate/summaries/iterXXX/<variant>_summary.json`.
+
+Command pattern:
+
+`python summarize_spinup_stats.py --stats-dir /pscratch/sd/t/tianyihu/E3SM_out/SOIL_project/UQ_output/spinup_surrogate_iterXXX_<VARIANT>/surrogate_spinup --glob "surrogate_spinup_stats_seed*.json" --output-json /pscratch/sd/t/tianyihu/E3SM_out/SOIL_project/UQ_output/spinup_surrogate_iterXXX_<VARIANT>/surrogate_spinup/summary.json`
+
 ## Commit Policy
 
 - Do not commit every seed run or partial trial.
-- Make one checkpoint commit per meaningful iteration milestone (after winner selection + tracking updates).
+- Default: make one checkpoint commit per finished iteration milestone after iteration artifacts are updated.
+- Optional: split into two commits only when it improves review clarity (for example code changes vs tracking/docs updates).
+- If an iteration is aborted without meaningful tracked updates, skip creating a checkpoint commit.
 - Include the iteration ID in the commit message (for example `iter002`).
 - Keep large raw outputs in `UQ_output` out of git unless explicitly requested.
 
@@ -40,14 +135,21 @@ Copy this checklist into `development/spinup_surrogate/iterations/iterXXX.md` an
 - [ ] Define objective and hypothesis
 - [ ] Define fixed controls (case, split mode, train fraction, seed range)
 - [ ] Define variants to compare
-- [ ] Prepare/update Slurm scripts in `development/spinup_surrogate/slurm/`
-- [ ] Submit runs through Slurm
-- [ ] Aggregate per-variant summary JSON
-- [ ] Compare variants with consistent metrics
-- [ ] Select winner and record decision
+- [ ] Prepare/update Slurm scripts in `development/spinup_surrogate/slurm/iterXXX/`
+- [ ] Copy script to default scratch variant directory unless user overrides path
+- [ ] Verify canonical/submitted script sync with checksum compare
+- [ ] Record per-variant provenance (`commit hash`, checksums, job IDs/states) in `iterations/iterXXX.md`
+- [ ] Invoke `perlmutter-slurm-jobops` to submit/monitor one job per variant (`VARIANT=<name>`)
+- [ ] Log submitted script path, job ID, and final state in `development/spinup_surrogate/iterations/iterXXX.md`
+- [ ] For failed variants, follow Failed Job Handling section before aggregation
+- [ ] If any variant is blocked after retry, terminate iteration as `failed` and write failure debug bundle
+- [ ] If no blocked variants, aggregate each variant with `summarize_spinup_stats.py` and copy summary JSON to `development/spinup_surrogate/summaries/iterXXX/`
+- [ ] If no blocked variants, compare variants with consistent metrics
+- [ ] If no blocked variants, select winner and record decision
+- [ ] Finalize `development/spinup_surrogate/iterations/iterXXX.md` with outcomes and rationale
 - [ ] Update `development/spinup_surrogate/registry.csv`
 - [ ] Update `development/spinup_surrogate/handoff/CURRENT.md`
-- [ ] Create one checkpoint commit with iteration ID in message
+- [ ] Create checkpoint commit(s) per Commit Policy with iteration ID in message
 
 ## Standard Comparison Metrics
 
@@ -59,10 +161,16 @@ For each target variable (`TOTSOMC`, `TOTSOMN`), report:
 - `overfit_warning_fraction`
 - tails (`min r2_val`, `max rmse_ratio`)
 
+IQR definition:
+
+- `IQR = p75 - p25` using the `p25` and `p75` fields from each variant summary JSON.
+
 ## Required Outputs Per Iteration
 
-- `development/spinup_surrogate/iterations/iterXXX.md`
+- finalized `development/spinup_surrogate/iterations/iterXXX.md`
 - `development/spinup_surrogate/summaries/iterXXX/<variant>_summary.json`
 - one new row in `development/spinup_surrogate/registry.csv`
 - updated `development/spinup_surrogate/handoff/CURRENT.md`
-- one checkpoint commit referencing `iterXXX`
+- checkpoint commit(s) per Commit Policy referencing `iterXXX`
+
+On failed iterations, summary outputs may be incomplete; failure debug bundle is required.
