@@ -56,11 +56,17 @@ For `TOTSOMC` medians:
 
 ## Ready/Blocked Status for Next Iteration
 
-Ready with defined scope; blocked only on selecting adequate Slurm memory/time settings for 9-case runs.
+Ready to run iter002. Resource policy resolved to explicit values from the successful 9-case multisite reference run.
 
 ## Required User Decisions Before Execution (if any)
 
-- Confirm initial `#SBATCH --mem` and walltime for iter002 multisite jobs.
+None for resource policy. Use explicit baseline:
+
+- `#SBATCH --mem=42GB`
+- `#SBATCH --time=00:05:00`
+
+Reference used:
+`/pscratch/sd/t/tianyihu/E3SM_out/SOIL_project/UQ_output/spinup_surrogate_iter1_multisite_baseline/case.train_surrogate_spinup_iter1.slurm`
 
 ## Artifact Paths
 
