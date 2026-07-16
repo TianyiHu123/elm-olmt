@@ -5,6 +5,7 @@ import hashlib
 import json
 import math
 import pickle
+import time
 from fnmatch import fnmatch
 from dataclasses import dataclass
 from datetime import datetime, timezone
@@ -90,6 +91,12 @@ def _rmse(y_true: np.ndarray, y_pred: np.ndarray) -> float:
 
 def _format_metric(v: float) -> str:
     return "nan" if not np.isfinite(v) else f"{v:.4f}"
+
+
+def _log_phase_timing(label: str, started: float, **details: Any) -> None:
+    detail_text = " ".join(f"{key}={value}" for key, value in details.items())
+    suffix = f" {detail_text}" if detail_text else ""
+    print(f"TIMING phase={label} seconds={time.perf_counter() - started:.3f}{suffix}", flush=True)
 
 
 def _sanitize_json_value(value: Any) -> Any:
@@ -904,6 +911,7 @@ def train_surrogate_spinup_from_cases(
     corr_threshold: float = DEFAULT_CORR_THRESHOLD,
     permutation_repeats: int = 5,
     permutation_random_state: Optional[int] = None,
+    pre_dispatch: Union[int, str] = "2*n_jobs",
 ) -> Optional[Dict[str, Any]]:
     if not cases:
         raise ValueError("At least one case object is required.")
@@ -937,8 +945,10 @@ def train_surrogate_spinup_from_cases(
     if int(permutation_repeats) < 0:
         raise ValueError(f"permutation_repeats must be >= 0, got {permutation_repeats}")
 
-    blocks = [
-        _prepare_case_spinup_block(
+    blocks: List[_PreparedSpinupCaseBlock] = []
+    for case, spinup_case in zip(cases, spinup_cases_resolved):
+        phase_start = time.perf_counter()
+        block = _prepare_case_spinup_block(
             case=case,
             spinup_vars=spinup_vars_list,
             surface_vars=surface_vars_list,
@@ -946,15 +956,17 @@ def train_surrogate_spinup_from_cases(
             clim_feature_mode=clim_feature_mode_norm,
             spinup_case=spinup_case,
         )
-        for case, spinup_case in zip(cases, spinup_cases_resolved)
-    ]
+        blocks.append(block)
+        _log_phase_timing("prepare_case", phase_start, case=block.case_name, rows=block.nsamples)
     _validate_spinup_blocks(blocks)
     case_names = [b.case_name for b in blocks]
     output_label = _resolve_output_label(case_names, run_name)
     outdir = Path(outputdir).resolve() / "UQ_output" / output_label / "surrogate_spinup"
     outdir.mkdir(parents=True, exist_ok=True)
 
+    phase_start = time.perf_counter()
     X, row_case_ids, row_member_ids, row_site_ids = _build_design_matrix(blocks)
+    _log_phase_timing("build_design_matrix", phase_start, shape=X.shape)
     ref = blocks[0]
     all_input_feature_names = (
         [f"parm_{i}" for i in range(ref.params.shape[1])]
@@ -974,6 +986,7 @@ def train_surrogate_spinup_from_cases(
     )
     print(f"Train rows: {train_idx.size}, Val rows: {val_idx.size}")
 
+    phase_start = time.perf_counter()
     selected_idx, feature_diagnostics = _select_feature_columns(
         X,
         train_idx,
@@ -988,6 +1001,7 @@ def train_surrogate_spinup_from_cases(
         apply_corr_filter=apply_corr_filter,
         corr_threshold=float(corr_threshold),
     )
+    _log_phase_timing("select_features", phase_start, selected=int(selected_idx.size))
     input_feature_names = [all_input_feature_names[i] for i in selected_idx.tolist()]
     X_selected = X[:, selected_idx]
     print(
@@ -1019,8 +1033,22 @@ def train_surrogate_spinup_from_cases(
         y_val = y_scaler.transform(y[val_idx, :]).ravel()
 
         estimator, param_grid = _build_spinup_estimator_and_grid(model_type_norm, quick_grid)
-        grid = GridSearchCV(estimator, param_grid, n_jobs=n_jobs, cv=cv_folds)
+        grid = GridSearchCV(
+            estimator,
+            param_grid,
+            n_jobs=n_jobs,
+            cv=cv_folds,
+            pre_dispatch=pre_dispatch,
+        )
+        phase_start = time.perf_counter()
         grid.fit(X_train, y_train)
+        _log_phase_timing(
+            "grid_search_fit",
+            phase_start,
+            target=var,
+            n_jobs=n_jobs,
+            pre_dispatch=pre_dispatch,
+        )
 
         yhat_train = y_scaler.inverse_transform(grid.predict(X_train).reshape(-1, 1)).ravel()
         yhat_val = y_scaler.inverse_transform(grid.predict(X_val).reshape(-1, 1)).ravel()
@@ -1048,6 +1076,7 @@ def train_surrogate_spinup_from_cases(
             if permutation_random_state is not None
             else (int(split_random_state) if split_random_state is not None else 42)
         ) + int(ivar)
+        phase_start = time.perf_counter()
         permutation_importance = _permutation_importance_rmse(
             grid,
             X_val,
@@ -1056,6 +1085,12 @@ def train_surrogate_spinup_from_cases(
             input_feature_names,
             n_repeats=int(permutation_repeats),
             random_state=perm_seed,
+        )
+        _log_phase_timing(
+            "permutation_importance",
+            phase_start,
+            target=var,
+            repeats=permutation_repeats,
         )
 
         stats[var] = {

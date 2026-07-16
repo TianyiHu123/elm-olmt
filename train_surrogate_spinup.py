@@ -115,6 +115,11 @@ def _build_parser() -> argparse.ArgumentParser:
         help="Optional base seed for permutation importance (defaults to split seed when set)",
     )
     parser.add_argument("--n-jobs", type=int, default=8)
+    parser.add_argument(
+        "--pre-dispatch",
+        default="2*n_jobs",
+        help="GridSearchCV pre_dispatch value (default: 2*n_jobs; iter004 can use n_jobs to limit queued copies)",
+    )
     parser.add_argument("--cv-folds", type=int, default=3)
     parser.add_argument(
         "--quick-grid",
@@ -217,6 +222,7 @@ def main() -> int:
         train_fraction=args.train_fraction,
         split_random_state=args.split_random_state,
         n_jobs=args.n_jobs,
+        pre_dispatch=args.pre_dispatch,
         cv_folds=args.cv_folds,
         quick_grid=args.quick_grid,
         model_type=args.model_type,
