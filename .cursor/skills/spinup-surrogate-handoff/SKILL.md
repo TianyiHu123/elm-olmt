@@ -52,12 +52,13 @@ At the start of the next session:
 4. What changed in latest iteration
 5. Open risks / unknowns
 6. Next iteration plan
-7. Next session start protocol (what to read/check first)
-8. Ready/blocked status for next iteration
-9. Required user decisions before execution (if any)
-10. Artifact paths (repo summaries + `/pscratch/.../UQ_output/...`)
-11. Files modified in repo
-12. Failure debug bundle reference (required when latest iteration status is `failed`)
+7. Plan Reference (optional): path to long-form plan file when available, otherwise `none`
+8. Next session start protocol (what to read/check first)
+9. Ready/blocked status for next iteration
+10. Required user decisions before execution (if any)
+11. Artifact paths (repo summaries + `/pscratch/.../UQ_output/...`)
+12. Files modified in repo
+13. Failure debug bundle reference (required when latest iteration status is `failed`)
 
 ## Quality Rules
 
@@ -68,6 +69,7 @@ At the start of the next session:
 - Include the iteration ID (for example `iter002`) in the handoff title/summary text.
 - Do not require runnable commands in handoff; commands belong in iteration artifacts or Slurm execution workflow.
 - In `Next session start protocol`, list the exact iteration report files to load.
+- In `Plan Reference (optional)`, missing path must not block progress; default to continuing from `CURRENT.md` and deriving the next-round plan autonomously.
 - If latest iteration is `failed`, next session plan must start with debug/unblock steps, not a new variant sweep.
 
 ## Commit Policy During Handoff

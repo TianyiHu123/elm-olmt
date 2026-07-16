@@ -39,6 +39,7 @@ If either is missing, do not start the loop.
 
 1. Invoke `/spinup-surrogate-handoff` bootstrap behavior:
    - load `development/spinup_surrogate/handoff/CURRENT.md`
+   - read `Plan Reference (optional)` in `CURRENT.md`; if a long-form plan path is set, load it; if not set, continue from `CURRENT.md` only
    - load the last three iteration reports (or all available if fewer)
 2. Extract current state:
    - current objective

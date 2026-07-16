@@ -20,6 +20,14 @@ disable-model-invocation: true
 - `development/spinup_surrogate/slurm/`
 - `development/spinup_surrogate/handoff/CURRENT.md`
 
+## Bootstrap Context (before plan lock)
+
+Before defining the iteration matrix, load context in this order:
+
+1. `development/spinup_surrogate/handoff/CURRENT.md`
+2. Optional long-form plan path from `CURRENT.md` `Plan Reference (optional)` (if set; if missing or `none`, continue with `CURRENT.md` only)
+3. Last three iteration reports from `development/spinup_surrogate/iterations/` (or all available if fewer than three)
+
 ## Execution Guardrails
 
 - Confirm whether the current workspace/session is on HPC before execution.
