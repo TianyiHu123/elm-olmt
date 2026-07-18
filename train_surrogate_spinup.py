@@ -81,6 +81,14 @@ def _build_parser() -> argparse.ArgumentParser:
         ),
     )
     parser.add_argument(
+        "--feature-subset",
+        default=None,
+        help=(
+            "Optional comma-separated explicit feature-name subset after eligibility "
+            "filtering (for example 'parm_6,PCT_SAND,FSDS_clim_mean')."
+        ),
+    )
+    parser.add_argument(
         "--apply-variance-filter",
         action="store_true",
         help="Drop selected features with train variance <= --variance-threshold",
@@ -192,6 +200,11 @@ def main() -> int:
     surface_vars = [s.strip() for s in args.surface_vars.split(",") if s.strip()]
     forcing_vars = [s.strip() for s in args.forcing_vars.split(",") if s.strip()]
     clim_feature_include = [s.strip() for s in args.clim_feature_include.split(",") if s.strip()]
+    feature_subset = (
+        [s.strip() for s in args.feature_subset.split(",") if s.strip()]
+        if args.feature_subset is not None
+        else None
+    )
     if not spinup_vars:
         print("Error: --spinup-vars cannot be empty", file=sys.stderr)
         return 1
@@ -228,6 +241,7 @@ def main() -> int:
         model_type=args.model_type,
         feature_set=args.feature_set,
         clim_feature_include=clim_feature_include,
+        explicit_feature_subset=feature_subset,
         apply_variance_filter=args.apply_variance_filter,
         variance_threshold=args.variance_threshold,
         apply_corr_filter=args.apply_corr_filter,

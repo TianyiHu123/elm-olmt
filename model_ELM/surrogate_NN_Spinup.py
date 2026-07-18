@@ -691,11 +691,26 @@ def _normalize_glob_patterns(patterns: Optional[Sequence[str]]) -> List[str]:
     return out if out else ["*"]
 
 
-def _collect_high_corr_pairs(
+def _normalize_feature_subset(feature_subset: Optional[Sequence[str]]) -> List[str]:
+    if feature_subset is None:
+        return []
+    out: List[str] = []
+    seen = set()
+    for raw in feature_subset:
+        name = str(raw).strip()
+        if not name or name in seen:
+            continue
+        out.append(name)
+        seen.add(name)
+    return out
+
+
+def _collect_corr_pairs(
     X_train: np.ndarray,
     feature_idx: np.ndarray,
     feature_names: Sequence[str],
-    corr_threshold: float,
+    *,
+    corr_threshold: Optional[float] = None,
 ) -> List[Dict[str, Any]]:
     if feature_idx.size < 2:
         return []
@@ -705,16 +720,38 @@ def _collect_high_corr_pairs(
     for i in range(corr.shape[0]):
         for j in range(i + 1, corr.shape[1]):
             cval = float(corr[i, j])
-            if abs(cval) >= float(corr_threshold):
-                pairs.append(
-                    {
-                        "feature_i": str(feature_names[int(feature_idx[i])]),
-                        "feature_j": str(feature_names[int(feature_idx[j])]),
-                        "corr": cval,
-                    }
-                )
+            if corr_threshold is not None and abs(cval) < float(corr_threshold):
+                continue
+            pairs.append(
+                {
+                    "feature_i": str(feature_names[int(feature_idx[i])]),
+                    "feature_j": str(feature_names[int(feature_idx[j])]),
+                    "corr": cval,
+                }
+            )
     pairs.sort(key=lambda d: abs(float(d["corr"])), reverse=True)
     return pairs
+
+
+def _find_drop_representative(
+    dropped_name: str,
+    high_corr_pairs: Sequence[Dict[str, Any]],
+) -> Dict[str, Any]:
+    for pair in high_corr_pairs:
+        name_i = str(pair.get("feature_i", ""))
+        name_j = str(pair.get("feature_j", ""))
+        if name_j != dropped_name:
+            continue
+        return {
+            "dropped_feature": dropped_name,
+            "representative_feature": name_i,
+            "corr": float(pair.get("corr", float("nan"))),
+        }
+    return {
+        "dropped_feature": dropped_name,
+        "representative_feature": None,
+        "corr": None,
+    }
 
 
 def _select_feature_columns(
@@ -727,6 +764,7 @@ def _select_feature_columns(
     n_climatology: int,
     feature_set: str,
     clim_feature_include: Optional[Sequence[str]] = None,
+    explicit_feature_subset: Optional[Sequence[str]] = None,
     apply_variance_filter: bool = False,
     variance_threshold: float = DEFAULT_VARIANCE_THRESHOLD,
     apply_corr_filter: bool = False,
@@ -788,11 +826,20 @@ def _select_feature_columns(
                 keep[idx] = False
                 dropped_by_variance.append({"feature": str(names[idx]), "variance": v})
 
+    explicit_subset_requested = _normalize_feature_subset(explicit_feature_subset)
+    eligible_idx_pre_corr = np.where(keep)[0].astype(np.int32)
+    full_corr_pairs_pre_prune = _collect_corr_pairs(
+        train_X,
+        eligible_idx_pre_corr,
+        names,
+    )
+
     high_corr_pairs: List[Dict[str, Any]] = []
     dropped_by_correlation: List[str] = []
+    dropped_by_correlation_pairs: List[Dict[str, Any]] = []
     if apply_corr_filter:
         candidate = np.where(keep)[0]
-        high_corr_pairs = _collect_high_corr_pairs(
+        high_corr_pairs = _collect_corr_pairs(
             train_X,
             candidate,
             names,
@@ -809,7 +856,11 @@ def _select_feature_columns(
         for idx in sorted(dropped):
             if keep[idx]:
                 keep[idx] = False
-                dropped_by_correlation.append(str(names[idx]))
+                dropped_name = str(names[idx])
+                dropped_by_correlation.append(dropped_name)
+                dropped_by_correlation_pairs.append(
+                    _find_drop_representative(dropped_name, high_corr_pairs)
+                )
 
     selected_idx = np.where(keep)[0].astype(np.int32)
     if selected_idx.size == 0:
@@ -817,6 +868,25 @@ def _select_feature_columns(
             "Feature selection removed all features. "
             "Relax feature_set / clim_feature_include / variance / correlation filters."
         )
+
+    selected_name_set = {str(names[i]) for i in selected_idx.tolist()}
+    missing_requested = [name for name in explicit_subset_requested if name not in selected_name_set]
+    if missing_requested:
+        raise ValueError(
+            "Explicit feature subset includes unavailable feature(s) after "
+            "feature_set/clim/variance/correlation filtering: "
+            + ", ".join(missing_requested)
+        )
+    explicit_subset_excluded: List[str] = []
+    if explicit_subset_requested:
+        name_to_idx = {str(name): int(i) for i, name in enumerate(names)}
+        selected_idx = np.asarray(
+            [name_to_idx[name] for name in explicit_subset_requested],
+            dtype=np.int32,
+        )
+        selected_name_set_subset = set(explicit_subset_requested)
+        explicit_subset_excluded = sorted(selected_name_set - selected_name_set_subset)
+
     selected_names = [str(names[i]) for i in selected_idx.tolist()]
     diagnostics: Dict[str, Any] = {
         "feature_set": mode,
@@ -832,8 +902,14 @@ def _select_feature_columns(
         "dropped_by_feature_set": dropped_by_feature_set,
         "dropped_by_clim_include": dropped_by_clim_include,
         "dropped_by_variance": dropped_by_variance,
+        "full_corr_pairs_pre_prune": full_corr_pairs_pre_prune,
         "high_corr_pairs": high_corr_pairs,
         "dropped_by_correlation": dropped_by_correlation,
+        "dropped_by_correlation_pairs": dropped_by_correlation_pairs,
+        "explicit_feature_subset_requested": explicit_subset_requested,
+        "explicit_feature_subset_applied": bool(explicit_subset_requested),
+        "explicit_feature_subset_missing": missing_requested,
+        "excluded_by_explicit_subset": explicit_subset_excluded,
         "n_params": int(n_params),
         "n_surface": int(n_surface),
         "n_climatology": int(n_climatology),
@@ -905,6 +981,7 @@ def train_surrogate_spinup_from_cases(
     stats_run_id: Optional[str] = None,
     feature_set: str = "all",
     clim_feature_include: Optional[Sequence[str]] = None,
+    explicit_feature_subset: Optional[Sequence[str]] = None,
     apply_variance_filter: bool = False,
     variance_threshold: float = DEFAULT_VARIANCE_THRESHOLD,
     apply_corr_filter: bool = False,
@@ -996,6 +1073,7 @@ def train_surrogate_spinup_from_cases(
         n_climatology=int(ref.climatology.shape[1]),
         feature_set=feature_set_norm,
         clim_feature_include=clim_feature_include,
+        explicit_feature_subset=explicit_feature_subset,
         apply_variance_filter=apply_variance_filter,
         variance_threshold=float(variance_threshold),
         apply_corr_filter=apply_corr_filter,
@@ -1133,6 +1211,7 @@ def train_surrogate_spinup_from_cases(
         "model_type": model_type_norm,
         "feature_set": feature_set_norm,
         "clim_feature_include": _normalize_glob_patterns(clim_feature_include),
+        "explicit_feature_subset": _normalize_feature_subset(explicit_feature_subset),
         "apply_variance_filter": bool(apply_variance_filter),
         "variance_threshold": float(variance_threshold),
         "apply_corr_filter": bool(apply_corr_filter),
