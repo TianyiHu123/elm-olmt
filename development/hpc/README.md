@@ -19,6 +19,10 @@ Profiles contain site facts only. They must not restate experiment lifecycle, it
 tracking, promotion rules, or handoff policy; those belong in
 `development/spinup_surrogate/WORKFLOW.md`.
 
-Start with `perlmutter.md`. Add a new profile when supporting another HPC system, including a
-non-Slurm system; document its equivalent submit, monitor, accounting, and cancellation
-operations.
+Available profiles:
+
+- `perlmutter.md`: NERSC Perlmutter.
+- `puma.md`: University of Arizona Puma.
+
+Add a new profile when supporting another HPC system, including a non-Slurm system; document its
+equivalent submit, monitor, accounting, and cancellation operations.

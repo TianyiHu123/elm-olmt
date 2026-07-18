@@ -1,16 +1,63 @@
-# Spinup Surrogate - Current Handoff (iter006 completed, all_control retained)
+# Spinup Surrogate - Current Handoff (Puma migration validated; iter007 ready to scaffold)
 
 ## Live State
 
 - Active iteration: `iter007` (not yet scaffolded)
 - Status: `planned`
-- Phase: `planning`
+- Phase: `ready for scaffolding`
 - Active job IDs: none
-- Site profile: `development/hpc/perlmutter.md`
+- Site profile: `development/hpc/puma.md`
+- Execution authority: not granted; confirm a new runtime contract before any iter007 execution
 
 ## Current Objective
 
-`iter006` completed feature-set settling under explicit subset validation. No reduced feature set passed the locked quality/tail gates, so `all_control` is retained. Iter007 should tune only MLP hyperparameters with the iter006 feature set frozen.
+The temporary Perlmutter-to-Puma migration is complete and validated without scaffolding iter007.
+`iter006` remains closed with `all_control` retained. Iter007 is ready for scaffolding as the first
+post-migration iteration and should tune only MLP hyperparameters with the iter006 feature set
+frozen. Execution authority for iter007 remains not granted.
+
+## Puma Migration State
+
+- Authoritative iter007 plan (by path only):
+  `/home/u32/tianyihu/.cursor/plans/iter007-mlp-tuning-4525e552.plan.md`.
+- Fixed repository root: `/xdisk/chopinsong/tianyihu/elm-olmt`. Future Slurm scripts must use this
+  literal root and fail early if `train_surrogate_spinup.py`, `WORKFLOW.md`, the Puma profile, the
+  Puma environment YAML, or iteration-specific tracked artifacts are absent. `$0`, copied-script
+  locations, `SLURM_SUBMIT_DIR`, current-directory discovery, and environment overrides are
+  prohibited for repository-root selection.
+- Pickle utility: `development/spinup_surrogate/migrate_case_pickles.py`, with mutually exclusive
+  inspect, apply, and recovery modes. All nine pickles form one transaction and originals are
+  retained as `<case>.pkl.perlmutter.bak` until the user manages them.
+- Puma run mapping:
+  `/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe`.
+- Puma meteorology mapping:
+  `/xdisk/chopinsong/tianyihu/E3SM_out/PTCLM/NEON/CTSM_NEON/<SITE>/1x1pt_<SITE>/CLM1PT_data`.
+- Future iter007 output root:
+  `/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/UQ_output`.
+- Puma runtime and lifecycle: use `micromamba run -n OLMT_puma` and treat
+  `development/spinup_surrogate/WORKFLOW.md` as canonical.
+- Only `case.runroot` and `case.metdir` are rewritten. `finidat`, `dependcase`, and unrelated
+  historical path metadata are unchanged; restart lookup continues through `dependcase` and the
+  `finidat` basename.
+- Login-node read-only inventory observed the nine meteorology directories and complete filename
+  sequences: 84 monthly files (2018-01 through 2024-12) for ABBY/JERC/OSBS/SOAP/RMNP/TALL and 72
+  (2019-01 through 2024-12) for TEAK/WREF/YELL. This is not compute-node validation.
+- Compute-node validation and activation passed under the bounded Puma contract. Inspection job
+  `23333089` completed successfully; apply job `23333093` completed successfully; final live-set
+  verification job `23333117` completed successfully. All nine original pickles are now Puma
+  mapped, and all nine `.perlmutter.bak` files remain preserved. No staged or temporary files
+  remain.
+
+Migration runtime contract completed:
+
+1. The intended interactive allocation path was unavailable because the Puma interactive and
+   `salloc` wrappers terminated before allocation. Under subsequent explicit user authority, the
+   bounded migration work ran as 1-CPU standard-partition batch jobs under account `chopinsong`,
+   where Puma derives the 5-GB allocation from the requested CPU.
+2. Load micromamba and run the utility through `micromamba run -n OLMT_puma`.
+3. Permit one retry at 2 CPUs and 10 GB only after confirmed OOM.
+4. Stop and request fresh authority for serialization, application, data, or validation failures.
+5. No training, training dry-run, iter007 artifacts, or unrelated jobs were run or created.
 
 ## Best Variant So Far
 
@@ -55,6 +102,9 @@ Resource diagnostics (`iter006`):
 - CPU efficiency remains low despite short walltime, indicating resource under-utilization
 - Correlated-feature attribution remains sensitive; explicit subset validity is now strict and may reject broad lists unless pre-screened
 - Hyperparameter-space behavior with the frozen iter006 feature set is not yet characterized
+- The Puma environment, nine pickles, and transferred data passed the dedicated compute-node
+  migration preflight; iter007 training and training dry-run have not run.
+- `OLMT_puma` currently uses the home-directory micromamba root; monitor the 50-GB home quota
 
 ## Next Iteration Plan (`iter007`, not started)
 
@@ -65,15 +115,19 @@ Resource diagnostics (`iter006`):
 5. Hyperparameter scope: vary `hidden_layer_sizes`, `alpha`, `learning_rate_init`; allow `activation` and `solver` changes for architecture-shift variants.
 6. Use no anchor candidate inside the iter007 matrix; compare all candidates directly against iter006 `all_control` as the external baseline.
 7. Keep scientific controls fixed: split mode `by_member`, train fraction `0.8`, targets `TOTSOMC,TOTSOMN`, seeds `10001-10005`.
-8. Keep resource defaults unless changed by user: `--mem=48GB`, `--time=00:30:00`, `N_JOBS=4`, `PRE_DISPATCH=n_jobs`.
-9. Selection rule: apply standard iteration-loop gates first; among passers, rank by mean median `r2_val` across both targets, then lower `rmse_ratio`, then simpler architecture.
-10. This handoff update is planning-only; no iter007 execution started.
+8. Start from the Puma standard-node baseline unless changed by user: account `chopinsong`,
+   partition `standard`, `--cpus-per-task=10` (which implies 50 GB total memory at Puma's 5 GB/CPU
+   ratio), omit `--mem` and `--mem-per-cpu`, use `--time=00:30:00`, `N_JOBS=4`,
+   `PRE_DISPATCH=n_jobs`, and single-threaded BLAS/OpenMP settings.
+9. Selection rule: apply the standard `WORKFLOW.md` gates first; among passers, rank by mean median `r2_val` across both targets, then lower `rmse_ratio`, then simpler architecture.
+10. Iter007 is the first iteration after the temporary Perlmutter-to-Puma migration. Migration
+    checks passed; iter007 is ready for scaffolding, but no iter007 execution has started.
 
-## Plan Reference (optional)
+## Plan Reference
 
-- Primary execution summary: this file (`CURRENT.md`) under `Next Iteration Plan`.
-- Iter007 full planning artifact (authoritative): `/global/homes/t/tianyihu/.cursor/plans/iter007-mlp-tuning-4525e552.plan.md`.
-- Iter006 archival plan: `/global/homes/t/tianyihu/.cursor/plans/iter006-feature-settling-03e71a26.plan.md`.
+- Iter007 full planning artifact (authoritative by path only): `/home/u32/tianyihu/.cursor/plans/iter007-mlp-tuning-4525e552.plan.md`.
+- Live migration and execution state: this file (`CURRENT.md`).
+- Iter006 archival plan: `/home/u32/tianyihu/.cursor/plans/iter006-feature-settling-03e71a26.plan.md`.
 
 ## Next Session Start Protocol
 
@@ -82,35 +136,49 @@ Resource diagnostics (`iter006`):
    - `development/spinup_surrogate/iterations/iter006.md`
    - `development/spinup_surrogate/iterations/iter005.md`
    - `development/spinup_surrogate/iterations/iter004.md`
-3. Load iter007 full plan: `/global/homes/t/tianyihu/.cursor/plans/iter007-mlp-tuning-4525e552.plan.md`.
+3. Load iter007 full plan: `/home/u32/tianyihu/.cursor/plans/iter007-mlp-tuning-4525e552.plan.md`.
 4. Review `development/spinup_surrogate/WORKFLOW.md` and
-   `development/hpc/perlmutter.md`.
-5. Treat iter006 as completed with `all_control` retained; execute iter007 only after runtime-contract confirmation (round budget, HPC/session confirmation, execution approval, resource policy).
+   `development/hpc/puma.md`.
+5. Keep iter007 unscaffolded until the user requests the planned scaffolding step. Do not use
+   training or training dry-run as migration preflight.
+6. Confirm a separate iter007 runtime contract before any training execution; execution authority
+   remains not granted.
 
 ## Ready/Blocked Status for Next Iteration
 
-Ready for iter007 MLP-only tuning. No scientific decision gate is currently blocking start.
+Ready for iter007 scaffolding. The nine-case Puma compute-node preflight, transactional rewrite,
+and post-activation verification passed. Retain `Execution authority: not granted` until the
+separate iter007 runtime contract is confirmed.
 
 ## Required User Decisions Before Execution (if any)
 
-Standard runtime contract confirmations still apply before the next submission:
-
-- round budget mode
-- HPC/session confirmation
-- execution approval
-- resource policy mode
+The remaining authority is the standard iter007 runtime contract: round budget mode, HPC/session
+confirmation, execution approval, and resource policy mode.
 
 ## Artifact Paths
 
 - Registry: `development/spinup_surrogate/registry.csv`
 - Current handoff: `development/spinup_surrogate/handoff/CURRENT.md`
+- Pickle migration utility: `development/spinup_surrogate/migrate_case_pickles.py`
+- Puma site profile: `development/hpc/puma.md`
 - Iter005 report: `development/spinup_surrogate/iterations/iter005.md`
 - Iter005 summaries: `development/spinup_surrogate/summaries/iter005/`
 - Iter006 report: `development/spinup_surrogate/iterations/iter006.md`
 - Iter006 script root: `development/spinup_surrogate/slurm/iter006/`
 - Iter006 summary root: `development/spinup_surrogate/summaries/iter006/`
 
-## Files Modified in Repo (latest cycle)
+## Files Modified in Repo (migration cycle)
+
+- `development/spinup_surrogate/migrate_case_pickles.py`
+- `development/hpc/puma.md`
+- `development/spinup_surrogate/handoff/CURRENT.md`
+- `development/spinup_surrogate/iterations/iter006.md` (provenance restoration only)
+
+The authoritative external plan was updated in place at
+`/home/u32/tianyihu/.cursor/plans/iter007-mlp-tuning-4525e552.plan.md`; it has no tracked mirror or
+recorded hash.
+
+## Files Modified in Repo (latest completed iteration)
 
 - `train_surrogate_spinup.py`
 - `model_ELM/surrogate_NN_Spinup.py`
