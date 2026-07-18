@@ -1,5 +1,13 @@
 # Spinup Surrogate - Current Handoff (iter006 completed, all_control retained)
 
+## Live State
+
+- Active iteration: `iter007` (not yet scaffolded)
+- Status: `planned`
+- Phase: `planning`
+- Active job IDs: none
+- Site profile: `development/hpc/perlmutter.md`
+
 ## Current Objective
 
 `iter006` completed feature-set settling under explicit subset validation. No reduced feature set passed the locked quality/tail gates, so `all_control` is retained. Iter007 should tune only MLP hyperparameters with the iter006 feature set frozen.
@@ -75,7 +83,8 @@ Resource diagnostics (`iter006`):
    - `development/spinup_surrogate/iterations/iter005.md`
    - `development/spinup_surrogate/iterations/iter004.md`
 3. Load iter007 full plan: `/global/homes/t/tianyihu/.cursor/plans/iter007-mlp-tuning-4525e552.plan.md`.
-4. Review `development/spinup_surrogate/iteration_loop.md`.
+4. Review `development/spinup_surrogate/WORKFLOW.md` and
+   `development/hpc/perlmutter.md`.
 5. Treat iter006 as completed with `all_control` retained; execute iter007 only after runtime-contract confirmation (round budget, HPC/session confirmation, execution approval, resource policy).
 
 ## Ready/Blocked Status for Next Iteration

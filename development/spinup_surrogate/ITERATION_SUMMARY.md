@@ -170,7 +170,7 @@ Use `multi_all` as the control and freeze the current MLP quick-grid while settl
 
 ## Source Artifacts
 
-- Controlling loop: `development/spinup_surrogate/iteration_loop.md`
+- Canonical workflow: `development/spinup_surrogate/WORKFLOW.md`
 - Current handoff: `development/spinup_surrogate/handoff/CURRENT.md`
 - Registry: `development/spinup_surrogate/registry.csv`
 - Detailed reports: `development/spinup_surrogate/iterations/iter001.md` through `iter005.md`

@@ -7,31 +7,25 @@ This folder tracks iterative development for the standalone spinup surrogate.
 - Keep an auditable history of each iteration (changes, results, decisions).
 - Separate lightweight tracked metadata (Git) from heavy run outputs (`/pscratch/...`).
 - Enable smooth handoff to new chat sessions with minimal context loss.
+- Use one repository-tracked workflow instead of project-specific agent skills.
 
 ## Structure
 
+- `WORKFLOW.md`: canonical instructions for planning, execution, closeout, and portability.
 - `registry.csv`: one-row summary per iteration.
 - `iterations/iterXXX.md`: detailed notes for each iteration.
 - `summaries/`: copied small summary JSON files used for comparisons.
 - `slurm/`: iteration-specific Slurm scripts (or references).
-- `handoff/CURRENT.md`: single source of truth for the next session.
+- `handoff/CURRENT.md`: live control record for the active iteration and next session.
+- `templates/`: blank iteration and handoff scaffolds; not runtime artifacts.
+- `../hpc/`: shared site profiles, beginning with `perlmutter.md`.
 
-## Standard Iteration Loop
+## Records
 
-1. Define objective + variant matrix in `iterations/iterXXX.md`.
-2. Run variants on HPC via Slurm.
-3. Aggregate metrics (`summarize_spinup_stats.py`) per variant.
-4. Copy summary JSONs into `summaries/iterXXX/`.
-5. Decide next action and update:
-   - `registry.csv`
-   - `handoff/CURRENT.md`
+`CURRENT.md` is the source of truth for current phase, active job IDs, and next action.
+`iterations/iterXXX.md` files are the permanent detailed evidence records. Start new sessions
+from the handoff, then read the latest report in full plus preceding reports and registry rows
+to avoid repeating work.
 
-## Metric Focus
-
-Track for `TOTSOMC` and `TOTSOMN`:
-
-- median `r2_val`
-- median `r2_gap`
-- median `rmse_ratio`
-- `overfit_warning_fraction`
-- tails (`min r2_val`, `max rmse_ratio`)
+Follow [`WORKFLOW.md`](WORKFLOW.md) for the complete lifecycle and use the selected
+[`development/hpc/`](../hpc/) profile for scheduler-specific behavior.
