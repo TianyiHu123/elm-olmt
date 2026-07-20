@@ -1,20 +1,31 @@
-# Spinup Surrogate - Current Handoff (Puma migration validated; iter007 ready to scaffold)
+# Spinup Surrogate - Current Handoff (iter007 completed)
 
 ## Live State
 
-- Active iteration: `iter007` (not yet scaffolded)
-- Status: `planned`
-- Phase: `ready for scaffolding`
+- Active iteration: `iter007`
+- Status: `completed`
+- Phase: `selection and closeout complete`
 - Active job IDs: none
 - Site profile: `development/hpc/puma.md`
-- Execution authority: not granted; confirm a new runtime contract before any iter007 execution
+- Execution authority: on 2026-07-20, the user approved a fresh finite retry contract for only
+  `s24_relu_adam_a50_lr5e4` seed `10005` and `d16_16_relu_adam_a50_lr5e4` seed `10002`, using the
+  per-array-task `XDG_CACHE_HOME` isolation in the canonical script. The user also authorized
+  continuous monitoring, successful-path aggregation/selection/closeout, one further retry per
+  leaf only for scheduler/resource interruption, and amendment of the existing iter007 closeout
+  commit. Both leaf retries completed. The user subsequently authorized correction of aggregation
+  job `23346866`'s one `d16_08` path suffix and a same-resource aggregation rerun. Corrected job
+  `23346902` completed; selection and closeout authority are now exhausted.
 
 ## Current Objective
 
-The temporary Perlmutter-to-Puma migration is complete and validated without scaffolding iter007.
-`iter006` remains closed with `all_control` retained. Iter007 is ready for scaffolding as the first
-post-migration iteration and should tune only MLP hyperparameters with the iter006 feature set
-frozen. Execution authority for iter007 remains not granted.
+The temporary Perlmutter-to-Puma migration is complete and validated. `iter006` remains closed
+with `all_control` retained. Iter007 is now scaffolded as the first post-migration iteration: it
+tests eight fixed MLP configurations with the iter006 45-feature set frozen. All eight original
+arrays are terminal: 38 leaves completed, while two leaves failed before training due to a
+concurrent ArviZ home-cache race. The two cache-isolated retry leaves completed, restoring all 40
+stats files. Corrected aggregation produced all eight summary/stability pairs; only
+`s08_tanh_adam_a10_lr1e3` passed the locked gates, exactly matching the iter006 all_control
+baseline. Do not broaden the matrix or alter the selected result.
 
 ## Puma Migration State
 
@@ -86,15 +97,15 @@ Resource diagnostics (`iter006`):
 - `seff` CPU efficiency approximately `2.64-3.56%`
 - `seff` memory efficiency approximately `76.25-99.94%`
 
-## What Changed in Latest Iteration
+## What Changed in Iter007 Scaffold
 
-- Added explicit feature-subset support in `train_surrogate_spinup.py` and `model_ELM/surrogate_NN_Spinup.py`
-- Enforced hard rejection when requested explicit-subset features are unavailable after variance/correlation filtering
-- Added full training-row Pearson-pair diagnostics before correlation pruning and persisted dropped-representative mapping
-- Expanded `development/spinup_surrogate/analyze_feature_stability.py` with thresholded pair frequencies (`0.80`, `0.90`, `0.95`, `0.98`) and cross-target agreement summaries
-- Ran iter006 four-variant matrix; completed three variants and rejected one invalid explicit subset
-- Aggregated iter006 performance and stability summaries under `development/spinup_surrogate/summaries/iter006/`
-- Kept `all_control` as baseline because no reduced candidate passed iter006 promotion gates
+- Added fixed MLP CLI controls and a direct fixed-parameter fitting path while retaining legacy
+  GridSearchCV behavior when the controls are absent.
+- Created the iter007 report, canonical Puma script, and expected summary path.
+- Added the required five-part runtime-contract authorization request to `WORKFLOW.md` for every
+  future iteration start.
+- Recorded the user's iter007 approval, the confirmed Puma login host, resource cap, retry limit,
+  and closeout-commit authority in `iterations/iter007.md`.
 
 ## Open Risks / Unknowns
 
@@ -106,22 +117,18 @@ Resource diagnostics (`iter006`):
   migration preflight; iter007 training and training dry-run have not run.
 - `OLMT_puma` currently uses the home-directory micromamba root; monitor the 50-GB home quota
 
-## Next Iteration Plan (`iter007`, not started)
+## Iter007 Plan (scaffolded, not submitted)
 
-1. Freeze features to the exact 45-feature set actually used by iter006 `all_control` after filtering (explicit subset list from `iter006.md`).
-2. For iter007 runs, enforce this explicit subset and disable variance/correlation filtering to keep inputs fixed.
-3. Parameterize MLP hyperparameters via input arguments (instead of hardcoded values), while preserving backward compatibility when fixed args are not provided.
-4. Evaluate an external fixed-hyperparameter matrix with 8 candidates (`4` single-layer + `4` two-layer), conservative widths (`8-32`), mostly `adam`, with one `lbfgs` stress-test.
-5. Hyperparameter scope: vary `hidden_layer_sizes`, `alpha`, `learning_rate_init`; allow `activation` and `solver` changes for architecture-shift variants.
-6. Use no anchor candidate inside the iter007 matrix; compare all candidates directly against iter006 `all_control` as the external baseline.
-7. Keep scientific controls fixed: split mode `by_member`, train fraction `0.8`, targets `TOTSOMC,TOTSOMN`, seeds `10001-10005`.
-8. Start from the Puma standard-node baseline unless changed by user: account `chopinsong`,
-   partition `standard`, `--cpus-per-task=10` (which implies 50 GB total memory at Puma's 5 GB/CPU
-   ratio), omit `--mem` and `--mem-per-cpu`, use `--time=00:30:00`, `N_JOBS=4`,
-   `PRE_DISPATCH=n_jobs`, and single-threaded BLAS/OpenMP settings.
-9. Selection rule: apply the standard `WORKFLOW.md` gates first; among passers, rank by mean median `r2_val` across both targets, then lower `rmse_ratio`, then simpler architecture.
-10. Iter007 is the first iteration after the temporary Perlmutter-to-Puma migration. Migration
-    checks passed; iter007 is ready for scaffolding, but no iter007 execution has started.
+1. Freeze the exact iter006 `all_control` 45-feature subset and disable variance/correlation
+   filtering, so all candidates see identical inputs.
+2. Evaluate four single-layer and four two-layer fixed MLPs with widths 8-32, mostly `adam`, and
+   one `lbfgs` stress candidate.
+3. Keep `by_member`, train fraction 0.8, targets `TOTSOMC,TOTSOMN`, and seeds 10001-10005 fixed.
+4. Use Puma `standard`, account `chopinsong`, 10 CPUs/50 GB implied memory, 30 minutes,
+   `N_JOBS=4`, `PRE_DISPATCH=n_jobs`, and single-threaded BLAS/OpenMP settings.
+5. Gate each target against iter006 `all_control`; rank passers by mean median `r2_val`, then
+   lower mean median `rmse_ratio`, then simpler architecture. Full parameters and gates are in
+   `iterations/iter007.md`.
 
 ## Plan Reference
 
@@ -139,21 +146,21 @@ Resource diagnostics (`iter006`):
 3. Load iter007 full plan: `/home/u32/tianyihu/.cursor/plans/iter007-mlp-tuning-4525e552.plan.md`.
 4. Review `development/spinup_surrogate/WORKFLOW.md` and
    `development/hpc/puma.md`.
-5. Keep iter007 unscaffolded until the user requests the planned scaffolding step. Do not use
-   training or training dry-run as migration preflight.
-6. Confirm a separate iter007 runtime contract before any training execution; execution authority
-   remains not granted.
+5. Read `development/spinup_surrogate/iterations/iter007.md` and inspect the live job set.
+6. Follow the iter007 runtime contract; do not submit an additional matrix or change code without
+   fresh user authority.
 
 ## Ready/Blocked Status for Next Iteration
 
-Ready for iter007 scaffolding. The nine-case Puma compute-node preflight, transactional rewrite,
-and post-activation verification passed. Retain `Execution authority: not granted` until the
-separate iter007 runtime contract is confirmed.
+Iter007 is complete. The training job set is terminal with all 40 stats files preserved,
+including cache-isolated retry leaves `23346857_5` and `23346858_2`. Corrected aggregation job
+`23346902` completed (`0:0`, `00:00:15`), producing all eight summary/stability pairs. Retain
+`s08_tanh_adam_a10_lr1e3`; all other variants were rejected by the locked gates.
 
 ## Required User Decisions Before Execution (if any)
 
-The remaining authority is the standard iter007 runtime contract: round budget mode, HPC/session
-confirmation, execution approval, and resource policy mode.
+No active execution decision remains. A subsequent iteration requires the standard new
+runtime-contract authorization request under `development/hpc/puma.md`.
 
 ## Artifact Paths
 
@@ -166,6 +173,9 @@ confirmation, execution approval, and resource policy mode.
 - Iter006 report: `development/spinup_surrogate/iterations/iter006.md`
 - Iter006 script root: `development/spinup_surrogate/slurm/iter006/`
 - Iter006 summary root: `development/spinup_surrogate/summaries/iter006/`
+- Iter007 report: `development/spinup_surrogate/iterations/iter007.md`
+- Iter007 script: `development/spinup_surrogate/slurm/iter007/case.train_surrogate_spinup_iter007_mlp_tuning.slurm`
+- Iter007 summary root: `development/spinup_surrogate/summaries/iter007/`
 
 ## Files Modified in Repo (migration cycle)
 

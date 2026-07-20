@@ -1,0 +1,15 @@
+# iter007 authorized aggregation-fix source manifest
+#
+# Captured before the aggregation rerun on 2026-07-21. The tracked-diff hash excludes
+# this manifest and separately records generated, untracked summary artifacts.
+
+source_head=7cb12968bd3a0a8ca1f52b1d29601eaaa25e5f2c
+tracked_diff_sha256=97c4f9565baf7e3549424b30843ecc603f782e3639ecb94161d496510d40cac4
+tracked_diff_scope=repository working-tree diff excluding this manifest and untracked files
+aggregation_script_sha256=2340dc95f87ebc2dd3c593a9ddd330326ebe8db3b59fbd268326f669cb4cdb42
+authorized_change=correct d16_08_tanh_adam_a50_lr5e4 to d16_08_tanh_adam_a50_lr1e3 in the variant list
+
+Generated artifacts preserved from failed job 23346866:
+
+- five summary JSON files and five feature-stability JSON files under summaries/iter007/
+- stdout/stderr logs under the configured UQ output root

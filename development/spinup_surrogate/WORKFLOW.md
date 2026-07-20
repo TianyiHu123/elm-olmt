@@ -50,6 +50,23 @@ The contract is scoped to the declared run. A new iteration outside that scope, 
 increase beyond the cap, or a code/configuration change needed to retry requires fresh user
 authorization. Do not create a commit unless closeout-commit authority was explicitly given.
 
+### Required authorization request
+
+At the start of every new iteration, after planning has identified the matrix and before any
+execution or scheduler action, the primary agent must explicitly request and record a single
+runtime-contract response covering all of the following:
+
+1. confirmation that the active session is on the selected HPC system;
+2. the finite run mode and its task/round count;
+3. authorization to prepare, submit, and monitor the locked matrix;
+4. the exact resource profile and the one-retry boundary for scheduler/resource failures;
+5. whether one closeout commit is authorized.
+
+The request must name the selected `development/hpc/` profile and state that application or
+code/configuration failures stop for fresh authorization. A plain approval is sufficient only
+when the request states all five items. Record the response verbatim or as an unambiguous
+summary in both the active iteration report and `handoff/CURRENT.md` before submission.
+
 ## Bootstrap
 
 Before planning a new round:
@@ -92,8 +109,17 @@ the tie-breaker. Do not infer an automatic promotion rule when a report does not
 4. Record terminal state, exit code, elapsed time, resource diagnostics, and failure reason
    for every job.
 
+After an approved submission, the primary agent must remain in the active iteration lifecycle
+until terminal accounting is recorded for the complete job set and every non-completion is
+classified. Poll at a bounded cadence and autonomously perform only the subsequent actions already
+authorized by the runtime contract. Do not issue a terminal handoff while jobs are active; a
+user-facing message during execution is a status update only. On a platform-forced interruption,
+record the time and active job set in `CURRENT.md`; the next active agent must resume with
+`squeue`/`sacct` before any other iteration action.
+
 Direct `squeue`/`sacct` checks are the default. `/loop` is optional only when the user
-requests unattended status checks; it must not submit work or advance a round.
+requests unattended status checks; it must not submit work or advance a round. Its optional status
+does not remove the primary agent's monitoring and terminal-accounting obligation.
 
 ### 3. Handle failures and rejections
 

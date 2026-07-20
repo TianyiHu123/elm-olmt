@@ -10,7 +10,7 @@ from fnmatch import fnmatch
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
+from typing import Any, Dict, List, Mapping, Optional, Sequence, Tuple, Union
 
 import matplotlib
 
@@ -185,6 +185,48 @@ def _build_spinup_estimator_and_grid(model_type: str, quick_grid: bool) -> Tuple
             "max_features": ["sqrt"],
         }
     return estimator, param_grid
+
+
+def _normalize_fixed_mlp_params(fixed_mlp_params: Optional[Mapping[str, Any]]) -> Optional[Dict[str, Any]]:
+    """Validate and normalize the opt-in fixed MLP configuration.
+
+    A ``None`` value preserves the historical GridSearchCV workflow.  Fixed parameters are
+    deliberately all-or-nothing so an iteration cannot silently mix a supplied setting with
+    a value from the legacy grid.
+    """
+    if fixed_mlp_params is None:
+        return None
+    required = {"hidden_layer_sizes", "activation", "solver", "alpha", "learning_rate_init"}
+    supplied = set(fixed_mlp_params)
+    missing = sorted(required - supplied)
+    extra = sorted(supplied - required)
+    if missing or extra:
+        raise ValueError(
+            "fixed_mlp_params must contain exactly "
+            f"{sorted(required)}; missing={missing}, extra={extra}"
+        )
+    hidden = tuple(int(width) for width in fixed_mlp_params["hidden_layer_sizes"])
+    if not hidden or any(width <= 0 for width in hidden):
+        raise ValueError("fixed_mlp_params['hidden_layer_sizes'] must contain positive widths")
+    activation = str(fixed_mlp_params["activation"]).strip().lower()
+    solver = str(fixed_mlp_params["solver"]).strip().lower()
+    if activation not in {"identity", "logistic", "tanh", "relu"}:
+        raise ValueError(f"Unsupported fixed MLP activation: {activation}")
+    if solver not in {"lbfgs", "sgd", "adam"}:
+        raise ValueError(f"Unsupported fixed MLP solver: {solver}")
+    alpha = float(fixed_mlp_params["alpha"])
+    learning_rate_init = float(fixed_mlp_params["learning_rate_init"])
+    if alpha < 0.0:
+        raise ValueError("fixed_mlp_params['alpha'] must be >= 0")
+    if learning_rate_init <= 0.0:
+        raise ValueError("fixed_mlp_params['learning_rate_init'] must be > 0")
+    return {
+        "hidden_layer_sizes": hidden,
+        "activation": activation,
+        "solver": solver,
+        "alpha": alpha,
+        "learning_rate_init": learning_rate_init,
+    }
 
 
 def _random_group_partition(
@@ -619,6 +661,7 @@ def _write_stats_json(
     split_details: Optional[Dict[str, Any]] = None,
     feature_diagnostics: Optional[Dict[str, Any]] = None,
     input_feature_names_all: Optional[Sequence[str]] = None,
+    fixed_mlp_params: Optional[Mapping[str, Any]] = None,
 ) -> None:
     payload: Dict[str, Any] = {
         "timestamp_utc": datetime.now(timezone.utc).isoformat(),
@@ -639,6 +682,8 @@ def _write_stats_json(
         payload["split_details"] = _sanitize_json_value(split_details)
     if feature_diagnostics is not None:
         payload["feature_diagnostics"] = _sanitize_json_value(feature_diagnostics)
+    if fixed_mlp_params is not None:
+        payload["fixed_mlp_params"] = _sanitize_json_value(dict(fixed_mlp_params))
     path.write_text(json.dumps(payload, indent=2, allow_nan=False), encoding="utf-8")
 
 
@@ -974,6 +1019,7 @@ def train_surrogate_spinup_from_cases(
     cv_folds: int = 3,
     quick_grid: bool = False,
     model_type: str = "nn",
+    fixed_mlp_params: Optional[Mapping[str, Any]] = None,
     dry_run: bool = False,
     outputdir: str = ".",
     run_name: Optional[str] = None,
@@ -1016,6 +1062,9 @@ def train_surrogate_spinup_from_cases(
     if not forcing_vars_list:
         raise ValueError("forcing_vars must not be empty.")
     model_type_norm = _normalize_model_type(model_type)
+    fixed_mlp_params_norm = _normalize_fixed_mlp_params(fixed_mlp_params)
+    if fixed_mlp_params_norm is not None and model_type_norm != "nn":
+        raise ValueError("fixed_mlp_params is only supported when model_type='nn'")
     feature_set_norm = _normalize_feature_set(feature_set)
     if float(corr_threshold) < 0.0 or float(corr_threshold) > 1.0:
         raise ValueError(f"corr_threshold must be in [0, 1], got {corr_threshold}")
@@ -1111,25 +1160,30 @@ def train_surrogate_spinup_from_cases(
         y_val = y_scaler.transform(y[val_idx, :]).ravel()
 
         estimator, param_grid = _build_spinup_estimator_and_grid(model_type_norm, quick_grid)
-        grid = GridSearchCV(
-            estimator,
-            param_grid,
-            n_jobs=n_jobs,
-            cv=cv_folds,
-            pre_dispatch=pre_dispatch,
-        )
         phase_start = time.perf_counter()
-        grid.fit(X_train, y_train)
-        _log_phase_timing(
-            "grid_search_fit",
-            phase_start,
-            target=var,
-            n_jobs=n_jobs,
-            pre_dispatch=pre_dispatch,
-        )
+        if fixed_mlp_params_norm is not None:
+            fitted_model = estimator.set_params(**fixed_mlp_params_norm)
+            fitted_model.fit(X_train, y_train)
+            _log_phase_timing("fixed_mlp_fit", phase_start, target=var)
+        else:
+            fitted_model = GridSearchCV(
+                estimator,
+                param_grid,
+                n_jobs=n_jobs,
+                cv=cv_folds,
+                pre_dispatch=pre_dispatch,
+            )
+            fitted_model.fit(X_train, y_train)
+            _log_phase_timing(
+                "grid_search_fit",
+                phase_start,
+                target=var,
+                n_jobs=n_jobs,
+                pre_dispatch=pre_dispatch,
+            )
 
-        yhat_train = y_scaler.inverse_transform(grid.predict(X_train).reshape(-1, 1)).ravel()
-        yhat_val = y_scaler.inverse_transform(grid.predict(X_val).reshape(-1, 1)).ravel()
+        yhat_train = y_scaler.inverse_transform(fitted_model.predict(X_train).reshape(-1, 1)).ravel()
+        yhat_val = y_scaler.inverse_transform(fitted_model.predict(X_val).reshape(-1, 1)).ravel()
         ytrain_true = y[train_idx, :].ravel()
         yval_true = y[val_idx, :].ravel()
 
@@ -1156,7 +1210,7 @@ def train_surrogate_spinup_from_cases(
         ) + int(ivar)
         phase_start = time.perf_counter()
         permutation_importance = _permutation_importance_rmse(
-            grid,
+            fitted_model,
             X_val,
             y_scaler,
             yval_true,
@@ -1182,8 +1236,13 @@ def train_surrogate_spinup_from_cases(
             "overfit_reason": overfit["overfit_reason"],
             "permutation_repeats": int(permutation_repeats),
             "permutation_importance_rmse": permutation_importance,
+            "effective_model_params": (
+                dict(fixed_mlp_params_norm)
+                if fixed_mlp_params_norm is not None
+                else dict(fitted_model.best_params_)
+            ),
         }
-        model_store[var] = grid
+        model_store[var] = fitted_model
         x_scaler_store[var] = x_scaler
         y_scaler_store[var] = y_scaler
 
@@ -1209,6 +1268,7 @@ def train_surrogate_spinup_from_cases(
         "climatology_feature_names": list(ref.climatology_feature_names),
         "spinup_vars": list(spinup_vars_list),
         "model_type": model_type_norm,
+        "fixed_mlp_params": fixed_mlp_params_norm,
         "feature_set": feature_set_norm,
         "clim_feature_include": _normalize_glob_patterns(clim_feature_include),
         "explicit_feature_subset": _normalize_feature_subset(explicit_feature_subset),
@@ -1250,6 +1310,7 @@ def train_surrogate_spinup_from_cases(
         split_details=split_details,
         feature_diagnostics=feature_diagnostics,
         input_feature_names_all=all_input_feature_names,
+        fixed_mlp_params=fixed_mlp_params_norm,
     )
 
     if minimal_output:

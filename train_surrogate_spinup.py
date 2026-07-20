@@ -134,6 +134,38 @@ def _build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Use smaller hyperparameter grid for faster seed-sweep diagnostics",
     )
+    parser.add_argument(
+        "--mlp-hidden-layer-sizes",
+        default=None,
+        help=(
+            "Comma-separated positive hidden-layer widths for one fixed MLP run "
+            "(for example '16' or '16,8'). Requires all --mlp-* fixed controls."
+        ),
+    )
+    parser.add_argument(
+        "--mlp-activation",
+        default=None,
+        choices=["identity", "logistic", "tanh", "relu"],
+        help="Fixed MLP activation; requires all --mlp-* fixed controls.",
+    )
+    parser.add_argument(
+        "--mlp-solver",
+        default=None,
+        choices=["lbfgs", "sgd", "adam"],
+        help="Fixed MLP solver; requires all --mlp-* fixed controls.",
+    )
+    parser.add_argument(
+        "--mlp-alpha",
+        type=float,
+        default=None,
+        help="Fixed MLP L2 regularization alpha; requires all --mlp-* fixed controls.",
+    )
+    parser.add_argument(
+        "--mlp-learning-rate-init",
+        type=float,
+        default=None,
+        help="Fixed MLP learning-rate initialization; requires all --mlp-* fixed controls.",
+    )
     parser.add_argument("--dry-run", action="store_true", help="Print data dimensions and exit before training")
     parser.add_argument("--workdir", default=".", help="OLMT root directory (for pklfiles path)")
     parser.add_argument(
@@ -205,6 +237,40 @@ def main() -> int:
         if args.feature_subset is not None
         else None
     )
+    fixed_mlp_arg_values = [
+        args.mlp_hidden_layer_sizes,
+        args.mlp_activation,
+        args.mlp_solver,
+        args.mlp_alpha,
+        args.mlp_learning_rate_init,
+    ]
+    fixed_mlp_params = None
+    if any(value is not None for value in fixed_mlp_arg_values):
+        if args.model_type != "nn" or any(value is None for value in fixed_mlp_arg_values):
+            print(
+                "Error: fixed MLP controls require --model-type nn and all five --mlp-* options",
+                file=sys.stderr,
+            )
+            return 1
+        try:
+            hidden_layer_sizes = tuple(
+                int(width.strip())
+                for width in args.mlp_hidden_layer_sizes.split(",")
+                if width.strip()
+            )
+        except ValueError:
+            print("Error: --mlp-hidden-layer-sizes must be comma-separated integers", file=sys.stderr)
+            return 1
+        if not hidden_layer_sizes or any(width <= 0 for width in hidden_layer_sizes):
+            print("Error: --mlp-hidden-layer-sizes must contain positive widths", file=sys.stderr)
+            return 1
+        fixed_mlp_params = {
+            "hidden_layer_sizes": hidden_layer_sizes,
+            "activation": args.mlp_activation,
+            "solver": args.mlp_solver,
+            "alpha": args.mlp_alpha,
+            "learning_rate_init": args.mlp_learning_rate_init,
+        }
     if not spinup_vars:
         print("Error: --spinup-vars cannot be empty", file=sys.stderr)
         return 1
@@ -239,6 +305,7 @@ def main() -> int:
         cv_folds=args.cv_folds,
         quick_grid=args.quick_grid,
         model_type=args.model_type,
+        fixed_mlp_params=fixed_mlp_params,
         feature_set=args.feature_set,
         clim_feature_include=clim_feature_include,
         explicit_feature_subset=feature_subset,
