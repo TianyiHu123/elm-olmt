@@ -187,6 +187,54 @@ Submit it with `/usr/bin/sbatch`, and monitor it with `/usr/bin/squeue --job=<jo
 simple, bounded test or preflight; do not use `--wrap` as the production representation of a large
 workflow.
 
+### Variant-Local Submission Artifacts
+
+For every production matrix variant, keep both its Slurm logs and its submitted, variant-specific
+script under that variant's output directory, not directly under the shared `UQ_output` root. The
+required layout is:
+
+```text
+<output-root>/UQ_output/<run-slug>/
+  slurm_%A_%a.out
+  slurm_%A_%a.err
+  submit_<variant>.slurm
+  submission_config.env
+```
+
+`submit_<variant>.slurm` is a pre-submit copy of the tracked canonical script. It must be
+self-describing for the exact variant: either render the locked variables into the copy or source
+the immutable `submission_config.env` beside it. Do not submit the repository canonical script
+directly. The iteration report must record the canonical path/hash, submitted-copy path/hash,
+configuration path/hash, exact `sbatch` command, and both log paths.
+
+Before submission, create the variant directory and materialize the copy/configuration. Use the
+variant directory as Slurm's working directory, and override `--output` and `--error` at submission
+time so dynamic job IDs are resolved directly at that variant root. The following shape is
+required; substitute the iteration's locked paths and variables:
+
+```bash
+readonly VARIANT_DIR="${OUTPUT_ROOT}/UQ_output/${RUN_NAME}"
+readonly SUBMITTED_SCRIPT="${VARIANT_DIR}/submit_${VARIANT}.slurm"
+readonly SUBMISSION_CONFIG="${VARIANT_DIR}/submission_config.env"
+mkdir -p "${VARIANT_DIR}"
+
+# Materialize a self-describing submitted copy and immutable locked configuration before sbatch.
+cp "${CANONICAL_SCRIPT}" "${SUBMITTED_SCRIPT}"
+# The new canonical script must load SUBMISSION_CONFIG, or the locked settings must be rendered
+# into SUBMITTED_SCRIPT; record hashes for both artifacts in the iteration ledger.
+
+/usr/bin/sbatch \
+  --chdir="${VARIANT_DIR}" \
+  --output="${VARIANT_DIR}/slurm_%A_%a.out" \
+  --error="${VARIANT_DIR}/slurm_%A_%a.err" \
+  --export="ALL,SUBMISSION_CONFIG=${SUBMISSION_CONFIG},VARIANT=${VARIANT},N_JOBS=${N_JOBS},PRE_DISPATCH=${PRE_DISPATCH}" \
+  "${SUBMITTED_SCRIPT}"
+```
+
+The `#SBATCH --output` and `#SBATCH --error` lines in a canonical script are only safe defaults;
+the explicit `sbatch` options above are authoritative for production variant submissions. Do not
+put production matrix logs at the shared `UQ_output` root or in extra per-variant subdirectories.
+
 Use this batch shape for a one-CPU/5-GB preflight (Puma derives 5 GB from one CPU; do not add a
 memory directive to the normal CPU-limited form):
 
@@ -209,10 +257,14 @@ environment override.
 ## Pre-submit and Monitoring Checklist
 
 1. Verify the canonical script and all resource directives are explicit.
-2. Verify canonical and submitted copies have identical SHA-256 hashes.
+2. Create and verify the variant-local submitted copy, configuration manifest, and root-level
+   standard/error log paths, plus their SHA-256 hashes. If configuration is rendered into the
+   copy, record that intentional difference from the canonical source rather than claiming
+   byte-identical scripts.
 3. Record the commit plus dirty-diff/source-manifest provenance.
 4. Verify the Cursor plan references and required data paths are readable on Puma.
-5. Show the exact `sbatch` command and obtain runtime-contract authority.
+5. Show the exact `sbatch` command, including variant-local `--chdir`, `--output`, and `--error`,
+   and obtain runtime-contract authority.
 6. Record job IDs immediately after submission.
 7. Use `squeue` while active and `sacct` after terminal state; record state, exit code, allocation,
    and memory evidence.

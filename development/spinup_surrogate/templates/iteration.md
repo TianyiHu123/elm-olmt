@@ -51,13 +51,14 @@
 
 ## Provenance and Job Ledger
 
-| Variant | Canonical script and SHA-256 | Submitted script and SHA-256 | Commit | Dirty diff/source manifest | Job IDs | State | Retry notes |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| `<name>` | `<path/hash>` | `<path/hash>` | `<hash>` | `<path/hash or clean>` | `<IDs>` | `<state>` | `<notes>` |
+| Variant | Canonical script and SHA-256 | Variant-local submitted copy/config and SHA-256 | Variant-local log paths | Commit | Dirty diff/source manifest | Job IDs | State | Retry notes |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| `<name>` | `<path/hash>` | `<script path/hash>; <config path/hash>` | `<stdout>; <stderr>` | `<hash>` | `<path/hash or clean>` | `<IDs>` | `<state>` | `<notes>` |
 
 ## Execution and Diagnostics
 
 - Exact submission commands:
+- Variant-local submission-copy/configuration and log-path evidence:
 - Queue/accounting evidence:
 - Resource diagnostics:
 - Failure or rejection evidence:

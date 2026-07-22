@@ -15,7 +15,7 @@ must not edit records or operate jobs.
 | `iterations/iterXXX.md` | Detailed, append-only evidence for one iteration | Create at planning; update the ledger as work occurs; finalize at closeout. |
 | `registry.csv` | One-row index of completed/failed iterations | Update only at closeout. |
 | `summaries/iterXXX/` | Compact metrics and stability evidence | Populate after successful aggregation. |
-| `slurm/iterXXX/` | Canonical submission scripts for an iteration | Treat as the source of truth for submitted copies. |
+| `slurm/iterXXX/` | Canonical submission scripts for an iteration | Treat as the source of truth; materialize a variant-local, self-describing submission copy before each `sbatch`. |
 
 Use `templates/iteration.md` to create an iteration record and
 `templates/current-handoff.md` only to initialize or repair the handoff format. Do not
@@ -92,12 +92,21 @@ the tie-breaker. Do not infer an automatic promotion rule when a report does not
 3. Update `CURRENT.md` to show the active iteration and `planning` phase.
 4. Before submit, record:
    - canonical and submitted script paths and SHA-256 hashes;
+   - the variant-local configuration manifest or rendered configuration block and its SHA-256 hash;
+   - the variant-local standard-output and standard-error paths;
    - commit hash;
    - a hash and path for the relevant uncommitted diff or source manifest when the tree is
      dirty;
    - selected site profile, resource request, exports, and exact submission command.
 5. Confirm the selected site's pre-submit requirements in its profile. Keep raw outputs in
    the configured scratch root, not Git.
+6. For every submitted variant, create `<scratch-output-root>/<run_slug>/` before submission.
+   Put the exact submission copy, immutable configuration manifest, and Slurm standard/error logs
+   directly at that variant root; do not add `slurm/` or `logs/` subdirectories. The submission
+   copy must be self-describing for that variant: it must either render the locked variant
+   configuration into the script or source the configuration manifest beside it. Submit that
+   variant-local copy, not the repository canonical script. Record the canonical source,
+   submitted copy, configuration, and log paths in the iteration ledger.
 
 ### 2. Submit and monitor
 
@@ -117,9 +126,21 @@ user-facing message during execution is a status update only. On a platform-forc
 record the time and active job set in `CURRENT.md`; the next active agent must resume with
 `squeue`/`sacct` before any other iteration action.
 
+### Primary-Agent Continuity Rule
+
+Once an iteration is `in_progress`, the primary agent must not autonomously interrupt, end, or
+hand off its own lifecycle before the workflow reaches a recorded stop condition. In particular,
+it must not treat submission, a status response, a pending queue, an optional monitoring helper,
+or a completed subset of jobs as permission to return control and leave the iteration unfinished.
+Remain active through monitoring, failure classification, every runtime-contract-authorized next
+step, aggregation/decision when eligible, and closeout. Only an explicit user stop/replacement
+request, a contract-defined stop condition, or a platform-forced interruption may suspend this
+continuity. A platform-forced interruption must be logged in `CURRENT.md` and resumed from Slurm
+state before any other action.
+
 Direct `squeue`/`sacct` checks are the default. `/loop` is optional only when the user
 requests unattended status checks; it must not submit work or advance a round. Its optional status
-does not remove the primary agent's monitoring and terminal-accounting obligation.
+does not remove the primary agent's continuity, monitoring, or terminal-accounting obligation.
 
 ### 3. Handle failures and rejections
 
