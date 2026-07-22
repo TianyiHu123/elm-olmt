@@ -221,6 +221,64 @@ SHA-256 `2340dc95...db42`, source head `7cb12968...5f2c`, and tracked-diff SHA-2
 - Next action: retain `s08_tanh_adam_a10_lr1e3` as the iter007 result and start any new iteration
   only under a new runtime contract.
 
+## Post-Closeout Iter008 Planning Addendum (No Execution)
+
+This addendum records the agreed successor plan without changing the completed iter007 matrix,
+results, provenance, or decision. It does not authorize code changes, Slurm preparation, or
+submission.
+
+### Durable correlation-filter policy
+
+All current and future spinup-surrogate filtering must occur on the complete feature-only design
+matrix **before** any train/test split. Feature filtering must not use target values. Freeze and
+record that globally selected schema with scope `global_pre_split`, then build seed-specific
+splits and fit scalers/models from training rows only. This makes one feature-policy schema stable
+across every seed and model that uses it; historical reports remain unchanged.
+
+For each correlated pair requiring a removal, preferentially drop a `WIND_*`, `PSRF_*`, or
+`FLDS_*` member. If both members have this drop priority, or neither does, use canonical feature
+order as the deterministic tie-breaker. Record the retained schema, every dropped feature, its
+correlation pair, and the threshold in each iter008 result.
+
+### Iter008 objective and matrix
+
+Hypothesis: stronger L2 regularization can make the iter007 LBFGS signal eligible by reducing its
+RMSE-ratio and overfit-warning failures while retaining its high validation R2; globally pruned
+schemas may also improve the selected compact Adam baseline.
+
+- Fixed controls: the same nine cases, `by_member`, train fraction `0.8`, targets
+  `TOTSOMC,TOTSOMN`, seeds `10001-10005`, and stats-only outputs. Variance filtering remains
+  disabled.
+- Candidate feature pool: the exact iter006 `all_control` 45 features. In an iter008 filtered
+  arm, this is an eligible pool rather than an all-must-survive explicit subset, so correlation
+  pruning may remove members without an explicit-subset validation error.
+- Six model settings: `s08_tanh_adam_a10_lr1e3`, plus `(32,)`, `tanh`, `lbfgs` with alpha `50`,
+  `100`, `250`, `500`, and `1000`. Record `learning_rate_init=1e-3` for LBFGS provenance only.
+- Three feature-policy arms for each model: `full45` (no correlation filter),
+  `corr080_prioritydrop` (global absolute-correlation threshold `0.8`), and
+  `corr060_prioritydrop` (global absolute-correlation threshold `0.6`).
+- The locked prospective matrix is 18 variants times five seeds: **90 training leaves**. Use run
+  slugs `spinup_surrogate_iter008_<model>_<feature-policy>`.
+
+### Prospective gates, operations, and stop boundary
+
+- Apply the iter007 per-target gates to each complete five-seed variant: median validation R2 no
+  more than `0.01` below the control, minimum R2 no more than `0.02` below, R2 IQR no more than
+  `0.02` above, median per-seed RMSE ratio no more than `0.02` above, and zero overfit warnings.
+  Report absolute validation RMSE as well. Rank passers by mean cross-target median R2, then lower
+  mean median RMSE ratio, then simpler architecture. If none pass, retain the iter007 selected
+  `s08_tanh_adam_a10_lr1e3` with `full45`.
+- Before any runtime contract, implement and test the global-pre-split ordering, eligible-pool
+  behavior, priority-aware pair pruning, and seed-invariant feature-schema diagnostics. Preserve
+  closed iteration artifacts.
+- A future runtime contract must explicitly authorize the 90 leaves, the Puma
+  `development/hpc/puma.md` profile, proposed `standard`/`chopinsong` 10-CPU (50-GB implied),
+  30-minute cap, one scheduler/resource retry only, continuous monitoring through closeout, and
+  the closeout-commit decision. Application/code/configuration failures require fresh authority.
+- Every submitted variant must use per-array-task `XDG_CACHE_HOME`, a variant-local submitted
+  script plus `submission_config.env`, root-level Slurm stdout/stderr paths, and manifest-locked
+  aggregation validation of all 18 variant names before selection.
+
 ## Closeout Checklist
 
 - [x] Iteration report scaffolded

@@ -43,7 +43,7 @@ baseline. Do not broaden the matrix or alter the selected result.
   `/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe`.
 - Puma meteorology mapping:
   `/xdisk/chopinsong/tianyihu/E3SM_out/PTCLM/NEON/CTSM_NEON/<SITE>/1x1pt_<SITE>/CLM1PT_data`.
-- Future iter007 output root:
+- Future spinup-surrogate output root:
   `/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/UQ_output`.
 - Puma runtime and lifecycle: use `micromamba run -n OLMT_puma` and treat
   `development/spinup_surrogate/WORKFLOW.md` as canonical.
@@ -72,7 +72,8 @@ Migration runtime contract completed:
 
 ## Best Variant So Far
 
-`all_control` remains the preferred nine-case baseline (`TOTSOMC`/`TOTSOMN` median `r2_val=0.5892`).
+The preferred nine-case baseline is the iter007-selected `s08_tanh_adam_a10_lr1e3` fixed MLP
+with the iter006 `all_control` 45-feature schema (`TOTSOMC`/`TOTSOMN` median `r2_val=0.5892`).
 
 ## Evidence (key metrics and failure signals)
 
@@ -111,24 +112,75 @@ Resource diagnostics (`iter006`):
 
 - Memory headroom remains tight (completed tasks reached approximately `47.97GB` of `48GB`)
 - CPU efficiency remains low despite short walltime, indicating resource under-utilization
-- Correlated-feature attribution remains sensitive; explicit subset validity is now strict and may reject broad lists unless pre-screened
-- Hyperparameter-space behavior with the frozen iter006 feature set is not yet characterized
+- Correlation pruning will now be a global, feature-only preprocessing step before any
+  train/test split; its priority and provenance must be tested before iter008 execution.
+- Whether stronger LBFGS regularization can retain its high validation R2 without violating
+  RMSE-ratio or overfit-warning gates remains untested.
 - The Puma environment, nine pickles, and transferred data passed the dedicated compute-node
   migration preflight; iter007 training and training dry-run have not run.
 - `OLMT_puma` currently uses the home-directory micromamba root; monitor the 50-GB home quota
 
-## Iter007 Plan (scaffolded, not submitted)
+## Next Iteration Plan (iter008, planning only)
 
-1. Freeze the exact iter006 `all_control` 45-feature subset and disable variance/correlation
-   filtering, so all candidates see identical inputs.
-2. Evaluate four single-layer and four two-layer fixed MLPs with widths 8-32, mostly `adam`, and
-   one `lbfgs` stress candidate.
-3. Keep `by_member`, train fraction 0.8, targets `TOTSOMC,TOTSOMN`, and seeds 10001-10005 fixed.
-4. Use Puma `standard`, account `chopinsong`, 10 CPUs/50 GB implied memory, 30 minutes,
-   `N_JOBS=4`, `PRE_DISPATCH=n_jobs`, and single-threaded BLAS/OpenMP settings.
-5. Gate each target against iter006 `all_control`; rank passers by mean median `r2_val`, then
-   lower mean median `rmse_ratio`, then simpler architecture. Full parameters and gates are in
-   `iterations/iter007.md`.
+No iter008 files, code changes, or Slurm jobs are authorized yet. This plan is the required
+starting point for its scaffold and runtime-contract request.
+
+### Durable correlation-filter ordering
+
+For every current and future spinup-surrogate run that enables variance or correlation filtering:
+
+1. Build the complete feature-only design matrix and apply filtering before any train/test split.
+   Feature filtering must never inspect target values.
+2. Freeze and record the retained schema before creating the seed-specific splits. The record must
+   identify the scope as `global_pre_split`, so the same schema is used by every seed for that
+   feature-policy arm.
+3. For every high-correlation pair requiring a removal, preferentially drop a `WIND_*`, `PSRF_*`,
+   or `FLDS_*` feature. If both or neither member has that drop priority, use canonical feature
+   order as the deterministic tie-breaker. Record each dropped feature and its correlation pair.
+4. Fit scalers and models only on the seed-specific training rows after the schema is frozen.
+
+Historical iteration artifacts remain provenance and are not retroactively reinterpreted.
+
+### Objective and locked design
+
+Test whether stronger L2 regularization can make the high-validation-R2 LBFGS approach eligible
+without the iter007 RMSE-ratio and overfit-warning failure, while measuring whether globally
+pruned input schemas improve the selected compact Adam baseline.
+
+- Fixed scientific controls: the same nine cases, `by_member` split, train fraction `0.8`, targets
+  `TOTSOMC,TOTSOMN`, seeds `10001-10005`, stats-only outputs, and disabled variance filtering.
+- Candidate feature pool: exactly the iter006 `all_control` 45 features. For filtered arms it is
+  an eligible pool, not an all-must-survive explicit subset; correlation pruning may remove its
+  members without causing explicit-subset validation failure.
+- Model settings: `s08_tanh_adam_a10_lr1e3` plus `(32,)`, `tanh`, `lbfgs` candidates at alpha
+  `50`, `100`, `250`, `500`, and `1000` (`learning_rate_init=1e-3` is provenance-only for
+  LBFGS).
+- Feature-policy arms for every model: `full45` (no correlation filter),
+  `corr080_prioritydrop` (global absolute-correlation threshold `0.8`), and
+  `corr060_prioritydrop` (global absolute-correlation threshold `0.6`).
+- Matrix size: six models times three feature policies times five seeds: **18 variants and 90
+  training leaves**. Derive each run slug as
+  `spinup_surrogate_iter008_<model>_<feature-policy>`.
+
+### Decision and execution requirements
+
+- Retain the iter007 gates independently for both targets: required five readable stats files;
+  median validation R2 no more than `0.01` below control; minimum R2 no more than `0.02` below;
+  R2 IQR no more than `0.02` above; median per-seed RMSE ratio no more than `0.02` above; and zero
+  overfit warnings. Report absolute validation RMSE alongside those gates.
+- Rank full gate passers by mean cross-target median validation R2, then lower mean median RMSE
+  ratio, then simpler architecture. If no new candidate passes, retain
+  `s08_tanh_adam_a10_lr1e3` with `full45`.
+- Before execution, implement and test global-pre-split filtering, the eligible-pool behavior,
+  priority-aware pair pruning, and seed-invariant feature-schema evidence. Do not change closed
+  iteration artifacts.
+- The runtime-contract request must explicitly cover this 90-leaf matrix, Puma
+  `development/hpc/puma.md`, the proposed 10-CPU/50-GB-implied/30-minute cap, one retry only for
+  a scheduler/resource interruption, continuous monitoring through closeout, and closeout-commit
+  authority. Application/code/configuration failures stop for fresh authorization.
+- Each variant must use per-array-task `XDG_CACHE_HOME`, a variant-local self-describing submitted
+  Slurm copy and `submission_config.env`, root-level stdout/stderr paths, and a manifest-derived
+  aggregation input list validated against the 18 locked variant names.
 
 ## Plan Reference
 
@@ -143,12 +195,12 @@ Resource diagnostics (`iter006`):
    - `development/spinup_surrogate/iterations/iter006.md`
    - `development/spinup_surrogate/iterations/iter005.md`
    - `development/spinup_surrogate/iterations/iter004.md`
-3. Load iter007 full plan: `/home/u32/tianyihu/.cursor/plans/iter007-mlp-tuning-4525e552.plan.md`.
+3. Load the iter008 planning addendum in `iterations/iter007.md` and this plan section.
 4. Review `development/spinup_surrogate/WORKFLOW.md` and
    `development/hpc/puma.md`.
-5. Read `development/spinup_surrogate/iterations/iter007.md` and inspect the live job set.
-6. Follow the iter007 runtime contract; do not submit an additional matrix or change code without
-   fresh user authority.
+5. Read `development/spinup_surrogate/iterations/iter007.md`; there is no live job set.
+6. Do not scaffold, submit, or change code for iter008 until the new runtime contract explicitly
+   authorizes the locked matrix and the required implementation work.
 
 ## Ready/Blocked Status for Next Iteration
 
@@ -157,10 +209,16 @@ including cache-isolated retry leaves `23346857_5` and `23346858_2`. Corrected a
 `23346902` completed (`0:0`, `00:00:15`), producing all eight summary/stability pairs. Retain
 `s08_tanh_adam_a10_lr1e3`; all other variants were rejected by the locked gates.
 
+Iter008 has a defined, unexecuted 18-variant/90-leaf plan. It is blocked only on the required
+implementation/test work and a new explicit runtime contract; it is not a retry or extension of
+the iter007 authorization.
+
 ## Required User Decisions Before Execution (if any)
 
-No active execution decision remains. A subsequent iteration requires the standard new
-runtime-contract authorization request under `development/hpc/puma.md`.
+No active execution decision remains. Iter008 requires explicit authority for the documented
+implementation/test work and the standard new runtime-contract authorization request under
+`development/hpc/puma.md`; the request must name the 18 variants/90 leaves, proposed resource
+cap, one scheduler/resource retry, continuous monitoring, and closeout-commit decision.
 
 ## Artifact Paths
 
