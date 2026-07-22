@@ -751,7 +751,7 @@ def _normalize_feature_subset(feature_subset: Optional[Sequence[str]]) -> List[s
 
 
 def _collect_corr_pairs(
-    X_train: np.ndarray,
+    X_features: np.ndarray,
     feature_idx: np.ndarray,
     feature_names: Sequence[str],
     *,
@@ -759,7 +759,7 @@ def _collect_corr_pairs(
 ) -> List[Dict[str, Any]]:
     if feature_idx.size < 2:
         return []
-    corr = np.corrcoef(X_train[:, feature_idx], rowvar=False)
+    corr = np.corrcoef(X_features[:, feature_idx], rowvar=False)
     corr = np.nan_to_num(corr, nan=0.0, posinf=0.0, neginf=0.0)
     pairs: List[Dict[str, Any]] = []
     for i in range(corr.shape[0]):
@@ -774,34 +774,40 @@ def _collect_corr_pairs(
                     "corr": cval,
                 }
             )
-    pairs.sort(key=lambda d: abs(float(d["corr"])), reverse=True)
+    canonical_order = {str(name): index for index, name in enumerate(feature_names)}
+    pairs.sort(
+        key=lambda d: (
+            -abs(float(d["corr"])),
+            canonical_order[str(d["feature_i"])],
+            canonical_order[str(d["feature_j"])],
+        )
+    )
     return pairs
 
 
-def _find_drop_representative(
-    dropped_name: str,
-    high_corr_pairs: Sequence[Dict[str, Any]],
-) -> Dict[str, Any]:
-    for pair in high_corr_pairs:
-        name_i = str(pair.get("feature_i", ""))
-        name_j = str(pair.get("feature_j", ""))
-        if name_j != dropped_name:
-            continue
-        return {
-            "dropped_feature": dropped_name,
-            "representative_feature": name_i,
-            "corr": float(pair.get("corr", float("nan"))),
-        }
-    return {
-        "dropped_feature": dropped_name,
-        "representative_feature": None,
-        "corr": None,
-    }
+def _correlation_drop_choice(
+    feature_i: str,
+    feature_j: str,
+    canonical_order: Mapping[str, int],
+) -> Tuple[str, str, str]:
+    """Return dropped feature, retained feature, and deterministic drop reason."""
+    priority_prefixes = ("WIND_", "PSRF_", "FLDS_")
+    i_priority = feature_i.startswith(priority_prefixes)
+    j_priority = feature_j.startswith(priority_prefixes)
+    if i_priority != j_priority:
+        return (feature_i, feature_j, "priority_prefix") if i_priority else (
+            feature_j,
+            feature_i,
+            "priority_prefix",
+        )
+    # Preserve the earlier canonical feature when both (or neither) have priority.
+    if canonical_order[feature_i] <= canonical_order[feature_j]:
+        return feature_j, feature_i, "canonical_order"
+    return feature_i, feature_j, "canonical_order"
 
 
 def _select_feature_columns(
     X: np.ndarray,
-    train_idx: np.ndarray,
     input_feature_names: Sequence[str],
     *,
     n_params: int,
@@ -810,6 +816,7 @@ def _select_feature_columns(
     feature_set: str,
     clim_feature_include: Optional[Sequence[str]] = None,
     explicit_feature_subset: Optional[Sequence[str]] = None,
+    feature_subset_policy: str = "strict",
     apply_variance_filter: bool = False,
     variance_threshold: float = DEFAULT_VARIANCE_THRESHOLD,
     apply_corr_filter: bool = False,
@@ -827,7 +834,12 @@ def _select_feature_columns(
             "Feature block length mismatch: "
             f"n_total={n_total}, n_params={n_params}, n_surface={n_surface}, n_climatology={n_climatology}."
         )
-    train_X = X[train_idx, :]
+    subset_policy = str(feature_subset_policy).strip().lower()
+    if subset_policy not in ("strict", "eligible_pool"):
+        raise ValueError(
+            "feature_subset_policy must be 'strict' or 'eligible_pool', got "
+            f"{feature_subset_policy!r}"
+        )
     keep = np.zeros(n_total, dtype=bool)
     p_end = n_params
     s_end = n_params + n_surface
@@ -861,20 +873,33 @@ def _select_feature_columns(
                 keep[idx] = False
                 dropped_by_clim_include.append(fname)
 
+    explicit_subset_requested = _normalize_feature_subset(explicit_feature_subset)
+    if explicit_subset_requested:
+        name_to_idx = {str(name): int(i) for i, name in enumerate(names)}
+        unknown_requested = [name for name in explicit_subset_requested if name not in name_to_idx]
+        if unknown_requested:
+            raise ValueError("Explicit feature subset includes unknown feature(s): " + ", ".join(unknown_requested))
+        requested_idx = {name_to_idx[name] for name in explicit_subset_requested}
+        excluded_by_explicit_subset = [
+            str(names[i]) for i in np.where(keep)[0].tolist() if i not in requested_idx
+        ]
+        keep &= np.asarray([i in requested_idx for i in range(n_total)], dtype=bool)
+    else:
+        excluded_by_explicit_subset = []
+
     dropped_by_variance: List[Dict[str, Any]] = []
     if apply_variance_filter:
         candidate = np.where(keep)[0]
-        variances = np.nanvar(train_X[:, candidate], axis=0)
+        variances = np.nanvar(X[:, candidate], axis=0)
         for local_i, idx in enumerate(candidate.tolist()):
             v = float(variances[local_i])
             if (not np.isfinite(v)) or (v <= float(variance_threshold)):
                 keep[idx] = False
                 dropped_by_variance.append({"feature": str(names[idx]), "variance": v})
 
-    explicit_subset_requested = _normalize_feature_subset(explicit_feature_subset)
     eligible_idx_pre_corr = np.where(keep)[0].astype(np.int32)
     full_corr_pairs_pre_prune = _collect_corr_pairs(
-        train_X,
+        X,
         eligible_idx_pre_corr,
         names,
     )
@@ -885,27 +910,35 @@ def _select_feature_columns(
     if apply_corr_filter:
         candidate = np.where(keep)[0]
         high_corr_pairs = _collect_corr_pairs(
-            train_X,
+            X,
             candidate,
             names,
             corr_threshold=float(corr_threshold),
         )
-        name_to_idx = {name: idx for idx, name in enumerate(names)}
-        dropped = set()
+        name_to_idx = {str(name): int(idx) for idx, name in enumerate(names)}
+        canonical_order = dict(name_to_idx)
         for pair in high_corr_pairs:
-            name_j = str(pair["feature_j"])
-            idx_j = int(name_to_idx[name_j])
-            if idx_j in dropped:
+            feature_i = str(pair["feature_i"])
+            feature_j = str(pair["feature_j"])
+            idx_i = name_to_idx[feature_i]
+            idx_j = name_to_idx[feature_j]
+            if not (keep[idx_i] and keep[idx_j]):
                 continue
-            dropped.add(idx_j)
-        for idx in sorted(dropped):
-            if keep[idx]:
-                keep[idx] = False
-                dropped_name = str(names[idx])
-                dropped_by_correlation.append(dropped_name)
-                dropped_by_correlation_pairs.append(
-                    _find_drop_representative(dropped_name, high_corr_pairs)
-                )
+            dropped_name, representative_name, drop_reason = _correlation_drop_choice(
+                feature_i, feature_j, canonical_order
+            )
+            dropped_idx = name_to_idx[dropped_name]
+            keep[dropped_idx] = False
+            dropped_by_correlation.append(dropped_name)
+            dropped_by_correlation_pairs.append(
+                {
+                    "dropped_feature": dropped_name,
+                    "representative_feature": representative_name,
+                    "corr": float(pair["corr"]),
+                    "pair": [feature_i, feature_j],
+                    "drop_reason": drop_reason,
+                }
+            )
 
     selected_idx = np.where(keep)[0].astype(np.int32)
     if selected_idx.size == 0:
@@ -916,22 +949,12 @@ def _select_feature_columns(
 
     selected_name_set = {str(names[i]) for i in selected_idx.tolist()}
     missing_requested = [name for name in explicit_subset_requested if name not in selected_name_set]
-    if missing_requested:
+    if missing_requested and subset_policy == "strict":
         raise ValueError(
             "Explicit feature subset includes unavailable feature(s) after "
             "feature_set/clim/variance/correlation filtering: "
             + ", ".join(missing_requested)
         )
-    explicit_subset_excluded: List[str] = []
-    if explicit_subset_requested:
-        name_to_idx = {str(name): int(i) for i, name in enumerate(names)}
-        selected_idx = np.asarray(
-            [name_to_idx[name] for name in explicit_subset_requested],
-            dtype=np.int32,
-        )
-        selected_name_set_subset = set(explicit_subset_requested)
-        explicit_subset_excluded = sorted(selected_name_set - selected_name_set_subset)
-
     selected_names = [str(names[i]) for i in selected_idx.tolist()]
     diagnostics: Dict[str, Any] = {
         "feature_set": mode,
@@ -953,8 +976,10 @@ def _select_feature_columns(
         "dropped_by_correlation_pairs": dropped_by_correlation_pairs,
         "explicit_feature_subset_requested": explicit_subset_requested,
         "explicit_feature_subset_applied": bool(explicit_subset_requested),
+        "feature_subset_policy": subset_policy,
         "explicit_feature_subset_missing": missing_requested,
-        "excluded_by_explicit_subset": explicit_subset_excluded,
+        "excluded_by_explicit_subset": excluded_by_explicit_subset,
+        "filter_scope": "global_pre_split",
         "n_params": int(n_params),
         "n_surface": int(n_surface),
         "n_climatology": int(n_climatology),
@@ -1028,6 +1053,7 @@ def train_surrogate_spinup_from_cases(
     feature_set: str = "all",
     clim_feature_include: Optional[Sequence[str]] = None,
     explicit_feature_subset: Optional[Sequence[str]] = None,
+    feature_subset_policy: str = "strict",
     apply_variance_filter: bool = False,
     variance_threshold: float = DEFAULT_VARIANCE_THRESHOLD,
     apply_corr_filter: bool = False,
@@ -1102,20 +1128,9 @@ def train_surrogate_spinup_from_cases(
     print(f"Final spinup design matrix (full): {X.shape}")
     print(f"Cases: {case_names}")
 
-    train_idx, val_idx, split_details = _build_split_indices(
-        row_case_ids=row_case_ids,
-        row_member_ids=row_member_ids,
-        row_site_ids=row_site_ids,
-        split_mode=split_mode,
-        train_fraction=train_fraction,
-        split_random_state=split_random_state,
-    )
-    print(f"Train rows: {train_idx.size}, Val rows: {val_idx.size}")
-
     phase_start = time.perf_counter()
     selected_idx, feature_diagnostics = _select_feature_columns(
         X,
-        train_idx,
         all_input_feature_names,
         n_params=int(ref.params.shape[1]),
         n_surface=int(ref.surface.shape[1]),
@@ -1123,6 +1138,7 @@ def train_surrogate_spinup_from_cases(
         feature_set=feature_set_norm,
         clim_feature_include=clim_feature_include,
         explicit_feature_subset=explicit_feature_subset,
+        feature_subset_policy=feature_subset_policy,
         apply_variance_filter=apply_variance_filter,
         variance_threshold=float(variance_threshold),
         apply_corr_filter=apply_corr_filter,
@@ -1135,6 +1151,16 @@ def train_surrogate_spinup_from_cases(
         f"Feature selection: kept {X_selected.shape[1]}/{X.shape[1]} columns "
         f"(feature_set={feature_set_norm})"
     )
+
+    train_idx, val_idx, split_details = _build_split_indices(
+        row_case_ids=row_case_ids,
+        row_member_ids=row_member_ids,
+        row_site_ids=row_site_ids,
+        split_mode=split_mode,
+        train_fraction=train_fraction,
+        split_random_state=split_random_state,
+    )
+    print(f"Train rows: {train_idx.size}, Val rows: {val_idx.size}")
 
     if dry_run:
         print("Dry-run only. Exiting before model fitting.")
@@ -1272,6 +1298,7 @@ def train_surrogate_spinup_from_cases(
         "feature_set": feature_set_norm,
         "clim_feature_include": _normalize_glob_patterns(clim_feature_include),
         "explicit_feature_subset": _normalize_feature_subset(explicit_feature_subset),
+        "feature_subset_policy": str(feature_subset_policy).strip().lower(),
         "apply_variance_filter": bool(apply_variance_filter),
         "variance_threshold": float(variance_threshold),
         "apply_corr_filter": bool(apply_corr_filter),

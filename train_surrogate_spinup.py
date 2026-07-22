@@ -89,9 +89,19 @@ def _build_parser() -> argparse.ArgumentParser:
         ),
     )
     parser.add_argument(
+        "--feature-subset-policy",
+        default="strict",
+        choices=["strict", "eligible_pool"],
+        help=(
+            "How --feature-subset interacts with variance/correlation filtering: "
+            "strict requires every requested feature to survive; eligible_pool lets "
+            "filters prune the requested pool."
+        ),
+    )
+    parser.add_argument(
         "--apply-variance-filter",
         action="store_true",
-        help="Drop selected features with train variance <= --variance-threshold",
+        help="Drop selected features with global feature-only variance <= --variance-threshold",
     )
     parser.add_argument(
         "--variance-threshold",
@@ -309,6 +319,7 @@ def main() -> int:
         feature_set=args.feature_set,
         clim_feature_include=clim_feature_include,
         explicit_feature_subset=feature_subset,
+        feature_subset_policy=args.feature_subset_policy,
         apply_variance_filter=args.apply_variance_filter,
         variance_threshold=args.variance_threshold,
         apply_corr_filter=args.apply_corr_filter,

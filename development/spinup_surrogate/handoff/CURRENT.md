@@ -1,20 +1,18 @@
-# Spinup Surrogate - Current Handoff (iter007 completed)
+# Spinup Surrogate - Current Handoff (iter008 completed)
 
 ## Live State
 
-- Active iteration: `iter007`
+- Active iteration: `iter008`
 - Status: `completed`
 - Phase: `selection and closeout complete`
 - Active job IDs: none
 - Site profile: `development/hpc/puma.md`
-- Execution authority: on 2026-07-20, the user approved a fresh finite retry contract for only
-  `s24_relu_adam_a50_lr5e4` seed `10005` and `d16_16_relu_adam_a50_lr5e4` seed `10002`, using the
-  per-array-task `XDG_CACHE_HOME` isolation in the canonical script. The user also authorized
-  continuous monitoring, successful-path aggregation/selection/closeout, one further retry per
-  leaf only for scheduler/resource interruption, and amendment of the existing iter007 closeout
-  commit. Both leaf retries completed. The user subsequently authorized correction of aggregation
-  job `23346866`'s one `d16_08` path suffix and a same-resource aggregation rerun. Corrected job
-  `23346902` completed; selection and closeout authority are now exhausted.
+- Execution authority: on 2026-07-22 the user approved the iter008 contract: UA Puma with
+  `development/hpc/puma.md`; one finite 18-variant / 90-leaf matrix; implementation/test work,
+  preparation, submission, continuous monitoring through closeout; `standard` / `chopinsong`,
+  10 CPUs (50 GB implied), 30 minutes, per-task cache isolation; one retry only for a
+  scheduler/resource interruption; and one closeout commit. Application/code/configuration
+  failures stop for fresh authorization. The contract completed without a matrix retry.
 
 ## Current Objective
 
@@ -25,7 +23,34 @@ arrays are terminal: 38 leaves completed, while two leaves failed before trainin
 concurrent ArviZ home-cache race. The two cache-isolated retry leaves completed, restoring all 40
 stats files. Corrected aggregation produced all eight summary/stability pairs; only
 `s08_tanh_adam_a10_lr1e3` passed the locked gates, exactly matching the iter006 all_control
-baseline. Do not broaden the matrix or alter the selected result.
+baseline. Iter008 selected `s32_tanh_lbfgs_a50_lr1e3_full45`: median validation R2
+`0.7935/0.7937`, absolute validation RMSE `4661.8/469.7`, median RMSE ratio `0.9499/0.9561`, and
+zero warnings. Validation job `23362319` failed before checking invariants because
+the absolute-path validator could not import `model_ELM`; this is an application/configuration
+failure. On 2026-07-22 the user authorized adding the fixed repository root to `sys.path` and
+rerunning the same one-CPU/5-GB/5-minute validation only. Corrected job `23362351` completed
+successfully (`0:0`, `00:00:35`, MaxRSS `406084K`) and confirmed the global-filter invariants.
+All 90 training leaves completed `0:0`; manifest aggregation job `23362489` completed `0:0`.
+The next iteration requires a new runtime contract.
+
+## Durable Prevention Rule
+
+For any Python utility launched by absolute path on Puma, prepend the fixed repository root
+`/xdisk/chopinsong/tianyihu/elm-olmt` to `sys.path` before importing repository modules. Require a
+bounded compute-node import/no-training preflight before a production matrix. Treat an import-path
+failure as application/configuration: preserve diagnostics and request exact-fix authority before
+retrying.
+
+## Next Round Action and Decision
+
+- Retain `s32_tanh_lbfgs_a50_lr1e3_full45` and its full45 schema as the current nine-case
+  baseline; correlation-pruned policies are not promoted.
+- The next sequential iteration is `iter009`. Its first action is planning: define and lock a
+  focused scientific objective, candidate matrix, target-combination gates, resource/retry policy,
+  and expected artifacts against the iter008 baseline.
+- Only after that planning record is complete may the primary agent request the required Puma
+  runtime contract. No iter009 code change, scaffold, submission, or execution is authorized by
+  this closeout.
 
 ## Puma Migration State
 
@@ -120,10 +145,10 @@ Resource diagnostics (`iter006`):
   migration preflight; iter007 training and training dry-run have not run.
 - `OLMT_puma` currently uses the home-directory micromamba root; monitor the 50-GB home quota
 
-## Next Iteration Plan (iter008, planning only)
+## Historical Iter008 Plan
 
-No iter008 files, code changes, or Slurm jobs are authorized yet. This plan is the required
-starting point for its scaffold and runtime-contract request.
+This is the pre-execution plan retained as provenance. Iter008 is closed; do not treat this
+historical text as an execution authorization.
 
 ### Durable correlation-filter ordering
 
@@ -192,15 +217,16 @@ pruned input schemas improve the selected compact Adam baseline.
 
 1. Load `development/spinup_surrogate/handoff/CURRENT.md`.
 2. Load iteration reports:
+   - `development/spinup_surrogate/iterations/iter008.md`
    - `development/spinup_surrogate/iterations/iter006.md`
    - `development/spinup_surrogate/iterations/iter005.md`
    - `development/spinup_surrogate/iterations/iter004.md`
-3. Load the iter008 planning addendum in `iterations/iter007.md` and this plan section.
+3. Treat the iter008 planning addendum in `iterations/iter007.md` and this historical plan
+   section as provenance only.
 4. Review `development/spinup_surrogate/WORKFLOW.md` and
    `development/hpc/puma.md`.
 5. Read `development/spinup_surrogate/iterations/iter007.md`; there is no live job set.
-6. Do not scaffold, submit, or change code for iter008 until the new runtime contract explicitly
-   authorizes the locked matrix and the required implementation work.
+6. Identify the next sequential iteration and request its fresh runtime contract before scaffolding.
 
 ## Ready/Blocked Status for Next Iteration
 
@@ -209,16 +235,14 @@ including cache-isolated retry leaves `23346857_5` and `23346858_2`. Corrected a
 `23346902` completed (`0:0`, `00:00:15`), producing all eight summary/stability pairs. Retain
 `s08_tanh_adam_a10_lr1e3`; all other variants were rejected by the locked gates.
 
-Iter008 has a defined, unexecuted 18-variant/90-leaf plan. It is blocked only on the required
-implementation/test work and a new explicit runtime contract; it is not a retry or extension of
-the iter007 authorization.
+Iter008 is complete: all 90 leaves and aggregation job `23362489` completed successfully. The
+selected alpha-50 full45 LBFGS model is the current nine-case baseline. Any next iteration is a
+new round and requires a fresh runtime contract.
 
 ## Required User Decisions Before Execution (if any)
 
-No active execution decision remains. Iter008 requires explicit authority for the documented
-implementation/test work and the standard new runtime-contract authorization request under
-`development/hpc/puma.md`; the request must name the 18 variants/90 leaves, proposed resource
-cap, one scheduler/resource retry, continuous monitoring, and closeout-commit decision.
+No active execution decision remains. A future iteration must name its own locked matrix,
+Puma resource cap, retry boundary, monitoring authority, and closeout-commit decision.
 
 ## Artifact Paths
 
