@@ -1,16 +1,25 @@
-# Spinup Surrogate Iteration Summary: iter001-iter005
+# Spinup Surrogate Iteration Summary: iter001-iter007
 
 ## Executive Summary
 
-The workflow progressed from a single-case overfitting baseline to a successful nine-case feature-attribution study.
+The workflow progressed from a single-case overfitting baseline to a validated nine-case feature
+set and fixed-MLP selection.
 
 - `iter001` established the single-case NN baseline, but surface and climatology features had no usable variation and were removed by filtering.
 - `iter002` moved to nine cases but failed because the five-minute walltime was inadequate; its retry pilot also timed out.
 - `iter003` tested GridSearchCV parallelism and failed its runtime gate under both four- and eight-worker profiles.
 - `iter004` instrumented source phases and showed that per-case forcing preparation, not model fitting, dominated runtime. A combined xarray-loading change did not improve runtime or memory.
 - `iter005` successfully completed all 20 nine-case tasks using five seeds for each of four feature-set variants. `multi_all` was the preferred configuration, and stable surface/climatology features were identified.
+- `iter006` tested whether a smaller interpretable feature set could retain the all-feature result.
+  No reduction passed the locked validation/tail/stability gates, so the exact 45-feature
+  `all_control` set was retained.
+- `iter007` held those 45 features fixed and evaluated eight MLP configurations. The compact
+  `(8,)`, `tanh`, `adam`, alpha `10`, learning rate `1e-3` model was the sole gate passer and
+  exactly reproduced the iter006 baseline.
 
-Current preferred direction: use `multi_all` as the nine-case baseline and validate a reduced, interpretable feature set with targeted grouped ablations.
+Current preferred configuration: retain the iter006 45-feature `all_control` input set and use
+the iter007 `s08_tanh_adam_a10_lr1e3` fixed MLP. No tested feature reduction or MLP alternative
+improved it under the declared gates.
 
 ## Cross-Iteration Setup
 
@@ -21,6 +30,8 @@ Current preferred direction: use `multi_all` as the nine-case baseline and valid
 | iter003 | Nine cases, `by_member` | Five pilot seeds | Parallelism and timeout reduction | Failed: runtime |
 | iter004 | Nine cases, `by_member` | One diagnostic seed plus retry | Source timing and memory diagnosis | Failed: memory headroom |
 | iter005 | Nine cases, `by_member` | Five per variant | Feature attribution and model comparison | Completed |
+| iter006 | Nine cases, `by_member` | Five per variant | Feature-set settlement | Completed: retain 45 features |
+| iter007 | Nine cases, `by_member` | Five per variant | Fixed MLP hyperparameter tuning | Completed: retain `(8,)` tanh/adam MLP |
 
 All multicase iterations used train fraction `0.8`, targets `TOTSOMC,TOTSOMN`, compact climatology features, NN models, variance/correlation filtering, and permutation diagnostics unless noted otherwise.
 
@@ -149,30 +160,110 @@ These candidates were retained across all five seeds and generally appeared in t
 - `development/spinup_surrogate/summaries/iter005/*_summary.json`
 - `development/spinup_surrogate/summaries/iter005/*_feature_stability.json`
 
-## Main Conclusions
+### iter006 — Feature-Set Settlement and the 45-Feature Decision
+
+Setup:
+
+- Five seeds per variant (`10001-10005`), the same nine cases, `by_member` split, and both
+  spinup targets.
+- `all_control` retained all 14 parameters, all three surface variables, and 28 compact
+  climatology features: 45 features total.
+- Reduced candidates used 20 features (`all_params_all_surface_core_clim`) or 11 features
+  (`core_tri_group`). `core_params_all_surface_all_clim` was rejected before fitting because
+  seven requested features were unavailable after the locked variance/correlation filtering.
+
+The table reports five-seed medians. `r2_val` is shown as `median / minimum / IQR` for each
+target; absolute validation RMSE and RMSE ratio are shown as `TOTSOMC / TOTSOMN`. RMSE ratio is
+the median of per-seed `validation RMSE / training RMSE` values. Warning fraction is the fraction
+of seeds with an overfit warning.
+
+| Feature variant | Features | TOTSOMC r2_val | TOTSOMN r2_val | Validation RMSE | RMSE ratio | Warning fraction | Decision |
+| --- | ---: | --- | --- | ---: | --- | --- | --- |
+| **all_control** | **45** | **0.5892 / 0.4922 / 0.0745** | **0.5892 / 0.4930 / 0.0746** | **6758.3 / 676.4** | **1.0000 / 1.0008** | **0.00 / 0.00** | **Retained** |
+| all_params_all_surface_core_clim | 20 | 0.5513 / 0.4413 / 0.0521 | 0.5515 / 0.4417 / 0.0517 | 7590.5 / 760.2 | 1.0132 / 1.0142 | 0.00 / 0.00 | Rejected: median and tail R2 gates fail |
+| core_tri_group | 11 | 0.5189 / 0.3958 / 0.1122 | 0.5188 / 0.3965 / 0.1124 | 7368.2 / 737.8 | 1.0048 / 1.0059 | 0.00 / 0.00 | Rejected: median, tail, and IQR R2 gates fail |
+| core_params_all_surface_all_clim | — | — | — | — | — | — | Rejected before fitting: explicit subset invalid after filtering |
+
+Why the 45 features were retained:
+
+- The 20-feature reduction lost `0.0379 / 0.0377` median validation R2 and `0.0509 / 0.0513`
+  minimum validation R2 versus control (`TOTSOMC / TOTSOMN`), exceeding the allowed drops of
+  `0.01` and `0.02` respectively.
+- The 11-feature reduction lost `0.0703 / 0.0704` median validation R2, lost
+  `0.0964 / 0.0965` at the validation tail, and expanded R2 IQR to approximately `0.112`, beyond
+  the control-IQR allowance.
+- All completed variants had zero warnings, so the decision is driven by validated performance
+  and stability rather than a warning tradeoff.
+- Strong cross-target feature evidence in the selected 45-feature set included `parm_6`,
+  `parm_9`, `parm_10`, `parm_12`, `parm_13`, `PCT_SAND`, `FSDS_clim_mean`,
+  `PRECTmms_clim_mean`, `RH_clim_mean`, and `RH_clim_seasonal_amp`.
+
+### iter007 — Fixed-Feature MLP Hyperparameter Selection
+
+Setup:
+
+- The exact 45 iter006 `all_control` features were frozen. Variance and correlation filtering
+  were disabled so every MLP saw identical inputs.
+- Five seeds per candidate, eight fixed MLP configurations, `by_member` split, and the same nine
+  cases/targets were used.
+- Gates were applied independently to both targets: median validation R2 no more than `0.01`
+  below control, minimum R2 no more than `0.02` below, R2 IQR within `0.02`, median RMSE ratio
+  within `0.02`, and no overfit warnings.
+
+The table reports five-seed medians. `R2 gap` is median `train R2 - validation R2`; absolute
+validation RMSE, RMSE ratio, R2 gap, and warning fraction are all shown as `TOTSOMC / TOTSOMN`.
+
+| MLP variant | Hidden layers; activation; solver | Alpha; learning rate | TOTSOMC/TOTSOMN r2_val (median / min / IQR) | Validation RMSE | RMSE ratio | R2 gap | Warning fraction | Decision |
+| --- | --- | --- | --- | ---: | --- | --- | --- | --- |
+| **s08_tanh_adam_a10_lr1e3** | **(8,); tanh; adam** | **10; 1e-3** | **0.5892 / 0.4922 / 0.0745; 0.5892 / 0.4930 / 0.0746** | **6758.3 / 676.4** | **1.0000 / 1.0008** | **0.0017 / 0.0024** | **0.00 / 0.00** | **Selected: only full gate passer; reproduces iter006 control** |
+| s16_tanh_adam_a50_lr1e3 | (16,); tanh; adam | 50; 1e-3 | 0.4082 / 0.3109 / 0.0503; 0.4080 / 0.3116 / 0.0503 | 8650.9 / 866.1 | 1.0037 / 1.0046 | 0.0111 / 0.0116 | 0.00 / 0.00 | Reject: median and tail R2 |
+| s24_relu_adam_a50_lr5e4 | (24,); relu; adam | 50; 5e-4 | 0.3326 / 0.2660 / 0.0598; 0.3341 / 0.2673 / 0.0593 | 8989.5 / 899.7 | 1.0092 / 1.0100 | 0.0280 / 0.0275 | 0.00 / 0.00 | Reject: median and tail R2 |
+| s32_tanh_lbfgs_a10_lr1e3 | (32,); tanh; lbfgs | 10; 1e-3* | 0.9043 / 0.8884 / 0.0339; 0.9045 / 0.8883 / 0.0327 | 3096.6 / 308.3 | 1.2244 / 1.2176 | 0.0324 / 0.0322 | 0.40 / 0.40 | Reject: RMSE-ratio caps and warning gate |
+| d08_08_tanh_adam_a10_lr1e3 | (8, 8); tanh; adam | 10; 1e-3 | 0.5588 / 0.4051 / 0.0871; 0.5586 / 0.4057 / 0.0874 | 7511.7 / 752.1 | 0.9966 / 0.9976 | -0.0134 / -0.0127 | 0.00 / 0.00 | Reject: median and tail R2 |
+| d16_08_tanh_adam_a50_lr1e3 | (16, 8); tanh; adam | 50; 1e-3 | 0.2666 / 0.2201 / 0.0309; 0.2652 / 0.2210 / 0.0506 | 9351.8 / 936.1 | 1.0251 / 1.0260 | 0.0265 / 0.0269 | 0.00 / 0.00 | Reject: median and tail R2 |
+| d16_16_relu_adam_a50_lr5e4 | (16, 16); relu; adam | 50; 5e-4 | 0.2016 / 0.1108 / 0.0971; 0.2030 / 0.1121 / 0.0976 | 10061.0 / 1007.4 | 1.0173 / 1.0182 | 0.0191 / 0.0191 | 0.00 / 0.00 | Reject: median and tail R2 |
+| d32_16_tanh_adam_a100_lr1e3 | (32, 16); tanh; adam | 100; 1e-3 | 0.1785 / 0.1080 / 0.0148; 0.1795 / 0.1084 / 0.0151 | 9526.0 / 953.7 | 1.0390 / 1.0399 | 0.0333 / 0.0336 | 0.00 / 0.00 | Reject: median and tail R2 |
+
+`*` Scikit-learn's `lbfgs` solver does not use `learning_rate_init`; it is recorded only for
+matrix provenance. Although the lbfgs candidate attained the highest R2 and lowest absolute RMSE,
+its validation-to-training RMSE ratio exceeded the overfit threshold and 2/5 seeds warned for
+overfitting. It was therefore ineligible under the predeclared gate.
+
+The selected `(8,)` tanh/adam model retained the same strong cross-target top-10 stability signals
+as iter006 (`FSDS_clim_mean`, `PCT_SAND`, `PRECTmms_clim_mean`, `RH_clim_seasonal_amp`, `parm_6`,
+`parm_9`, `parm_10`, `parm_12`, and `parm_13`). This confirms that the parameter selection did
+not obtain its result by changing the frozen feature evidence.
+
+## Main Conclusions Through iter007
 
 1. The single-case feature conclusion from iter001 was limited by absent surface/climatology variation.
 2. Nine-case diversity made surface and climatology features informative.
-3. The all-feature NN performed best among the iter005 variants.
-4. Climatology features contributed more strongly than surface features in the tested ablation comparison.
-5. Overfitting diagnostics improved substantially in the nine-case study, with zero warning fractions across all iter005 variants.
-6. Runtime is operationally manageable at 30 minutes, but memory remains near the request ceiling and CPU efficiency remains low.
+3. The 45-feature iter006 `all_control` set was the only feature configuration to meet all
+   performance, tail, IQR, and validity requirements; no reduced set is justified by the data.
+4. With those inputs frozen, the compact `(8,)` tanh/adam MLP was the only iter007 parameter
+   configuration to satisfy all gates. It matches, rather than improves upon, the feature-control
+   baseline.
+5. The high-R2 lbfgs candidate illustrates why absolute RMSE/R2 alone is insufficient: its RMSE
+   ratio and warning fraction showed unacceptable generalization behavior.
+6. Overfitting diagnostics remain clean for the selected configuration (zero warnings), and the
+   same cross-target feature-stability signals remain present.
+7. Runtime is operationally manageable at 30 minutes, but memory remains near the request ceiling
+   and CPU efficiency remains low.
 
-## Next Recommended Iteration: iter006
+## Next Iteration Guidance
 
-Use `multi_all` as the control and freeze the current MLP quick-grid while settling the feature set. Do not rerun a parameter-only configuration.
-
-- Test four five-seed configurations, each retaining parameter, surface, and climatology groups: all eligible features; core parameters plus all surface/climatology; all parameters/surface plus core climatology; and core parameters plus all surface plus core climatology.
-- Add training-row Pearson pair analysis at `|r| >= 0.80`, `0.90`, `0.95`, and `0.98`.
-- Reject a requested subset if filtering removes one of its required features.
-- Choose the simplest reduced set that remains within the performance, tail, IQR, and cross-seed feature-stability gates.
-- Defer MLP hyperparameter tuning to iter007.
+Retain the exact 45-feature input set and the selected fixed MLP `(8,)`, `tanh`, `adam`, alpha
+`10`, learning rate `1e-3` as the current baseline. A future iteration should start from a new
+runtime contract and state a distinct hypothesis; it should not repeat these failed reductions or
+hyperparameter variants without a new scientific reason.
 
 ## Source Artifacts
 
 - Canonical workflow: `development/spinup_surrogate/WORKFLOW.md`
 - Current handoff: `development/spinup_surrogate/handoff/CURRENT.md`
 - Registry: `development/spinup_surrogate/registry.csv`
-- Detailed reports: `development/spinup_surrogate/iterations/iter001.md` through `iter005.md`
+- Detailed reports: `development/spinup_surrogate/iterations/iter001.md` through `iter007.md`
 - Iter005 summaries: `development/spinup_surrogate/summaries/iter005/`
+- Iter006 summaries: `development/spinup_surrogate/summaries/iter006/`
+- Iter007 summaries: `development/spinup_surrogate/summaries/iter007/`
 - Feature analyzer: `development/spinup_surrogate/analyze_feature_stability.py`
