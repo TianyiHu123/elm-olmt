@@ -296,8 +296,10 @@ runtime contract.
 ## Next Iteration Guidance
 
 Retain full45 and `(32,), tanh, lbfgs, alpha=50` as the current baseline. The proposed iter009
-plan is a full45-only alpha refinement at `25,35,50,65,75`; it requires a new runtime contract,
-reviewer subagent, and no-training preflight before execution.
+plan crosses alpha `25,35,50,65,75` with three feature-policy arms: full45, global pre-split
+correlation pruning at `0.80`, and a strict 32-feature arm that directly omits `FLDS`, `WIND`, and
+`PSRF` through the Slurm `--forcing-vars` argument. This produces 15 variants and 75 leaves and
+requires a new runtime contract, reviewer subagent, and no-training preflight before execution.
 
 ## Source Artifacts
 

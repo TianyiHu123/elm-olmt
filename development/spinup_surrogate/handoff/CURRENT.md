@@ -49,12 +49,18 @@ authorization.
 
 ## Proposed Iter009 Plan (Planning Only)
 
-- Retained baseline: `s32_tanh_lbfgs_a50_lr1e3_full45` with full45. Do not promote a
-  correlation-pruned policy.
-- Hypothesis and tentative matrix: refine the alpha-50 LBFGS result with `(32,), tanh, lbfgs,
-  full45` at alpha `25`, `35`, `50` control, `65`, and `75`; five seeds per candidate (25 leaves).
-  Keep the nine cases, `by_member`/`0.8` split, two targets, and disabled variance/correlation
-  filtering.
+- Retained baseline: `s32_tanh_lbfgs_a50_lr1e3_full45` with full45.
+- Hypothesis and tentative matrix: refine the alpha-50 LBFGS result while testing whether either
+  global 0.80 correlation pruning or direct removal of the longwave-radiation, wind, and pressure
+  climatology inputs improves generalization. Cross alpha `25`, `35`, `50` control, `65`, and `75`
+  with three feature-policy arms: `full45` with no correlation filter; `corr080_prioritydrop` with
+  the full45 eligible pool and global pre-split correlation threshold `0.80`; and
+  `drop_flds_wind_psrf` with no correlation filter and Slurm argument
+  `--forcing-vars PRECTmms,FSDS,TBOT,RH`, yielding the strict 32-feature subset after directly
+  excluding all 13 `FLDS_*`, `WIND_*`, and `PSRF_*` climatology features. Use `(32,), tanh, lbfgs`
+  and five seeds per variant: 15 variants and 75 leaves. Keep the nine cases, `by_member`/`0.8`
+  split, two targets, and disabled variance filtering; correlation filtering is enabled only for
+  `corr080_prioritydrop`.
 - Proposed gates: apply the iter008 selected-baseline gates independently per target: median/min
   R2 within `0.01`/`0.02`, IQR within `0.02`, RMSE ratio within `0.02`, and zero warnings; rank
   passers by mean median R2, lower RMSE ratio, then lower alpha.

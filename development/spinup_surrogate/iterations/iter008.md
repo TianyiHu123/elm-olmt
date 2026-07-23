@@ -177,14 +177,20 @@ runtime contract.
 
 ## Proposed Iter009 Plan (Planning Only)
 
-- Retained baseline: `s32_tanh_lbfgs_a50_lr1e3_full45` with the full45 schema. Correlation-pruned
-  arms are not proposed because all three alpha-50 policies ranked below full45.
+- Retained baseline: `s32_tanh_lbfgs_a50_lr1e3_full45` with the full45 schema.
 - Hypothesis: the sharp improvement at LBFGS alpha 50 can be refined by a narrow regularization
-  sweep without reopening feature policy or architecture.
-- Tentative matrix: `(32,), tanh, lbfgs, full45` at alpha `25`, `35`, `50` (control), `65`, and
-  `75`; five seeds `10001-10005`, for 25 proposed leaves. Keep the nine cases, `by_member` split,
-  `0.8` train fraction, `TOTSOMC,TOTSOMN`, stats-only output, and disabled variance/correlation
-  filtering.
+  sweep, while parallel feature-policy arms test whether global 0.80 correlation pruning or direct
+  removal of longwave-radiation, wind, and pressure climatology inputs improves generalization
+  without changing the architecture.
+- Tentative matrix: cross `(32,), tanh, lbfgs` at alpha `25`, `35`, `50` (control), `65`, and `75`
+  with three feature-policy arms: `full45` with no correlation filter; `corr080_prioritydrop` with
+  the full45 eligible pool and global pre-split correlation threshold `0.80`; and
+  `drop_flds_wind_psrf` with no correlation filter and Slurm argument
+  `--forcing-vars PRECTmms,FSDS,TBOT,RH`. The last arm directly excludes all 13 `FLDS_*`,
+  `WIND_*`, and `PSRF_*` climatology features and uses the corresponding strict 32-feature subset.
+  Use five seeds `10001-10005`, producing 15 variants and 75 proposed leaves. Keep the nine cases,
+  `by_member` split, `0.8` train fraction, `TOTSOMC,TOTSOMN`, stats-only output, and disabled
+  variance filtering; correlation filtering is enabled only for `corr080_prioritydrop`.
 - Tentative gates, independently per target against the iter008 selected baseline: median R2 not
   more than `0.01` below (`0.7935/0.7937`); minimum R2 not more than `0.02` below
   (`0.6820/0.6820`); R2 IQR not more than `0.02` above (`0.0646/0.0612`); median per-seed RMSE
