@@ -38,19 +38,32 @@ The next iteration requires a new runtime contract.
 For any Python utility launched by absolute path on Puma, prepend the fixed repository root
 `/xdisk/chopinsong/tianyihu/elm-olmt` to `sys.path` before importing repository modules. Require a
 bounded compute-node import/no-training preflight before a production matrix. Treat an import-path
-failure as application/configuration: preserve diagnostics and request exact-fix authority before
-retrying.
+failure as application/configuration: preserve diagnostics and apply only the validation-only
+retry boundary defined below.
 
-## Next Round Action and Decision
+The canonical workflow now grants one separate validation-only retry when a bounded preflight
+fails before training: the primary agent may apply one minimal import/launch/configuration fix and
+rerun the same preflight once. It does not consume the matrix variant retry budget; a second
+preflight failure, a changed failure class, or any scientific-control change stops for fresh
+authorization.
 
-- Retain `s32_tanh_lbfgs_a50_lr1e3_full45` and its full45 schema as the current nine-case
-  baseline; correlation-pruned policies are not promoted.
-- The next sequential iteration is `iter009`. Its first action is planning: define and lock a
-  focused scientific objective, candidate matrix, target-combination gates, resource/retry policy,
-  and expected artifacts against the iter008 baseline.
-- Only after that planning record is complete may the primary agent request the required Puma
-  runtime contract. No iter009 code change, scaffold, submission, or execution is authorized by
-  this closeout.
+## Proposed Iter009 Plan (Planning Only)
+
+- Retained baseline: `s32_tanh_lbfgs_a50_lr1e3_full45` with full45. Do not promote a
+  correlation-pruned policy.
+- Hypothesis and tentative matrix: refine the alpha-50 LBFGS result with `(32,), tanh, lbfgs,
+  full45` at alpha `25`, `35`, `50` control, `65`, and `75`; five seeds per candidate (25 leaves).
+  Keep the nine cases, `by_member`/`0.8` split, two targets, and disabled variance/correlation
+  filtering.
+- Proposed gates: apply the iter008 selected-baseline gates independently per target: median/min
+  R2 within `0.01`/`0.02`, IQR within `0.02`, RMSE ratio within `0.02`, and zero warnings; rank
+  passers by mean median R2, lower RMSE ratio, then lower alpha.
+- Proposed operational shape: Puma `standard` / `chopinsong`, 10 CPUs (50 GB implied), 30 minutes,
+  `N_JOBS=4`, per-task cache isolation, iteration-local Slurm manifest, independent read-only
+  reviewer subagent, and no-training compute preflight. The validation-only retry is separate from
+  the one scheduler/resource retry per leaf.
+- Authorization boundary: validate/refine this proposal against current state, then obtain a new
+  runtime contract. No iter009 scaffold, code change, submission, or execution is authorized.
 
 ## Puma Migration State
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Compute-node invariant checks for iter008 global feature filtering."""
+"""Compute-node invariant checks for durable global feature filtering."""
 from pathlib import Path
 import sys
 
@@ -36,7 +36,7 @@ def main() -> None:
     assert diagnostics["dropped_by_correlation"] == ["WIND_feature", "PSRF_feature", "other"]
     assert diagnostics["dropped_by_correlation_pairs"][0]["drop_reason"] == "priority_prefix"
     assert diagnostics["dropped_by_correlation_pairs"][1]["drop_reason"] == "priority_prefix"
-    print("iter008 global feature-filter invariants passed")
+    print("global feature-filter invariants passed")
 
 
 if __name__ == "__main__":

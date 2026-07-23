@@ -1,4 +1,4 @@
-# Spinup Surrogate Iteration Summary: iter001-iter007
+# Spinup Surrogate Iteration Summary: iter001-iter008
 
 ## Executive Summary
 
@@ -16,10 +16,12 @@ set and fixed-MLP selection.
 - `iter007` held those 45 features fixed and evaluated eight MLP configurations. The compact
   `(8,)`, `tanh`, `adam`, alpha `10`, learning rate `1e-3` model was the sole gate passer and
   exactly reproduced the iter006 baseline.
+- `iter008` implemented global pre-split correlation filtering, then tested the compact Adam
+  control and five `(32,)`, tanh/LBFGS regularization levels under full45, 0.80, and 0.60 feature
+  policies. LBFGS alpha 50/full45 was selected and materially improved both targets.
 
-Current preferred configuration: retain the iter006 45-feature `all_control` input set and use
-the iter007 `s08_tanh_adam_a10_lr1e3` fixed MLP. No tested feature reduction or MLP alternative
-improved it under the declared gates.
+Current preferred configuration: retain the full 45-feature schema and use iter008
+`s32_tanh_lbfgs_a50_lr1e3_full45`. It is the highest full-gate passer so far.
 
 ## Cross-Iteration Setup
 
@@ -32,6 +34,7 @@ improved it under the declared gates.
 | iter005 | Nine cases, `by_member` | Five per variant | Feature attribution and model comparison | Completed |
 | iter006 | Nine cases, `by_member` | Five per variant | Feature-set settlement | Completed: retain 45 features |
 | iter007 | Nine cases, `by_member` | Five per variant | Fixed MLP hyperparameter tuning | Completed: retain `(8,)` tanh/adam MLP |
+| iter008 | Nine cases, `by_member` | Five per variant | Global feature pruning and LBFGS regularization | Completed: retain `(32,)` tanh/LBFGS alpha 50, full45 |
 
 All multicase iterations used train fraction `0.8`, targets `TOTSOMC,TOTSOMN`, compact climatology features, NN models, variance/correlation filtering, and permutation diagnostics unless noted otherwise.
 
@@ -234,7 +237,45 @@ as iter006 (`FSDS_clim_mean`, `PCT_SAND`, `PRECTmms_clim_mean`, `RH_clim_seasona
 `parm_9`, `parm_10`, `parm_12`, and `parm_13`). This confirms that the parameter selection did
 not obtain its result by changing the frozen feature evidence.
 
-## Main Conclusions Through iter007
+### iter008 — Global Correlation Pruning and LBFGS Regularization
+
+Objective: test whether global, target-free correlation pruning improves the selected compact Adam
+baseline and whether stronger LBFGS L2 regularization resolves iter007's RMSE-ratio/warning failure.
+
+Locked setup:
+
+- Nine cases; `by_member` split; train fraction `0.8`; targets `TOTSOMC,TOTSOMN`; five seeds.
+- Exact iter006 45-feature pool; variance filtering disabled. Correlation filtering, when enabled,
+  ran before split with priority drops for `WIND_*`, `PSRF_*`, and `FLDS_*`.
+- Eighteen variants: the `(8,), tanh, adam, alpha=10` control plus `(32,), tanh, lbfgs` at alpha
+  `50,100,250,500,1000`, each under `full45`, `corr080_prioritydrop`, and
+  `corr060_prioritydrop`.
+- Puma: `standard` / `chopinsong`, 10 CPUs (50 GB implied), 30 minutes, `N_JOBS=4`, per-task
+  cache isolation. All 90 leaves completed; aggregation job `23362489` completed.
+
+Feature-schema evidence: full45, corr080, and corr060 retained 45, 25, and 21 features,
+respectively, with identical selected schemas across all five seeds.
+
+| Full-gate passer | TOTSOMC/TOTSOMN median R2 | Validation RMSE | RMSE ratio | Decision |
+| --- | --- | --- | --- | --- |
+| **LBFGS alpha 50, full45** | **0.7935 / 0.7937** | **4661.8 / 469.7** | **0.9499 / 0.9561** | **Selected** |
+| LBFGS alpha 50, corr080 | 0.7896 / 0.7906 | 4719.5 / 472.6 | 0.9531 / 0.9539 | Pass; lower R2 than full45 |
+| LBFGS alpha 50, corr060 | 0.7726 / 0.7724 | 4866.4 / 487.2 | 0.9542 / 0.9552 | Pass; lower R2 than full45 |
+| LBFGS alpha 100, full45 | 0.6908 / 0.6905 | 5861.8 / 586.9 | 0.9727 / 0.9737 | Pass; lower R2 than alpha 50 |
+| LBFGS alpha 100, corr080 | 0.6796 / 0.6798 | 5966.2 / 597.3 | 0.9817 / 0.9826 | Pass; lower R2 than alpha 50 |
+| Adam control, full45 | 0.5892 / 0.5892 | 6758.3 / 676.4 | 1.0000 / 1.0008 | Pass; iter007 baseline |
+
+All other candidates were rejected: the pruned Adam arms missed R2 gates; LBFGS alpha 100/corr060
+warned on 2/5 seeds; alpha 250 and above missed R2 gates, with alpha 500/1000 also exceeding RMSE
+ratio limits in some policies. The selected alpha-50/full45 model had zero overfit warnings and
+the highest mean cross-target median R2 (`0.7936`).
+
+Conclusion: retain full45 rather than promote correlation pruning. The iter007 LBFGS signal was
+real but required stronger regularization; alpha 50 converted it into the best eligible model.
+The next proposed round narrows full45 LBFGS alpha around 50 (`25,35,50,65,75`) under a fresh
+runtime contract.
+
+## Main Conclusions Through iter008
 
 1. The single-case feature conclusion from iter001 was limited by absent surface/climatology variation.
 2. Nine-case diversity made surface and climatology features informative.
@@ -247,23 +288,25 @@ not obtain its result by changing the frozen feature evidence.
    ratio and warning fraction showed unacceptable generalization behavior.
 6. Overfitting diagnostics remain clean for the selected configuration (zero warnings), and the
    same cross-target feature-stability signals remain present.
-7. Runtime is operationally manageable at 30 minutes, but memory remains near the request ceiling
+7. Iter008 established that global correlation pruning is seed-invariant but does not improve the
+   selected full45 policy. LBFGS alpha 50/full45 is the current best eligible model.
+8. Runtime is operationally manageable at 30 minutes, but memory remains near the request ceiling
    and CPU efficiency remains low.
 
 ## Next Iteration Guidance
 
-Retain the exact 45-feature input set and the selected fixed MLP `(8,)`, `tanh`, `adam`, alpha
-`10`, learning rate `1e-3` as the current baseline. A future iteration should start from a new
-runtime contract and state a distinct hypothesis; it should not repeat these failed reductions or
-hyperparameter variants without a new scientific reason.
+Retain full45 and `(32,), tanh, lbfgs, alpha=50` as the current baseline. The proposed iter009
+plan is a full45-only alpha refinement at `25,35,50,65,75`; it requires a new runtime contract,
+reviewer subagent, and no-training preflight before execution.
 
 ## Source Artifacts
 
 - Canonical workflow: `development/spinup_surrogate/WORKFLOW.md`
 - Current handoff: `development/spinup_surrogate/handoff/CURRENT.md`
 - Registry: `development/spinup_surrogate/registry.csv`
-- Detailed reports: `development/spinup_surrogate/iterations/iter001.md` through `iter007.md`
+- Detailed reports: `development/spinup_surrogate/iterations/iter001.md` through `iter008.md`
 - Iter005 summaries: `development/spinup_surrogate/summaries/iter005/`
 - Iter006 summaries: `development/spinup_surrogate/summaries/iter006/`
 - Iter007 summaries: `development/spinup_surrogate/summaries/iter007/`
+- Iter008 summaries: `development/spinup_surrogate/summaries/iter008/`
 - Feature analyzer: `development/spinup_surrogate/analyze_feature_stability.py`

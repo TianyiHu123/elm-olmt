@@ -14,8 +14,10 @@ must not edit records or operate jobs.
 | `handoff/CURRENT.md` | Live control record: current iteration, phase, active job IDs, next action | Update at scaffold, submission, terminal-state, and closeout transitions. |
 | `iterations/iterXXX.md` | Detailed, append-only evidence for one iteration | Create at planning; update the ledger as work occurs; finalize at closeout. |
 | `registry.csv` | One-row index of completed/failed iterations | Update only at closeout. |
+| `ITERATION_SUMMARY.md` | Cumulative cross-iteration scientific and operational summary | Update at every iteration closeout with objective, locked settings, quantitative evidence, and conclusion. |
 | `summaries/iterXXX/` | Compact metrics and stability evidence | Populate after successful aggregation. |
 | `slurm/iterXXX/` | Canonical submission scripts for an iteration | Treat as the source of truth; materialize a variant-local, self-describing submission copy before each `sbatch`. |
+| `tools/` | Reusable, no-training validation utilities | Keep only iteration-independent utilities here; promote or remove one-off validation code at closeout. |
 
 Use `templates/iteration.md` to create an iteration record and
 `templates/current-handoff.md` only to initialize or repair the handoff format. Do not
@@ -42,13 +44,15 @@ Before any execution, record the following in the active iteration report and
 2. **HPC and site profile:** user confirms the active session is on HPC and selects a profile
    under `development/hpc/` (for example `perlmutter.md`).
 3. **Submission authority:** explicit authorization for Slurm preparation, submission,
-   monitoring, and a single retry within the stated scope.
+   monitoring, a one-time preflight-validation retry, and a single matrix retry within the
+   stated scope.
 4. **Resource policy:** explicit resources, or calibrated mode with memory and walltime caps.
 5. **Commit authority:** whether one closeout commit per completed iteration is authorized.
 
 The contract is scoped to the declared run. A new iteration outside that scope, a resource
 increase beyond the cap, or a code/configuration change needed to retry requires fresh user
-authorization. Do not create a commit unless closeout-commit authority was explicitly given.
+authorization, except for the validation-only retry defined below. Do not create a commit unless
+closeout-commit authority was explicitly given.
 
 ### Required authorization request
 
@@ -58,8 +62,10 @@ runtime-contract response covering all of the following:
 
 1. confirmation that the active session is on the selected HPC system;
 2. the finite run mode and its task/round count;
-3. authorization to prepare, submit, and monitor the locked matrix;
-4. the exact resource profile and the one-retry boundary for scheduler/resource failures;
+3. authorization to prepare, submit, and monitor the locked matrix, including a bounded
+   no-training preflight;
+4. the exact resource profile, one automatic validation-only retry, and the separate one-retry
+   boundary for scheduler/resource matrix failures;
 5. whether one closeout commit is authorized.
 
 The request must name the selected `development/hpc/` profile and state that application or
@@ -75,8 +81,17 @@ Before planning a new round:
 2. Read the latest iteration report in full and the two preceding reports, when available.
 3. Read the relevant `registry.csv` rows and summary JSON files.
 4. Read the selected site profile in `development/hpc/`.
-5. Determine the next iteration ID and run slug.
-6. Record a focused objective, fixed controls, candidate matrix, acceptance gates, retry
+5. Find the preceding iteration's proposed next-iteration plan in both its `iterXXX.md` record
+   and `handoff/CURRENT.md`. Verify that the two records agree on the retained baseline and
+   proposed sequential ID.
+6. Assess plan quality before scaffolding. A plan is actionable only when it states an
+   evidence-derived objective/hypothesis, tentative candidate matrix and seed count, comparison
+   baseline and acceptance gates, proposed site/resources and retry boundaries, expected artifacts,
+   and the new-runtime-contract boundary. If the plan is absent, contradictory, or materially
+   obscure on any of those points, stop and ask the user to propose or clarify the next plan; do
+   not infer a scientific matrix, create iteration artifacts, or request execution authority.
+7. Determine the next iteration ID and run slug from the validated proposal.
+8. Record a focused objective, fixed controls, candidate matrix, acceptance gates, retry
    policy, and expected artifacts in the new iteration report.
 
 The report's decision rules are authoritative for that iteration. They must state how
@@ -107,6 +122,25 @@ the tie-breaker. Do not infer an automatic promotion rule when a report does not
    configuration into the script or source the configuration manifest beside it. Submit that
    variant-local copy, not the repository canonical script. Record the canonical source,
    submitted copy, configuration, and log paths in the iteration ledger.
+7. Keep iteration-specific Slurm manifests, variant matrices, and preflight scripts under
+   `slurm/iterXXX/`. A validation utility must be promoted to `tools/` only when it is reusable
+   across iterations; otherwise remove it at closeout after its evidence is recorded.
+8. When the iteration introduces or changes execution-affecting code, Slurm scripts, manifests,
+   variant-local configuration rendering, or preflight utilities, obtain one independent,
+   separately scoped **read-only reviewer subagent** check before the compute-node preflight.
+   This review must be performed by a different agent from the primary agent; it is not a
+   primary-agent self-review. The reviewer subagent verifies the locked matrix and runtime
+   contract, fixed-root/import behavior, artifact paths, and static checks; it must not edit
+   files, submit/cancel jobs, update records, or make the final decision. Record its concise
+   findings, outcome (`pass`, `pass_with_concerns`, or `block`), and the reviewed source hash in
+   the iteration ledger. On `block`, the primary agent must revise the identified
+   execution-affecting material, rerun static checks, and obtain a passing re-review before
+   preflight or submission. The primary agent may proceed past `pass_with_concerns` only after
+   recording a concrete rationale; it may not override `block`. A records-only iteration does not
+   require this check.
+9. Before a production matrix, run the contract-authorized bounded compute-node preflight. It
+   must verify absolute-path repository imports, locked manifests/configuration, and its declared
+   no-training invariants.
 
 ### 2. Submit and monitor
 
@@ -151,6 +185,12 @@ Classify each non-completion before acting:
   continue.
 - **Resource or scheduler failure:** make one minimal resource/configuration adjustment within
   the runtime contract and retry once.
+- **Preflight validation failure:** if the failure occurs before training/model execution, the
+  primary agent may make one minimal validation-only import, launch, or configuration correction
+  and rerun that same bounded preflight once. Record the diagnostic, correction, source/config
+  hashes, and rerun job ID. This retry does not consume a matrix variant's retry budget. A second
+  validation failure, a changed failure class, any change to scientific controls, or a failure
+  after training begins stops for fresh user authorization.
 - **Application or code failure:** preserve the diagnostic bundle and obtain fresh
   authorization before changing code/configuration or retrying.
 
@@ -175,13 +215,25 @@ agent records the final decision.
 ### 5. Close out
 
 1. Finalize the iteration report, including outcome, evidence, decision, next action, and
-   status.
-2. Add or update the corresponding `registry.csv` row.
-3. Update `CURRENT.md` with the completed/blocked state, key evidence, and next-session
+   status. It must also contain a **proposed next-iteration plan** derived from the completed
+   result: sequential ID, retained baseline, focused hypothesis, tentative locked matrix, gates,
+   resource/retry proposal, expected artifacts, and explicit statement that it is planning only.
+   Do not leave the next scientific direction unspecified when the completed evidence supports a
+   bounded proposal.
+2. Mirror that proposed next-iteration plan in `CURRENT.md`, including its proposed next action
+   and the fact that a new runtime contract is still required. The next primary agent uses this
+   proposal as its starting point, validates or refines it against current state, and must not
+   execute it automatically.
+3. Update `ITERATION_SUMMARY.md` with the completed iteration's detailed objective, fixed controls
+   and variant settings, seed/resource context, quantitative evidence (including absolute RMSE and
+   normalized metrics when available), gate outcome, and conclusion/retained baseline. Preserve
+   prior entries as historical evidence; do not replace them with a high-level recap.
+4. Add or update the corresponding `registry.csv` row.
+5. Update `CURRENT.md` with the completed/blocked state, key evidence, and next-session
    protocol.
-4. If the runtime contract allows it, create at most one checkpoint commit after all closeout
+6. If the runtime contract allows it, create at most one checkpoint commit after all closeout
    artifacts are updated.
-5. Stop when the run mode is exhausted, a report-defined convergence condition is met, a
+7. Stop when the run mode is exhausted, a report-defined convergence condition is met, a
    blocked failure ends the run, or the user stops it.
 
 ## Portability

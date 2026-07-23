@@ -11,7 +11,7 @@
 set -o pipefail
 readonly REPO_ROOT=/xdisk/chopinsong/tianyihu/elm-olmt
 readonly OUTPUT_ROOT=/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project
-readonly MANIFEST="${REPO_ROOT}/development/spinup_surrogate/iter008_variants.tsv"
+readonly MANIFEST="${REPO_ROOT}/development/spinup_surrogate/slurm/iter008/iter008_variants.tsv"
 readonly SUMMARY_ROOT="${REPO_ROOT}/development/spinup_surrogate/summaries/iter008"
 readonly SUMMARY_TOOL="${REPO_ROOT}/summarize_spinup_stats.py"
 readonly STABILITY_TOOL="${REPO_ROOT}/development/spinup_surrogate/analyze_feature_stability.py"

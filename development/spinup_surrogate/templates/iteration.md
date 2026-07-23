@@ -72,10 +72,21 @@
 - Selected baseline or no-promotion decision:
 - Next action:
 
+## Proposed Next-Iteration Plan (Planning Only)
+
+- Proposed sequential ID and retained baseline:
+- Evidence-derived hypothesis:
+- Tentative fixed controls and candidate matrix:
+- Tentative acceptance gates and ranking rule:
+- Proposed site/resources, preflight, reviewer, and retry boundaries:
+- Expected artifacts and decision record:
+- Authorization boundary: `<A new runtime contract is required; do not scaffold, submit, or execute this proposal automatically.>`
+
 ## Closeout Checklist
 
 - [ ] Iteration report finalized
 - [ ] Summary/stability artifacts copied to `summaries/iterXXX/`
+- [ ] `ITERATION_SUMMARY.md` updated with objective, settings, evidence, and conclusion
 - [ ] `registry.csv` updated
 - [ ] `handoff/CURRENT.md` updated
 - [ ] Optional one closeout commit created, if authorized

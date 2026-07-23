@@ -44,7 +44,7 @@ this cap. Any application, code, or configuration failure requires fresh authori
   only before a split, records `filter_scope=global_pre_split`, and never inspects targets.
 - Pair removal: prefer dropping `WIND_*`, `PSRF_*`, or `FLDS_*`; otherwise retain the earlier
   canonical feature. Every dropped feature records its triggering pair and reason.
-- Locked manifest: `development/spinup_surrogate/iter008_variants.tsv` (18 variants).
+- Locked manifest: `development/spinup_surrogate/slurm/iter008/iter008_variants.tsv` (18 variants).
 
 Models are the compact Adam baseline `(8,), tanh, adam, alpha=10, lr=1e-3` and `(32,), tanh,
 lbfgs` at alpha `50, 100, 250, 500, 1000`; the recorded LBFGS learning rate is provenance-only.
@@ -65,7 +65,7 @@ lbfgs` at alpha `50, 100, 250, 500, 1000`; the recorded LBFGS learning rate is p
 | Item | Evidence |
 | --- | --- |
 | Canonical training script | `slurm/iter008/case.train_surrogate_spinup_iter008.slurm`; SHA-256 `c3fe108a05984aa601d113d967f6174b6fd3f17badebb2120849f04801a084f8` |
-| Manifest | `iter008_variants.tsv`; 18 locked names; SHA-256 `4fbc66c8e2f0b35069ed100e148e9beb644823c5b00682e0c58eb9c21d1ea63c` |
+| Manifest | `slurm/iter008/iter008_variants.tsv`; 18 locked names; SHA-256 `4fbc66c8e2f0b35069ed100e148e9beb644823c5b00682e0c58eb9c21d1ea63c` |
 | Compute validation | `slurm/iter008/validate_iter008_global_filter.slurm`; SHA-256 `b12dcf11dcdefe1e56f1cfdb92f23fd91cf60b4f214913a1bbd5d29253196999`; source `eb06ee9ebb3d0698d30e99e4155957ed96506021`; dirty iter008 scaffold |
 | Variant-local artifacts | Required per variant: `UQ_output/<run_slug>/submit_<variant>.slurm`, `submission_config.env`, `slurm_%A_%a.out`, and `slurm_%A_%a.err` |
 | Source state | pending compute validation and pre-submit source manifest |
@@ -146,6 +146,7 @@ Their configuration hashes are recorded below; each is at
 - [x] Variant-local scripts/configs materialized and hashes recorded
 - [x] Locked matrix submitted and monitored to terminal accounting
 - [x] Summary/stability artifacts copied to `summaries/iter008/`
+- [x] `ITERATION_SUMMARY.md` updated with objective, settings, evidence, and conclusion
 - [x] `registry.csv` and `handoff/CURRENT.md` finalized
 - [x] One authorized closeout commit created
 
@@ -174,15 +175,29 @@ the highest full-gate passer, ahead of alpha-50 corr080 (`0.7901`) and corr060 (
 improves markedly on the iter007 baseline without warnings. The next iteration requires a new
 runtime contract.
 
-## Next Round Action and Decision
+## Proposed Iter009 Plan (Planning Only)
 
-- Decision carried forward: retain `s32_tanh_lbfgs_a50_lr1e3_full45` with the full45 schema as
-  the nine-case baseline; do not promote a correlation-pruned policy.
-- Next action: begin `iter009` planning from this selected baseline. First define and lock its
-  scientific objective, candidate matrix, acceptance gates, resource/retry boundary, and expected
-  artifacts; then request and record a new Puma runtime contract before scaffolding or submission.
-- No iter009 scientific hypothesis or candidate is pre-authorized by this closeout. Historical
-  iter008 artifacts and the locked result remain unchanged.
+- Retained baseline: `s32_tanh_lbfgs_a50_lr1e3_full45` with the full45 schema. Correlation-pruned
+  arms are not proposed because all three alpha-50 policies ranked below full45.
+- Hypothesis: the sharp improvement at LBFGS alpha 50 can be refined by a narrow regularization
+  sweep without reopening feature policy or architecture.
+- Tentative matrix: `(32,), tanh, lbfgs, full45` at alpha `25`, `35`, `50` (control), `65`, and
+  `75`; five seeds `10001-10005`, for 25 proposed leaves. Keep the nine cases, `by_member` split,
+  `0.8` train fraction, `TOTSOMC,TOTSOMN`, stats-only output, and disabled variance/correlation
+  filtering.
+- Tentative gates, independently per target against the iter008 selected baseline: median R2 not
+  more than `0.01` below (`0.7935/0.7937`); minimum R2 not more than `0.02` below
+  (`0.6820/0.6820`); R2 IQR not more than `0.02` above (`0.0646/0.0612`); median per-seed RMSE
+  ratio not more than `0.02` above (`0.9499/0.9561`); zero warnings. Rank passers by mean
+  cross-target median R2, then lower mean median RMSE ratio, then lower alpha.
+- Tentative Puma shape: `standard` / `chopinsong`, 10 CPUs (50 GB implied), 30 minutes,
+  `N_JOBS=4`, per-task `XDG_CACHE_HOME`, variant-local scripts/configs, read-only reviewer
+  subagent, and bounded no-training preflight. One validation-only retry is separate from one
+  scheduler/resource retry per matrix leaf; application/code failures after preflight stop.
+- Expected artifacts: `iterations/iter009.md`, `slurm/iter009/` controls and manifest,
+  variant-local output roots, `summaries/iter009/`, and a refreshed `CURRENT.md`/registry record.
+- Authorization boundary: this is an evidence-derived proposal only. A new runtime contract is
+  required before any iter009 scaffold, code change, submission, or execution.
 
 ## Preventive Refinement
 
@@ -193,3 +208,8 @@ the fixed Puma checkout root `/xdisk/chopinsong/tianyihu/elm-olmt` to `sys.path`
 repository modules. Before any production matrix submission, run a bounded compute-node preflight
 that imports the utility and executes its no-training invariants; classify a failure as an
 application/configuration failure and request narrow authorization before retrying.
+
+Post-closeout workflow refinement: the validator was promoted to reusable
+`tools/validate_global_feature_filter.py`, and the locked matrix manifest was moved under
+`slurm/iter008/`. The submitted variant-local copies and their recorded hashes remain the
+execution provenance.

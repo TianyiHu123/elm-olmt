@@ -10,7 +10,7 @@
 
 set -o pipefail
 readonly REPO_ROOT=/xdisk/chopinsong/tianyihu/elm-olmt
-readonly VALIDATOR="${REPO_ROOT}/development/spinup_surrogate/validate_iter008_global_filter.py"
+readonly VALIDATOR="${REPO_ROOT}/development/spinup_surrogate/tools/validate_global_feature_filter.py"
 test -f "${REPO_ROOT}/train_surrogate_spinup.py"
 test -f "${REPO_ROOT}/development/spinup_surrogate/WORKFLOW.md"
 test -f "${REPO_ROOT}/development/hpc/puma.md"
