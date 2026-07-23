@@ -275,7 +275,46 @@ real but required stronger regularization; alpha 50 converted it into the best e
 The next proposed round narrows full45 LBFGS alpha around 50 (`25,35,50,65,75`) under a fresh
 runtime contract.
 
-## Main Conclusions Through iter008
+### iter009 — Alpha-50 LBFGS Refinement and Forcing-Group Ablation
+
+Objective: refine the iter008 alpha-50 LBFGS selection and test whether global correlation-0.80
+pruning or direct exclusion of FLDS/WIND/PSRF climatology inputs improves generalization.
+
+Locked setup:
+
+- Nine cases; `by_member` split; train fraction `0.8`; `TOTSOMC,TOTSOMN`; seeds `10001-10005`.
+- `(32,), tanh, lbfgs` at alpha `25,35,50,65,75`; learning rate `1e-3` recorded as provenance.
+- Three policies per alpha: strict full45; global pre-split `corr080_prioritydrop`; and strict
+  32-feature `drop_flds_wind_psrf` using forcing variables `PRECTmms,FSDS,TBOT,RH`.
+- Puma `standard` / `chopinsong`, 10 CPUs (50 GB implied), 30 minutes, `N_JOBS=4`, task-local
+  cache. Preflight `23370951`, all 75 leaves, and aggregation `23371111` completed without retry.
+- Leaf elapsed range was `00:01:17-00:02:09`; MaxRSS was `37314780K-52427868K`. Full45,
+  corr080, and drop32 schemas were seed-invariant at 45, 25, and 32 features.
+
+The table reports `TOTSOMC / TOTSOMN` five-seed medians. Absolute RMSE is validation RMSE;
+RMSE ratio is the median of per-seed validation/training RMSE ratios.
+
+| Alpha and policy | Median validation R2 | Validation RMSE | RMSE ratio | Warning fraction | Decision |
+| --- | --- | --- | --- | --- | --- |
+| 25 full45 | 0.8538 / 0.8542 | 3668.8 / 367.5 | 0.9652 / 0.9661 | 0.2 / 0.2 | Reject: warning gate |
+| 25 corr080 | 0.8547 / 0.8540 | 3708.9 / 370.6 | 0.9588 / 0.9578 | 0.2 / 0.2 | Reject: warning gate |
+| 25 drop32 | 0.8506 / 0.8519 | 3696.1 / 370.4 | 0.9551 / 0.9565 | 0.2 / 0.2 | Reject: warning gate |
+| 35 full45 | 0.8291 / 0.8286 | 4137.7 / 413.9 | 0.9518 / 0.9518 | 0.2 / 0.2 | Reject: warning gate |
+| 35 corr080 | 0.8276 / 0.8270 | 4165.2 / 417.0 | 0.9425 / 0.9440 | 0.2 / 0.2 | Reject: warning gate |
+| 35 drop32 | 0.8259 / 0.8258 | 4204.0 / 420.5 | 0.9509 / 0.9519 | 0.2 / 0.2 | Reject: warning gate |
+| **50 full45** | **0.7935 / 0.7937** | **4661.8 / 469.7** | **0.9499 / 0.9561** | **0 / 0** | **Pass; selected** |
+| 50 corr080 | 0.7896 / 0.7906 | 4719.5 / 472.6 | 0.9531 / 0.9539 | 0 / 0 | Pass; lower R2 |
+| 50 drop32 | 0.7906 / 0.7904 | 4746.2 / 474.8 | 0.9533 / 0.9541 | 0 / 0 | Pass; lower R2 |
+| 65 full45 / corr080 / drop32 | 0.7496-0.7605 / 0.7539-0.7571 | 5106.3-5183.6 / 510.9-518.9 | 0.9605-0.9653 / 0.9614-0.9661 | 0 / 0 | Reject: median and minimum R2 |
+| 75 full45 / corr080 / drop32 | 0.7343-0.7393 / 0.7342-0.7391 | 5336.9-5450.7 / 534.0-545.8 | 0.9637-0.9723 / 0.9645-0.9732 | 0 / 0 | Reject: R2; some RMSE ratio |
+
+Conclusion: retain alpha-50/full45. Lower alpha values produced much better R2 and absolute RMSE,
+but one of five seeds warned for both targets under every policy, so they failed the locked gate.
+Neither correlation pruning nor removal of all 13 FLDS/WIND/PSRF features improved the eligible
+control. The evidence brackets the warning transition between alpha 35 and 50 and supports a
+future full45-only intermediate-alpha study.
+
+## Main Conclusions Through iter009
 
 1. The single-case feature conclusion from iter001 was limited by absent surface/climatology variation.
 2. Nine-case diversity made surface and climatology features informative.
@@ -292,14 +331,16 @@ runtime contract.
    selected full45 policy. LBFGS alpha 50/full45 is the current best eligible model.
 8. Runtime is operationally manageable at 30 minutes, but memory remains near the request ceiling
    and CPU efficiency remains low.
+9. Iter009 retained alpha-50/full45: alpha 25/35 improved R2 and absolute RMSE but warned on one
+   seed for both targets, while corr080 and the strict 32-feature forcing-group ablation did not
+   improve the eligible alpha-50 control.
 
 ## Next Iteration Guidance
 
-Retain full45 and `(32,), tanh, lbfgs, alpha=50` as the current baseline. The proposed iter009
-plan crosses alpha `25,35,50,65,75` with three feature-policy arms: full45, global pre-split
-correlation pruning at `0.80`, and a strict 32-feature arm that directly omits `FLDS`, `WIND`, and
-`PSRF` through the Slurm `--forcing-vars` argument. This produces 15 variants and 75 leaves and
-requires a new runtime contract, reviewer subagent, and no-training preflight before execution.
+Retain full45 and `(32,), tanh, lbfgs, alpha=50` as the current baseline. The proposed iter010
+plan brackets the alpha-35/50 warning transition with full45-only alpha
+`40,42.5,45,47.5,50`: five variants and 25 leaves. It requires a new runtime contract, reviewer
+subagent, and no-training preflight before execution.
 
 ## Source Artifacts
 
@@ -311,4 +352,5 @@ requires a new runtime contract, reviewer subagent, and no-training preflight be
 - Iter006 summaries: `development/spinup_surrogate/summaries/iter006/`
 - Iter007 summaries: `development/spinup_surrogate/summaries/iter007/`
 - Iter008 summaries: `development/spinup_surrogate/summaries/iter008/`
+- Iter009 summaries: `development/spinup_surrogate/summaries/iter009/`
 - Feature analyzer: `development/spinup_surrogate/analyze_feature_stability.py`

@@ -1,18 +1,22 @@
-# Spinup Surrogate - Current Handoff (iter008 completed)
+# Spinup Surrogate - Current Handoff (iter009 completed)
 
 ## Live State
 
-- Active iteration: `iter008`
+- Active iteration: `iter009`
 - Status: `completed`
 - Phase: `selection and closeout complete`
 - Active job IDs: none
 - Site profile: `development/hpc/puma.md`
-- Execution authority: on 2026-07-22 the user approved the iter008 contract: UA Puma with
-  `development/hpc/puma.md`; one finite 18-variant / 90-leaf matrix; implementation/test work,
-  preparation, submission, continuous monitoring through closeout; `standard` / `chopinsong`,
-  10 CPUs (50 GB implied), 30 minutes, per-task cache isolation; one retry only for a
-  scheduler/resource interruption; and one closeout commit. Application/code/configuration
-  failures stop for fresh authorization. The contract completed without a matrix retry.
+- Execution authority: on 2026-07-22 America/Phoenix / 2026-07-23 UTC the user approved the
+  iter009 contract: confirmed UA Puma login host `junonia.hpc.arizona.edu` with
+  `development/hpc/puma.md`; one finite 15-variant / 75-leaf matrix; scaffolding, static tests,
+  independent read-only review, bounded no-training preflight, preparation, submission,
+  continuous monitoring through aggregation/selection/closeout; `standard` / `chopinsong`,
+  10 CPUs (50 GB implied), 30 minutes, `N_JOBS=4`, and per-task cache isolation. One minimal
+  validation-only preflight correction/rerun is separate from one retry per matrix leaf only for
+  scheduler/resource interruption within the caps. Other application/code/configuration failures
+  stop for fresh authorization. At most one closeout commit is authorized. The contract completed
+  without a preflight or matrix retry.
 
 ## Current Objective
 
@@ -31,7 +35,12 @@ failure. On 2026-07-22 the user authorized adding the fixed repository root to `
 rerunning the same one-CPU/5-GB/5-minute validation only. Corrected job `23362351` completed
 successfully (`0:0`, `00:00:35`, MaxRSS `406084K`) and confirmed the global-filter invariants.
 All 90 training leaves completed `0:0`; manifest aggregation job `23362489` completed `0:0`.
-The next iteration requires a new runtime contract.
+Iter009 completed all 75 leaves and aggregation job `23371111` without retry. Alpha 25/35 improved
+R2 and absolute RMSE but warned on one of five seeds for both targets under every policy. Alpha 50
+produced the only three passers; full45 ranked first (`0.7935/0.7937` median validation R2,
+`4661.8/469.7` absolute validation RMSE, `0.9499/0.9561` median RMSE ratio, zero warnings) and is
+retained. Corr080 retained 25 features and the direct ablation retained 32, but neither improved
+the eligible full45 control. Any next iteration requires a new runtime contract.
 
 ## Durable Prevention Rule
 
@@ -47,10 +56,10 @@ rerun the same preflight once. It does not consume the matrix variant retry budg
 preflight failure, a changed failure class, or any scientific-control change stops for fresh
 authorization.
 
-## Proposed Iter009 Plan (Planning Only)
+## Historical Iter009 Plan
 
 - Retained baseline: `s32_tanh_lbfgs_a50_lr1e3_full45` with full45.
-- Hypothesis and tentative matrix: refine the alpha-50 LBFGS result while testing whether either
+- Hypothesis and matrix: refine the alpha-50 LBFGS result while testing whether either
   global 0.80 correlation pruning or direct removal of the longwave-radiation, wind, and pressure
   climatology inputs improves generalization. Cross alpha `25`, `35`, `50` control, `65`, and `75`
   with three feature-policy arms: `full45` with no correlation filter; `corr080_prioritydrop` with
@@ -61,15 +70,33 @@ authorization.
   and five seeds per variant: 15 variants and 75 leaves. Keep the nine cases, `by_member`/`0.8`
   split, two targets, and disabled variance filtering; correlation filtering is enabled only for
   `corr080_prioritydrop`.
-- Proposed gates: apply the iter008 selected-baseline gates independently per target: median/min
+- Gates: apply the iter008 selected-baseline gates independently per target: median/min
   R2 within `0.01`/`0.02`, IQR within `0.02`, RMSE ratio within `0.02`, and zero warnings; rank
   passers by mean median R2, lower RMSE ratio, then lower alpha.
-- Proposed operational shape: Puma `standard` / `chopinsong`, 10 CPUs (50 GB implied), 30 minutes,
+- Operational shape: Puma `standard` / `chopinsong`, 10 CPUs (50 GB implied), 30 minutes,
   `N_JOBS=4`, per-task cache isolation, iteration-local Slurm manifest, independent read-only
   reviewer subagent, and no-training compute preflight. The validation-only retry is separate from
   the one scheduler/resource retry per leaf.
-- Authorization boundary: validate/refine this proposal against current state, then obtain a new
-  runtime contract. No iter009 scaffold, code change, submission, or execution is authorized.
+- Authorization: the finite iter009 lifecycle completed under the runtime contract recorded in
+  Live State and `iterations/iter009.md`; this historical plan is not future authority.
+
+## Proposed Iter010 Plan (Planning Only)
+
+- Retained baseline: `s32_tanh_lbfgs_a50_lr1e3_full45`.
+- Hypothesis and tentative matrix: bracket the alpha-35/50 warning transition using strict full45
+  only, at alpha `40`, `42.5`, `45`, `47.5`, and `50` control with five seeds: five variants and
+  25 leaves. Keep the nine cases, `(32,), tanh, lbfgs`, `by_member`/`0.8`, two targets, stats-only
+  output, and disabled variance/correlation filtering. Record the warning seed and reason.
+- Proposed gates: apply the iter009 selected-baseline gates independently per target: median/min
+  R2 within `0.01/0.02`, IQR within `0.02`, median per-seed RMSE ratio within `0.02`, and zero
+  warnings. Report absolute validation RMSE and rank passers by mean median R2, lower mean median
+  RMSE ratio, then lower alpha.
+- Proposed operations: Puma `standard` / `chopinsong`, 10 CPUs (50 GB implied), 30 minutes,
+  `N_JOBS=4`, task-local cache, immutable variant artifacts, read-only reviewer, and bounded
+  no-training preflight. The validation-only retry remains separate from one scheduler/resource
+  retry per leaf; other application/code/configuration failures stop.
+- Authorization boundary: evidence-derived planning only. A new iter010 runtime contract is
+  required before scaffolding, code/configuration changes, submission, or execution.
 
 ## Puma Migration State
 
@@ -156,12 +183,10 @@ Resource diagnostics (`iter006`):
 
 - Memory headroom remains tight (completed tasks reached approximately `47.97GB` of `48GB`)
 - CPU efficiency remains low despite short walltime, indicating resource under-utilization
-- Correlation pruning will now be a global, feature-only preprocessing step before any
-  train/test split; its priority and provenance must be tested before iter008 execution.
-- Whether stronger LBFGS regularization can retain its high validation R2 without violating
-  RMSE-ratio or overfit-warning gates remains untested.
-- The Puma environment, nine pickles, and transferred data passed the dedicated compute-node
-  migration preflight; iter007 training and training dry-run have not run.
+- Iter009 MaxRSS reached `52427868K` against the 50-GB implied allocation, so headroom remains
+  tight even though all 75 leaves completed.
+- The zero-warning transition for full45 LBFGS lies somewhere between alpha 35 and 50; intermediate
+  alphas remain untested.
 - `OLMT_puma` currently uses the home-directory micromamba root; monitor the 50-GB home quota
 
 ## Historical Iter008 Plan
@@ -236,27 +261,22 @@ pruned input schemas improve the selected compact Adam baseline.
 
 1. Load `development/spinup_surrogate/handoff/CURRENT.md`.
 2. Load iteration reports:
+   - `development/spinup_surrogate/iterations/iter009.md`
    - `development/spinup_surrogate/iterations/iter008.md`
-   - `development/spinup_surrogate/iterations/iter006.md`
-   - `development/spinup_surrogate/iterations/iter005.md`
-   - `development/spinup_surrogate/iterations/iter004.md`
-3. Treat the iter008 planning addendum in `iterations/iter007.md` and this historical plan
-   section as provenance only.
+   - `development/spinup_surrogate/iterations/iter007.md`
+3. Treat historical iter008/iter009 plan sections as provenance only.
 4. Review `development/spinup_surrogate/WORKFLOW.md` and
    `development/hpc/puma.md`.
-5. Read `development/spinup_surrogate/iterations/iter007.md`; there is no live job set.
-6. Identify the next sequential iteration and request its fresh runtime contract before scaffolding.
+5. Confirm there is no live job set.
+6. Validate the proposed iter010 plan and request its fresh runtime contract before scaffolding.
 
 ## Ready/Blocked Status for Next Iteration
 
-Iter007 is complete. The training job set is terminal with all 40 stats files preserved,
-including cache-isolated retry leaves `23346857_5` and `23346858_2`. Corrected aggregation job
-`23346902` completed (`0:0`, `00:00:15`), producing all eight summary/stability pairs. Retain
-`s08_tanh_adam_a10_lr1e3`; all other variants were rejected by the locked gates.
-
-Iter008 is complete: all 90 leaves and aggregation job `23362489` completed successfully. The
-selected alpha-50 full45 LBFGS model is the current nine-case baseline. Any next iteration is a
-new round and requires a fresh runtime contract.
+Iter009 is complete: preflight `23370951`, all 75 training leaves, and aggregation `23371111`
+completed successfully without retry. All 15 summary/stability pairs are preserved. Retain the
+alpha-50 full45 LBFGS model; alpha 25/35 failed the warning gate and the two alternative feature
+policies did not improve the eligible control. Iter010 is planning-only and requires a fresh
+runtime contract.
 
 ## Required User Decisions Before Execution (if any)
 
@@ -277,6 +297,11 @@ Puma resource cap, retry boundary, monitoring authority, and closeout-commit dec
 - Iter007 report: `development/spinup_surrogate/iterations/iter007.md`
 - Iter007 script: `development/spinup_surrogate/slurm/iter007/case.train_surrogate_spinup_iter007_mlp_tuning.slurm`
 - Iter007 summary root: `development/spinup_surrogate/summaries/iter007/`
+- Iter008 report: `development/spinup_surrogate/iterations/iter008.md`
+- Iter008 summary root: `development/spinup_surrogate/summaries/iter008/`
+- Iter009 report: `development/spinup_surrogate/iterations/iter009.md`
+- Iter009 script root: `development/spinup_surrogate/slurm/iter009/`
+- Iter009 summary root: `development/spinup_surrogate/summaries/iter009/`
 
 ## Files Modified in Repo (migration cycle)
 
@@ -291,19 +316,18 @@ recorded hash.
 
 ## Files Modified in Repo (latest completed iteration)
 
-- `train_surrogate_spinup.py`
-- `model_ELM/surrogate_NN_Spinup.py`
-- `development/spinup_surrogate/analyze_feature_stability.py`
-- `development/spinup_surrogate/slurm/iter006/case.train_surrogate_spinup_iter6_feature_settle.slurm`
-- `development/spinup_surrogate/iterations/iter006.md`
-- `development/spinup_surrogate/summaries/iter006/`
+- `development/spinup_surrogate/slurm/iter009/`
+- `development/spinup_surrogate/iterations/iter009.md`
+- `development/spinup_surrogate/iterations/iter009_source_manifest.txt`
+- `development/spinup_surrogate/summaries/iter009/`
+- `development/spinup_surrogate/ITERATION_SUMMARY.md`
 - `development/spinup_surrogate/registry.csv`
 - `development/spinup_surrogate/handoff/CURRENT.md`
 
 ## Latest Iteration Reference
 
-See `development/spinup_surrogate/iterations/iter006.md` sections:
+See `development/spinup_surrogate/iterations/iter009.md` sections:
 
-- `Execution Log`
-- `Results`
-- `Aggregation and Closeout`
+- `Execution and Diagnostics`
+- `Results and Decision`
+- `Proposed Iter010 Plan (Planning Only)`
