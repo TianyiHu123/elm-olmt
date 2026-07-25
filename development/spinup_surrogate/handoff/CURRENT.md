@@ -1,24 +1,31 @@
-# Spinup Surrogate - Current Handoff (iter009 completed)
+# Spinup Surrogate - Current Handoff (iter010 closed)
 
 ## Live State
 
-- Active iteration: `iter009`
-- Status: `completed`
-- Phase: `selection and closeout complete`
-- Active job IDs: none
+- Active iteration: none
+- Status: `iter010 completed`
+- Phase: `closed; new runtime contract required for any Iter011 work`
+- Active job IDs: none. Corrected Iter010 production arrays completed 1,500/1,500 leaves `0:0`; aggregation `23399438` completed `0:0`.
 - Site profile: `development/hpc/puma.md`
-- Execution authority: on 2026-07-22 America/Phoenix / 2026-07-23 UTC the user approved the
-  iter009 contract: confirmed UA Puma login host `junonia.hpc.arizona.edu` with
-  `development/hpc/puma.md`; one finite 15-variant / 75-leaf matrix; scaffolding, static tests,
-  independent read-only review, bounded no-training preflight, preparation, submission,
-  continuous monitoring through aggregation/selection/closeout; `standard` / `chopinsong`,
-  10 CPUs (50 GB implied), 30 minutes, `N_JOBS=4`, and per-task cache isolation. One minimal
-  validation-only preflight correction/rerun is separate from one retry per matrix leaf only for
-  scheduler/resource interruption within the caps. Other application/code/configuration failures
-  stop for fresh authorization. At most one closeout commit is authorized. The contract completed
-  without a preflight or matrix retry.
+- Execution authority: on 2026-07-24 America/Phoenix the user replied `approved` to the complete
+  Iter010 request: confirmed UA Puma login host `junonia.hpc.arizona.edu` with
+  `development/hpc/puma.md`; one finite 15-variant / 1,500-leaf matrix; artifact preparation,
+  static validation, independent read-only review, bounded no-training preflight, submission, and
+  continuous monitoring through aggregation/selection/closeout. Resources are `standard` /
+  `chopinsong`, 10 CPUs (50 GB implied), 30 minutes, `N_JOBS=4`, `PRE_DISPATCH=n_jobs`, and
+  per-task cache isolation. One minimal validation-only correction/rerun is separate from one
+  retry per leaf only for scheduler/resource interruption within the caps. Other
+  application/code/configuration failures stop for fresh authorization. At most one closeout
+  commit is authorized.
 
 ## Current Objective
+
+Iter010 completed its 15-variant, 100-seed (1,500-leaf) alpha-40--50 and feature-policy matrix.
+The exact aggregate validator accepted all 1,500 results and produced 15 summary, 15 stability,
+and 15 importance artifacts. All variants are scientifically rejected by the locked zero-warning
+gate (warnings `0.22-0.25` for both targets); no model is promoted. Retain the Iter009 baseline
+`s32_tanh_lbfgs_a50_lr1e3_full45`. The detailed terminal accounting and failure-prevention rules
+are in `iterations/iter010.md`.
 
 The temporary Perlmutter-to-Puma migration is complete and validated. `iter006` remains closed
 with `all_control` retained. Iter007 is now scaffolded as the first post-migration iteration: it

@@ -1,4 +1,4 @@
-# Spinup Surrogate Iteration Summary: iter001-iter008
+# Spinup Surrogate Iteration Summary: iter001-iter010
 
 ## Executive Summary
 
@@ -19,6 +19,11 @@ set and fixed-MLP selection.
 - `iter008` implemented global pre-split correlation filtering, then tested the compact Adam
   control and five `(32,)`, tanh/LBFGS regularization levels under full45, 0.80, and 0.60 feature
   policies. LBFGS alpha 50/full45 was selected and materially improved both targets.
+- `iter009` confirmed alpha-50/full45 as the strongest eligible candidate; lower alpha improved
+  R2 but warned in one of five seeds.
+- `iter010` used 100 seeds across 15 alpha/policy variants. Every variant warned in 22--25% of
+  seeds, including alpha-50/full45, so no candidate was eligible and the Iter009 baseline remains
+  retained.
 
 Current preferred configuration: retain the full 45-feature schema and use iter008
 `s32_tanh_lbfgs_a50_lr1e3_full45`. It is the highest full-gate passer so far.
@@ -35,6 +40,8 @@ Current preferred configuration: retain the full 45-feature schema and use iter0
 | iter006 | Nine cases, `by_member` | Five per variant | Feature-set settlement | Completed: retain 45 features |
 | iter007 | Nine cases, `by_member` | Five per variant | Fixed MLP hyperparameter tuning | Completed: retain `(8,)` tanh/adam MLP |
 | iter008 | Nine cases, `by_member` | Five per variant | Global feature pruning and LBFGS regularization | Completed: retain `(32,)` tanh/LBFGS alpha 50, full45 |
+| iter009 | Nine cases, `by_member` | Five per variant | Alpha-50 refinement and forcing-group ablation | Completed: retain alpha-50 full45 |
+| iter010 | Nine cases, `by_member` | 100 per variant | Warning-threshold bracket and importance stability | Completed: no gate passer; retain Iter009 baseline |
 
 All multicase iterations used train fraction `0.8`, targets `TOTSOMC,TOTSOMN`, compact climatology features, NN models, variance/correlation filtering, and permutation diagnostics unless noted otherwise.
 
@@ -314,7 +321,27 @@ Neither correlation pruning nor removal of all 13 FLDS/WIND/PSRF features improv
 control. The evidence brackets the warning transition between alpha 35 and 50 and supports a
 future full45-only intermediate-alpha study.
 
-## Main Conclusions Through iter009
+### iter010 — 100-Seed Warning-Threshold Test and Importance Stability
+
+Iter010 tested alpha `40,42.5,45,47.5,50` under full45, corr080, and drop32 with 100 seeds per
+variant (1,500 leaves). The corrected production matrix completed 1,500/1,500 leaves `0:0`; the
+exact validator and aggregation job `23399438` completed successfully. Full45, corr080, and
+drop32 remained seed-invariant at 45, 25, and 32 features respectively.
+
+Every candidate failed the zero-warning gate: TOTSOMC/TOTSOMN warning fractions ranged from
+`0.22/0.22` to `0.25/0.24`. Alpha-40/full45 had the best median R2 (`0.8310/0.8301`) and absolute
+validation RMSE (`4090.9/410.8`), but warned on 24% of seeds for both targets. The alpha-50/full45
+control also warned on 22% of seeds, overturning the five-seed zero-warning result. Consequently,
+no Iter010 candidate is promoted and Iter009 alpha-50/full45 remains the baseline. The 100-seed
+importance records consistently rank `parm_6`, `parm_13`, `parm_12`, `parm_9`, and `parm_10` at
+the top for alpha-40/full45 across both targets.
+
+Operational lessons recorded in `iterations/iter010.md`: sequentialize dependent Bash assignments;
+do not let `sbatch` inherit a manifest loop's stdin; construct `--chdir`, logs, and exported config
+paths from one validated run root; and keep the primary agent active through terminal accounting,
+aggregation, decision, records, and closeout.
+
+## Main Conclusions Through iter010
 
 1. The single-case feature conclusion from iter001 was limited by absent surface/climatology variation.
 2. Nine-case diversity made surface and climatology features informative.
@@ -334,23 +361,27 @@ future full45-only intermediate-alpha study.
 9. Iter009 retained alpha-50/full45: alpha 25/35 improved R2 and absolute RMSE but warned on one
    seed for both targets, while corr080 and the strict 32-feature forcing-group ablation did not
    improve the eligible alpha-50 control.
+10. Iter010's 100-seed matrix found 22--25% warnings for every alpha/policy arm, including
+    alpha-50/full45; the five-seed zero-warning observation did not generalize. No threshold
+    candidate may be promoted without changing the gate under a future, explicit contract.
 
 ## Next Iteration Guidance
 
-Retain full45 and `(32,), tanh, lbfgs, alpha=50` as the current baseline. The proposed iter010
-plan brackets the alpha-35/50 warning transition with full45-only alpha
-`40,42.5,45,47.5,50`: five variants and 25 leaves. It requires a new runtime contract, reviewer
-subagent, and no-training preflight before execution.
+Retain full45 and `(32,), tanh, lbfgs, alpha=50` as the current baseline. Before any Iter011
+proposal, decide whether the warning definition is scientifically appropriate in light of the
+100-seed evidence; do not relax the Iter010 zero-warning gate retroactively. Any new work requires
+a new runtime contract, reviewer, and no-training preflight.
 
 ## Source Artifacts
 
 - Canonical workflow: `development/spinup_surrogate/WORKFLOW.md`
 - Current handoff: `development/spinup_surrogate/handoff/CURRENT.md`
 - Registry: `development/spinup_surrogate/registry.csv`
-- Detailed reports: `development/spinup_surrogate/iterations/iter001.md` through `iter008.md`
+- Detailed reports: `development/spinup_surrogate/iterations/iter001.md` through `iter010.md`
 - Iter005 summaries: `development/spinup_surrogate/summaries/iter005/`
 - Iter006 summaries: `development/spinup_surrogate/summaries/iter006/`
 - Iter007 summaries: `development/spinup_surrogate/summaries/iter007/`
 - Iter008 summaries: `development/spinup_surrogate/summaries/iter008/`
 - Iter009 summaries: `development/spinup_surrogate/summaries/iter009/`
+- Iter010 summaries: `development/spinup_surrogate/summaries/iter010/`
 - Feature analyzer: `development/spinup_surrogate/analyze_feature_stability.py`
