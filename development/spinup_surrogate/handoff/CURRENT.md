@@ -80,21 +80,31 @@ authorization.
 - Authorization: the finite iter009 lifecycle completed under the runtime contract recorded in
   Live State and `iterations/iter009.md`; this historical plan is not future authority.
 
-## Proposed Iter010 Plan (Planning Only)
+## Proposed Iter010 Plan (Planning Only; Revised)
 
 - Retained baseline: `s32_tanh_lbfgs_a50_lr1e3_full45`.
-- Hypothesis and tentative matrix: bracket the alpha-35/50 warning transition using strict full45
-  only, at alpha `40`, `42.5`, `45`, `47.5`, and `50` control with five seeds: five variants and
-  25 leaves. Keep the nine cases, `(32,), tanh, lbfgs`, `by_member`/`0.8`, two targets, stats-only
-  output, and disabled variance/correlation filtering. Record the warning seed and reason.
+- Hypothesis and tentative matrix: bracket the alpha-35/50 warning transition across all three
+  iter009 full-gate passers: `full45`, `corr080_prioritydrop`, and
+  `drop_flds_wind_psrf`. Cross each policy with alpha `40`, `42.5`, `45`, `47.5`, and `50`
+  control, using seeds `10001-10100`: 15 variants and 1,500 leaves. Keep the nine cases,
+  `(32,), tanh, lbfgs`, `by_member`/`0.8`, two targets, stats-only output, and disabled variance
+  filtering. Correlation filtering remains enabled only for `corr080_prioritydrop`; direct feature
+  removal remains locked for `drop_flds_wind_psrf`. Record the warning seed and reason.
 - Proposed gates: apply the iter009 selected-baseline gates independently per target: median/min
   R2 within `0.01/0.02`, IQR within `0.02`, median per-seed RMSE ratio within `0.02`, and zero
   warnings. Report absolute validation RMSE and rank passers by mean median R2, lower mean median
   RMSE ratio, then lower alpha.
+- Feature-importance analysis: retain the existing validation permutation-importance method with
+  `8` repeats. For every variant, target, and retained feature, aggregate the 100 seed results and
+  report the feature's median rank across seeds, rank spread, median RMSE increase, and R2-drop
+  diagnostics. Provide separate `TOTSOMC` and `TOTSOMN` rankings plus a combined cross-target
+  view. Order each aggregate ranking by median rank, then median RMSE increase.
 - Proposed operations: Puma `standard` / `chopinsong`, 10 CPUs (50 GB implied), 30 minutes,
-  `N_JOBS=4`, task-local cache, immutable variant artifacts, read-only reviewer, and bounded
-  no-training preflight. The validation-only retry remains separate from one scheduler/resource
-  retry per leaf; other application/code/configuration failures stop.
+  `N_JOBS=4`, `PRE_DISPATCH=n_jobs`, single-thread BLAS/OpenMP, task-local cache, immutable
+  variant artifacts, read-only reviewer, and bounded no-training preflight. `N_JOBS=4` is retained
+  for the legacy GridSearchCV compatibility path; the fixed-parameter LBFGS path and current
+  permutation-importance loop are sequential. The validation-only retry remains separate from one
+  scheduler/resource retry per leaf; other application/code/configuration failures stop.
 - Authorization boundary: evidence-derived planning only. A new iter010 runtime contract is
   required before scaffolding, code/configuration changes, submission, or execution.
 

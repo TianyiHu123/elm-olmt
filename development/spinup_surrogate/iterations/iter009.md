@@ -232,6 +232,24 @@ FLDS/WIND/PSRF features improved the eligible alpha-50 control. No promotion is 
 - Authorization boundary: a new runtime contract is required; do not scaffold, submit, or execute
   this proposal automatically.
 
+## Proposed Iter010 Plan Revision (Planning Only)
+
+Following the planning discussion after iter009 closeout, revise the proposal as follows while
+preserving the original proposal above as provenance:
+
+- Cross all three iter009 full-gate passers (`full45`, `corr080_prioritydrop`, and
+  `drop_flds_wind_psrf`) with alphas `40,42.5,45,47.5,50` (alpha 50 is the control), using seeds
+  `10001-10100`: 15 variants and 1,500 training leaves.
+- Retain the existing validation permutation-importance method and `8` repeats. Aggregate every
+  retained feature across the 100 seeds for each variant, separately for `TOTSOMC` and `TOTSOMN`,
+  and in a combined cross-target view. Rank by median seed-rank, then median RMSE increase; include
+  rank spread and R2-drop diagnostics.
+- Retain `N_JOBS=4`, `PRE_DISPATCH=n_jobs`, and single-thread BLAS/OpenMP. In the fixed-parameter
+  LBFGS path, `n_jobs` is retained for compatibility with the legacy GridSearchCV path and does
+  not create fitting workers; permutation importance remains sequential.
+- This revision remains planning-only and requires a fresh iter010 runtime contract before
+  scaffolding, code/configuration changes, submission, or execution.
+
 ## Closeout Checklist
 
 - [x] Iteration report finalized
