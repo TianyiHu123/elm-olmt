@@ -84,23 +84,61 @@ them.
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=<CPUS>
 #SBATCH --time=<HH:MM:SS>
+#SBATCH --output=job_%j.out
+#SBATCH --error=job_%j.err
 ```
 
 ### 1.4 Scheduler command reference
 
-Use absolute command paths where the repository profile requires them, and record job IDs and
-terminal accounting in the active workload record.
+Use the supported Puma command interface documented by UArizona HPC first. The monitoring
+documentation lists the supported forms for `squeue`, `scontrol`, `scancel`, `job-history`,
+`seff`, and `job-limits`: [Monitoring Jobs and Resources](https://hpcdocs.hpc.arizona.edu/running_jobs/monitoring_jobs_and_resources/).
+Record job IDs and terminal accounting in the active workload record.
+
+At session bootstrap, record command resolution with `type -a` or `command -v` for the Slurm
+commands used by the workload. Do not replace the supported command interface with an absolute
+`/usr/bin/<command>` path merely as a convention. An absolute binary is a fallback only when the
+supported command is demonstrably malfunctioning or unavailable; record the failure, command
+paths, timestamps, and resulting state when using that fallback.
 
 | Purpose | Command shape |
 | --- | --- |
-| Submit | `/usr/bin/sbatch --export=ALL,<KEY=VALUE,...> <script>` |
-| Queue state and pending reason | `/usr/bin/squeue --job=<JOB_ID>` |
-| Detailed active-job state | `/usr/bin/scontrol show job <JOB_ID>` |
-| Terminal accounting | `/usr/bin/sacct --jobs=<JOB_ID> --format=JobID,JobName,Partition,Account,AllocTRES,State,ExitCode,MaxRSS` |
+| Submit | `sbatch --export=ALL,<KEY=VALUE,...> <script>` |
+| Queue state and pending reason | `squeue --job=<JOB_ID>` |
+| Detailed active-job state | `scontrol show job <JOB_ID>` |
+| Terminal accounting | `sacct --jobs=<JOB_ID> --format=JobID,JobName,Partition,Account,AllocTRES,State,ExitCode,MaxRSS` |
 | Readable job history | `job-history <JOB_ID>` |
 | Efficiency report | `seff <JOB_ID>` |
 | Group limits and usage | `job-limits <ACCOUNT>` |
 | Cancel, only when authorized | `scancel <JOB_ID_OR_IDS>` |
+
+Scheduler-query failures:
+
+- Treat `squeue`, `sacct`, and related read-only connection/resource errors as temporary
+  scheduler-query instability. Retry the same job-scoped query with bounded backoff at least once,
+  recording the exact command, scope, timestamp, and response. Do not classify jobs, retry
+  workloads, cancel jobs, or declare completion until scheduler state is successfully reconciled.
+- Prefer a parent-job ID over a user-wide query. For an array, use `squeue --job=<JOB_ID> -r` to
+  list its individual elements and `sacct --jobs=<JOB_ID>` for terminal accounting. If retries
+  continue to fail, preserve the state as unknown and reconcile later using scheduler queries,
+  job logs, and exact output-artifact validation.
+
+**Array monitoring example (Puma):** UArizona's array-job convention returns one parent ID from
+`sbatch`; `squeue --job=<JOB_ID> -r` expands that parent into rows such as
+`<JOB_ID>_<ARRAY_INDEX>`. Use the same parent ID for accounting:
+
+```bash
+job_id="3186754"
+
+squeue --job="${job_id}" -r
+
+sacct --jobs="${job_id}" \
+  --format=JobID,JobName,State,ExitCode,Elapsed,AllocTRES,MaxRSS
+```
+
+This follows the [UArizona array-job example](https://hpcdocs.hpc.arizona.edu/running_jobs/batch_jobs/array_jobs/#example-jobs).
+Record the parent ID, array range, per-element terminal states, and any retry evidence in the
+workload record.
 
 For arrays, monitor the parent job and inspect individual array elements when diagnosing a partial
 failure. Use `squeue` while jobs are active and `sacct` after they reach terminal state. Do not
@@ -169,10 +207,55 @@ Every production workload should preserve, as applicable:
 - the exact submission command and log paths;
 - job IDs, terminal state, exit code, allocation, elapsed time, and memory evidence.
 
+### 2.4 Slurm script authoring and submission layout
+
+**REPOSITORY RULE:** create or copy the self-describing submitted Slurm script into the
+user-specified run, case, or variant directory before submission. Submit the copied script from
+inside that directory. Do not submit the repository canonical script directly, and do not rely on
+an absolute script path plus a different caller directory as a substitute for this procedure.
+
+Canonical scripts must be human-readable and auditable. In particular:
+
+- define one variable per line, especially when a later variable depends on an earlier one;
+- do not combine dependent assignments in one `readonly` command;
+- put long commands on multiple lines with one option per line;
+- group the script into recognizable sections for directives, paths, validation, environment,
+  provenance, and execution;
+- include explicit `#SBATCH --output` and `#SBATCH --error` directives in every submission
+  script. Use `%A_%a` for array jobs and `%j` for non-array jobs.
+
+The Iter007 script
+`development/spinup_surrogate/slurm/iter007/case.train_surrogate_spinup_iter007_mlp_tuning.slurm`
+is the repository formatting example. Command-line output/error overrides may be used for a
+special submission, but the script itself must remain self-describing.
+
+The required submission shape is:
+
+```bash
+readonly RUN_DIR="<USER_SPECIFIED_RUN_OR_CASE_DIR>"
+readonly SUBMITTED_SCRIPT="${RUN_DIR}/submit_<VARIANT>.slurm"
+readonly SUBMISSION_CONFIG="${RUN_DIR}/submission_config.env"
+
+mkdir -p "${RUN_DIR}"
+cp "${CANONICAL_SCRIPT}" "${SUBMITTED_SCRIPT}"
+test -f "${SUBMITTED_SCRIPT}"
+test -f "${SUBMISSION_CONFIG}"
+
+cd "${RUN_DIR}"
+test "$(pwd -P)" = "${RUN_DIR}"
+sbatch --parsable \
+  --export="ALL,SUBMISSION_CONFIG=${SUBMISSION_CONFIG}" \
+  "./submit_<VARIANT>.slurm" </dev/null
+```
+
+Record the copied script path/hash, configuration path/hash, run directory, exact submission
+command, and returned job ID immediately. Use `</dev/null` when the submission is performed from a
+manifest-reading loop so `sbatch` cannot inherit the manifest's stdin.
+
 The spinup-surrogate default output root is intentionally defined in the workload section below;
 it is not a repository-wide output convention.
 
-### 2.4 Workflow authority
+### 2.5 Workflow authority
 
 Workload-specific lifecycle policy is defined by that workload's workflow document. For
 spinup-surrogate work, `development/spinup_surrogate/WORKFLOW.md` is authoritative for runtime
@@ -248,38 +331,70 @@ configuration has been validated against the manifest:
 readonly VARIANT_DIR="${OUTPUT_ROOT}/UQ_output/${RUN_SLUG}"
 readonly SUBMITTED_SCRIPT="${VARIANT_DIR}/submit_${VARIANT}.slurm"
 readonly SUBMISSION_CONFIG="${VARIANT_DIR}/submission_config.env"
+
 mkdir -p "${VARIANT_DIR}"
 
 cp "${CANONICAL_SCRIPT}" "${SUBMITTED_SCRIPT}"
 test -f "${SUBMISSION_CONFIG}"
 test -f "${SUBMITTED_SCRIPT}"
 
-/usr/bin/sbatch \
-  --chdir="${VARIANT_DIR}" \
-  --output="${VARIANT_DIR}/slurm_%A_%a.out" \
-  --error="${VARIANT_DIR}/slurm_%A_%a.err" \
-  --export="ALL,SUBMISSION_CONFIG=${SUBMISSION_CONFIG},VARIANT=${VARIANT},N_JOBS=${N_JOBS},PRE_DISPATCH=${PRE_DISPATCH}" \
-  "${SUBMITTED_SCRIPT}"
+cd "${VARIANT_DIR}"
+test "$(pwd -P)" = "${VARIANT_DIR}"
+job_id=$(
+  sbatch --parsable \
+    --export="ALL,SUBMISSION_CONFIG=${SUBMISSION_CONFIG},VARIANT=${VARIANT},N_JOBS=${N_JOBS},PRE_DISPATCH=${PRE_DISPATCH}" \
+    "./submit_${VARIANT}.slurm" </dev/null
+)
+test -n "${job_id}"
+echo "submitted variant=${VARIANT} job_id=${job_id} run_dir=${VARIANT_DIR}"
 ```
 
-The explicit `sbatch` `--output` and `--error` options are authoritative for production variant
-submissions. Place logs at the variant root, not at the shared output root or in an additional
-nested per-variant directory.
+The submitted script itself must contain the authoritative output and error directives, for
+example:
+
+```bash
+#SBATCH --output=slurm_%A_%a.out
+#SBATCH --error=slurm_%A_%a.err
+```
+
+Place logs at the variant root, not at the shared output root or in an additional nested
+per-variant directory. If a command-line output/error override is used, record the override and
+verify that it still resolves inside the same run directory.
 
 ### 3.4 Spinup preflight example
 
 Use a bounded one-CPU/approximately-5-GB allocation for a no-training preflight when authorized.
-The time limit and tracked utility are workload-contract values:
+The time limit and tracked utility are workload-contract values. Materialize the tracked preflight
+script into the user-specified preflight run directory and submit it from there:
 
 ```bash
-/usr/bin/sbatch \
-  --account=chopinsong --partition=standard --nodes=1 --ntasks=1 --cpus-per-task=1 \
-  --time=<PREFLIGHT_TIME> --job-name=puma-preflight \
-  --output=/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/UQ_output/puma_preflight_%j.out \
-  --error=/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/UQ_output/puma_preflight_%j.err \
-  --wrap='set -e; cd /xdisk/chopinsong/tianyihu/elm-olmt; module load micromamba; \
-    micromamba run -n OLMT_puma python /xdisk/chopinsong/tianyihu/elm-olmt/<TRACKED_PREFLIGHT>'
+readonly REPO_ROOT=/xdisk/chopinsong/tianyihu/elm-olmt
+readonly PREFLIGHT_DIR="<USER_SPECIFIED_PREFLIGHT_RUN_DIR>"
+readonly PREFLIGHT_SCRIPT="${PREFLIGHT_DIR}/validate_<ITERATION>.slurm"
+
+mkdir -p "${PREFLIGHT_DIR}"
+cp "${REPO_ROOT}/<TRACKED_PREFLIGHT>" "${PREFLIGHT_SCRIPT}"
+test -f "${PREFLIGHT_SCRIPT}"
+cd "${PREFLIGHT_DIR}"
+test "$(pwd -P)" = "${PREFLIGHT_DIR}"
+
+job_id=$(
+  sbatch --parsable \
+    --account=chopinsong \
+    --partition=standard \
+    --nodes=1 \
+    --ntasks=1 \
+    --cpus-per-task=1 \
+    --time=<PREFLIGHT_TIME> \
+    --job-name=puma-preflight \
+    "./validate_<ITERATION>.slurm" </dev/null
+)
+test -n "${job_id}"
+echo "submitted preflight job_id=${job_id} run_dir=${PREFLIGHT_DIR}"
 ```
+
+The copied preflight script must contain explicit `#SBATCH --output` and `#SBATCH --error`
+directives, for example `puma_preflight_%j.out` and `puma_preflight_%j.err`.
 
 The preflight must establish the fixed repository root before importing repository modules. A
 preflight failure before training is an application/configuration failure unless the active
