@@ -1,4 +1,4 @@
-# Spinup Surrogate Iteration Summary: iter001-iter010
+# Spinup Surrogate Iteration Summary: iter001-iter011
 
 ## Executive Summary
 
@@ -24,6 +24,10 @@ set and fixed-MLP selection.
 - `iter010` used 100 seeds across 15 alpha/policy variants. Every variant warned in 22--25% of
   seeds, including alpha-50/full45, so no candidate was eligible and the Iter009 baseline remains
   retained.
+- `iter011` prospectively compared alpha-40 DROP32 with DROP32 followed by correlation-0.80
+  pruning over 100 paired seeds. The candidate produced a stable 21-feature schema and passed
+  warning/IQR/exactness gates, but failed both-target R2 and median-RMSE-ratio gates; no promotion
+  was made.
 
 Current preferred configuration: retain the full 45-feature schema and use iter008
 `s32_tanh_lbfgs_a50_lr1e3_full45`. It is the highest full-gate passer so far.
@@ -42,6 +46,7 @@ Current preferred configuration: retain the full 45-feature schema and use iter0
 | iter008 | Nine cases, `by_member` | Five per variant | Global feature pruning and LBFGS regularization | Completed: retain `(32,)` tanh/LBFGS alpha 50, full45 |
 | iter009 | Nine cases, `by_member` | Five per variant | Alpha-50 refinement and forcing-group ablation | Completed: retain alpha-50 full45 |
 | iter010 | Nine cases, `by_member` | 100 per variant | Warning-threshold bracket and importance stability | Completed: no gate passer; retain Iter009 baseline |
+| iter011 | Nine cases, `by_member` | 100 per variant | Sequential DROP32 then correlation-0.80 filtering | Completed: candidate rejected; retain Iter009 baseline |
 
 All multicase iterations used train fraction `0.8`, targets `TOTSOMC,TOTSOMN`, compact climatology features, NN models, variance/correlation filtering, and permutation diagnostics unless noted otherwise.
 
@@ -341,7 +346,54 @@ do not let `sbatch` inherit a manifest loop's stdin; construct `--chdir`, logs, 
 paths from one validated run root; and keep the primary agent active through terminal accounting,
 aggregation, decision, records, and closeout.
 
-## Main Conclusions Through iter010
+### iter011 — Sequential DROP32 Correlation Filtering
+
+Objective: test whether global pre-split, priority-aware correlation filtering at `0.80`, applied
+only after locking the strict DROP32 universe, could yield a stable smaller schema without
+unacceptable paired performance or importance changes.
+
+Locked setup and execution:
+
+- Nine cases; `by_member`; train fraction `0.8`; targets `TOTSOMC,TOTSOMN`; paired seeds
+  `10001-10100`.
+- `(32,), tanh, lbfgs`, alpha `40`, provenance-only learning rate `1e-3`; 8 validation
+  permutation repeats.
+- Two exact arms: strict 32-feature DROP32 control
+  `s32_tanh_lbfgs_a40_lr1e3_drop_flds_wind_psrf` and `DROP32` then global-pre-split
+  `s32_tanh_lbfgs_a40_lr1e3_drop32_corr080_prioritydrop`.
+- Puma `standard/chopinsong`, 10 CPUs (50 GB implied), 15 minutes, `N_JOBS=4`,
+  `PRE_DISPATCH=n_jobs`, task-local cache. Preflight `23432877`, all 200 leaves, and aggregate
+  `23436731` completed `0:0`; no retry was used.
+- Exact validation passed seed, metadata, input-universe, schema, metric, and finite 8-repeat
+  importance invariants. The candidate schema was identical across all 100 seeds, contained 21
+  DROP32 features, and excluded every `FLDS_*`, `WIND_*`, and `PSRF_*` feature.
+
+The table reports TOTSOMC/TOTSOMN. R2 is `median / minimum / IQR`; absolute RMSE and RMSE ratio
+are medians.
+
+| Variant | Features | Validation R2 | Validation RMSE | RMSE ratio | Warning fraction | Decision |
+| --- | ---: | --- | --- | --- | --- | --- |
+| **alpha-40 DROP32 control** | **32** | **0.827271 / 0.699599 / 0.090059; 0.827497 / 0.699270 / 0.090807** | **4150.32 / 415.26** | **0.893196 / 0.893928** | **0.25 / 0.24** | **Prospective Iter011 control retained** |
+| DROP32 then corr080 priority-drop | 21 | 0.801217 / 0.671361 / 0.102057; 0.801178 / 0.672209 / 0.102155 | 4478.95 / 448.79 | 0.921297 / 0.921987 | 0.22 / 0.23 | Reject: median R2, minimum R2, and median RMSE-ratio gates fail both targets |
+
+Candidate-minus-control locked gate deltas were:
+
+- median R2 `-0.026054 / -0.026319` versus the `-0.01` floor;
+- minimum R2 `-0.028238 / -0.027061` versus the `-0.02` floor;
+- R2 IQR `+0.011998 / +0.011348`, passing the `+0.02` ceiling;
+- median RMSE ratio `+0.028101 / +0.028060` versus the `+0.02` ceiling;
+- warning fraction `0.22 / 0.23`, passing the inclusive `0.25` ceiling.
+
+Importance evidence was complete and finite. Both arms ranked `parm_6` and `parm_13` first and
+second across targets. Pruning elevated `RH_clim_seasonal_amp` and `FSDS_clim_mean`, but that
+redistribution did not offset the paired performance loss.
+
+Conclusion: reject the correlation-0.80 candidate. Retain alpha-40 DROP32 only as the prospective
+feature-reduction control; do not promote it over the historical Iter009 alpha-50/full45
+baseline. A planning-only Iter012 proposal tests milder DROP32-first thresholds (`0.90`, `0.95`)
+under a fresh runtime contract.
+
+## Main Conclusions Through iter011
 
 1. The single-case feature conclusion from iter001 was limited by absent surface/climatology variation.
 2. Nine-case diversity made surface and climatology features informative.
@@ -364,24 +416,29 @@ aggregation, decision, records, and closeout.
 10. Iter010's 100-seed matrix found 22--25% warnings for every alpha/policy arm, including
     alpha-50/full45; the five-seed zero-warning observation did not generalize. No threshold
     candidate may be promoted without changing the gate under a future, explicit contract.
+11. Iter011 showed that DROP32-first correlation-0.80 pruning is seed-stable and warning-safe but
+    too aggressive: reducing 32 inputs to 21 failed median/tail R2 and median-RMSE-ratio gates for
+    both targets. The historical Iter009 alpha-50/full45 baseline remains retained.
 
 ## Next Iteration Guidance
 
-Retain full45 and `(32,), tanh, lbfgs, alpha=50` as the current baseline. Before any Iter011
-proposal, decide whether the warning definition is scientifically appropriate in light of the
-100-seed evidence; do not relax the Iter010 zero-warning gate retroactively. Any new work requires
-a new runtime contract, reviewer, and no-training preflight.
+Retain full45 and `(32,), tanh, lbfgs, alpha=50` from Iter009 as the historical baseline.
+Planning-only Iter012 may test DROP32-first correlation thresholds `0.90` and `0.95` against the
+completed alpha-40 DROP32 prospective control, using 100 paired seeds and the Iter011 gates. No
+Iter012 scaffolding or scheduler action is authorized without a fresh runtime contract, reviewer,
+and no-training preflight.
 
 ## Source Artifacts
 
 - Canonical workflow: `development/spinup_surrogate/WORKFLOW.md`
 - Current handoff: `development/spinup_surrogate/handoff/CURRENT.md`
 - Registry: `development/spinup_surrogate/registry.csv`
-- Detailed reports: `development/spinup_surrogate/iterations/iter001.md` through `iter010.md`
+- Detailed reports: `development/spinup_surrogate/iterations/iter001.md` through `iter011.md`
 - Iter005 summaries: `development/spinup_surrogate/summaries/iter005/`
 - Iter006 summaries: `development/spinup_surrogate/summaries/iter006/`
 - Iter007 summaries: `development/spinup_surrogate/summaries/iter007/`
 - Iter008 summaries: `development/spinup_surrogate/summaries/iter008/`
 - Iter009 summaries: `development/spinup_surrogate/summaries/iter009/`
 - Iter010 summaries: `development/spinup_surrogate/summaries/iter010/`
+- Iter011 summaries: `development/spinup_surrogate/summaries/iter011/`
 - Feature analyzer: `development/spinup_surrogate/analyze_feature_stability.py`

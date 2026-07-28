@@ -1,169 +1,173 @@
-# Spinup Surrogate - Current Handoff (iter010 closed; Iter011 proposal prepared)
+# Spinup Surrogate - Current Handoff (Iter011 closed)
 
 ## Live State
 
-- Active iteration: none
-- Status: `iter010 completed`
-- Phase: `closed; Iter011 proposal prepared; new runtime contract required before initialization`
-- Iter011 execution authority: none; do not create `iterations/iter011.md` until Iter011 is
-  initialized under its fresh runtime contract.
-- Active job IDs: none. Corrected Iter010 production arrays completed 1,500/1,500 leaves `0:0`; aggregation `23399438` completed `0:0`.
+- Active/latest iteration: `iter011`
+- Status: `completed`
+- Phase: `closed`
+- Active job IDs: none. Preflight `23432877`, control seed gate `23432904_1`, control
+  remainder `23432937_[2-100]`, candidate `23432938_[1-100]`, and aggregation `23436731`
+  are terminal `COMPLETED 0:0`.
 - Site profile: `development/hpc/puma.md`
-- Last updated: `2026-07-27 America/Phoenix`
-- Execution authority: on 2026-07-24 America/Phoenix the user replied `approved` to the complete
-  Iter010 request: confirmed UA Puma login host `junonia.hpc.arizona.edu` with
-  `development/hpc/puma.md`; one finite 15-variant / 1,500-leaf matrix; artifact preparation,
-  static validation, independent read-only review, bounded no-training preflight, submission, and
-  continuous monitoring through aggregation/selection/closeout. Resources are `standard` /
-  `chopinsong`, 10 CPUs (50 GB implied), 30 minutes, `N_JOBS=4`, `PRE_DISPATCH=n_jobs`, and
-  per-task cache isolation. One minimal validation-only correction/rerun is separate from one
-  retry per leaf only for scheduler/resource interruption within the caps. Other
-  application/code/configuration failures stop for fresh authorization. At most one closeout
-  commit is authorized.
+- Last updated: `2026-07-28 America/Phoenix`
+- The approved Iter011 finite run mode is exhausted. Its submission, retry, and closeout
+  authorities do not authorize Iter012 execution.
 
 ## Current Objective
 
-The Iter011 proposal is ready for future initialization: rerun Iter010 alpha-40 drop32 as the
-explicit control, then test whether a global pre-split, priority-aware `0.80` correlation filter
-applied only after locking `DROP32` yields a stable smaller schema without unacceptable paired
-performance or importance changes. No Iter011 iteration record or execution is authorized yet.
+Iter011 tested whether global pre-split, priority-aware correlation filtering at `0.80`, applied
+only after locking the strict DROP32 universe, could produce a stable smaller schema without
+unacceptable paired validation-performance or importance changes.
 
 ## Best Evidence So Far
 
-- Historical retained baseline: `s32_tanh_lbfgs_a50_lr1e3_full45` from Iter009; it remains the
-  completed Iter010 decision.
-- Iter010 evidence: 15 variants, 100 seeds each, 1,500/1,500 corrected leaves `0:0`, aggregate
-  `23399438` completed `0:0`, and 45 aggregate JSON artifacts passed exact validation.
-- Iter011 control evidence: Iter010 alpha-40 drop32 had warning fractions `0.25 / 0.24` and will
-  be rerun as `s32_tanh_lbfgs_a40_lr1e3_drop_flds_wind_psrf`. Its new role is prospective:
-  control for Iter011 eligibility deltas and ranking, not retroactive promotion.
+- Execution: the bounded preflight, all 200 unique production leaves, and aggregation completed
+  `0:0`; no retry was used. Exact seed, metadata, input-universe, schema, metric, and finite
+  8-repeat importance validation passed.
+- Control: alpha-40 DROP32 retained a stable 32-feature schema. TOTSOMC/TOTSOMN median validation
+  R2 was `0.827271 / 0.827497`, minimum R2 `0.699599 / 0.699270`, R2 IQR
+  `0.090059 / 0.090807`, median validation RMSE `4150.32 / 415.26`, median RMSE ratio
+  `0.893196 / 0.893928`, and warning fraction `0.25 / 0.24`.
+- Candidate: DROP32 then corr080 retained one stable 21-feature schema with no `FLDS_*`,
+  `WIND_*`, or `PSRF_*`. Its TOTSOMC/TOTSOMN median validation R2 was
+  `0.801217 / 0.801178` and warning fraction was `0.22 / 0.23`. It passed IQR, warning, schema,
+  exactness, and importance gates, but failed both targets' median-R2
+  (`-0.026054 / -0.026319`), minimum-R2
+  (`-0.028238 / -0.027061`), and median-RMSE-ratio (`+0.028101 / +0.028060`) gates.
+- Decision: reject the 21-feature candidate and retain alpha-40 DROP32 only as the prospective
+  Iter011 feature-reduction control. No Iter011 candidate is promoted.
+- Historical retained baseline: Iter009
+  `s32_tanh_lbfgs_a50_lr1e3_full45`; it remains unchanged.
 
 ## Current Risks or Blockers
 
-- No active runtime blocker or job set.
-- Iter011 execution is blocked pending a fresh runtime contract. The plan now defines a
-  prospective inclusive warning rule (`<= 0.25` per target), but this cannot alter Iter010's
-  closed zero-warning decision.
-- The sequential `DROP32` then correlation-filter implementation must be statically reviewed and
-  validated to exclude all removed feature families before any compute-node preflight.
+- No active runtime blocker and no unaccounted Iter011 job.
+- Production memory sometimes approached the 50-GiB allocation; the observed maximum was
+  `52427916K`, but every leaf completed. Keep the same cap unless a fresh contract authorizes a
+  resource change.
+- Codex filesystem-sandbox Slurm connection errors are not Puma controller evidence. Per
+  `development/hpc/puma.md`, scheduler submission and authoritative monitoring must use the
+  approved elevated HPC context when the user namespace drops connectivity or project groups.
+- The planning-only Iter012 proposal below is not execution authority.
 
 ## Next Action
 
-Request a fresh Iter011 runtime contract. Create `iterations/iter011.md` only during the
-subsequent Iter011 initialization, then proceed with authorized scaffolding, preflight,
-submission, monitoring, or scheduler operations as applicable.
+Review or modify the planning-only Iter012 proposal. Before any Iter012 scaffolding, preflight, or
+scheduler action, approve a fresh runtime contract covering Puma, the finite 300-leaf scope,
+resources, submission/monitoring authority, retry/cancellation bounds, and closeout-commit
+authority.
 
 ## Next Iteration Plan (Planning Only)
 
-- Sequential ID and control: `iter011` reruns alpha-40 drop32 as the explicit control for
-  eligibility deltas and ranking.
-- Matrix: 100 seeds (`10001-10100`) each for strict drop32 and `DROP32` followed by global
-  pre-split, priority-aware correlation filtering at `0.80`; the candidate filter universe is
-  only `DROP32` and cannot reintroduce `FLDS_*`, `WIND_*`, or `PSRF_*`.
-- Acceptance gates: retain independent per-target R2, minimum-R2, IQR, and RMSE-ratio deltas
-  against the Iter011 control; set the prospective warning gate to inclusive `<= 0.25` per
-  target. Require exact result identity, per-seed selected schemas/counts, paired deltas, and
-  8-repeat importance evidence.
-- Expected artifacts: planning report, locked manifest, variant-local submitted scripts/configs,
-  bounded preflight evidence, universal R2/RMSE and importance plots, paired analyses, summaries,
-  stability/importance results, and closeout records.
-- Required boundary: a new runtime contract must state Puma confirmation, finite scope/resources,
-  retry/cancellation limits, monitoring authority, and closeout-commit authority.
+- Sequential ID and retained baselines: propose `iter012`. Keep Iter009
+  `s32_tanh_lbfgs_a50_lr1e3_full45` as the historical retained baseline and use the completed
+  Iter011 alpha-40 DROP32 arm as the prospective paired control; do not retroactively promote it.
+- Focused hypothesis: the 0.80 correlation threshold reduced DROP32 from 32 to 21 stable features
+  but failed both R2 and median-RMSE-ratio gates. Milder global pre-split priority-aware
+  thresholds of `0.90` and `0.95`, applied only after locking DROP32, may retain enough information
+  to pass while still producing a stable schema smaller than 32.
+- Tentative locked matrix: 100 paired seeds (`10001-10100`) for three arms:
+  (1) strict alpha-40 DROP32 control,
+  (2) `DROP32` then `corr090_prioritydrop`, and
+  (3) `DROP32` then `corr095_prioritydrop`. Preserve the nine cases, `by_member` split, train
+  fraction `0.8`, targets `TOTSOMC,TOTSOMN`, `(32,), tanh, lbfgs`, alpha `40`, provenance-only
+  learning rate `1e-3`, 8 permutation repeats, and the exact DROP32 input universe.
+- Acceptance gates: require exactly 100 validated seeds per arm; stable per-candidate schemas that
+  are strict DROP32 subsets with fewer than 32 features and no `FLDS_*`, `WIND_*`, or `PSRF_*`;
+  apply independently to both targets the Iter011 limits of median validation-R2 delta
+  `>= -0.01`, minimum validation-R2 delta `>= -0.02`, R2-IQR delta `<= +0.02`, median
+  RMSE-ratio delta `<= +0.02`, and warning fraction `<= 0.25`. Require finite 8-repeat importance
+  and exact identity/schema validation. Among full-gate passers, prefer the smaller stable schema;
+  otherwise retain the prospective DROP32 control. The historical Iter009 baseline remains
+  unchanged without a separately defined direct-promotion comparison.
+- Proposed Puma resources and retry boundary: `development/hpc/puma.md`,
+  `standard/chopinsong`, one task, 10 CPUs (about 50 GB), 15 minutes per production or aggregation
+  job, `N_JOBS=4`, `PRE_DISPATCH=n_jobs`, single-thread numerical libraries, and task-local cache;
+  1 CPU/5 minutes for the no-training preflight. Propose one validation-only preflight correction
+  and separately one failed-leaf retry only for scheduler/resource interruption within the same
+  caps. Application/code/configuration failures after training begins or scientific-control
+  changes must stop for fresh authorization.
+- Expected artifacts: Iter012 report and locked manifest; canonical and variant-local submitted
+  scripts/configurations and hashes; reviewer and preflight evidence; exactly 300 seed JSONs;
+  three summary, three feature-stability, and three 100-seed importance JSONs; paired gate/decision
+  JSON comparing both candidates to control; universal R2/RMSE and importance plots; terminal
+  accounting; updated four durable records; handoff-validator evidence; and, only if authorized,
+  one closeout commit.
+- Required user decision and boundary: this is planning-only. Before any Iter012 scaffolding or
+  scheduler action, obtain one fresh runtime contract confirming Puma, the finite 300-leaf scope,
+  exact resources, submission/monitoring authority, retry/cancellation bounds, and whether one
+  closeout commit is authorized.
 
-## Durable Prevention Rule
+## Durable Prevention Rules
 
-For any Python utility launched by absolute path on Puma, prepend the fixed repository root
-`/xdisk/chopinsong/tianyihu/elm-olmt` to `sys.path` before importing repository modules. Require a
-bounded compute-node import/no-training preflight before a production matrix. Treat an import-path
-failure as application/configuration: preserve diagnostics and apply only the validation-only
-retry boundary defined below.
-
-The canonical workflow now grants one separate validation-only retry when a bounded preflight
-fails before training: the primary agent may apply one minimal import/launch/configuration fix and
-rerun the same preflight once. It does not consume the matrix variant retry budget; a second
-preflight failure, a changed failure class, or any scientific-control change stops for fresh
-authorization.
-
-Iter010 also established these active prevention rules: materialize each submitted Slurm copy in
-the specified run directory and submit from inside it; use the supported Puma Slurm command
-interface first; capture and verify each returned job ID against its variant, script, run
-directory, array range, and configuration; isolate manifest-loop stdin with `</dev/null`; use
-emergency cancellation only for a proven universal pre-training failure; and remain active
-through terminal accounting, aggregation, decision, handoff validation, and closeout.
-
-## Historical Handoff Records
-
-Detailed historical plans, migration notes, Iter006 evidence, Iter007 scaffold notes, and closed
-resource observations were moved to `development/spinup_surrogate/handoff/CURRENT_HISTORY.md`.
-Authoritative scientific evidence remains in the iteration reports and
-`development/spinup_surrogate/ITERATION_SUMMARY.md`.
+- Launch Python utilities only in a compute allocation or Slurm job, with the fixed repository
+  root explicitly on `sys.path` before repository imports. Use the bounded no-training preflight.
+- Materialize each submitted Slurm copy in its specified run directory, submit from inside that
+  directory, record `sbatch --parsable` mappings, and verify identity with job-scoped
+  `squeue`/`scontrol`.
+- Treat scheduler-query failure as unknown. Retry boundedly in the approved elevated HPC context,
+  then reconcile with logs, exact artifacts, and terminal accounting.
+- Do not interpret an in-sandbox `scontrol ping`, `sbatch`, `squeue`, or `sacct` connection error
+  as authoritative Puma state when the Codex namespace lacks project groups or scheduler
+  connectivity.
+- Wait for every terminal state before retry classification; retry only failed leaves whose
+  scheduler/resource class is permitted by the active contract.
 
 ## Next Session Start Protocol
 
-1. Load `development/spinup_surrogate/handoff/CURRENT.md`.
-2. Load iteration reports:
-   - `development/spinup_surrogate/iterations/iter010.md`
-   - `development/spinup_surrogate/iterations/iter009.md`
-   - `development/spinup_surrogate/iterations/iter008.md`
-3. Treat historical Iter008, Iter009, and completed Iter010 plan sections as provenance only.
-4. Review `development/spinup_surrogate/WORKFLOW.md` and
-   `development/hpc/puma.md`.
-5. Confirm there is no live job set.
-6. Validate the Iter011 proposal in this handoff and `iterations/iter010.md` against the Iter010
-   evidence.
-7. Request and record a fresh Iter011 runtime contract before initializing Iter011 or doing any
-   execution scaffolding.
+1. Read `development/spinup_surrogate/handoff/CURRENT.md`.
+2. Read `development/spinup_surrogate/iterations/iter011.md`,
+   `development/spinup_surrogate/iterations/iter010.md`, and
+   `development/spinup_surrogate/iterations/iter009.md`.
+3. Read `development/spinup_surrogate/WORKFLOW.md` and `development/hpc/puma.md`.
+4. Verify the Iter011 report, cumulative summary, registry row, and current handoff agree that
+   Iter011 is completed, the corr080 candidate is rejected, and Iter009 alpha-50/full45 remains
+   the historical retained baseline.
+5. Treat the Iter012 section as planning-only. Assess or revise it before any scaffold.
+6. Obtain and record a fresh complete Iter012 runtime contract before changing execution-affecting
+   files or scheduler state.
 
-## Ready/Blocked Status for Next Iteration
+## Required User Decisions Before Execution
 
-Iter010 is complete: corrected production arrays completed 1,500/1,500 leaves `0:0`, aggregate
-`23399438` completed `0:0`, and all 15 variants passed exact result identity validation. Every
-variant failed the locked zero-warning gate with warnings in the `0.22-0.25` range. Its Iter011
-proposal reruns alpha-40 drop32 as control and compares one sequential drop32-then-correlation
-candidate under a prospective inclusive `<= 0.25` warning rule. Iter011 itself is not initialized;
-a fresh runtime contract remains required.
-
-## Required User Decisions Before Execution (if any)
-
-Before Iter011 execution, the user must approve Puma confirmation, the finite two-variant/
-200-leaf scope, the proposed resources, preflight/submission/monitoring authority, retry and
-emergency-cancellation boundary, and closeout-commit decision. The scientific plan already locks
-the prospective inclusive warning rule, 100 seeds, control, and candidate semantics.
+- Confirm or modify the Iter012 hypothesis, three-arm matrix, and gates.
+- If execution is desired, approve one fresh runtime contract with Puma confirmation, finite
+  scope, resources, submission/monitoring authority, retry/cancellation boundaries, and
+  closeout-commit authority.
 
 ## Artifact Paths
 
-- Current report: `development/spinup_surrogate/iterations/iter010.md`
+- Current report: `development/spinup_surrogate/iterations/iter011.md`
+- Cumulative summary: `development/spinup_surrogate/ITERATION_SUMMARY.md`
 - Registry: `development/spinup_surrogate/registry.csv`
 - Current handoff: `development/spinup_surrogate/handoff/CURRENT.md`
-- Iter010 scripts and manifest: `development/spinup_surrogate/slurm/iter010/`
-- Iter010 summaries, stability, and importance: `development/spinup_surrogate/summaries/iter010/`
-- Iter011 proposal: `development/spinup_surrogate/iterations/iter010.md` section
-  `Proposed Next-Iteration Plan (Planning Only)` and this handoff's `Next Iteration Plan`.
-- Scratch output root: `/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/UQ_output/`
-- Aggregate logs: `/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/UQ_output/spinup_iter010_aggregate_23399438.out/.err`
+- Iter011 canonical scripts and manifest: `development/spinup_surrogate/slurm/iter011/`
+- Iter011 summaries, decision JSON, and plots:
+  `development/spinup_surrogate/summaries/iter011/`
+- Control scratch root:
+  `/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/UQ_output/spinup_surrogate_iter011_s32_tanh_lbfgs_a40_lr1e3_drop_flds_wind_psrf/`
+- Candidate scratch root:
+  `/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/UQ_output/spinup_surrogate_iter011_s32_tanh_lbfgs_a40_lr1e3_drop32_corr080_prioritydrop/`
+- Aggregation submitted copy:
+  `/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/UQ_output/spinup_surrogate_iter011_aggregate/aggregate_iter011.slurm`
+- Aggregation logs:
+  `/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/UQ_output/spinup_iter011_aggregate_23436731.out/.err`
 - Puma site profile: `development/hpc/puma.md`
 - Historical handoff material: `development/spinup_surrogate/handoff/CURRENT_HISTORY.md`
-## Files Modified in Repo
 
-- `development/spinup_surrogate/slurm/iter010/`
-- `development/spinup_surrogate/iterations/iter010.md`
-- `development/spinup_surrogate/summaries/iter010/`
+## Files Modified in Repo (latest completed iteration)
+
+- `development/spinup_surrogate/iterations/iter011.md`
+- `development/spinup_surrogate/slurm/iter011/`
+- `development/spinup_surrogate/summaries/iter011/`
+- `development/spinup_surrogate/tools/aggregate_permutation_importance.py`
+- `development/spinup_surrogate/tools/plot_spinup_distributions.py`
+- `development/spinup_surrogate/tools/plot_spinup_importance.py`
 - `development/spinup_surrogate/ITERATION_SUMMARY.md`
 - `development/spinup_surrogate/registry.csv`
 - `development/spinup_surrogate/handoff/CURRENT.md`
 
-Current Iter011 proposal/tooling updates are:
-
-- `development/spinup_surrogate/iterations/iter010.md`
-- `development/spinup_surrogate/tools/plot_iter010_a40_distributions.py`
-- `development/spinup_surrogate/tools/plot_iter010_a40_importance.py`
-
-Previously identified post-closeout policy-document changes, if still present, are:
-
-- `development/spinup_surrogate/WORKFLOW.md`
-- `development/hpc/puma.md`
-
 ## Latest Iteration Reference
 
-See `development/spinup_surrogate/iterations/iter010.md` for completed evidence, the incident
-ledger, and the Iter011 planning-only controls, gates, matrix, and authorization boundary.
+See `development/spinup_surrogate/iterations/iter011.md` for the completed runtime contract,
+provenance, terminal accounting, exact validation, gate decision, and planning-only Iter012
+proposal.

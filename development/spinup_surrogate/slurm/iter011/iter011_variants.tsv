@@ -1,0 +1,3 @@
+variant	alpha	feature_policy	forcing_vars	feature_subset_policy	apply_corr_filter	corr_threshold
+s32_tanh_lbfgs_a40_lr1e3_drop_flds_wind_psrf	40	drop_flds_wind_psrf	PRECTmms,FSDS,TBOT,RH	strict	false	NA
+s32_tanh_lbfgs_a40_lr1e3_drop32_corr080_prioritydrop	40	drop32_corr080_prioritydrop	PRECTmms,FSDS,TBOT,RH	eligible_pool	true	0.80
