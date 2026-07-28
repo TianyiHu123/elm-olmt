@@ -1,13 +1,15 @@
-# Spinup Surrogate - Current Handoff (iter010 closed)
+# Spinup Surrogate - Current Handoff (iter010 closed; Iter011 proposal prepared)
 
 ## Live State
 
 - Active iteration: none
 - Status: `iter010 completed`
-- Phase: `closed; new runtime contract required for any Iter011 work`
+- Phase: `closed; Iter011 proposal prepared; new runtime contract required before initialization`
+- Iter011 execution authority: none; do not create `iterations/iter011.md` until Iter011 is
+  initialized under its fresh runtime contract.
 - Active job IDs: none. Corrected Iter010 production arrays completed 1,500/1,500 leaves `0:0`; aggregation `23399438` completed `0:0`.
 - Site profile: `development/hpc/puma.md`
-- Last updated: `2026-07-25 America/Phoenix`
+- Last updated: `2026-07-27 America/Phoenix`
 - Execution authority: on 2026-07-24 America/Phoenix the user replied `approved` to the complete
   Iter010 request: confirmed UA Puma login host `junonia.hpc.arizona.edu` with
   `development/hpc/puma.md`; one finite 15-variant / 1,500-leaf matrix; artifact preparation,
@@ -21,48 +23,52 @@
 
 ## Current Objective
 
-Iter010 completed its 15-variant, 100-seed (1,500-leaf) alpha-40--50 and feature-policy matrix.
-The exact aggregate validator accepted all 1,500 results and produced 15 summary, 15 stability,
-and 15 importance artifacts. All variants are scientifically rejected by the locked zero-warning
-gate (warnings `0.22-0.25` for both targets); no model is promoted. Retain the Iter009 baseline
-`s32_tanh_lbfgs_a50_lr1e3_full45`. The detailed terminal accounting and failure-prevention rules
-are in `iterations/iter010.md`.
+The Iter011 proposal is ready for future initialization: rerun Iter010 alpha-40 drop32 as the
+explicit control, then test whether a global pre-split, priority-aware `0.80` correlation filter
+applied only after locking `DROP32` yields a stable smaller schema without unacceptable paired
+performance or importance changes. No Iter011 iteration record or execution is authorized yet.
 
 ## Best Evidence So Far
 
-- Baseline retained: `s32_tanh_lbfgs_a50_lr1e3_full45` from Iter009.
+- Historical retained baseline: `s32_tanh_lbfgs_a50_lr1e3_full45` from Iter009; it remains the
+  completed Iter010 decision.
 - Iter010 evidence: 15 variants, 100 seeds each, 1,500/1,500 corrected leaves `0:0`, aggregate
   `23399438` completed `0:0`, and 45 aggregate JSON artifacts passed exact validation.
-- Decision: all variants failed the locked zero-warning gate with warning fractions `0.22-0.25`;
-  no Iter010 candidate is promoted.
+- Iter011 control evidence: Iter010 alpha-40 drop32 had warning fractions `0.25 / 0.24` and will
+  be rerun as `s32_tanh_lbfgs_a40_lr1e3_drop_flds_wind_psrf`. Its new role is prospective:
+  control for Iter011 eligibility deltas and ranking, not retroactive promotion.
 
 ## Current Risks or Blockers
 
 - No active runtime blocker or job set.
-- Iter011 is blocked from execution pending a new runtime contract and a decision on whether the
-  zero-warning definition remains scientifically appropriate after the 100-seed evidence.
-- Do not relax the Iter010 gate retroactively or infer an Iter011 matrix automatically.
+- Iter011 execution is blocked pending a fresh runtime contract. The plan now defines a
+  prospective inclusive warning rule (`<= 0.25` per target), but this cannot alter Iter010's
+  closed zero-warning decision.
+- The sequential `DROP32` then correlation-filter implementation must be statically reviewed and
+  validated to exclude all removed feature families before any compute-node preflight.
 
 ## Next Action
 
-Prepare and review a planning-only Iter011 proposal; request fresh runtime authority before any
-scaffolding, code/configuration change, preflight, submission, or scheduler operation.
+Request a fresh Iter011 runtime contract. Create `iterations/iter011.md` only during the
+subsequent Iter011 initialization, then proceed with authorized scaffolding, preflight,
+submission, monitoring, or scheduler operations as applicable.
 
 ## Next Iteration Plan (Planning Only)
 
-- Sequential ID and baseline: `iter011`; retain `s32_tanh_lbfgs_a50_lr1e3_full45` unless a new
-  contract explicitly changes the decision rule.
-- Hypothesis: determine whether the warning metric/threshold is scientifically appropriate at
-  100-seed scale before proposing another alpha or feature-policy sweep.
-- Tentative controls/matrix: no execution matrix is locked yet; any candidate matrix must be
-  evidence-derived and explicitly authorized after the warning-definition decision.
-- Acceptance/retry gates: retain the current independent R2, minimum-R2, IQR, RMSE-ratio, and
-  zero-warning gates unless the user explicitly approves a revised scientific rule; retain one
-  validation-only retry and one scheduler/resource retry within the new contract.
+- Sequential ID and control: `iter011` reruns alpha-40 drop32 as the explicit control for
+  eligibility deltas and ranking.
+- Matrix: 100 seeds (`10001-10100`) each for strict drop32 and `DROP32` followed by global
+  pre-split, priority-aware correlation filtering at `0.80`; the candidate filter universe is
+  only `DROP32` and cannot reintroduce `FLDS_*`, `WIND_*`, or `PSRF_*`.
+- Acceptance gates: retain independent per-target R2, minimum-R2, IQR, and RMSE-ratio deltas
+  against the Iter011 control; set the prospective warning gate to inclusive `<= 0.25` per
+  target. Require exact result identity, per-seed selected schemas/counts, paired deltas, and
+  8-repeat importance evidence.
 - Expected artifacts: planning report, locked manifest, variant-local submitted scripts/configs,
-  bounded preflight evidence, summaries, stability/importance results, and closeout records.
-- Required boundary: planning only. A new runtime contract must state Puma, finite scope,
-  resources, retry/cancellation authority, monitoring authority, and closeout-commit authority.
+  bounded preflight evidence, universal R2/RMSE and importance plots, paired analyses, summaries,
+  stability/importance results, and closeout records.
+- Required boundary: a new runtime contract must state Puma confirmation, finite scope/resources,
+  retry/cancellation limits, monitoring authority, and closeout-commit authority.
 
 ## Durable Prevention Rule
 
@@ -103,22 +109,26 @@ Authoritative scientific evidence remains in the iteration reports and
 4. Review `development/spinup_surrogate/WORKFLOW.md` and
    `development/hpc/puma.md`.
 5. Confirm there is no live job set.
-6. Validate the planning-only Iter011 proposal against current evidence.
-7. Request and record a fresh Iter011 runtime contract before scaffolding or execution.
+6. Validate the Iter011 proposal in this handoff and `iterations/iter010.md` against the Iter010
+   evidence.
+7. Request and record a fresh Iter011 runtime contract before initializing Iter011 or doing any
+   execution scaffolding.
 
 ## Ready/Blocked Status for Next Iteration
 
 Iter010 is complete: corrected production arrays completed 1,500/1,500 leaves `0:0`, aggregate
 `23399438` completed `0:0`, and all 15 variants passed exact result identity validation. Every
-variant failed the locked zero-warning gate with warnings in the `0.22-0.25` range. No candidate
-was promoted; retain the Iter009 alpha-50 full45 baseline. Iter011 is planning-only and requires a
-fresh runtime contract.
+variant failed the locked zero-warning gate with warnings in the `0.22-0.25` range. Its Iter011
+proposal reruns alpha-40 drop32 as control and compares one sequential drop32-then-correlation
+candidate under a prospective inclusive `<= 0.25` warning rule. Iter011 itself is not initialized;
+a fresh runtime contract remains required.
 
 ## Required User Decisions Before Execution (if any)
 
-No active execution decision remains. Before Iter011 execution, the user must approve its warning
-definition/gates, locked matrix and seed count, Puma resource cap, retry and emergency-cancellation
-boundary, monitoring authority, and closeout-commit decision.
+Before Iter011 execution, the user must approve Puma confirmation, the finite two-variant/
+200-leaf scope, the proposed resources, preflight/submission/monitoring authority, retry and
+emergency-cancellation boundary, and closeout-commit decision. The scientific plan already locks
+the prospective inclusive warning rule, 100 seeds, control, and candidate semantics.
 
 ## Artifact Paths
 
@@ -127,11 +137,13 @@ boundary, monitoring authority, and closeout-commit decision.
 - Current handoff: `development/spinup_surrogate/handoff/CURRENT.md`
 - Iter010 scripts and manifest: `development/spinup_surrogate/slurm/iter010/`
 - Iter010 summaries, stability, and importance: `development/spinup_surrogate/summaries/iter010/`
+- Iter011 proposal: `development/spinup_surrogate/iterations/iter010.md` section
+  `Proposed Next-Iteration Plan (Planning Only)` and this handoff's `Next Iteration Plan`.
 - Scratch output root: `/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/UQ_output/`
 - Aggregate logs: `/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/UQ_output/spinup_iter010_aggregate_23399438.out/.err`
 - Puma site profile: `development/hpc/puma.md`
 - Historical handoff material: `development/spinup_surrogate/handoff/CURRENT_HISTORY.md`
-## Files Modified in Repo (latest completed iteration)
+## Files Modified in Repo
 
 - `development/spinup_surrogate/slurm/iter010/`
 - `development/spinup_surrogate/iterations/iter010.md`
@@ -140,16 +152,18 @@ boundary, monitoring authority, and closeout-commit decision.
 - `development/spinup_surrogate/registry.csv`
 - `development/spinup_surrogate/handoff/CURRENT.md`
 
-Post-closeout policy-document changes are currently uncommitted in:
+Current Iter011 proposal/tooling updates are:
+
+- `development/spinup_surrogate/iterations/iter010.md`
+- `development/spinup_surrogate/tools/plot_iter010_a40_distributions.py`
+- `development/spinup_surrogate/tools/plot_iter010_a40_importance.py`
+
+Previously identified post-closeout policy-document changes, if still present, are:
 
 - `development/spinup_surrogate/WORKFLOW.md`
 - `development/hpc/puma.md`
 
 ## Latest Iteration Reference
 
-See `development/spinup_surrogate/iterations/iter010.md` sections:
-
-- `Execution and Diagnostics`
-- `Complete Incident Ledger`
-- `Results and Decision`
-- `Proposed Next-Iteration Plan (Planning Only)`
+See `development/spinup_surrogate/iterations/iter010.md` for completed evidence, the incident
+ledger, and the Iter011 planning-only controls, gates, matrix, and authorization boundary.

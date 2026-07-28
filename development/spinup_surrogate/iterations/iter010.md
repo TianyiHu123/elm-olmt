@@ -126,11 +126,33 @@ and R2-drop diagnostics.
 
 ## Proposed Next-Iteration Plan (Planning Only)
 
-A new runtime contract will be required before any Iter011 scaffold, submission, or execution.
-Iter010 shows the apparent alpha-35/50 transition from five seeds is not stable at 100 seeds:
-alpha 50 itself warned on 22% of seeds. A future proposal must first decide whether the warning
-definition remains scientifically appropriate; it must not relax the zero-warning gate
-retroactively to promote an Iter010 candidate.
+A new runtime contract will be required before any Iter011 execution. Iter010 shows the apparent
+alpha-35/50 transition from five seeds is not stable at 100 seeds: alpha 50 itself warned on 22%
+of seeds. The Iter011 planning decision is prospective only: it changes neither the Iter010
+result nor its zero-warning rejection.
+
+- Sequential ID and control: `iter011` reruns
+  `s32_tanh_lbfgs_a40_lr1e3_drop_flds_wind_psrf` as its 100-seed control. It becomes the
+  reference for candidate eligibility deltas and ranking; it does not revise the historical
+  Iter009 retained baseline or retroactively promote an Iter010 result.
+- Hypothesis: after the domain-driven `DROP32` restriction, global pre-split, priority-aware
+  correlation filtering at `0.80` can produce a stable smaller schema without materially
+  worsening paired validation performance or importance evidence.
+- Tentative matrix: the rerun control and one alpha-40 candidate that first locks `DROP32`, then
+  applies the `0.80` correlation filter only within that 32-feature universe. The candidate must
+  never reintroduce `FLDS_*`, `WIND_*`, or `PSRF_*`. Both variants use seeds `10001-10100`.
+- Tentative prospective warning rule: require `overfit_warning_fraction <= 0.25` independently
+  for `TOTSOMC` and `TOTSOMN`. Retain the existing per-target median-R2, minimum-R2, R2-IQR, and
+  median-RMSE-ratio deltas against the Iter011 control unless the Iter011 report explicitly
+  changes a value.
+- Required evidence: exact 100-file identity/metadata validation; selected feature names and
+  count for every seed; seed-paired validation R2/RMSE/RMSE-ratio deltas; train/test R2 and RMSE
+  distributions; and 8-repeat permutation-importance rankings for both targets plus combined
+  views. Generic plotting tools, rather than Iter010-hard-coded scripts, will produce the visual
+  comparisons.
+- Authorization boundary: planning artifacts may be prepared, but a fresh Iter011 runtime
+  contract must authorize the Puma resources, no-training preflight, submission, monitoring,
+  retry/cancellation limits, and any closeout commit.
 
 ## Closeout Checklist
 
