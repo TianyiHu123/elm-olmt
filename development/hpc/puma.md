@@ -112,6 +112,51 @@ paths, timestamps, and resulting state when using that fallback.
 | Group limits and usage | `job-limits <ACCOUNT>` |
 | Cancel, only when authorized | `scancel <JOB_ID_OR_IDS>` |
 
+### 1.5 Codex read-only monitoring context
+
+Codex's default filesystem sandbox can run in a user namespace that drops supplemental HPC
+groups. Before a Codex agent relies on any supported Slurm command, verify its effective group
+context:
+
+```bash
+id
+id -Gn
+```
+
+For a job using this repository's current `chopinsong` account, the effective groups must include
+`chopinsong`. If an authorized runtime contract selects another account, verify that the effective
+groups include that account's required project group instead. If the required group is absent, the
+Puma command wrappers used by `scontrol`, `sacct`, and `seff` can fail while attempting their group
+transition. The primary agent must then run **read-only** monitoring and post-job accounting commands
+outside that user-namespace sandbox through the product's approved elevated command context. This is
+a monitoring-context correction, not scheduler authority: it does not authorize submission,
+cancellation, retries, configuration changes, or any other mutation.
+
+Maintain reusable approval only for the read-only command families needed for normal monitoring:
+`squeue --job=...`, `scontrol show job ...`, `sacct --jobs=...`, `seff <JOB_ID>`,
+`job-history <JOB_ID>`, and `job-limits <ACCOUNT>`. Do not grant reusable approval for `scontrol`
+generally. Keep `sbatch`, `scancel`, `scontrol` mutations, and other state-changing commands under
+the runtime contract and their separate approval boundary.
+
+Use commands according to job state:
+
+| State or need | Command |
+| --- | --- |
+| Active or pending job, including an array | `squeue --job=<PARENT_JOB_ID> -r` |
+| Detailed active-job configuration | `scontrol show job <PARENT_JOB_ID>` |
+| Completed-job accounting, whole array | `sacct --jobs=<PARENT_JOB_ID> --format=JobID,JobName,State,ExitCode,Elapsed,TotalCPU,AllocCPUS,MaxRSS,AllocTRES` |
+| Completed-job accounting, one leaf | `sacct --jobs=<JOB_ID>_<ARRAY_INDEX> --format=JobID,JobName,State,ExitCode,Elapsed,TotalCPU,AllocCPUS,MaxRSS,AllocTRES` |
+| CPU and memory efficiency for one leaf | `seff <JOB_ID>_<ARRAY_INDEX>` |
+| Readable terminal history | `job-history <JOB_ID_OR_ARRAY_ELEMENT>` |
+
+Use the parent ID to reconcile every array element and overall terminal completeness. Use a
+concrete element ID only for leaf-specific diagnosis or efficiency reporting.
+
+`squeue` and `scontrol` reporting `Invalid job id specified` for a completed job is expected;
+use `sacct`, `seff`, or `job-history` for terminal evidence. Record the exact query command and
+its output in the workload ledger. A timeout, connection failure, or missing-group failure leaves
+state unknown: retry through the verified read-only elevated context before drawing a conclusion.
+
 Scheduler-query failures:
 
 - Treat `squeue`, `sacct`, and related read-only connection/resource errors as temporary
