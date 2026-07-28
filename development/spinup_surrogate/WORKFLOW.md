@@ -54,6 +54,36 @@ increase beyond the cap, or a code/configuration change needed to retry requires
 authorization, except for the validation-only retry defined below. Do not create a commit unless
 closeout-commit authority was explicitly given.
 
+### Kickoff Goal Contract
+
+Start each execution session with an explicit session goal for the finite iteration. The goal must
+name the iteration and its complete stop boundary; writing a `/goal` example in this file does not
+create the session goal by itself. The user or primary agent must establish the goal through the
+session's goal mechanism, then record the goal text or an unambiguous summary in the iteration
+report and `CURRENT.md`.
+
+Use a full-execution goal when the user authorizes the complete lifecycle:
+
+```text
+/goal Execute iterXXX according to development/spinup_surrogate/WORKFLOW.md:
+complete planning and authorized scaffolding, independent review, bounded preflight,
+submission, continuous monitoring, terminal accounting, failure classification,
+aggregation, gate evaluation, record updates, handoff validation, and authorized closeout.
+Do not stop before a recorded workflow stop condition.
+```
+
+Use a planning-only goal when execution authority has not been granted:
+
+```text
+/goal Prepare the planning-only iterXXX proposal according to
+development/spinup_surrogate/WORKFLOW.md; do not scaffold, submit, or run jobs.
+```
+
+A goal defines the completion objective; it does not grant HPC execution, retry, cancellation,
+or commit authority. Those authorities must still be stated in the runtime contract and approved
+by the user. A goal also does not replace `CURRENT.md` checkpoints, Slurm reconciliation, the
+pre-return gate, or final handoff cross-validation.
+
 ### Required authorization request
 
 At the start of every new iteration, after planning has identified the matrix and before any
