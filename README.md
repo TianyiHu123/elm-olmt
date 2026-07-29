@@ -247,6 +247,77 @@ Stats JSON files are written under **`/path/to/scratch/UQ_output/<CASE_NAME>/sur
 
 Standalone spinup-state surrogate training is provided by [`train_surrogate_spinup.py`](train_surrogate_spinup.py) and implemented in [`model_ELM/surrogate_NN_Spinup.py`](model_ELM/surrogate_NN_Spinup.py).
 
+### Final spinup-surrogate models
+
+Iter012 publishes two trusted-source, versioned `spinup-surrogate-v1` artifacts. Both use one
+independent `(32,)`, `tanh`, `lbfgs`, alpha-40 `MLPRegressor` per target, separate X/Y
+`StandardScaler` objects, estimator seed 42, and a full-data fit over 900 rows from ABBY, JERC,
+OSBS, SOAP, RMNP, TALL, TEAK, WREF, and YELL. The full-data diagnostics are not validation
+metrics: scientific performance remains the Iter011 100-seed `by_member` evidence.
+
+| Version | Role | Features | Artifact |
+| --- | --- | ---: | --- |
+| `drop32` | Recommended accuracy-oriented release | 32 | `/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/UQ_output/spinup_surrogate_iter012_drop32/surrogate_spinup/spinup_surrogate_iter012_drop32.pkl` |
+| `drop21_corr080` | Compact tradeoff accepted by the user | 21 | `/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/UQ_output/spinup_surrogate_iter012_drop21_corr080/surrogate_spinup/spinup_surrogate_iter012_drop21_corr080.pkl` |
+
+Ordered outputs are `TOTSOMC` in `gC/m^2` and `TOTSOMN` in `gN/m^2`. The trained scalars are,
+respectively, `numpy.nansum(totsomc[:])` and the sum of `numpy.nansum` over
+`litr1n,litr2n,litr3n,cwdn,soil1n,soil2n,soil3n,soil4n`. Restart component attributes are empty;
+the aggregate names and units are provenance-bound to 27 colocated native ELM history records
+from the exact same ELM version. See
+`development/spinup_surrogate/summaries/iter012/iter012_release_decision.json`.
+
+Both versions accept 14 physical parameters in this exact order:
+`k_l1,k_l2,k_l3,k_s1,k_s2,k_s3,k_s4,k_frag,rf_l1s1,rf_l2s2,rf_l3s3,rf_s1s2,rf_s2s3,rf_s3s4`.
+Their artifact aliases are `parm_0` through `parm_13`. Inputs also include surface fields
+`PCT_SAND,PCT_CLAY,ORGANIC` and compact climatology features engineered from
+`PRECTmms,FSDS,TBOT,RH`. The 21-feature version omits `PCT_CLAY` and additional correlated
+climatology columns. Exact selected order is mandatory:
+
+```text
+drop32:
+parm_0,parm_1,parm_2,parm_3,parm_4,parm_5,parm_6,parm_7,parm_8,parm_9,parm_10,parm_11,parm_12,parm_13,PCT_SAND,PCT_CLAY,ORGANIC,PRECTmms_clim_mean,PRECTmms_clim_std,PRECTmms_clim_max,PRECTmms_clim_seasonal_amp,FSDS_clim_mean,FSDS_clim_max,FSDS_clim_seasonal_amp,TBOT_clim_mean,TBOT_clim_std,TBOT_clim_min,TBOT_clim_max,RH_clim_mean,RH_clim_std,RH_clim_min,RH_clim_seasonal_amp
+
+drop21_corr080:
+parm_0,parm_1,parm_2,parm_3,parm_4,parm_5,parm_6,parm_7,parm_8,parm_9,parm_10,parm_11,parm_12,parm_13,PCT_SAND,ORGANIC,PRECTmms_clim_mean,PRECTmms_clim_std,FSDS_clim_mean,TBOT_clim_std,RH_clim_seasonal_amp
+```
+
+Predict existing members with a trusted artifact:
+
+```bash
+python predict_surrogate_spinup.py \
+  --workdir /xdisk/chopinsong/tianyihu/elm-olmt \
+  --case ABBY_ppe6_I20TRCNPRDCTCBC \
+  --artifact /xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/UQ_output/spinup_surrogate_iter012_drop32/surrogate_spinup \
+  --feature-subset parm_0,parm_1,parm_2,parm_3,parm_4,parm_5,parm_6,parm_7,parm_8,parm_9,parm_10,parm_11,parm_12,parm_13,PCT_SAND,PCT_CLAY,ORGANIC,PRECTmms_clim_mean,PRECTmms_clim_std,PRECTmms_clim_max,PRECTmms_clim_seasonal_amp,FSDS_clim_mean,FSDS_clim_max,FSDS_clim_seasonal_amp,TBOT_clim_mean,TBOT_clim_std,TBOT_clim_min,TBOT_clim_max,RH_clim_mean,RH_clim_std,RH_clim_min,RH_clim_seasonal_amp \
+  --members 1,2
+```
+
+For new parameters, create `params.json` as either an exact physical-name object or a list in
+the physical order above, then replace `--members 1,2` with
+`--parameters-json params.json`. Values outside stored `ensemble_pmin/pmax` are rejected; values
+inside those bounds but outside the empirical training range emit warnings. Missing, duplicate,
+extra, or misordered parameters/features are rejected with the required order.
+
+Artifacts are Python pickles: loading can execute code. Load only trusted artifacts, verify the
+colocated manifest SHA-256, and use a compatible Python/scikit-learn environment. The validated
+domain is the nine training sites and their parameter bounds; new sites and extrapolation beyond
+the observed feature ranges are not established.
+
+The validated future forcing bridge is:
+
+```text
+parameters + surface + compact climatology
+  -> spinup surrogate -> ordered [TOTSOMC,TOTSOMN]
+  -> compose_forcing_surrogate_design_matrix(
+       engineered_forcing, parameters, spinup,
+       {"n_forcing_cols": ..., "n_params": 14, "n_spinup": 2})
+  -> forcing surrogate
+```
+
+Iter012 validated only the order, shape, and `float64` design-matrix contract. No forcing
+artifact was available, no forcing model was trained, and no real SR/flux prediction was made.
+
 ### Key points
 
 - selectable backend with `--model-type`:

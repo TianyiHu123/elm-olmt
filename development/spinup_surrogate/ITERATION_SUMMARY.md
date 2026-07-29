@@ -1,4 +1,4 @@
-# Spinup Surrogate Iteration Summary: iter001-iter011
+# Spinup Surrogate Iteration Summary: iter001-iter012
 
 ## Executive Summary
 
@@ -28,9 +28,14 @@ set and fixed-MLP selection.
   pruning over 100 paired seeds. The candidate produced a stable 21-feature schema and passed
   warning/IQR/exactness gates, but failed both-target R2 and median-RMSE-ratio gates; no promotion
   was made.
+- `iter012` converted the two user-accepted Iter011 arms into versioned, self-validating
+  `spinup-surrogate-v1` artifacts. Exact seed-10001 reproduction, full-data fitting, fresh-process
+  loading, true batch inference, negative schema gates, metadata provenance, and forcing-bridge
+  design-matrix compatibility all passed.
 
-Current preferred configuration: retain the full 45-feature schema and use iter008
-`s32_tanh_lbfgs_a50_lr1e3_full45`. It is the highest full-gate passer so far.
+Current release recommendation: use the 32-feature Iter012 `drop32` artifact for accuracy-oriented
+work. The 21-feature `drop21_corr080` artifact is also released as a compact tradeoff, with its
+Iter011 performance-gate failures preserved rather than reinterpreted.
 
 ## Cross-Iteration Setup
 
@@ -47,6 +52,7 @@ Current preferred configuration: retain the full 45-feature schema and use iter0
 | iter009 | Nine cases, `by_member` | Five per variant | Alpha-50 refinement and forcing-group ablation | Completed: retain alpha-50 full45 |
 | iter010 | Nine cases, `by_member` | 100 per variant | Warning-threshold bracket and importance stability | Completed: no gate passer; retain Iter009 baseline |
 | iter011 | Nine cases, `by_member` | 100 per variant | Sequential DROP32 then correlation-0.80 filtering | Completed: candidate rejected; retain Iter009 baseline |
+| iter012 | Nine cases, `by_member` | Exact seed 10001 reproduction, then full 900-row fit | Final versioned artifact release | Completed: release both; recommend 32-feature artifact |
 
 All multicase iterations used train fraction `0.8`, targets `TOTSOMC,TOTSOMN`, compact climatology features, NN models, variance/correlation filtering, and permutation diagnostics unless noted otherwise.
 
@@ -390,10 +396,42 @@ redistribution did not offset the paired performance loss.
 
 Conclusion: reject the correlation-0.80 candidate. Retain alpha-40 DROP32 only as the prospective
 feature-reduction control; do not promote it over the historical Iter009 alpha-50/full45
-baseline. A planning-only Iter012 proposal tests milder DROP32-first thresholds (`0.90`, `0.95`)
-under a fresh runtime contract.
+baseline.
 
-## Main Conclusions Through iter011
+### iter012 — Final Spinup-Surrogate Release
+
+Iter012 released the two user-accepted Iter011 arms without reranking their scientific evidence.
+Both use `(32,), tanh, lbfgs`, alpha `40`, a fixed nine-case training population, and the exact
+Iter011 feature order. Each artifact first reproduced the seed-10001 train/validation result
+exactly and then fit all 900 rows.
+
+| Release | Features | Iter011 median R2 (C/N) | Median RMSE (C/N) | RMSE ratio (C/N) | Warning fraction (C/N) | Role |
+| --- | ---: | --- | --- | --- | --- | --- |
+| `drop32` | 32 | 0.827271 / 0.827497 | 4150.32 / 415.26 | 0.893196 / 0.893928 | 0.25 / 0.24 | Recommended accuracy-oriented release |
+| `drop21_corr080` | 21 | 0.801217 / 0.801178 | 4478.95 / 448.79 | 0.921297 / 0.921987 | 0.22 / 0.23 | Compact tradeoff; failed Iter011 median/minimum R2 and RMSE-ratio gates |
+
+The `drop32` artifact is 80,440 bytes with SHA-256
+`56bbd151103add74b5a0794e8d1bf4496c186d3a72e70b1b65c5ab247abd317e`; its full-fit training
+R2/RMSE is `0.839955/4220.30` for TOTSOMC and `0.840380/421.80` for TOTSOMN. The
+`drop21_corr080` artifact is 68,048 bytes with SHA-256
+`1427dc565af858e9c089a5b9545a7f127e42789ef1fe5c9af3af7f8cb12a3023`; its full-fit training
+R2/RMSE is `0.819614/4474.23` and `0.819709/447.68`. These full-fit diagnostics are not held-out
+validation metrics.
+
+Restart-component target attributes were empty in all 81 inspected files. A bounded same-version
+ELM-history audit established `TOTSOMC` as `gC/m^2` (`total soil organic matter carbon`) and
+`TOTSOMN` as `gN/m^2` (`total soil organic matter N`) while preserving the exact restart-component
+`nansum` scalar definition. One initial diagnostic exceeded 5 GB because it retained datasets;
+the corrected streaming diagnostic completed at the same cap with 30,820K MaxRSS.
+
+Release jobs `23445281` and `23445296` and cross-validator `23445328` completed `0:0`. The
+cross-validator passed manifest/hash binding, fresh-process loads, all nine cases, a true
+four-row batch, named/positional parity, empirical-range warnings, missing/extra/duplicate and
+bounds failures, sidecar identity, and both variants' 21-column
+`[engineered forcing | parameters | spinup]` bridge contract. It does not claim a trained or
+validated real forcing surrogate.
+
+## Main Conclusions Through iter012
 
 1. The single-case feature conclusion from iter001 was limited by absent surface/climatology variation.
 2. Nine-case diversity made surface and climatology features informative.
@@ -419,21 +457,22 @@ under a fresh runtime contract.
 11. Iter011 showed that DROP32-first correlation-0.80 pruning is seed-stable and warning-safe but
     too aggressive: reducing 32 inputs to 21 failed median/tail R2 and median-RMSE-ratio gates for
     both targets. The historical Iter009 alpha-50/full45 baseline remains retained.
+12. Iter012 produced two operationally validated, versioned release artifacts. Use `drop32` by
+    default; use `drop21_corr080` only when its compactness tradeoff justifies its recorded
+    validation loss.
 
 ## Next Iteration Guidance
 
-Retain full45 and `(32,), tanh, lbfgs, alpha=50` from Iter009 as the historical baseline.
-Planning-only Iter012 may test DROP32-first correlation thresholds `0.90` and `0.95` against the
-completed alpha-40 DROP32 prospective control, using 100 paired seeds and the Iter011 gates. No
-Iter012 scaffolding or scheduler action is authorized without a fresh runtime contract, reviewer,
-and no-training preflight.
+Iter012 is the terminal spinup-surrogate development release. No Iter013 experiment is proposed.
+Future integration with a real forcing-surrogate artifact requires a separate objective and
+runtime contract.
 
 ## Source Artifacts
 
 - Canonical workflow: `development/spinup_surrogate/WORKFLOW.md`
 - Current handoff: `development/spinup_surrogate/handoff/CURRENT.md`
 - Registry: `development/spinup_surrogate/registry.csv`
-- Detailed reports: `development/spinup_surrogate/iterations/iter001.md` through `iter011.md`
+- Detailed reports: `development/spinup_surrogate/iterations/iter001.md` through `iter012.md`
 - Iter005 summaries: `development/spinup_surrogate/summaries/iter005/`
 - Iter006 summaries: `development/spinup_surrogate/summaries/iter006/`
 - Iter007 summaries: `development/spinup_surrogate/summaries/iter007/`
@@ -441,4 +480,5 @@ and no-training preflight.
 - Iter009 summaries: `development/spinup_surrogate/summaries/iter009/`
 - Iter010 summaries: `development/spinup_surrogate/summaries/iter010/`
 - Iter011 summaries: `development/spinup_surrogate/summaries/iter011/`
+- Iter012 release sidecars and decision: `development/spinup_surrogate/summaries/iter012/`
 - Feature analyzer: `development/spinup_surrogate/analyze_feature_stability.py`

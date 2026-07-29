@@ -1,0 +1,2336 @@
+{
+  "release_version": "iter012-v1",
+  "schema_version": "spinup-surrogate-v1",
+  "variant": "drop21_corr080",
+  "passed": true,
+  "reproduction_gate": {
+    "passed": true,
+    "rtol": 1e-10,
+    "atol": 1e-08,
+    "split_details_sha256": "9c0954e3a04dd9f43c1ca5f34d1072f4572d39fe65932fb960914b5cb74ca772",
+    "metrics": {
+      "TOTSOMC": {
+        "r2_train": {
+          "observed": 0.8136282094187987,
+          "expected": 0.8136282094187987,
+          "passed": true
+        },
+        "r2_val": {
+          "observed": 0.6713614067825241,
+          "expected": 0.6713614067825241,
+          "passed": true
+        },
+        "rmse_train": {
+          "observed": 4446.846469550806,
+          "expected": 4446.846469550806,
+          "passed": true
+        },
+        "rmse_val": {
+          "observed": 6649.514935163682,
+          "expected": 6649.514935163682,
+          "passed": true
+        },
+        "r2_gap": {
+          "observed": 0.14226680263627456,
+          "expected": 0.14226680263627456,
+          "passed": true
+        },
+        "rmse_ratio": {
+          "observed": 1.4953326994074019,
+          "expected": 1.4953326994074019,
+          "passed": true
+        }
+      },
+      "TOTSOMN": {
+        "r2_train": {
+          "observed": 0.8137193389115376,
+          "expected": 0.8137193389115376,
+          "passed": true
+        },
+        "r2_val": {
+          "observed": 0.6722089987860651,
+          "expected": 0.6722089987860651,
+          "passed": true
+        },
+        "rmse_train": {
+          "observed": 445.00855444712664,
+          "expected": 445.00855444712664,
+          "passed": true
+        },
+        "rmse_val": {
+          "observed": 664.4963461056911,
+          "expected": 664.4963461056911,
+          "passed": true
+        },
+        "r2_gap": {
+          "observed": 0.14151034012547248,
+          "expected": 0.14151034012547248,
+          "passed": true
+        },
+        "rmse_ratio": {
+          "observed": 1.4932215110589357,
+          "expected": 1.4932215110589357,
+          "passed": true
+        }
+      }
+    }
+  },
+  "pre_save_post_load": {
+    "rtol": 1e-10,
+    "atol": 1e-08,
+    "max_abs_difference": 0.0,
+    "prediction_shape": [
+      12,
+      2
+    ],
+    "prediction_sha256": "7b94ec79e0a94e7b51534c51bc03e29e1a0e68b8046a09ad3c61084cd95e811e"
+  },
+  "target_metadata_audit": {
+    "TOTSOMC": {
+      "components": [
+        "totsomc"
+      ],
+      "units": "gC/m^2",
+      "long_name": "total soil organic matter carbon",
+      "scalar_definition": "numpy.nansum(component[:])",
+      "unit_definition_provenance": "units and long_name are taken from three colocated native ELM history diagnostics per case after exact E3SM Land Model version equality with each restart; restart component units/long_name are recorded verbatim and may be empty",
+      "diagnostic_evidence": {
+        "path": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/UQ_output/spinup_surrogate_iter012_metadata_diagnostic/target_metadata_diagnostic.json",
+        "sha256": "91025494247e060558b39919aa664f0288f943b1b823565ca89153526448592e"
+      },
+      "records": [
+        {
+          "case": "ABBY_ppe6_I20TRCNPRDCTCBC",
+          "restart": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe/UQ/ABBY_ppe6_I1850CNPRDCTCBC/g00001/ABBY_ppe6_I1850CNPRDCTCBC.elm.r.0201-01-01-00000.nc",
+          "component": "totsomc",
+          "units": "",
+          "long_name": "",
+          "dimensions": [
+            "column"
+          ],
+          "shape": [
+            16
+          ],
+          "numpy_nansum": 7896.169350899886,
+          "aggregation": "numpy.nansum over every stored element"
+        },
+        {
+          "case": "JERC_ppe6_I20TRCNPRDCTCBC",
+          "restart": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe/UQ/JERC_ppe6_I1850CNPRDCTCBC/g00001/JERC_ppe6_I1850CNPRDCTCBC.elm.r.0201-01-01-00000.nc",
+          "component": "totsomc",
+          "units": "",
+          "long_name": "",
+          "dimensions": [
+            "column"
+          ],
+          "shape": [
+            16
+          ],
+          "numpy_nansum": 1831.9893706904907,
+          "aggregation": "numpy.nansum over every stored element"
+        },
+        {
+          "case": "OSBS_ppe6_I20TRCNPRDCTCBC",
+          "restart": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe/UQ/OSBS_ppe6_I1850CNPRDCTCBC/g00001/OSBS_ppe6_I1850CNPRDCTCBC.elm.r.0201-01-01-00000.nc",
+          "component": "totsomc",
+          "units": "",
+          "long_name": "",
+          "dimensions": [
+            "column"
+          ],
+          "shape": [
+            16
+          ],
+          "numpy_nansum": 4089.6097794969205,
+          "aggregation": "numpy.nansum over every stored element"
+        },
+        {
+          "case": "SOAP_ppe6_I20TRCNPRDCTCBC",
+          "restart": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe/UQ/SOAP_ppe6_I1850CNPRDCTCBC/g00001/SOAP_ppe6_I1850CNPRDCTCBC.elm.r.0201-01-01-00000.nc",
+          "component": "totsomc",
+          "units": "",
+          "long_name": "",
+          "dimensions": [
+            "column"
+          ],
+          "shape": [
+            16
+          ],
+          "numpy_nansum": 24275.362466988572,
+          "aggregation": "numpy.nansum over every stored element"
+        },
+        {
+          "case": "RMNP_ppe6_I20TRCNPRDCTCBC",
+          "restart": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe/UQ/RMNP_ppe6_I1850CNPRDCTCBC/g00001/RMNP_ppe6_I1850CNPRDCTCBC.elm.r.0201-01-01-00000.nc",
+          "component": "totsomc",
+          "units": "",
+          "long_name": "",
+          "dimensions": [
+            "column"
+          ],
+          "shape": [
+            16
+          ],
+          "numpy_nansum": 4810.982446077858,
+          "aggregation": "numpy.nansum over every stored element"
+        },
+        {
+          "case": "TALL_ppe6_I20TRCNPRDCTCBC",
+          "restart": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe/UQ/TALL_ppe6_I1850CNPRDCTCBC/g00001/TALL_ppe6_I1850CNPRDCTCBC.elm.r.0201-01-01-00000.nc",
+          "component": "totsomc",
+          "units": "",
+          "long_name": "",
+          "dimensions": [
+            "column"
+          ],
+          "shape": [
+            16
+          ],
+          "numpy_nansum": 1641.6471678065416,
+          "aggregation": "numpy.nansum over every stored element"
+        },
+        {
+          "case": "TEAK_ppe6_I20TRCNPRDCTCBC",
+          "restart": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe/UQ/TEAK_ppe6_I1850CNPRDCTCBC/g00001/TEAK_ppe6_I1850CNPRDCTCBC.elm.r.0201-01-01-00000.nc",
+          "component": "totsomc",
+          "units": "",
+          "long_name": "",
+          "dimensions": [
+            "column"
+          ],
+          "shape": [
+            16
+          ],
+          "numpy_nansum": 8269.3568684945,
+          "aggregation": "numpy.nansum over every stored element"
+        },
+        {
+          "case": "WREF_ppe6_I20TRCNPRDCTCBC",
+          "restart": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe/UQ/WREF_ppe6_I1850CNPRDCTCBC/g00001/WREF_ppe6_I1850CNPRDCTCBC.elm.r.0201-01-01-00000.nc",
+          "component": "totsomc",
+          "units": "",
+          "long_name": "",
+          "dimensions": [
+            "column"
+          ],
+          "shape": [
+            16
+          ],
+          "numpy_nansum": 1361.524452103748,
+          "aggregation": "numpy.nansum over every stored element"
+        },
+        {
+          "case": "YELL_ppe6_I20TRCNPRDCTCBC",
+          "restart": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe/UQ/YELL_ppe6_I1850CNPRDCTCBC/g00001/YELL_ppe6_I1850CNPRDCTCBC.elm.r.0201-01-01-00000.nc",
+          "component": "totsomc",
+          "units": "",
+          "long_name": "",
+          "dimensions": [
+            "column"
+          ],
+          "shape": [
+            16
+          ],
+          "numpy_nansum": 4920.705639588671,
+          "aggregation": "numpy.nansum over every stored element"
+        }
+      ],
+      "native_history_records": [
+        {
+          "case": "ABBY_ppe6_I20TRCNPRDCTCBC",
+          "path": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe/UQ/ABBY_ppe6_I1850CNPRDCTCBC/g00001/ABBY_ppe6_I1850CNPRDCTCBC.elm.h0.0001-01-01-00000.nc",
+          "sha256": "9e1805d87a1ad7ceffe4a4b5cebc8de98e3d74ce7713bcebc698dcc94031e8bc",
+          "model_source": "E3SM Land Model",
+          "model_version": "468a9a4a84",
+          "target": "TOTSOMC",
+          "units": "gC/m^2",
+          "long_name": "total soil organic matter carbon",
+          "dimensions": [
+            "time",
+            "lndgrid"
+          ],
+          "shape": [
+            1,
+            1
+          ]
+        },
+        {
+          "case": "ABBY_ppe6_I20TRCNPRDCTCBC",
+          "path": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe/UQ/ABBY_ppe6_I1850CNPRDCTCBC/g00001/ABBY_ppe6_I1850CNPRDCTCBC.elm.h0.0006-01-01-00000.nc",
+          "sha256": "5da11ccd00195e604a31ef3fa8343e9a3a59305a9ca39f48c6de8a0afea52a6c",
+          "model_source": "E3SM Land Model",
+          "model_version": "468a9a4a84",
+          "target": "TOTSOMC",
+          "units": "gC/m^2",
+          "long_name": "total soil organic matter carbon",
+          "dimensions": [
+            "time",
+            "lndgrid"
+          ],
+          "shape": [
+            1,
+            1
+          ]
+        },
+        {
+          "case": "ABBY_ppe6_I20TRCNPRDCTCBC",
+          "path": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe/UQ/ABBY_ppe6_I1850CNPRDCTCBC/g00001/ABBY_ppe6_I1850CNPRDCTCBC.elm.h0.0011-01-01-00000.nc",
+          "sha256": "63bdaf0aa7e8975bd55d848311af4c5454b2e0e90f012a25c3ec4acc8f60582f",
+          "model_source": "E3SM Land Model",
+          "model_version": "468a9a4a84",
+          "target": "TOTSOMC",
+          "units": "gC/m^2",
+          "long_name": "total soil organic matter carbon",
+          "dimensions": [
+            "time",
+            "lndgrid"
+          ],
+          "shape": [
+            1,
+            1
+          ]
+        },
+        {
+          "case": "JERC_ppe6_I20TRCNPRDCTCBC",
+          "path": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe/UQ/JERC_ppe6_I1850CNPRDCTCBC/g00001/JERC_ppe6_I1850CNPRDCTCBC.elm.h0.0001-01-01-00000.nc",
+          "sha256": "a6c59ecad8b6ef3bbcf3cde38a9b1e2fa0889ddbd943272ea0333cbf6630548d",
+          "model_source": "E3SM Land Model",
+          "model_version": "468a9a4a84",
+          "target": "TOTSOMC",
+          "units": "gC/m^2",
+          "long_name": "total soil organic matter carbon",
+          "dimensions": [
+            "time",
+            "lndgrid"
+          ],
+          "shape": [
+            1,
+            1
+          ]
+        },
+        {
+          "case": "JERC_ppe6_I20TRCNPRDCTCBC",
+          "path": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe/UQ/JERC_ppe6_I1850CNPRDCTCBC/g00001/JERC_ppe6_I1850CNPRDCTCBC.elm.h0.0006-01-01-00000.nc",
+          "sha256": "5b09994de22312ed61e1315dd63cfc80b7b2676f0064919308ec5af5148ea060",
+          "model_source": "E3SM Land Model",
+          "model_version": "468a9a4a84",
+          "target": "TOTSOMC",
+          "units": "gC/m^2",
+          "long_name": "total soil organic matter carbon",
+          "dimensions": [
+            "time",
+            "lndgrid"
+          ],
+          "shape": [
+            1,
+            1
+          ]
+        },
+        {
+          "case": "JERC_ppe6_I20TRCNPRDCTCBC",
+          "path": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe/UQ/JERC_ppe6_I1850CNPRDCTCBC/g00001/JERC_ppe6_I1850CNPRDCTCBC.elm.h0.0011-01-01-00000.nc",
+          "sha256": "f37004fdbb4a1403c9a9812a6a703b8e7a93a2dff185ded88378a118f775ab8a",
+          "model_source": "E3SM Land Model",
+          "model_version": "468a9a4a84",
+          "target": "TOTSOMC",
+          "units": "gC/m^2",
+          "long_name": "total soil organic matter carbon",
+          "dimensions": [
+            "time",
+            "lndgrid"
+          ],
+          "shape": [
+            1,
+            1
+          ]
+        },
+        {
+          "case": "OSBS_ppe6_I20TRCNPRDCTCBC",
+          "path": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe/UQ/OSBS_ppe6_I1850CNPRDCTCBC/g00001/OSBS_ppe6_I1850CNPRDCTCBC.elm.h0.0001-01-01-00000.nc",
+          "sha256": "b7034d44df8eea5c47feb2b94cccdae0bc7ee45ed6f5adda6e0c39234936fbc4",
+          "model_source": "E3SM Land Model",
+          "model_version": "468a9a4a84",
+          "target": "TOTSOMC",
+          "units": "gC/m^2",
+          "long_name": "total soil organic matter carbon",
+          "dimensions": [
+            "time",
+            "lndgrid"
+          ],
+          "shape": [
+            1,
+            1
+          ]
+        },
+        {
+          "case": "OSBS_ppe6_I20TRCNPRDCTCBC",
+          "path": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe/UQ/OSBS_ppe6_I1850CNPRDCTCBC/g00001/OSBS_ppe6_I1850CNPRDCTCBC.elm.h0.0006-01-01-00000.nc",
+          "sha256": "e827d0f40649c168dd03ee573439e84094fbe63803a5082972d955ffc88c55f0",
+          "model_source": "E3SM Land Model",
+          "model_version": "468a9a4a84",
+          "target": "TOTSOMC",
+          "units": "gC/m^2",
+          "long_name": "total soil organic matter carbon",
+          "dimensions": [
+            "time",
+            "lndgrid"
+          ],
+          "shape": [
+            1,
+            1
+          ]
+        },
+        {
+          "case": "OSBS_ppe6_I20TRCNPRDCTCBC",
+          "path": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe/UQ/OSBS_ppe6_I1850CNPRDCTCBC/g00001/OSBS_ppe6_I1850CNPRDCTCBC.elm.h0.0011-01-01-00000.nc",
+          "sha256": "4b9b5a1cff4139b649447ababb5815322e93ce2b8219c6f6a908c88586bc50eb",
+          "model_source": "E3SM Land Model",
+          "model_version": "468a9a4a84",
+          "target": "TOTSOMC",
+          "units": "gC/m^2",
+          "long_name": "total soil organic matter carbon",
+          "dimensions": [
+            "time",
+            "lndgrid"
+          ],
+          "shape": [
+            1,
+            1
+          ]
+        },
+        {
+          "case": "SOAP_ppe6_I20TRCNPRDCTCBC",
+          "path": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe/UQ/SOAP_ppe6_I1850CNPRDCTCBC/g00001/SOAP_ppe6_I1850CNPRDCTCBC.elm.h0.0001-01-01-00000.nc",
+          "sha256": "ffcfb6fd853a54f9be897ec9b52846e684f7bedf23e060d665c677c1f373b764",
+          "model_source": "E3SM Land Model",
+          "model_version": "468a9a4a84",
+          "target": "TOTSOMC",
+          "units": "gC/m^2",
+          "long_name": "total soil organic matter carbon",
+          "dimensions": [
+            "time",
+            "lndgrid"
+          ],
+          "shape": [
+            1,
+            1
+          ]
+        },
+        {
+          "case": "SOAP_ppe6_I20TRCNPRDCTCBC",
+          "path": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe/UQ/SOAP_ppe6_I1850CNPRDCTCBC/g00001/SOAP_ppe6_I1850CNPRDCTCBC.elm.h0.0006-01-01-00000.nc",
+          "sha256": "ade23a9d72d5711fb626cd35ee22b03e8424f652241d69dcaee36f8c1cd34abd",
+          "model_source": "E3SM Land Model",
+          "model_version": "468a9a4a84",
+          "target": "TOTSOMC",
+          "units": "gC/m^2",
+          "long_name": "total soil organic matter carbon",
+          "dimensions": [
+            "time",
+            "lndgrid"
+          ],
+          "shape": [
+            1,
+            1
+          ]
+        },
+        {
+          "case": "SOAP_ppe6_I20TRCNPRDCTCBC",
+          "path": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe/UQ/SOAP_ppe6_I1850CNPRDCTCBC/g00001/SOAP_ppe6_I1850CNPRDCTCBC.elm.h0.0011-01-01-00000.nc",
+          "sha256": "40fa86cd13da435b63f41549e50c88b365f7f79d731ad2c91e64c38232714222",
+          "model_source": "E3SM Land Model",
+          "model_version": "468a9a4a84",
+          "target": "TOTSOMC",
+          "units": "gC/m^2",
+          "long_name": "total soil organic matter carbon",
+          "dimensions": [
+            "time",
+            "lndgrid"
+          ],
+          "shape": [
+            1,
+            1
+          ]
+        },
+        {
+          "case": "RMNP_ppe6_I20TRCNPRDCTCBC",
+          "path": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe/UQ/RMNP_ppe6_I1850CNPRDCTCBC/g00001/RMNP_ppe6_I1850CNPRDCTCBC.elm.h0.0001-01-01-00000.nc",
+          "sha256": "741f194ef047bb4c3dec29e163449d6ece2414aeedc462209ba3635963d9a69d",
+          "model_source": "E3SM Land Model",
+          "model_version": "468a9a4a84",
+          "target": "TOTSOMC",
+          "units": "gC/m^2",
+          "long_name": "total soil organic matter carbon",
+          "dimensions": [
+            "time",
+            "lndgrid"
+          ],
+          "shape": [
+            1,
+            1
+          ]
+        },
+        {
+          "case": "RMNP_ppe6_I20TRCNPRDCTCBC",
+          "path": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe/UQ/RMNP_ppe6_I1850CNPRDCTCBC/g00001/RMNP_ppe6_I1850CNPRDCTCBC.elm.h0.0006-01-01-00000.nc",
+          "sha256": "30e99d882b3fb945db1740c1d8a7964fc741bd58b47fb9e8a889c84297547898",
+          "model_source": "E3SM Land Model",
+          "model_version": "468a9a4a84",
+          "target": "TOTSOMC",
+          "units": "gC/m^2",
+          "long_name": "total soil organic matter carbon",
+          "dimensions": [
+            "time",
+            "lndgrid"
+          ],
+          "shape": [
+            1,
+            1
+          ]
+        },
+        {
+          "case": "RMNP_ppe6_I20TRCNPRDCTCBC",
+          "path": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe/UQ/RMNP_ppe6_I1850CNPRDCTCBC/g00001/RMNP_ppe6_I1850CNPRDCTCBC.elm.h0.0011-01-01-00000.nc",
+          "sha256": "77d3b450d31b0406e100b6d6757856ad7c8feac5d2ea6d7ed30a6603230a8628",
+          "model_source": "E3SM Land Model",
+          "model_version": "468a9a4a84",
+          "target": "TOTSOMC",
+          "units": "gC/m^2",
+          "long_name": "total soil organic matter carbon",
+          "dimensions": [
+            "time",
+            "lndgrid"
+          ],
+          "shape": [
+            1,
+            1
+          ]
+        },
+        {
+          "case": "TALL_ppe6_I20TRCNPRDCTCBC",
+          "path": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe/UQ/TALL_ppe6_I1850CNPRDCTCBC/g00001/TALL_ppe6_I1850CNPRDCTCBC.elm.h0.0001-01-01-00000.nc",
+          "sha256": "a4eb5584cbf1533584d79c63a629809ea1b06a60b026119488d6210a0ca0a741",
+          "model_source": "E3SM Land Model",
+          "model_version": "468a9a4a84",
+          "target": "TOTSOMC",
+          "units": "gC/m^2",
+          "long_name": "total soil organic matter carbon",
+          "dimensions": [
+            "time",
+            "lndgrid"
+          ],
+          "shape": [
+            1,
+            1
+          ]
+        },
+        {
+          "case": "TALL_ppe6_I20TRCNPRDCTCBC",
+          "path": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe/UQ/TALL_ppe6_I1850CNPRDCTCBC/g00001/TALL_ppe6_I1850CNPRDCTCBC.elm.h0.0006-01-01-00000.nc",
+          "sha256": "4b9c5cde5ba30b378e45b1e174be6bb49f264369d44f75a988cb3d2abf1e230e",
+          "model_source": "E3SM Land Model",
+          "model_version": "468a9a4a84",
+          "target": "TOTSOMC",
+          "units": "gC/m^2",
+          "long_name": "total soil organic matter carbon",
+          "dimensions": [
+            "time",
+            "lndgrid"
+          ],
+          "shape": [
+            1,
+            1
+          ]
+        },
+        {
+          "case": "TALL_ppe6_I20TRCNPRDCTCBC",
+          "path": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe/UQ/TALL_ppe6_I1850CNPRDCTCBC/g00001/TALL_ppe6_I1850CNPRDCTCBC.elm.h0.0011-01-01-00000.nc",
+          "sha256": "0fed7582bd15b6e4c5009883170203cb69a9f0f3421034c60278859a58118199",
+          "model_source": "E3SM Land Model",
+          "model_version": "468a9a4a84",
+          "target": "TOTSOMC",
+          "units": "gC/m^2",
+          "long_name": "total soil organic matter carbon",
+          "dimensions": [
+            "time",
+            "lndgrid"
+          ],
+          "shape": [
+            1,
+            1
+          ]
+        },
+        {
+          "case": "TEAK_ppe6_I20TRCNPRDCTCBC",
+          "path": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe/UQ/TEAK_ppe6_I1850CNPRDCTCBC/g00001/TEAK_ppe6_I1850CNPRDCTCBC.elm.h0.0001-01-01-00000.nc",
+          "sha256": "28bbe3aa89c4c32c0703f96e1339e5e650d34430f1c2f1059150d2f87d54ca89",
+          "model_source": "E3SM Land Model",
+          "model_version": "468a9a4a84",
+          "target": "TOTSOMC",
+          "units": "gC/m^2",
+          "long_name": "total soil organic matter carbon",
+          "dimensions": [
+            "time",
+            "lndgrid"
+          ],
+          "shape": [
+            1,
+            1
+          ]
+        },
+        {
+          "case": "TEAK_ppe6_I20TRCNPRDCTCBC",
+          "path": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe/UQ/TEAK_ppe6_I1850CNPRDCTCBC/g00001/TEAK_ppe6_I1850CNPRDCTCBC.elm.h0.0006-01-01-00000.nc",
+          "sha256": "4e7623beb9f34091862b12692ca67523dd5cf87005b0488466bb3e39bd401db4",
+          "model_source": "E3SM Land Model",
+          "model_version": "468a9a4a84",
+          "target": "TOTSOMC",
+          "units": "gC/m^2",
+          "long_name": "total soil organic matter carbon",
+          "dimensions": [
+            "time",
+            "lndgrid"
+          ],
+          "shape": [
+            1,
+            1
+          ]
+        },
+        {
+          "case": "TEAK_ppe6_I20TRCNPRDCTCBC",
+          "path": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe/UQ/TEAK_ppe6_I1850CNPRDCTCBC/g00001/TEAK_ppe6_I1850CNPRDCTCBC.elm.h0.0011-01-01-00000.nc",
+          "sha256": "911535b5c8bb58978905f365e82b137c9b042174b8712c548bd0cbee4e9c4d1d",
+          "model_source": "E3SM Land Model",
+          "model_version": "468a9a4a84",
+          "target": "TOTSOMC",
+          "units": "gC/m^2",
+          "long_name": "total soil organic matter carbon",
+          "dimensions": [
+            "time",
+            "lndgrid"
+          ],
+          "shape": [
+            1,
+            1
+          ]
+        },
+        {
+          "case": "WREF_ppe6_I20TRCNPRDCTCBC",
+          "path": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe/UQ/WREF_ppe6_I1850CNPRDCTCBC/g00001/WREF_ppe6_I1850CNPRDCTCBC.elm.h0.0001-01-01-00000.nc",
+          "sha256": "2e5a013e3366f479b80c4b78413cff3ff45993150a2fd636f1b33ddacb9ed822",
+          "model_source": "E3SM Land Model",
+          "model_version": "468a9a4a84",
+          "target": "TOTSOMC",
+          "units": "gC/m^2",
+          "long_name": "total soil organic matter carbon",
+          "dimensions": [
+            "time",
+            "lndgrid"
+          ],
+          "shape": [
+            1,
+            1
+          ]
+        },
+        {
+          "case": "WREF_ppe6_I20TRCNPRDCTCBC",
+          "path": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe/UQ/WREF_ppe6_I1850CNPRDCTCBC/g00001/WREF_ppe6_I1850CNPRDCTCBC.elm.h0.0006-01-01-00000.nc",
+          "sha256": "7dd3e063d61839c989efba6cc690a9bcf264538ba1c78c1c5569381f0c826412",
+          "model_source": "E3SM Land Model",
+          "model_version": "468a9a4a84",
+          "target": "TOTSOMC",
+          "units": "gC/m^2",
+          "long_name": "total soil organic matter carbon",
+          "dimensions": [
+            "time",
+            "lndgrid"
+          ],
+          "shape": [
+            1,
+            1
+          ]
+        },
+        {
+          "case": "WREF_ppe6_I20TRCNPRDCTCBC",
+          "path": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe/UQ/WREF_ppe6_I1850CNPRDCTCBC/g00001/WREF_ppe6_I1850CNPRDCTCBC.elm.h0.0011-01-01-00000.nc",
+          "sha256": "10cb4eb26bbc82242c0cebdb070a502c398b18f08fc84bea48ab58fdeacfb676",
+          "model_source": "E3SM Land Model",
+          "model_version": "468a9a4a84",
+          "target": "TOTSOMC",
+          "units": "gC/m^2",
+          "long_name": "total soil organic matter carbon",
+          "dimensions": [
+            "time",
+            "lndgrid"
+          ],
+          "shape": [
+            1,
+            1
+          ]
+        },
+        {
+          "case": "YELL_ppe6_I20TRCNPRDCTCBC",
+          "path": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe/UQ/YELL_ppe6_I1850CNPRDCTCBC/g00001/YELL_ppe6_I1850CNPRDCTCBC.elm.h0.0001-01-01-00000.nc",
+          "sha256": "30dcaa75d1fb2908d2abd98c1ce0ffe033e5febe0c43bfde3ab6462fab5d5cc5",
+          "model_source": "E3SM Land Model",
+          "model_version": "468a9a4a84",
+          "target": "TOTSOMC",
+          "units": "gC/m^2",
+          "long_name": "total soil organic matter carbon",
+          "dimensions": [
+            "time",
+            "lndgrid"
+          ],
+          "shape": [
+            1,
+            1
+          ]
+        },
+        {
+          "case": "YELL_ppe6_I20TRCNPRDCTCBC",
+          "path": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe/UQ/YELL_ppe6_I1850CNPRDCTCBC/g00001/YELL_ppe6_I1850CNPRDCTCBC.elm.h0.0006-01-01-00000.nc",
+          "sha256": "50733c735f0240191d8000b5d0b0a48b979c6ec20a03c57b494c982e9898a277",
+          "model_source": "E3SM Land Model",
+          "model_version": "468a9a4a84",
+          "target": "TOTSOMC",
+          "units": "gC/m^2",
+          "long_name": "total soil organic matter carbon",
+          "dimensions": [
+            "time",
+            "lndgrid"
+          ],
+          "shape": [
+            1,
+            1
+          ]
+        },
+        {
+          "case": "YELL_ppe6_I20TRCNPRDCTCBC",
+          "path": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe/UQ/YELL_ppe6_I1850CNPRDCTCBC/g00001/YELL_ppe6_I1850CNPRDCTCBC.elm.h0.0011-01-01-00000.nc",
+          "sha256": "a541352771d7e5759da9f25899cd6b8cf03f1ca0c6b360b8c8eda289193f6706",
+          "model_source": "E3SM Land Model",
+          "model_version": "468a9a4a84",
+          "target": "TOTSOMC",
+          "units": "gC/m^2",
+          "long_name": "total soil organic matter carbon",
+          "dimensions": [
+            "time",
+            "lndgrid"
+          ],
+          "shape": [
+            1,
+            1
+          ]
+        }
+      ]
+    },
+    "TOTSOMN": {
+      "components": [
+        "litr1n",
+        "litr2n",
+        "litr3n",
+        "cwdn",
+        "soil1n",
+        "soil2n",
+        "soil3n",
+        "soil4n"
+      ],
+      "units": "gN/m^2",
+      "long_name": "total soil organic matter N",
+      "scalar_definition": "sum numpy.nansum(component[:]) across listed components",
+      "unit_definition_provenance": "units and long_name are taken from three colocated native ELM history diagnostics per case after exact E3SM Land Model version equality with each restart; restart component units/long_name are recorded verbatim and may be empty",
+      "diagnostic_evidence": {
+        "path": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/UQ_output/spinup_surrogate_iter012_metadata_diagnostic/target_metadata_diagnostic.json",
+        "sha256": "91025494247e060558b39919aa664f0288f943b1b823565ca89153526448592e"
+      },
+      "records": [
+        {
+          "case": "ABBY_ppe6_I20TRCNPRDCTCBC",
+          "restart": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe/UQ/ABBY_ppe6_I1850CNPRDCTCBC/g00001/ABBY_ppe6_I1850CNPRDCTCBC.elm.r.0201-01-01-00000.nc",
+          "component": "litr1n",
+          "units": "",
+          "long_name": "",
+          "dimensions": [
+            "column"
+          ],
+          "shape": [
+            16
+          ],
+          "numpy_nansum": 0.027910870428613743,
+          "aggregation": "numpy.nansum over every stored element"
+        },
+        {
+          "case": "ABBY_ppe6_I20TRCNPRDCTCBC",
+          "restart": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe/UQ/ABBY_ppe6_I1850CNPRDCTCBC/g00001/ABBY_ppe6_I1850CNPRDCTCBC.elm.r.0201-01-01-00000.nc",
+          "component": "litr2n",
+          "units": "",
+          "long_name": "",
+          "dimensions": [
+            "column"
+          ],
+          "shape": [
+            16
+          ],
+          "numpy_nansum": 0.12131276374341807,
+          "aggregation": "numpy.nansum over every stored element"
+        },
+        {
+          "case": "ABBY_ppe6_I20TRCNPRDCTCBC",
+          "restart": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe/UQ/ABBY_ppe6_I1850CNPRDCTCBC/g00001/ABBY_ppe6_I1850CNPRDCTCBC.elm.r.0201-01-01-00000.nc",
+          "component": "litr3n",
+          "units": "",
+          "long_name": "",
+          "dimensions": [
+            "column"
+          ],
+          "shape": [
+            16
+          ],
+          "numpy_nansum": 0.40709940423066493,
+          "aggregation": "numpy.nansum over every stored element"
+        },
+        {
+          "case": "ABBY_ppe6_I20TRCNPRDCTCBC",
+          "restart": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe/UQ/ABBY_ppe6_I1850CNPRDCTCBC/g00001/ABBY_ppe6_I1850CNPRDCTCBC.elm.r.0201-01-01-00000.nc",
+          "component": "cwdn",
+          "units": "",
+          "long_name": "",
+          "dimensions": [
+            "column"
+          ],
+          "shape": [
+            16
+          ],
+          "numpy_nansum": 1.05392803850444,
+          "aggregation": "numpy.nansum over every stored element"
+        },
+        {
+          "case": "ABBY_ppe6_I20TRCNPRDCTCBC",
+          "restart": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe/UQ/ABBY_ppe6_I1850CNPRDCTCBC/g00001/ABBY_ppe6_I1850CNPRDCTCBC.elm.r.0201-01-01-00000.nc",
+          "component": "soil1n",
+          "units": "",
+          "long_name": "",
+          "dimensions": [
+            "column"
+          ],
+          "shape": [
+            16
+          ],
+          "numpy_nansum": 0.36164755443843916,
+          "aggregation": "numpy.nansum over every stored element"
+        },
+        {
+          "case": "ABBY_ppe6_I20TRCNPRDCTCBC",
+          "restart": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe/UQ/ABBY_ppe6_I1850CNPRDCTCBC/g00001/ABBY_ppe6_I1850CNPRDCTCBC.elm.r.0201-01-01-00000.nc",
+          "component": "soil2n",
+          "units": "",
+          "long_name": "",
+          "dimensions": [
+            "column"
+          ],
+          "shape": [
+            16
+          ],
+          "numpy_nansum": 1.6490581254431993,
+          "aggregation": "numpy.nansum over every stored element"
+        },
+        {
+          "case": "ABBY_ppe6_I20TRCNPRDCTCBC",
+          "restart": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe/UQ/ABBY_ppe6_I1850CNPRDCTCBC/g00001/ABBY_ppe6_I1850CNPRDCTCBC.elm.r.0201-01-01-00000.nc",
+          "component": "soil3n",
+          "units": "",
+          "long_name": "",
+          "dimensions": [
+            "column"
+          ],
+          "shape": [
+            16
+          ],
+          "numpy_nansum": 52.667578878766655,
+          "aggregation": "numpy.nansum over every stored element"
+        },
+        {
+          "case": "ABBY_ppe6_I20TRCNPRDCTCBC",
+          "restart": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe/UQ/ABBY_ppe6_I1850CNPRDCTCBC/g00001/ABBY_ppe6_I1850CNPRDCTCBC.elm.r.0201-01-01-00000.nc",
+          "component": "soil4n",
+          "units": "",
+          "long_name": "",
+          "dimensions": [
+            "column"
+          ],
+          "shape": [
+            16
+          ],
+          "numpy_nansum": 734.5365093954985,
+          "aggregation": "numpy.nansum over every stored element"
+        },
+        {
+          "case": "JERC_ppe6_I20TRCNPRDCTCBC",
+          "restart": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe/UQ/JERC_ppe6_I1850CNPRDCTCBC/g00001/JERC_ppe6_I1850CNPRDCTCBC.elm.r.0201-01-01-00000.nc",
+          "component": "litr1n",
+          "units": "",
+          "long_name": "",
+          "dimensions": [
+            "column"
+          ],
+          "shape": [
+            16
+          ],
+          "numpy_nansum": 0.05497341871175026,
+          "aggregation": "numpy.nansum over every stored element"
+        },
+        {
+          "case": "JERC_ppe6_I20TRCNPRDCTCBC",
+          "restart": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe/UQ/JERC_ppe6_I1850CNPRDCTCBC/g00001/JERC_ppe6_I1850CNPRDCTCBC.elm.r.0201-01-01-00000.nc",
+          "component": "litr2n",
+          "units": "",
+          "long_name": "",
+          "dimensions": [
+            "column"
+          ],
+          "shape": [
+            16
+          ],
+          "numpy_nansum": 0.12192155611142295,
+          "aggregation": "numpy.nansum over every stored element"
+        },
+        {
+          "case": "JERC_ppe6_I20TRCNPRDCTCBC",
+          "restart": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe/UQ/JERC_ppe6_I1850CNPRDCTCBC/g00001/JERC_ppe6_I1850CNPRDCTCBC.elm.r.0201-01-01-00000.nc",
+          "component": "litr3n",
+          "units": "",
+          "long_name": "",
+          "dimensions": [
+            "column"
+          ],
+          "shape": [
+            16
+          ],
+          "numpy_nansum": 0.34160451303488765,
+          "aggregation": "numpy.nansum over every stored element"
+        },
+        {
+          "case": "JERC_ppe6_I20TRCNPRDCTCBC",
+          "restart": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe/UQ/JERC_ppe6_I1850CNPRDCTCBC/g00001/JERC_ppe6_I1850CNPRDCTCBC.elm.r.0201-01-01-00000.nc",
+          "component": "cwdn",
+          "units": "",
+          "long_name": "",
+          "dimensions": [
+            "column"
+          ],
+          "shape": [
+            16
+          ],
+          "numpy_nansum": 3.8762807635490075,
+          "aggregation": "numpy.nansum over every stored element"
+        },
+        {
+          "case": "JERC_ppe6_I20TRCNPRDCTCBC",
+          "restart": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe/UQ/JERC_ppe6_I1850CNPRDCTCBC/g00001/JERC_ppe6_I1850CNPRDCTCBC.elm.r.0201-01-01-00000.nc",
+          "component": "soil1n",
+          "units": "",
+          "long_name": "",
+          "dimensions": [
+            "column"
+          ],
+          "shape": [
+            16
+          ],
+          "numpy_nansum": 0.08411896657433462,
+          "aggregation": "numpy.nansum over every stored element"
+        },
+        {
+          "case": "JERC_ppe6_I20TRCNPRDCTCBC",
+          "restart": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe/UQ/JERC_ppe6_I1850CNPRDCTCBC/g00001/JERC_ppe6_I1850CNPRDCTCBC.elm.r.0201-01-01-00000.nc",
+          "component": "soil2n",
+          "units": "",
+          "long_name": "",
+          "dimensions": [
+            "column"
+          ],
+          "shape": [
+            16
+          ],
+          "numpy_nansum": 3.563084111002714,
+          "aggregation": "numpy.nansum over every stored element"
+        },
+        {
+          "case": "JERC_ppe6_I20TRCNPRDCTCBC",
+          "restart": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe/UQ/JERC_ppe6_I1850CNPRDCTCBC/g00001/JERC_ppe6_I1850CNPRDCTCBC.elm.r.0201-01-01-00000.nc",
+          "component": "soil3n",
+          "units": "",
+          "long_name": "",
+          "dimensions": [
+            "column"
+          ],
+          "shape": [
+            16
+          ],
+          "numpy_nansum": 87.39305926568026,
+          "aggregation": "numpy.nansum over every stored element"
+        },
+        {
+          "case": "JERC_ppe6_I20TRCNPRDCTCBC",
+          "restart": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe/UQ/JERC_ppe6_I1850CNPRDCTCBC/g00001/JERC_ppe6_I1850CNPRDCTCBC.elm.r.0201-01-01-00000.nc",
+          "component": "soil4n",
+          "units": "",
+          "long_name": "",
+          "dimensions": [
+            "column"
+          ],
+          "shape": [
+            16
+          ],
+          "numpy_nansum": 91.42923411028866,
+          "aggregation": "numpy.nansum over every stored element"
+        },
+        {
+          "case": "OSBS_ppe6_I20TRCNPRDCTCBC",
+          "restart": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe/UQ/OSBS_ppe6_I1850CNPRDCTCBC/g00001/OSBS_ppe6_I1850CNPRDCTCBC.elm.r.0201-01-01-00000.nc",
+          "component": "litr1n",
+          "units": "",
+          "long_name": "",
+          "dimensions": [
+            "column"
+          ],
+          "shape": [
+            16
+          ],
+          "numpy_nansum": 0.009234292474997364,
+          "aggregation": "numpy.nansum over every stored element"
+        },
+        {
+          "case": "OSBS_ppe6_I20TRCNPRDCTCBC",
+          "restart": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe/UQ/OSBS_ppe6_I1850CNPRDCTCBC/g00001/OSBS_ppe6_I1850CNPRDCTCBC.elm.r.0201-01-01-00000.nc",
+          "component": "litr2n",
+          "units": "",
+          "long_name": "",
+          "dimensions": [
+            "column"
+          ],
+          "shape": [
+            16
+          ],
+          "numpy_nansum": 0.2548286107582397,
+          "aggregation": "numpy.nansum over every stored element"
+        },
+        {
+          "case": "OSBS_ppe6_I20TRCNPRDCTCBC",
+          "restart": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe/UQ/OSBS_ppe6_I1850CNPRDCTCBC/g00001/OSBS_ppe6_I1850CNPRDCTCBC.elm.r.0201-01-01-00000.nc",
+          "component": "litr3n",
+          "units": "",
+          "long_name": "",
+          "dimensions": [
+            "column"
+          ],
+          "shape": [
+            16
+          ],
+          "numpy_nansum": 0.7791644969280359,
+          "aggregation": "numpy.nansum over every stored element"
+        },
+        {
+          "case": "OSBS_ppe6_I20TRCNPRDCTCBC",
+          "restart": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe/UQ/OSBS_ppe6_I1850CNPRDCTCBC/g00001/OSBS_ppe6_I1850CNPRDCTCBC.elm.r.0201-01-01-00000.nc",
+          "component": "cwdn",
+          "units": "",
+          "long_name": "",
+          "dimensions": [
+            "column"
+          ],
+          "shape": [
+            16
+          ],
+          "numpy_nansum": 8.20408759297124,
+          "aggregation": "numpy.nansum over every stored element"
+        },
+        {
+          "case": "OSBS_ppe6_I20TRCNPRDCTCBC",
+          "restart": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe/UQ/OSBS_ppe6_I1850CNPRDCTCBC/g00001/OSBS_ppe6_I1850CNPRDCTCBC.elm.r.0201-01-01-00000.nc",
+          "component": "soil1n",
+          "units": "",
+          "long_name": "",
+          "dimensions": [
+            "column"
+          ],
+          "shape": [
+            16
+          ],
+          "numpy_nansum": 0.3103159352323246,
+          "aggregation": "numpy.nansum over every stored element"
+        },
+        {
+          "case": "OSBS_ppe6_I20TRCNPRDCTCBC",
+          "restart": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe/UQ/OSBS_ppe6_I1850CNPRDCTCBC/g00001/OSBS_ppe6_I1850CNPRDCTCBC.elm.r.0201-01-01-00000.nc",
+          "component": "soil2n",
+          "units": "",
+          "long_name": "",
+          "dimensions": [
+            "column"
+          ],
+          "shape": [
+            16
+          ],
+          "numpy_nansum": 0.811892806518627,
+          "aggregation": "numpy.nansum over every stored element"
+        },
+        {
+          "case": "OSBS_ppe6_I20TRCNPRDCTCBC",
+          "restart": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe/UQ/OSBS_ppe6_I1850CNPRDCTCBC/g00001/OSBS_ppe6_I1850CNPRDCTCBC.elm.r.0201-01-01-00000.nc",
+          "component": "soil3n",
+          "units": "",
+          "long_name": "",
+          "dimensions": [
+            "column"
+          ],
+          "shape": [
+            16
+          ],
+          "numpy_nansum": 26.06927088763841,
+          "aggregation": "numpy.nansum over every stored element"
+        },
+        {
+          "case": "OSBS_ppe6_I20TRCNPRDCTCBC",
+          "restart": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe/UQ/OSBS_ppe6_I1850CNPRDCTCBC/g00001/OSBS_ppe6_I1850CNPRDCTCBC.elm.r.0201-01-01-00000.nc",
+          "component": "soil4n",
+          "units": "",
+          "long_name": "",
+          "dimensions": [
+            "column"
+          ],
+          "shape": [
+            16
+          ],
+          "numpy_nansum": 381.5450565720688,
+          "aggregation": "numpy.nansum over every stored element"
+        },
+        {
+          "case": "SOAP_ppe6_I20TRCNPRDCTCBC",
+          "restart": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe/UQ/SOAP_ppe6_I1850CNPRDCTCBC/g00001/SOAP_ppe6_I1850CNPRDCTCBC.elm.r.0201-01-01-00000.nc",
+          "component": "litr1n",
+          "units": "",
+          "long_name": "",
+          "dimensions": [
+            "column"
+          ],
+          "shape": [
+            16
+          ],
+          "numpy_nansum": 0.1347353360235945,
+          "aggregation": "numpy.nansum over every stored element"
+        },
+        {
+          "case": "SOAP_ppe6_I20TRCNPRDCTCBC",
+          "restart": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe/UQ/SOAP_ppe6_I1850CNPRDCTCBC/g00001/SOAP_ppe6_I1850CNPRDCTCBC.elm.r.0201-01-01-00000.nc",
+          "component": "litr2n",
+          "units": "",
+          "long_name": "",
+          "dimensions": [
+            "column"
+          ],
+          "shape": [
+            16
+          ],
+          "numpy_nansum": 3.032649652559219,
+          "aggregation": "numpy.nansum over every stored element"
+        },
+        {
+          "case": "SOAP_ppe6_I20TRCNPRDCTCBC",
+          "restart": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe/UQ/SOAP_ppe6_I1850CNPRDCTCBC/g00001/SOAP_ppe6_I1850CNPRDCTCBC.elm.r.0201-01-01-00000.nc",
+          "component": "litr3n",
+          "units": "",
+          "long_name": "",
+          "dimensions": [
+            "column"
+          ],
+          "shape": [
+            16
+          ],
+          "numpy_nansum": 1.0195691883871654,
+          "aggregation": "numpy.nansum over every stored element"
+        },
+        {
+          "case": "SOAP_ppe6_I20TRCNPRDCTCBC",
+          "restart": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe/UQ/SOAP_ppe6_I1850CNPRDCTCBC/g00001/SOAP_ppe6_I1850CNPRDCTCBC.elm.r.0201-01-01-00000.nc",
+          "component": "cwdn",
+          "units": "",
+          "long_name": "",
+          "dimensions": [
+            "column"
+          ],
+          "shape": [
+            16
+          ],
+          "numpy_nansum": 23.13960701428702,
+          "aggregation": "numpy.nansum over every stored element"
+        },
+        {
+          "case": "SOAP_ppe6_I20TRCNPRDCTCBC",
+          "restart": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe/UQ/SOAP_ppe6_I1850CNPRDCTCBC/g00001/SOAP_ppe6_I1850CNPRDCTCBC.elm.r.0201-01-01-00000.nc",
+          "component": "soil1n",
+          "units": "",
+          "long_name": "",
+          "dimensions": [
+            "column"
+          ],
+          "shape": [
+            16
+          ],
+          "numpy_nansum": 2.017481834595742,
+          "aggregation": "numpy.nansum over every stored element"
+        },
+        {
+          "case": "SOAP_ppe6_I20TRCNPRDCTCBC",
+          "restart": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe/UQ/SOAP_ppe6_I1850CNPRDCTCBC/g00001/SOAP_ppe6_I1850CNPRDCTCBC.elm.r.0201-01-01-00000.nc",
+          "component": "soil2n",
+          "units": "",
+          "long_name": "",
+          "dimensions": [
+            "column"
+          ],
+          "shape": [
+            16
+          ],
+          "numpy_nansum": 30.63391064069061,
+          "aggregation": "numpy.nansum over every stored element"
+        },
+        {
+          "case": "SOAP_ppe6_I20TRCNPRDCTCBC",
+          "restart": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe/UQ/SOAP_ppe6_I1850CNPRDCTCBC/g00001/SOAP_ppe6_I1850CNPRDCTCBC.elm.r.0201-01-01-00000.nc",
+          "component": "soil3n",
+          "units": "",
+          "long_name": "",
+          "dimensions": [
+            "column"
+          ],
+          "shape": [
+            16
+          ],
+          "numpy_nansum": 236.97312642057648,
+          "aggregation": "numpy.nansum over every stored element"
+        },
+        {
+          "case": "SOAP_ppe6_I20TRCNPRDCTCBC",
+          "restart": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe/UQ/SOAP_ppe6_I1850CNPRDCTCBC/g00001/SOAP_ppe6_I1850CNPRDCTCBC.elm.r.0201-01-01-00000.nc",
+          "component": "soil4n",
+          "units": "",
+          "long_name": "",
+          "dimensions": [
+            "column"
+          ],
+          "shape": [
+            16
+          ],
+          "numpy_nansum": 2151.3814493082386,
+          "aggregation": "numpy.nansum over every stored element"
+        },
+        {
+          "case": "RMNP_ppe6_I20TRCNPRDCTCBC",
+          "restart": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe/UQ/RMNP_ppe6_I1850CNPRDCTCBC/g00001/RMNP_ppe6_I1850CNPRDCTCBC.elm.r.0201-01-01-00000.nc",
+          "component": "litr1n",
+          "units": "",
+          "long_name": "",
+          "dimensions": [
+            "column"
+          ],
+          "shape": [
+            16
+          ],
+          "numpy_nansum": 0.043117132901016084,
+          "aggregation": "numpy.nansum over every stored element"
+        },
+        {
+          "case": "RMNP_ppe6_I20TRCNPRDCTCBC",
+          "restart": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe/UQ/RMNP_ppe6_I1850CNPRDCTCBC/g00001/RMNP_ppe6_I1850CNPRDCTCBC.elm.r.0201-01-01-00000.nc",
+          "component": "litr2n",
+          "units": "",
+          "long_name": "",
+          "dimensions": [
+            "column"
+          ],
+          "shape": [
+            16
+          ],
+          "numpy_nansum": 0.16063465567731708,
+          "aggregation": "numpy.nansum over every stored element"
+        },
+        {
+          "case": "RMNP_ppe6_I20TRCNPRDCTCBC",
+          "restart": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe/UQ/RMNP_ppe6_I1850CNPRDCTCBC/g00001/RMNP_ppe6_I1850CNPRDCTCBC.elm.r.0201-01-01-00000.nc",
+          "component": "litr3n",
+          "units": "",
+          "long_name": "",
+          "dimensions": [
+            "column"
+          ],
+          "shape": [
+            16
+          ],
+          "numpy_nansum": 1.6678250809957542,
+          "aggregation": "numpy.nansum over every stored element"
+        },
+        {
+          "case": "RMNP_ppe6_I20TRCNPRDCTCBC",
+          "restart": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe/UQ/RMNP_ppe6_I1850CNPRDCTCBC/g00001/RMNP_ppe6_I1850CNPRDCTCBC.elm.r.0201-01-01-00000.nc",
+          "component": "cwdn",
+          "units": "",
+          "long_name": "",
+          "dimensions": [
+            "column"
+          ],
+          "shape": [
+            16
+          ],
+          "numpy_nansum": 1.7627061898623757,
+          "aggregation": "numpy.nansum over every stored element"
+        },
+        {
+          "case": "RMNP_ppe6_I20TRCNPRDCTCBC",
+          "restart": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe/UQ/RMNP_ppe6_I1850CNPRDCTCBC/g00001/RMNP_ppe6_I1850CNPRDCTCBC.elm.r.0201-01-01-00000.nc",
+          "component": "soil1n",
+          "units": "",
+          "long_name": "",
+          "dimensions": [
+            "column"
+          ],
+          "shape": [
+            16
+          ],
+          "numpy_nansum": 0.05608025172663473,
+          "aggregation": "numpy.nansum over every stored element"
+        },
+        {
+          "case": "RMNP_ppe6_I20TRCNPRDCTCBC",
+          "restart": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe/UQ/RMNP_ppe6_I1850CNPRDCTCBC/g00001/RMNP_ppe6_I1850CNPRDCTCBC.elm.r.0201-01-01-00000.nc",
+          "component": "soil2n",
+          "units": "",
+          "long_name": "",
+          "dimensions": [
+            "column"
+          ],
+          "shape": [
+            16
+          ],
+          "numpy_nansum": 1.5766980607575567,
+          "aggregation": "numpy.nansum over every stored element"
+        },
+        {
+          "case": "RMNP_ppe6_I20TRCNPRDCTCBC",
+          "restart": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe/UQ/RMNP_ppe6_I1850CNPRDCTCBC/g00001/RMNP_ppe6_I1850CNPRDCTCBC.elm.r.0201-01-01-00000.nc",
+          "component": "soil3n",
+          "units": "",
+          "long_name": "",
+          "dimensions": [
+            "column"
+          ],
+          "shape": [
+            16
+          ],
+          "numpy_nansum": 19.09292341322519,
+          "aggregation": "numpy.nansum over every stored element"
+        },
+        {
+          "case": "RMNP_ppe6_I20TRCNPRDCTCBC",
+          "restart": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe/UQ/RMNP_ppe6_I1850CNPRDCTCBC/g00001/RMNP_ppe6_I1850CNPRDCTCBC.elm.r.0201-01-01-00000.nc",
+          "component": "soil4n",
+          "units": "",
+          "long_name": "",
+          "dimensions": [
+            "column"
+          ],
+          "shape": [
+            16
+          ],
+          "numpy_nansum": 460.04598721950026,
+          "aggregation": "numpy.nansum over every stored element"
+        },
+        {
+          "case": "TALL_ppe6_I20TRCNPRDCTCBC",
+          "restart": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe/UQ/TALL_ppe6_I1850CNPRDCTCBC/g00001/TALL_ppe6_I1850CNPRDCTCBC.elm.r.0201-01-01-00000.nc",
+          "component": "litr1n",
+          "units": "",
+          "long_name": "",
+          "dimensions": [
+            "column"
+          ],
+          "shape": [
+            16
+          ],
+          "numpy_nansum": 0.01533177219432272,
+          "aggregation": "numpy.nansum over every stored element"
+        },
+        {
+          "case": "TALL_ppe6_I20TRCNPRDCTCBC",
+          "restart": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe/UQ/TALL_ppe6_I1850CNPRDCTCBC/g00001/TALL_ppe6_I1850CNPRDCTCBC.elm.r.0201-01-01-00000.nc",
+          "component": "litr2n",
+          "units": "",
+          "long_name": "",
+          "dimensions": [
+            "column"
+          ],
+          "shape": [
+            16
+          ],
+          "numpy_nansum": 0.286480545448316,
+          "aggregation": "numpy.nansum over every stored element"
+        },
+        {
+          "case": "TALL_ppe6_I20TRCNPRDCTCBC",
+          "restart": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe/UQ/TALL_ppe6_I1850CNPRDCTCBC/g00001/TALL_ppe6_I1850CNPRDCTCBC.elm.r.0201-01-01-00000.nc",
+          "component": "litr3n",
+          "units": "",
+          "long_name": "",
+          "dimensions": [
+            "column"
+          ],
+          "shape": [
+            16
+          ],
+          "numpy_nansum": 0.26313832079399585,
+          "aggregation": "numpy.nansum over every stored element"
+        },
+        {
+          "case": "TALL_ppe6_I20TRCNPRDCTCBC",
+          "restart": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe/UQ/TALL_ppe6_I1850CNPRDCTCBC/g00001/TALL_ppe6_I1850CNPRDCTCBC.elm.r.0201-01-01-00000.nc",
+          "component": "cwdn",
+          "units": "",
+          "long_name": "",
+          "dimensions": [
+            "column"
+          ],
+          "shape": [
+            16
+          ],
+          "numpy_nansum": 2.334261810521763,
+          "aggregation": "numpy.nansum over every stored element"
+        },
+        {
+          "case": "TALL_ppe6_I20TRCNPRDCTCBC",
+          "restart": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe/UQ/TALL_ppe6_I1850CNPRDCTCBC/g00001/TALL_ppe6_I1850CNPRDCTCBC.elm.r.0201-01-01-00000.nc",
+          "component": "soil1n",
+          "units": "",
+          "long_name": "",
+          "dimensions": [
+            "column"
+          ],
+          "shape": [
+            16
+          ],
+          "numpy_nansum": 0.14511446674685455,
+          "aggregation": "numpy.nansum over every stored element"
+        },
+        {
+          "case": "TALL_ppe6_I20TRCNPRDCTCBC",
+          "restart": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe/UQ/TALL_ppe6_I1850CNPRDCTCBC/g00001/TALL_ppe6_I1850CNPRDCTCBC.elm.r.0201-01-01-00000.nc",
+          "component": "soil2n",
+          "units": "",
+          "long_name": "",
+          "dimensions": [
+            "column"
+          ],
+          "shape": [
+            16
+          ],
+          "numpy_nansum": 6.015176413393587,
+          "aggregation": "numpy.nansum over every stored element"
+        },
+        {
+          "case": "TALL_ppe6_I20TRCNPRDCTCBC",
+          "restart": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe/UQ/TALL_ppe6_I1850CNPRDCTCBC/g00001/TALL_ppe6_I1850CNPRDCTCBC.elm.r.0201-01-01-00000.nc",
+          "component": "soil3n",
+          "units": "",
+          "long_name": "",
+          "dimensions": [
+            "column"
+          ],
+          "shape": [
+            16
+          ],
+          "numpy_nansum": 24.604410230451712,
+          "aggregation": "numpy.nansum over every stored element"
+        },
+        {
+          "case": "TALL_ppe6_I20TRCNPRDCTCBC",
+          "restart": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe/UQ/TALL_ppe6_I1850CNPRDCTCBC/g00001/TALL_ppe6_I1850CNPRDCTCBC.elm.r.0201-01-01-00000.nc",
+          "component": "soil4n",
+          "units": "",
+          "long_name": "",
+          "dimensions": [
+            "column"
+          ],
+          "shape": [
+            16
+          ],
+          "numpy_nansum": 132.1679574940056,
+          "aggregation": "numpy.nansum over every stored element"
+        },
+        {
+          "case": "TEAK_ppe6_I20TRCNPRDCTCBC",
+          "restart": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe/UQ/TEAK_ppe6_I1850CNPRDCTCBC/g00001/TEAK_ppe6_I1850CNPRDCTCBC.elm.r.0201-01-01-00000.nc",
+          "component": "litr1n",
+          "units": "",
+          "long_name": "",
+          "dimensions": [
+            "column"
+          ],
+          "shape": [
+            16
+          ],
+          "numpy_nansum": 0.0075647745483268716,
+          "aggregation": "numpy.nansum over every stored element"
+        },
+        {
+          "case": "TEAK_ppe6_I20TRCNPRDCTCBC",
+          "restart": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe/UQ/TEAK_ppe6_I1850CNPRDCTCBC/g00001/TEAK_ppe6_I1850CNPRDCTCBC.elm.r.0201-01-01-00000.nc",
+          "component": "litr2n",
+          "units": "",
+          "long_name": "",
+          "dimensions": [
+            "column"
+          ],
+          "shape": [
+            16
+          ],
+          "numpy_nansum": 0.2754040453723481,
+          "aggregation": "numpy.nansum over every stored element"
+        },
+        {
+          "case": "TEAK_ppe6_I20TRCNPRDCTCBC",
+          "restart": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe/UQ/TEAK_ppe6_I1850CNPRDCTCBC/g00001/TEAK_ppe6_I1850CNPRDCTCBC.elm.r.0201-01-01-00000.nc",
+          "component": "litr3n",
+          "units": "",
+          "long_name": "",
+          "dimensions": [
+            "column"
+          ],
+          "shape": [
+            16
+          ],
+          "numpy_nansum": 1.9587274261572791,
+          "aggregation": "numpy.nansum over every stored element"
+        },
+        {
+          "case": "TEAK_ppe6_I20TRCNPRDCTCBC",
+          "restart": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe/UQ/TEAK_ppe6_I1850CNPRDCTCBC/g00001/TEAK_ppe6_I1850CNPRDCTCBC.elm.r.0201-01-01-00000.nc",
+          "component": "cwdn",
+          "units": "",
+          "long_name": "",
+          "dimensions": [
+            "column"
+          ],
+          "shape": [
+            16
+          ],
+          "numpy_nansum": 5.2731417597532175,
+          "aggregation": "numpy.nansum over every stored element"
+        },
+        {
+          "case": "TEAK_ppe6_I20TRCNPRDCTCBC",
+          "restart": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe/UQ/TEAK_ppe6_I1850CNPRDCTCBC/g00001/TEAK_ppe6_I1850CNPRDCTCBC.elm.r.0201-01-01-00000.nc",
+          "component": "soil1n",
+          "units": "",
+          "long_name": "",
+          "dimensions": [
+            "column"
+          ],
+          "shape": [
+            16
+          ],
+          "numpy_nansum": 0.47786643781787114,
+          "aggregation": "numpy.nansum over every stored element"
+        },
+        {
+          "case": "TEAK_ppe6_I20TRCNPRDCTCBC",
+          "restart": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe/UQ/TEAK_ppe6_I1850CNPRDCTCBC/g00001/TEAK_ppe6_I1850CNPRDCTCBC.elm.r.0201-01-01-00000.nc",
+          "component": "soil2n",
+          "units": "",
+          "long_name": "",
+          "dimensions": [
+            "column"
+          ],
+          "shape": [
+            16
+          ],
+          "numpy_nansum": 5.069983331196432,
+          "aggregation": "numpy.nansum over every stored element"
+        },
+        {
+          "case": "TEAK_ppe6_I20TRCNPRDCTCBC",
+          "restart": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe/UQ/TEAK_ppe6_I1850CNPRDCTCBC/g00001/TEAK_ppe6_I1850CNPRDCTCBC.elm.r.0201-01-01-00000.nc",
+          "component": "soil3n",
+          "units": "",
+          "long_name": "",
+          "dimensions": [
+            "column"
+          ],
+          "shape": [
+            16
+          ],
+          "numpy_nansum": 67.47798269617063,
+          "aggregation": "numpy.nansum over every stored element"
+        },
+        {
+          "case": "TEAK_ppe6_I20TRCNPRDCTCBC",
+          "restart": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe/UQ/TEAK_ppe6_I1850CNPRDCTCBC/g00001/TEAK_ppe6_I1850CNPRDCTCBC.elm.r.0201-01-01-00000.nc",
+          "component": "soil4n",
+          "units": "",
+          "long_name": "",
+          "dimensions": [
+            "column"
+          ],
+          "shape": [
+            16
+          ],
+          "numpy_nansum": 752.8002844303846,
+          "aggregation": "numpy.nansum over every stored element"
+        },
+        {
+          "case": "WREF_ppe6_I20TRCNPRDCTCBC",
+          "restart": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe/UQ/WREF_ppe6_I1850CNPRDCTCBC/g00001/WREF_ppe6_I1850CNPRDCTCBC.elm.r.0201-01-01-00000.nc",
+          "component": "litr1n",
+          "units": "",
+          "long_name": "",
+          "dimensions": [
+            "column"
+          ],
+          "shape": [
+            16
+          ],
+          "numpy_nansum": 0.007357932602382564,
+          "aggregation": "numpy.nansum over every stored element"
+        },
+        {
+          "case": "WREF_ppe6_I20TRCNPRDCTCBC",
+          "restart": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe/UQ/WREF_ppe6_I1850CNPRDCTCBC/g00001/WREF_ppe6_I1850CNPRDCTCBC.elm.r.0201-01-01-00000.nc",
+          "component": "litr2n",
+          "units": "",
+          "long_name": "",
+          "dimensions": [
+            "column"
+          ],
+          "shape": [
+            16
+          ],
+          "numpy_nansum": 0.4746579455530624,
+          "aggregation": "numpy.nansum over every stored element"
+        },
+        {
+          "case": "WREF_ppe6_I20TRCNPRDCTCBC",
+          "restart": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe/UQ/WREF_ppe6_I1850CNPRDCTCBC/g00001/WREF_ppe6_I1850CNPRDCTCBC.elm.r.0201-01-01-00000.nc",
+          "component": "litr3n",
+          "units": "",
+          "long_name": "",
+          "dimensions": [
+            "column"
+          ],
+          "shape": [
+            16
+          ],
+          "numpy_nansum": 0.9081220367705163,
+          "aggregation": "numpy.nansum over every stored element"
+        },
+        {
+          "case": "WREF_ppe6_I20TRCNPRDCTCBC",
+          "restart": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe/UQ/WREF_ppe6_I1850CNPRDCTCBC/g00001/WREF_ppe6_I1850CNPRDCTCBC.elm.r.0201-01-01-00000.nc",
+          "component": "cwdn",
+          "units": "",
+          "long_name": "",
+          "dimensions": [
+            "column"
+          ],
+          "shape": [
+            16
+          ],
+          "numpy_nansum": 1.0986306938233665,
+          "aggregation": "numpy.nansum over every stored element"
+        },
+        {
+          "case": "WREF_ppe6_I20TRCNPRDCTCBC",
+          "restart": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe/UQ/WREF_ppe6_I1850CNPRDCTCBC/g00001/WREF_ppe6_I1850CNPRDCTCBC.elm.r.0201-01-01-00000.nc",
+          "component": "soil1n",
+          "units": "",
+          "long_name": "",
+          "dimensions": [
+            "column"
+          ],
+          "shape": [
+            16
+          ],
+          "numpy_nansum": 0.19499683628875894,
+          "aggregation": "numpy.nansum over every stored element"
+        },
+        {
+          "case": "WREF_ppe6_I20TRCNPRDCTCBC",
+          "restart": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe/UQ/WREF_ppe6_I1850CNPRDCTCBC/g00001/WREF_ppe6_I1850CNPRDCTCBC.elm.r.0201-01-01-00000.nc",
+          "component": "soil2n",
+          "units": "",
+          "long_name": "",
+          "dimensions": [
+            "column"
+          ],
+          "shape": [
+            16
+          ],
+          "numpy_nansum": 2.927375523526697,
+          "aggregation": "numpy.nansum over every stored element"
+        },
+        {
+          "case": "WREF_ppe6_I20TRCNPRDCTCBC",
+          "restart": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe/UQ/WREF_ppe6_I1850CNPRDCTCBC/g00001/WREF_ppe6_I1850CNPRDCTCBC.elm.r.0201-01-01-00000.nc",
+          "component": "soil3n",
+          "units": "",
+          "long_name": "",
+          "dimensions": [
+            "column"
+          ],
+          "shape": [
+            16
+          ],
+          "numpy_nansum": 15.717608070020615,
+          "aggregation": "numpy.nansum over every stored element"
+        },
+        {
+          "case": "WREF_ppe6_I20TRCNPRDCTCBC",
+          "restart": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe/UQ/WREF_ppe6_I1850CNPRDCTCBC/g00001/WREF_ppe6_I1850CNPRDCTCBC.elm.r.0201-01-01-00000.nc",
+          "component": "soil4n",
+          "units": "",
+          "long_name": "",
+          "dimensions": [
+            "column"
+          ],
+          "shape": [
+            16
+          ],
+          "numpy_nansum": 116.68799030857507,
+          "aggregation": "numpy.nansum over every stored element"
+        },
+        {
+          "case": "YELL_ppe6_I20TRCNPRDCTCBC",
+          "restart": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe/UQ/YELL_ppe6_I1850CNPRDCTCBC/g00001/YELL_ppe6_I1850CNPRDCTCBC.elm.r.0201-01-01-00000.nc",
+          "component": "litr1n",
+          "units": "",
+          "long_name": "",
+          "dimensions": [
+            "column"
+          ],
+          "shape": [
+            16
+          ],
+          "numpy_nansum": 0.07855068747505249,
+          "aggregation": "numpy.nansum over every stored element"
+        },
+        {
+          "case": "YELL_ppe6_I20TRCNPRDCTCBC",
+          "restart": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe/UQ/YELL_ppe6_I1850CNPRDCTCBC/g00001/YELL_ppe6_I1850CNPRDCTCBC.elm.r.0201-01-01-00000.nc",
+          "component": "litr2n",
+          "units": "",
+          "long_name": "",
+          "dimensions": [
+            "column"
+          ],
+          "shape": [
+            16
+          ],
+          "numpy_nansum": 0.3436080419349048,
+          "aggregation": "numpy.nansum over every stored element"
+        },
+        {
+          "case": "YELL_ppe6_I20TRCNPRDCTCBC",
+          "restart": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe/UQ/YELL_ppe6_I1850CNPRDCTCBC/g00001/YELL_ppe6_I1850CNPRDCTCBC.elm.r.0201-01-01-00000.nc",
+          "component": "litr3n",
+          "units": "",
+          "long_name": "",
+          "dimensions": [
+            "column"
+          ],
+          "shape": [
+            16
+          ],
+          "numpy_nansum": 0.5065020020968158,
+          "aggregation": "numpy.nansum over every stored element"
+        },
+        {
+          "case": "YELL_ppe6_I20TRCNPRDCTCBC",
+          "restart": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe/UQ/YELL_ppe6_I1850CNPRDCTCBC/g00001/YELL_ppe6_I1850CNPRDCTCBC.elm.r.0201-01-01-00000.nc",
+          "component": "cwdn",
+          "units": "",
+          "long_name": "",
+          "dimensions": [
+            "column"
+          ],
+          "shape": [
+            16
+          ],
+          "numpy_nansum": 1.236227711968107,
+          "aggregation": "numpy.nansum over every stored element"
+        },
+        {
+          "case": "YELL_ppe6_I20TRCNPRDCTCBC",
+          "restart": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe/UQ/YELL_ppe6_I1850CNPRDCTCBC/g00001/YELL_ppe6_I1850CNPRDCTCBC.elm.r.0201-01-01-00000.nc",
+          "component": "soil1n",
+          "units": "",
+          "long_name": "",
+          "dimensions": [
+            "column"
+          ],
+          "shape": [
+            16
+          ],
+          "numpy_nansum": 0.06541125388994623,
+          "aggregation": "numpy.nansum over every stored element"
+        },
+        {
+          "case": "YELL_ppe6_I20TRCNPRDCTCBC",
+          "restart": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe/UQ/YELL_ppe6_I1850CNPRDCTCBC/g00001/YELL_ppe6_I1850CNPRDCTCBC.elm.r.0201-01-01-00000.nc",
+          "component": "soil2n",
+          "units": "",
+          "long_name": "",
+          "dimensions": [
+            "column"
+          ],
+          "shape": [
+            16
+          ],
+          "numpy_nansum": 4.1073801131127645,
+          "aggregation": "numpy.nansum over every stored element"
+        },
+        {
+          "case": "YELL_ppe6_I20TRCNPRDCTCBC",
+          "restart": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe/UQ/YELL_ppe6_I1850CNPRDCTCBC/g00001/YELL_ppe6_I1850CNPRDCTCBC.elm.r.0201-01-01-00000.nc",
+          "component": "soil3n",
+          "units": "",
+          "long_name": "",
+          "dimensions": [
+            "column"
+          ],
+          "shape": [
+            16
+          ],
+          "numpy_nansum": 47.94651732914938,
+          "aggregation": "numpy.nansum over every stored element"
+        },
+        {
+          "case": "YELL_ppe6_I20TRCNPRDCTCBC",
+          "restart": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe/UQ/YELL_ppe6_I1850CNPRDCTCBC/g00001/YELL_ppe6_I1850CNPRDCTCBC.elm.r.0201-01-01-00000.nc",
+          "component": "soil4n",
+          "units": "",
+          "long_name": "",
+          "dimensions": [
+            "column"
+          ],
+          "shape": [
+            16
+          ],
+          "numpy_nansum": 439.11669698930814,
+          "aggregation": "numpy.nansum over every stored element"
+        }
+      ],
+      "native_history_records": [
+        {
+          "case": "ABBY_ppe6_I20TRCNPRDCTCBC",
+          "path": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe/UQ/ABBY_ppe6_I1850CNPRDCTCBC/g00001/ABBY_ppe6_I1850CNPRDCTCBC.elm.h0.0001-01-01-00000.nc",
+          "sha256": "9e1805d87a1ad7ceffe4a4b5cebc8de98e3d74ce7713bcebc698dcc94031e8bc",
+          "model_source": "E3SM Land Model",
+          "model_version": "468a9a4a84",
+          "target": "TOTSOMN",
+          "units": "gN/m^2",
+          "long_name": "total soil organic matter N",
+          "dimensions": [
+            "time",
+            "lndgrid"
+          ],
+          "shape": [
+            1,
+            1
+          ]
+        },
+        {
+          "case": "ABBY_ppe6_I20TRCNPRDCTCBC",
+          "path": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe/UQ/ABBY_ppe6_I1850CNPRDCTCBC/g00001/ABBY_ppe6_I1850CNPRDCTCBC.elm.h0.0006-01-01-00000.nc",
+          "sha256": "5da11ccd00195e604a31ef3fa8343e9a3a59305a9ca39f48c6de8a0afea52a6c",
+          "model_source": "E3SM Land Model",
+          "model_version": "468a9a4a84",
+          "target": "TOTSOMN",
+          "units": "gN/m^2",
+          "long_name": "total soil organic matter N",
+          "dimensions": [
+            "time",
+            "lndgrid"
+          ],
+          "shape": [
+            1,
+            1
+          ]
+        },
+        {
+          "case": "ABBY_ppe6_I20TRCNPRDCTCBC",
+          "path": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe/UQ/ABBY_ppe6_I1850CNPRDCTCBC/g00001/ABBY_ppe6_I1850CNPRDCTCBC.elm.h0.0011-01-01-00000.nc",
+          "sha256": "63bdaf0aa7e8975bd55d848311af4c5454b2e0e90f012a25c3ec4acc8f60582f",
+          "model_source": "E3SM Land Model",
+          "model_version": "468a9a4a84",
+          "target": "TOTSOMN",
+          "units": "gN/m^2",
+          "long_name": "total soil organic matter N",
+          "dimensions": [
+            "time",
+            "lndgrid"
+          ],
+          "shape": [
+            1,
+            1
+          ]
+        },
+        {
+          "case": "JERC_ppe6_I20TRCNPRDCTCBC",
+          "path": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe/UQ/JERC_ppe6_I1850CNPRDCTCBC/g00001/JERC_ppe6_I1850CNPRDCTCBC.elm.h0.0001-01-01-00000.nc",
+          "sha256": "a6c59ecad8b6ef3bbcf3cde38a9b1e2fa0889ddbd943272ea0333cbf6630548d",
+          "model_source": "E3SM Land Model",
+          "model_version": "468a9a4a84",
+          "target": "TOTSOMN",
+          "units": "gN/m^2",
+          "long_name": "total soil organic matter N",
+          "dimensions": [
+            "time",
+            "lndgrid"
+          ],
+          "shape": [
+            1,
+            1
+          ]
+        },
+        {
+          "case": "JERC_ppe6_I20TRCNPRDCTCBC",
+          "path": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe/UQ/JERC_ppe6_I1850CNPRDCTCBC/g00001/JERC_ppe6_I1850CNPRDCTCBC.elm.h0.0006-01-01-00000.nc",
+          "sha256": "5b09994de22312ed61e1315dd63cfc80b7b2676f0064919308ec5af5148ea060",
+          "model_source": "E3SM Land Model",
+          "model_version": "468a9a4a84",
+          "target": "TOTSOMN",
+          "units": "gN/m^2",
+          "long_name": "total soil organic matter N",
+          "dimensions": [
+            "time",
+            "lndgrid"
+          ],
+          "shape": [
+            1,
+            1
+          ]
+        },
+        {
+          "case": "JERC_ppe6_I20TRCNPRDCTCBC",
+          "path": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe/UQ/JERC_ppe6_I1850CNPRDCTCBC/g00001/JERC_ppe6_I1850CNPRDCTCBC.elm.h0.0011-01-01-00000.nc",
+          "sha256": "f37004fdbb4a1403c9a9812a6a703b8e7a93a2dff185ded88378a118f775ab8a",
+          "model_source": "E3SM Land Model",
+          "model_version": "468a9a4a84",
+          "target": "TOTSOMN",
+          "units": "gN/m^2",
+          "long_name": "total soil organic matter N",
+          "dimensions": [
+            "time",
+            "lndgrid"
+          ],
+          "shape": [
+            1,
+            1
+          ]
+        },
+        {
+          "case": "OSBS_ppe6_I20TRCNPRDCTCBC",
+          "path": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe/UQ/OSBS_ppe6_I1850CNPRDCTCBC/g00001/OSBS_ppe6_I1850CNPRDCTCBC.elm.h0.0001-01-01-00000.nc",
+          "sha256": "b7034d44df8eea5c47feb2b94cccdae0bc7ee45ed6f5adda6e0c39234936fbc4",
+          "model_source": "E3SM Land Model",
+          "model_version": "468a9a4a84",
+          "target": "TOTSOMN",
+          "units": "gN/m^2",
+          "long_name": "total soil organic matter N",
+          "dimensions": [
+            "time",
+            "lndgrid"
+          ],
+          "shape": [
+            1,
+            1
+          ]
+        },
+        {
+          "case": "OSBS_ppe6_I20TRCNPRDCTCBC",
+          "path": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe/UQ/OSBS_ppe6_I1850CNPRDCTCBC/g00001/OSBS_ppe6_I1850CNPRDCTCBC.elm.h0.0006-01-01-00000.nc",
+          "sha256": "e827d0f40649c168dd03ee573439e84094fbe63803a5082972d955ffc88c55f0",
+          "model_source": "E3SM Land Model",
+          "model_version": "468a9a4a84",
+          "target": "TOTSOMN",
+          "units": "gN/m^2",
+          "long_name": "total soil organic matter N",
+          "dimensions": [
+            "time",
+            "lndgrid"
+          ],
+          "shape": [
+            1,
+            1
+          ]
+        },
+        {
+          "case": "OSBS_ppe6_I20TRCNPRDCTCBC",
+          "path": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe/UQ/OSBS_ppe6_I1850CNPRDCTCBC/g00001/OSBS_ppe6_I1850CNPRDCTCBC.elm.h0.0011-01-01-00000.nc",
+          "sha256": "4b9b5a1cff4139b649447ababb5815322e93ce2b8219c6f6a908c88586bc50eb",
+          "model_source": "E3SM Land Model",
+          "model_version": "468a9a4a84",
+          "target": "TOTSOMN",
+          "units": "gN/m^2",
+          "long_name": "total soil organic matter N",
+          "dimensions": [
+            "time",
+            "lndgrid"
+          ],
+          "shape": [
+            1,
+            1
+          ]
+        },
+        {
+          "case": "SOAP_ppe6_I20TRCNPRDCTCBC",
+          "path": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe/UQ/SOAP_ppe6_I1850CNPRDCTCBC/g00001/SOAP_ppe6_I1850CNPRDCTCBC.elm.h0.0001-01-01-00000.nc",
+          "sha256": "ffcfb6fd853a54f9be897ec9b52846e684f7bedf23e060d665c677c1f373b764",
+          "model_source": "E3SM Land Model",
+          "model_version": "468a9a4a84",
+          "target": "TOTSOMN",
+          "units": "gN/m^2",
+          "long_name": "total soil organic matter N",
+          "dimensions": [
+            "time",
+            "lndgrid"
+          ],
+          "shape": [
+            1,
+            1
+          ]
+        },
+        {
+          "case": "SOAP_ppe6_I20TRCNPRDCTCBC",
+          "path": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe/UQ/SOAP_ppe6_I1850CNPRDCTCBC/g00001/SOAP_ppe6_I1850CNPRDCTCBC.elm.h0.0006-01-01-00000.nc",
+          "sha256": "ade23a9d72d5711fb626cd35ee22b03e8424f652241d69dcaee36f8c1cd34abd",
+          "model_source": "E3SM Land Model",
+          "model_version": "468a9a4a84",
+          "target": "TOTSOMN",
+          "units": "gN/m^2",
+          "long_name": "total soil organic matter N",
+          "dimensions": [
+            "time",
+            "lndgrid"
+          ],
+          "shape": [
+            1,
+            1
+          ]
+        },
+        {
+          "case": "SOAP_ppe6_I20TRCNPRDCTCBC",
+          "path": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe/UQ/SOAP_ppe6_I1850CNPRDCTCBC/g00001/SOAP_ppe6_I1850CNPRDCTCBC.elm.h0.0011-01-01-00000.nc",
+          "sha256": "40fa86cd13da435b63f41549e50c88b365f7f79d731ad2c91e64c38232714222",
+          "model_source": "E3SM Land Model",
+          "model_version": "468a9a4a84",
+          "target": "TOTSOMN",
+          "units": "gN/m^2",
+          "long_name": "total soil organic matter N",
+          "dimensions": [
+            "time",
+            "lndgrid"
+          ],
+          "shape": [
+            1,
+            1
+          ]
+        },
+        {
+          "case": "RMNP_ppe6_I20TRCNPRDCTCBC",
+          "path": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe/UQ/RMNP_ppe6_I1850CNPRDCTCBC/g00001/RMNP_ppe6_I1850CNPRDCTCBC.elm.h0.0001-01-01-00000.nc",
+          "sha256": "741f194ef047bb4c3dec29e163449d6ece2414aeedc462209ba3635963d9a69d",
+          "model_source": "E3SM Land Model",
+          "model_version": "468a9a4a84",
+          "target": "TOTSOMN",
+          "units": "gN/m^2",
+          "long_name": "total soil organic matter N",
+          "dimensions": [
+            "time",
+            "lndgrid"
+          ],
+          "shape": [
+            1,
+            1
+          ]
+        },
+        {
+          "case": "RMNP_ppe6_I20TRCNPRDCTCBC",
+          "path": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe/UQ/RMNP_ppe6_I1850CNPRDCTCBC/g00001/RMNP_ppe6_I1850CNPRDCTCBC.elm.h0.0006-01-01-00000.nc",
+          "sha256": "30e99d882b3fb945db1740c1d8a7964fc741bd58b47fb9e8a889c84297547898",
+          "model_source": "E3SM Land Model",
+          "model_version": "468a9a4a84",
+          "target": "TOTSOMN",
+          "units": "gN/m^2",
+          "long_name": "total soil organic matter N",
+          "dimensions": [
+            "time",
+            "lndgrid"
+          ],
+          "shape": [
+            1,
+            1
+          ]
+        },
+        {
+          "case": "RMNP_ppe6_I20TRCNPRDCTCBC",
+          "path": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe/UQ/RMNP_ppe6_I1850CNPRDCTCBC/g00001/RMNP_ppe6_I1850CNPRDCTCBC.elm.h0.0011-01-01-00000.nc",
+          "sha256": "77d3b450d31b0406e100b6d6757856ad7c8feac5d2ea6d7ed30a6603230a8628",
+          "model_source": "E3SM Land Model",
+          "model_version": "468a9a4a84",
+          "target": "TOTSOMN",
+          "units": "gN/m^2",
+          "long_name": "total soil organic matter N",
+          "dimensions": [
+            "time",
+            "lndgrid"
+          ],
+          "shape": [
+            1,
+            1
+          ]
+        },
+        {
+          "case": "TALL_ppe6_I20TRCNPRDCTCBC",
+          "path": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe/UQ/TALL_ppe6_I1850CNPRDCTCBC/g00001/TALL_ppe6_I1850CNPRDCTCBC.elm.h0.0001-01-01-00000.nc",
+          "sha256": "a4eb5584cbf1533584d79c63a629809ea1b06a60b026119488d6210a0ca0a741",
+          "model_source": "E3SM Land Model",
+          "model_version": "468a9a4a84",
+          "target": "TOTSOMN",
+          "units": "gN/m^2",
+          "long_name": "total soil organic matter N",
+          "dimensions": [
+            "time",
+            "lndgrid"
+          ],
+          "shape": [
+            1,
+            1
+          ]
+        },
+        {
+          "case": "TALL_ppe6_I20TRCNPRDCTCBC",
+          "path": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe/UQ/TALL_ppe6_I1850CNPRDCTCBC/g00001/TALL_ppe6_I1850CNPRDCTCBC.elm.h0.0006-01-01-00000.nc",
+          "sha256": "4b9c5cde5ba30b378e45b1e174be6bb49f264369d44f75a988cb3d2abf1e230e",
+          "model_source": "E3SM Land Model",
+          "model_version": "468a9a4a84",
+          "target": "TOTSOMN",
+          "units": "gN/m^2",
+          "long_name": "total soil organic matter N",
+          "dimensions": [
+            "time",
+            "lndgrid"
+          ],
+          "shape": [
+            1,
+            1
+          ]
+        },
+        {
+          "case": "TALL_ppe6_I20TRCNPRDCTCBC",
+          "path": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe/UQ/TALL_ppe6_I1850CNPRDCTCBC/g00001/TALL_ppe6_I1850CNPRDCTCBC.elm.h0.0011-01-01-00000.nc",
+          "sha256": "0fed7582bd15b6e4c5009883170203cb69a9f0f3421034c60278859a58118199",
+          "model_source": "E3SM Land Model",
+          "model_version": "468a9a4a84",
+          "target": "TOTSOMN",
+          "units": "gN/m^2",
+          "long_name": "total soil organic matter N",
+          "dimensions": [
+            "time",
+            "lndgrid"
+          ],
+          "shape": [
+            1,
+            1
+          ]
+        },
+        {
+          "case": "TEAK_ppe6_I20TRCNPRDCTCBC",
+          "path": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe/UQ/TEAK_ppe6_I1850CNPRDCTCBC/g00001/TEAK_ppe6_I1850CNPRDCTCBC.elm.h0.0001-01-01-00000.nc",
+          "sha256": "28bbe3aa89c4c32c0703f96e1339e5e650d34430f1c2f1059150d2f87d54ca89",
+          "model_source": "E3SM Land Model",
+          "model_version": "468a9a4a84",
+          "target": "TOTSOMN",
+          "units": "gN/m^2",
+          "long_name": "total soil organic matter N",
+          "dimensions": [
+            "time",
+            "lndgrid"
+          ],
+          "shape": [
+            1,
+            1
+          ]
+        },
+        {
+          "case": "TEAK_ppe6_I20TRCNPRDCTCBC",
+          "path": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe/UQ/TEAK_ppe6_I1850CNPRDCTCBC/g00001/TEAK_ppe6_I1850CNPRDCTCBC.elm.h0.0006-01-01-00000.nc",
+          "sha256": "4e7623beb9f34091862b12692ca67523dd5cf87005b0488466bb3e39bd401db4",
+          "model_source": "E3SM Land Model",
+          "model_version": "468a9a4a84",
+          "target": "TOTSOMN",
+          "units": "gN/m^2",
+          "long_name": "total soil organic matter N",
+          "dimensions": [
+            "time",
+            "lndgrid"
+          ],
+          "shape": [
+            1,
+            1
+          ]
+        },
+        {
+          "case": "TEAK_ppe6_I20TRCNPRDCTCBC",
+          "path": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe/UQ/TEAK_ppe6_I1850CNPRDCTCBC/g00001/TEAK_ppe6_I1850CNPRDCTCBC.elm.h0.0011-01-01-00000.nc",
+          "sha256": "911535b5c8bb58978905f365e82b137c9b042174b8712c548bd0cbee4e9c4d1d",
+          "model_source": "E3SM Land Model",
+          "model_version": "468a9a4a84",
+          "target": "TOTSOMN",
+          "units": "gN/m^2",
+          "long_name": "total soil organic matter N",
+          "dimensions": [
+            "time",
+            "lndgrid"
+          ],
+          "shape": [
+            1,
+            1
+          ]
+        },
+        {
+          "case": "WREF_ppe6_I20TRCNPRDCTCBC",
+          "path": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe/UQ/WREF_ppe6_I1850CNPRDCTCBC/g00001/WREF_ppe6_I1850CNPRDCTCBC.elm.h0.0001-01-01-00000.nc",
+          "sha256": "2e5a013e3366f479b80c4b78413cff3ff45993150a2fd636f1b33ddacb9ed822",
+          "model_source": "E3SM Land Model",
+          "model_version": "468a9a4a84",
+          "target": "TOTSOMN",
+          "units": "gN/m^2",
+          "long_name": "total soil organic matter N",
+          "dimensions": [
+            "time",
+            "lndgrid"
+          ],
+          "shape": [
+            1,
+            1
+          ]
+        },
+        {
+          "case": "WREF_ppe6_I20TRCNPRDCTCBC",
+          "path": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe/UQ/WREF_ppe6_I1850CNPRDCTCBC/g00001/WREF_ppe6_I1850CNPRDCTCBC.elm.h0.0006-01-01-00000.nc",
+          "sha256": "7dd3e063d61839c989efba6cc690a9bcf264538ba1c78c1c5569381f0c826412",
+          "model_source": "E3SM Land Model",
+          "model_version": "468a9a4a84",
+          "target": "TOTSOMN",
+          "units": "gN/m^2",
+          "long_name": "total soil organic matter N",
+          "dimensions": [
+            "time",
+            "lndgrid"
+          ],
+          "shape": [
+            1,
+            1
+          ]
+        },
+        {
+          "case": "WREF_ppe6_I20TRCNPRDCTCBC",
+          "path": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe/UQ/WREF_ppe6_I1850CNPRDCTCBC/g00001/WREF_ppe6_I1850CNPRDCTCBC.elm.h0.0011-01-01-00000.nc",
+          "sha256": "10cb4eb26bbc82242c0cebdb070a502c398b18f08fc84bea48ab58fdeacfb676",
+          "model_source": "E3SM Land Model",
+          "model_version": "468a9a4a84",
+          "target": "TOTSOMN",
+          "units": "gN/m^2",
+          "long_name": "total soil organic matter N",
+          "dimensions": [
+            "time",
+            "lndgrid"
+          ],
+          "shape": [
+            1,
+            1
+          ]
+        },
+        {
+          "case": "YELL_ppe6_I20TRCNPRDCTCBC",
+          "path": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe/UQ/YELL_ppe6_I1850CNPRDCTCBC/g00001/YELL_ppe6_I1850CNPRDCTCBC.elm.h0.0001-01-01-00000.nc",
+          "sha256": "30dcaa75d1fb2908d2abd98c1ce0ffe033e5febe0c43bfde3ab6462fab5d5cc5",
+          "model_source": "E3SM Land Model",
+          "model_version": "468a9a4a84",
+          "target": "TOTSOMN",
+          "units": "gN/m^2",
+          "long_name": "total soil organic matter N",
+          "dimensions": [
+            "time",
+            "lndgrid"
+          ],
+          "shape": [
+            1,
+            1
+          ]
+        },
+        {
+          "case": "YELL_ppe6_I20TRCNPRDCTCBC",
+          "path": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe/UQ/YELL_ppe6_I1850CNPRDCTCBC/g00001/YELL_ppe6_I1850CNPRDCTCBC.elm.h0.0006-01-01-00000.nc",
+          "sha256": "50733c735f0240191d8000b5d0b0a48b979c6ec20a03c57b494c982e9898a277",
+          "model_source": "E3SM Land Model",
+          "model_version": "468a9a4a84",
+          "target": "TOTSOMN",
+          "units": "gN/m^2",
+          "long_name": "total soil organic matter N",
+          "dimensions": [
+            "time",
+            "lndgrid"
+          ],
+          "shape": [
+            1,
+            1
+          ]
+        },
+        {
+          "case": "YELL_ppe6_I20TRCNPRDCTCBC",
+          "path": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe/UQ/YELL_ppe6_I1850CNPRDCTCBC/g00001/YELL_ppe6_I1850CNPRDCTCBC.elm.h0.0011-01-01-00000.nc",
+          "sha256": "a541352771d7e5759da9f25899cd6b8cf03f1ca0c6b360b8c8eda289193f6706",
+          "model_source": "E3SM Land Model",
+          "model_version": "468a9a4a84",
+          "target": "TOTSOMN",
+          "units": "gN/m^2",
+          "long_name": "total soil organic matter N",
+          "dimensions": [
+            "time",
+            "lndgrid"
+          ],
+          "shape": [
+            1,
+            1
+          ]
+        }
+      ]
+    }
+  },
+  "full_fit_diagnostics": {
+    "TOTSOMC": {
+      "rows": 900,
+      "training_r2": 0.8196139325189392,
+      "training_rmse": 4474.233605154538,
+      "prediction_sha256": "ed3cb6b60ef80be14fccdb1282a66c5e3e7b3fd3208ae8710164bb1c61dff065",
+      "note": "full-data training diagnostic; not validation evidence"
+    },
+    "TOTSOMN": {
+      "rows": 900,
+      "training_r2": 0.8197092232588763,
+      "training_rmse": 447.68048406808344,
+      "prediction_sha256": "f8428b76090d3a5a5d1d1fd31671fc4fc8524188654a96bb44094986e14be801",
+      "note": "full-data training diagnostic; not validation evidence"
+    }
+  },
+  "artifact_sha256": "1427dc565af858e9c089a5b9545a7f127e42789ef1fe5c9af3af7f8cb12a3023",
+  "artifact_size_bytes": 68048
+}
