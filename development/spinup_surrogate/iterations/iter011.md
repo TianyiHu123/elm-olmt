@@ -227,44 +227,105 @@ The user replied: `approved with one modification: use 15 min for run time`.
 
 ## Proposed Next-Iteration Plan (Planning Only)
 
-- Sequential ID and retained baselines: propose `iter012`. Keep Iter009
-  `s32_tanh_lbfgs_a50_lr1e3_full45` as the historical retained baseline and use the completed
-  Iter011 alpha-40 DROP32 arm as the prospective paired control; do not retroactively promote it.
-- Focused hypothesis: the 0.80 correlation threshold reduced DROP32 from 32 to 21 stable features
-  but failed both R2 and median-RMSE-ratio gates. Milder global pre-split priority-aware
-  thresholds of `0.90` and `0.95`, applied only after locking DROP32, may retain enough information
-  to pass while still producing a stable schema smaller than 32.
-- Tentative locked matrix: 100 paired seeds (`10001-10100`) for three arms:
-  (1) strict alpha-40 DROP32 control,
-  (2) `DROP32` then `corr090_prioritydrop`, and
-  (3) `DROP32` then `corr095_prioritydrop`. Preserve the nine cases, `by_member` split, train
-  fraction `0.8`, targets `TOTSOMC,TOTSOMN`, `(32,), tanh, lbfgs`, alpha `40`, provenance-only
-  learning rate `1e-3`, 8 permutation repeats, and the exact DROP32 input universe.
-- Acceptance gates: require exactly 100 validated seeds per arm; stable per-candidate schemas that
-  are strict DROP32 subsets with fewer than 32 features and no `FLDS_*`, `WIND_*`, or `PSRF_*`;
-  apply independently to both targets the Iter011 limits of median validation-R2 delta
-  `>= -0.01`, minimum validation-R2 delta `>= -0.02`, R2-IQR delta `<= +0.02`, median
-  RMSE-ratio delta `<= +0.02`, and warning fraction `<= 0.25`. Require finite 8-repeat importance
-  and exact identity/schema validation. Among full-gate passers, prefer the smaller stable schema;
-  otherwise retain the prospective DROP32 control. The historical Iter009 baseline remains
-  unchanged without a separately defined direct-promotion comparison.
-- Proposed Puma resources and retry boundary: `development/hpc/puma.md`,
-  `standard/chopinsong`, one task, 10 CPUs (about 50 GB), 15 minutes per production or aggregation
-  job, `N_JOBS=4`, `PRE_DISPATCH=n_jobs`, single-thread numerical libraries, and task-local cache;
-  1 CPU/5 minutes for the no-training preflight. Propose one validation-only preflight correction
-  and separately one failed-leaf retry only for scheduler/resource interruption within the same
-  caps. Application/code/configuration failures after training begins or scientific-control
-  changes must stop for fresh authorization.
-- Expected artifacts: Iter012 report and locked manifest; canonical and variant-local submitted
-  scripts/configurations and hashes; reviewer and preflight evidence; exactly 300 seed JSONs;
-  three summary, three feature-stability, and three 100-seed importance JSONs; paired gate/decision
-  JSON comparing both candidates to control; universal R2/RMSE and importance plots; terminal
-  accounting; updated four durable records; handoff-validator evidence; and, only if authorized,
-  one closeout commit.
-- Required user decision and boundary: this is planning-only. Before any Iter012 scaffolding or
-  scheduler action, obtain one fresh runtime contract confirming Puma, the finite 300-leaf scope,
-  exact resources, submission/monitoring authority, retry/cancellation bounds, and whether one
-  closeout commit is authorized.
+- Sequential ID and terminal-development objective: propose `iter012` as the final
+  spinup-surrogate development iteration. Package two user-accepted versions from Iter011:
+  `drop32`, the recommended accuracy-oriented 32-feature model, and `drop21_corr080`, the compact
+  21-feature alternative. Preserve the Iter011 comparative-gate result as provenance, including
+  that the compact version missed the locked median-R2, minimum-R2, and median-RMSE-ratio gates;
+  the user nevertheless accepts both final versions for different tradeoffs. No new comparative
+  promotion decision is in scope.
+- Locked data and model: use the same ordered nine cases and matching `--spinup-case` list as
+  Iter011, 100 members per case (900 rows), targets `TOTSOMC,TOTSOMN`, compact climatology,
+  forcing variables `PRECTmms,FSDS,TBOT,RH`, and ABBY
+  `ABBY_ppe6_I20TRCNPRDCTCBC` as the parameter-metadata and example reference case. Train one
+  independent `MLPRegressor` per target with `(32,)`, `tanh`, `lbfgs`, alpha `40`,
+  `max_iter=800`, estimator seed `42`, and provenance-only learning rate `1e-3`; retain separate
+  X and Y `StandardScaler` objects per target.
+- Freeze schemas by exact names and disable variance and correlation filtering. The actual
+  canonical fitted order for `drop32` is:
+  `parm_0,parm_1,parm_2,parm_3,parm_4,parm_5,parm_6,parm_7,parm_8,parm_9,parm_10,parm_11,parm_12,parm_13,PCT_SAND,PCT_CLAY,ORGANIC,PRECTmms_clim_mean,PRECTmms_clim_std,PRECTmms_clim_max,PRECTmms_clim_seasonal_amp,FSDS_clim_mean,FSDS_clim_max,FSDS_clim_seasonal_amp,TBOT_clim_mean,TBOT_clim_std,TBOT_clim_min,TBOT_clim_max,RH_clim_mean,RH_clim_std,RH_clim_min,RH_clim_seasonal_amp`.
+  The actual canonical fitted order for `drop21_corr080` is:
+  `parm_0,parm_1,parm_2,parm_3,parm_4,parm_5,parm_6,parm_7,parm_8,parm_9,parm_10,parm_11,parm_12,parm_13,PCT_SAND,ORGANIC,PRECTmms_clim_mean,PRECTmms_clim_std,FSDS_clim_mean,TBOT_clim_std,RH_clim_seasonal_amp`.
+- Two-stage fitting: first reproduce each Iter011 seed-`10001` `by_member` 80/20 validation run
+  with exact cases, split membership, feature order, architecture, and configuration. Require
+  the recorded metrics to agree with the Iter011 reference using `rtol=1e-10` and `atol=1e-8`;
+  separately require pre-save and post-load predictions to agree with each other at that
+  tolerance. Only after the reproduction gate passes, refit the same frozen model on all 900
+  rows with estimator seed `42`. Use Iter011's 100-seed summaries as the scientific performance
+  and importance evidence; do not mislabel full-data training diagnostics or training-set
+  permutation importance as validation evidence.
+- Version and enrich the existing dictionary artifact while keeping older unversioned artifacts
+  loadable. Each final artifact must include release/schema versions, ordered physical parameter
+  names read from ABBY `ensemble_parms`, `parm_N` aliases and mapping, `ensemble_pmin/pmax`,
+  complete and selected feature orders, empirical feature ranges, ordered targets, output
+  definitions and audited units, models/scalers, architecture, cases, fit scope, validation
+  evidence, package versions, source/configuration hashes, and creation time. Pickles are
+  trusted-source-only and environment-version-sensitive.
+- Keep pickle binaries outside Git. Write:
+  `/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/UQ_output/spinup_surrogate_iter012_drop32/surrogate_spinup/spinup_surrogate_iter012_drop32.pkl`
+  and
+  `/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/UQ_output/spinup_surrogate_iter012_drop21_corr080/surrogate_spinup/spinup_surrogate_iter012_drop21_corr080.pkl`.
+  Put `artifact_manifest.json` and `validation_report.json` beside each pickle and keep
+  byte-identical tracked evidence copies. Record paths, sizes, and SHA-256 hashes. Backup
+  confirmation is not a closeout gate; record that `/xdisk` is temporary and unbacked and that
+  the user owns backup.
+- Inference contract: the user supplies a case name, optional distinct spinup-case name, artifact
+  path or directory, exact ordered feature subset, and either case-member parameters or new
+  parameters. Reuse the training code for case pickle loading and construction of parameters,
+  member or explicit mean surface data, the spinup-cycle forcing subset, and compact climatology;
+  do not load restart-derived `TOTSOMC/TOTSOMN` for inference. Support (1) one or more existing
+  case members and (2) new parameters supplied either positionally in physical `ensemble_parms`
+  order or as an exact physical-name mapping, matching the convention needed by
+  `optimize_surrogate_forcing.py`.
+- Enforce input contracts before prediction. Reject missing, duplicate, extra, or misordered
+  parameters/features and values outside `ensemble_pmin/pmax`; warn without blocking for values
+  within declared bounds but outside empirical training ranges. Do not silently reorder a
+  supplied feature subset. A feature-order error must show the supplied and required orders,
+  first mismatch, missing/unexpected names, and the complete correct `--feature-subset` value.
+- Operational release gates for both artifacts: fresh-process load; supported schema; exact
+  target/model/scaler keys; exact feature and physical-parameter order; correct single-row and
+  batch shapes; finite predictions; identical named and positional new-parameter results;
+  manifest size/hash equality; and strict pre-save/post-load agreement. Test one real member from
+  every training case, several ABBY members as a batch, the ABBY parameter-bounds midpoint in
+  positional and named forms, an empirical-range warning when possible, and negative cases for
+  ordering, missing/extra inputs, bounds, and schema. Audit authoritative restart-variable
+  definitions and NetCDF metadata for the exact scalar aggregation and units of `TOTSOMC` and
+  `TOTSOMN`; ambiguity stops release.
+- Forcing-surrogate bridge: document and validate
+  `parameters + surface + compact spinup-cycle climatology -> spinup surrogate -> ordered
+  [TOTSOMC,TOTSOMN] -> existing [engineered forcing | parameters | spinup] forcing-surrogate
+  interface`. Verify order, shape, dtype, and design-matrix compatibility. No forcing artifact
+  currently exists in the inspected output tree, so Iter012 must not train one or claim a real
+  SR/flux prediction; provide a complete future example for use with a real forcing artifact.
+  The deprecated `model_ELM/surrogate_NN.py` interface is out of scope, as is actual integration
+  into the forcing surrogate.
+- Documentation: fully populate `iterations/iter012.md`; add a separate detailed "Final Spinup
+  Surrogate Models" section to `ITERATION_SUMMARY.md`; and audit/update the root `README.md` for
+  stale spinup-surrogate material. Document both versions, physical and engineered inputs,
+  ordered outputs and units, architecture, Iter011 100-seed evidence, full-data-fit distinction,
+  validated nine-site domain, new-site and out-of-range limitations, artifact trust/version
+  requirements, both inference modes, failure messages, copyable examples, and the future
+  spinup-to-forcing bridge.
+- Proposed finite Puma topology after independent read-only review: one 1-CPU/5-minute
+  no-training preflight; one `drop32` release job and one `drop21_corr080` release job, each
+  10 CPUs (about 50 GB)/15 minutes; then one cross-artifact validation job at the same
+  10-CPU/15-minute cap. Use `development/hpc/puma.md`, `standard/chopinsong`, `N_JOBS=4`,
+  `PRE_DISPATCH=n_jobs`, single-thread numerical libraries, task-local cache, elevated
+  authoritative Slurm access, and roughly 5-10 minute monitoring intervals.
+- Proposed retry/stop boundaries: allow one no-training validation correction and one retry per
+  failed job only for scheduler/resource interruption within the same caps. Do not automatically
+  retry application/code/schema/numerical/artifact/scientific failures. Emergency cancellation is
+  limited to a proven universal pretraining defect. Architecture, schema, data-scope, resource,
+  or scientific changes require fresh authorization.
+- Closeout expectations: tracked code, tests, Slurm material, manifests/evidence, detailed
+  records, four-record handoff validation, no active jobs, and one separately authorized Iter012
+  closeout commit; never track the pickle binaries. Record PR readiness but do not fetch, rebase,
+  merge, or operate the `pmcpu` branch or GitHub PR.
+- Required new-session boundary: this plan does not authorize Iter012 scaffolding or execution.
+  The new session must create the exact native Iter012 lifecycle goal and obtain one fresh
+  consolidated runtime contract confirming Puma, the four-job finite scope, preparation,
+  submission and monitoring authority, the stated resources and retry/cancellation boundaries,
+  and one closeout commit before changing execution-affecting files or scheduler state.
 
 ## Handoff Validation
 
