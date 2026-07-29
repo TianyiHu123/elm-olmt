@@ -43,9 +43,11 @@ Before any execution, record the following in the active iteration report and
 1. **Run mode:** a finite number of rounds or `run-until-stopped`, plus stop conditions.
 2. **HPC and site profile:** user confirms the active session is on HPC and selects a profile
    under `development/hpc/` (for example `perlmutter.md`).
-3. **Submission authority:** explicit authorization for Slurm preparation, submission,
-   monitoring, a one-time preflight-validation retry, and a single matrix retry within the
-   stated scope.
+3. **Slurm and execution-context authority:** explicit authorization for Slurm preparation,
+   submission, continuous monitoring and terminal accounting, bounded retry/resubmission, and
+   cancellation within the stated scope. Separately record permission to execute the named
+   submission, read-only monitoring, and cancellation command families outside the Codex sandbox
+   when the selected HPC profile requires that context.
 4. **Resource policy:** explicit resources, or calibrated mode with memory and walltime caps.
 5. **Commit authority:** whether one closeout commit per completed iteration is authorized.
 
@@ -92,16 +94,41 @@ runtime-contract response covering all of the following:
 
 1. confirmation that the active session is on the selected HPC system;
 2. the finite run mode and its task/round count;
-3. authorization to prepare, submit, and monitor the locked matrix, including a bounded
-   no-training preflight;
+3. authorization to prepare, submit, and continuously monitor the locked matrix, including a
+   bounded no-training preflight and terminal accounting;
 4. the exact resource profile, one automatic validation-only retry, and the separate one-retry
    boundary for scheduler/resource matrix failures;
-5. whether one closeout commit is authorized.
+5. bounded cancellation authority, including the exact current-iteration job scope and conditions
+   under which `scancel` may be used;
+6. permission to execute outside the Codex sandbox, when required by the selected HPC profile:
+   `sbatch` for the locked submission and authorized resubmission, the named read-only monitoring
+   families for the complete monitoring lifecycle, and `scancel` only within item 5's scope; and
+7. whether one closeout commit is authorized.
 
 The request must name the selected `development/hpc/` profile and state that application or
 code/configuration failures stop for fresh authorization. A plain approval is sufficient only
-when the request states all five items. Record the response verbatim or as an unambiguous
-summary in both the active iteration report and `handoff/CURRENT.md` before submission.
+when the request states all seven items. Request reusable outside-sandbox approval for the narrow
+read-only command families when the product supports it, so continuous monitoring and accounting
+do not require repeated prompts. Keep `sbatch` and `scancel` bounded by the recorded runtime
+contract even if the product separately remembers a command approval. Record the response verbatim
+or as an unambiguous summary in both the active iteration report and `handoff/CURRENT.md` before
+submission.
+
+The single runtime-contract request must explicitly ask:
+
+```text
+For this iteration, do you authorize the primary agent to execute outside the Codex sandbox:
+1. sbatch for the locked submission and any resubmission already allowed by this contract;
+2. job-scoped squeue, scontrol show job, sacct, seff, job-history, and job-limits commands
+   throughout monitoring and terminal accounting, without another workflow-authority question;
+3. scancel only for the current iteration's recorded job IDs and only under the cancellation
+   conditions stated in this contract?
+```
+
+If any part is declined or omitted, treat that outside-sandbox action as unauthorized and request
+permission before using it. This runtime-contract response records workflow authority; the product
+may still require a separate one-time execution approval before it can run an outside-sandbox
+command.
 
 ## Bootstrap
 
@@ -182,6 +209,12 @@ the tie-breaker. Do not infer an automatic promotion rule when a report does not
 
 ### 2. Submit and monitor
 
+Before interpreting any scheduler output, apply the selected HPC profile's execution-context gate.
+Record whether each command ran inside the default sandbox or through the approved outside-sandbox
+context. Output from a context that cannot reach Slurm is inadmissible for job classification,
+scheduler-health diagnosis, retry or resubmission decisions, cancellation decisions, and
+completion claims. Scheduler observation failure is not workload failure.
+
 1. Submit only the locked matrix, normally one job or array per variant.
 2. Capture each returned job ID directly from `sbatch --parsable`; never transcribe or infer a
    job ID manually. Immediately record an atomic mapping of variant, job ID, submitted script,
@@ -193,8 +226,8 @@ the tie-breaker. Do not infer an automatic promotion rule when a report does not
    locked manifest and recorded mapping. Preserve the command/output as submission evidence. If
    any identity check mismatches, stop further submissions and classify the submission; do not
    assume the job is safe to run.
-4. Monitor the complete job set concurrently using the selected site's documented queue and
-   accounting commands.
+4. Monitor the complete job set concurrently using authoritative, job-scoped queue and accounting
+   commands in the execution context required by the selected site profile.
 5. Record terminal state, exit code, elapsed time, resource diagnostics, and failure reason
    for every job.
 
@@ -204,7 +237,7 @@ classified. Poll at a bounded cadence and autonomously perform only the subseque
 authorized by the runtime contract. Do not issue a terminal handoff while jobs are active; a
 user-facing message during execution is a status update only. On a platform-forced interruption,
 record the time and active job set in `CURRENT.md`; the next active agent must resume with
-`squeue`/`sacct` before any other iteration action.
+authoritative, site-profile-compliant `squeue`/`sacct` queries before any other iteration action.
 
 ### Primary-Agent Continuity Rule
 
@@ -224,7 +257,8 @@ Before yielding control or sending a completion-style response, the primary agen
 gate and record the result in the iteration ledger or durable state checkpoint:
 
 1. Confirm that no submitted job is still `PENDING`, `RUNNING`, or otherwise unaccounted for;
-   if jobs remain active or accounting is incomplete, continue monitoring.
+   if jobs remain active or accounting is incomplete, continue monitoring. Terminal evidence must
+   come from the execution context required by the selected site profile.
 2. Confirm that every non-completion has been classified and that all runtime-contract-authorized
    retries, cancellations, and reconciliation steps are finished.
 3. Confirm that aggregation, gate evaluation, selection/no-promotion, and required artifact
@@ -251,8 +285,11 @@ Classify each non-completion before acting:
 - **Scientific rejection:** a predeclared validity rule rejects the variant. Record evidence
   and continue only if the iteration report explicitly permits other independent variants to
   continue.
-- **Resource or scheduler failure:** make one minimal resource/configuration adjustment within
-  the runtime contract and retry once.
+- **Resource or scheduler job failure:** classify this only from authoritative job-state or
+  terminal-accounting evidence, then make one minimal resource/configuration adjustment within
+  the runtime contract and retry once. A scheduler-query, transport, sandbox, or
+  observation-context failure leaves state unknown; it does not consume a workload retry or
+  authorize resubmission or cancellation.
 - **Preflight validation failure:** if the failure occurs before training/model execution, the
   primary agent may make one minimal validation-only import, launch, or configuration correction
   and rerun that same bounded preflight once. Record the diagnostic, correction, source/config

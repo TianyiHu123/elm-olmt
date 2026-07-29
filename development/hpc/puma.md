@@ -112,11 +112,11 @@ paths, timestamps, and resulting state when using that fallback.
 | Group limits and usage | `job-limits <ACCOUNT>` |
 | Cancel, only when authorized | `scancel <JOB_ID_OR_IDS>` |
 
-### 1.5 Codex read-only monitoring context
+### 1.5 Codex Slurm execution-context gate
 
 Codex's default filesystem sandbox can run in a user namespace that drops supplemental HPC
-groups. Before a Codex agent relies on any supported Slurm command, verify its effective group
-context:
+groups or blocks Slurm connectivity. Before a Codex agent relies on any supported Slurm command,
+verify its effective group and execution context:
 
 ```bash
 id
@@ -127,16 +127,25 @@ For a job using this repository's current `chopinsong` account, the effective gr
 `chopinsong`. If an authorized runtime contract selects another account, verify that the effective
 groups include that account's required project group instead. If the required group is absent, the
 Puma command wrappers used by `scontrol`, `sacct`, and `seff` can fail while attempting their group
-transition. The primary agent must then run **read-only** monitoring and post-job accounting commands
-outside that user-namespace sandbox through the product's approved elevated command context. This is
-a monitoring-context correction, not scheduler authority: it does not authorize submission,
-cancellation, retries, configuration changes, or any other mutation.
+transition. The sandbox can also produce Slurm connection, socket, controller, authentication, or
+resource errors that do not occur in the host HPC context.
+
+Once the default sandbox is known to lack the required project group or Slurm connectivity, route
+all Slurm commands directly through the product's approved outside-sandbox execution context. Do
+not keep probing Slurm inside the affected sandbox. A Slurm error produced there is
+**observation-context failure**, not evidence that Puma's scheduler or controller has failed. In
+particular, never use an in-sandbox `scontrol ping` result to diagnose scheduler health.
+
+The primary agent must run read-only monitoring and post-job accounting outside the affected
+user-namespace sandbox. This is a monitoring-context correction, not scheduler authority: it does
+not authorize submission, cancellation, retries, configuration changes, or any other mutation.
 
 Maintain reusable approval only for the read-only command families needed for normal monitoring:
 `squeue --job=...`, `scontrol show job ...`, `sacct --jobs=...`, `seff <JOB_ID>`,
 `job-history <JOB_ID>`, and `job-limits <ACCOUNT>`. Do not grant reusable approval for `scontrol`
 generally. Keep `sbatch`, `scancel`, `scontrol` mutations, and other state-changing commands under
-the runtime contract and their separate approval boundary.
+the runtime contract and their separate approval boundary. When the runtime contract authorizes
+such an action, it must also state whether that command may be executed outside the sandbox.
 
 Use commands according to job state:
 
@@ -153,20 +162,32 @@ Use the parent ID to reconcile every array element and overall terminal complete
 concrete element ID only for leaf-specific diagnosis or efficiency reporting.
 
 `squeue` and `scontrol` reporting `Invalid job id specified` for a completed job is expected;
-use `sacct`, `seff`, or `job-history` for terminal evidence. Record the exact query command and
-its output in the workload ledger. A timeout, connection failure, or missing-group failure leaves
-state unknown: retry through the verified read-only elevated context before drawing a conclusion.
+use `sacct`, `seff`, or `job-history` for terminal evidence. A successful query with a valid empty
+result means that no matching job was found in that interface; a nonzero exit, timeout, malformed
+response, or connection error leaves state unknown.
 
-Scheduler-query failures:
+Record the exact query command, execution context, scope, timestamp, exit status, and response in
+the workload ledger. Apply these evidence rules:
 
-- Treat `squeue`, `sacct`, and related read-only connection/resource errors as temporary
-  scheduler-query instability. Retry the same job-scoped query with bounded backoff at least once,
-  recording the exact command, scope, timestamp, and response. Do not classify jobs, retry
-  workloads, cancel jobs, or declare completion until scheduler state is successfully reconciled.
+- A connection, controller, socket, authentication, group-transition, or resource error from the
+  affected Codex sandbox is inadmissible as scheduler-health or job-state evidence. Repeat the
+  exact job-scoped query through the approved outside-sandbox context without first diagnosing a
+  Puma scheduler problem.
+- If that outside-sandbox query succeeds, use its result as the authoritative scheduler evidence.
+  If it fails, classify the observation as an authoritative query failure and preserve job state
+  as unknown. Retry the same job-scoped query with bounded backoff at least once.
 - Prefer a parent-job ID over a user-wide query. For an array, use `squeue --job=<JOB_ID> -r` to
   list its individual elements and `sacct --jobs=<JOB_ID>` for terminal accounting. If retries
   continue to fail, preserve the state as unknown and reconcile later using scheduler queries,
   job logs, and exact output-artifact validation.
+- A query or transport failure is not a workload failure and must not consume a workload retry,
+  authorize cancellation or resubmission, or support a completion claim. Classify a resource or
+  scheduler job failure only from authoritative job-state or terminal-accounting evidence.
+
+If an authorized `sbatch` invocation is accidentally attempted inside the affected sandbox and
+returns an error or no parseable job ID, submission state is unknown. Before resubmitting, use
+approved outside-sandbox `squeue` and `sacct` queries to prove that the attempted submission did not
+create a matching job. This reconciliation is required to prevent duplicate jobs.
 
 **Array monitoring example (Puma):** UArizona's array-job convention returns one parent ID from
 `sbatch`; `squeue --job=<JOB_ID> -r` expands that parent into rows such as
