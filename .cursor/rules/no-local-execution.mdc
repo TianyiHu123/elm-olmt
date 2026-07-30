@@ -1,0 +1,27 @@
+---
+description: Confirm HPC status and ask permission before execution
+alwaysApply: true
+---
+
+# Execution Permission Gate
+
+- Before any repository/script execution, ask:
+  1) whether the current workspace/session is on HPC, and
+  2) whether the user gives permission to execute now.
+- If HPC is not confirmed, do not execute repository scripts.
+- If HPC is confirmed but permission is not granted, do not execute scripts.
+- Only execute when both are true: HPC confirmed and explicit user permission.
+
+# Examples
+
+```bash
+# Ask first:
+# "Is this workspace/session on HPC?"
+# "Do you want me to execute this now?"
+
+# ❌ If not HPC or no permission, do not run
+python train_surrogate_spinup.py --case ABBY_ppe6_I20TRCNPRDCTCBC
+
+# ✅ Only if HPC is confirmed and user approved execution
+python train_surrogate_spinup.py --case ABBY_ppe6_I20TRCNPRDCTCBC
+```

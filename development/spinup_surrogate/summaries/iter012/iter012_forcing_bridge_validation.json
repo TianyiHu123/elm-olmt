@@ -1,0 +1,36 @@
+{
+  "drop32": {
+    "passed": true,
+    "interface": "[engineered forcing | parameters | spinup]",
+    "ordered_spinup_targets": [
+      "TOTSOMC",
+      "TOTSOMN"
+    ],
+    "shape": [
+      3,
+      21
+    ],
+    "dtype": "float64",
+    "forcing_columns": 5,
+    "parameter_columns": 14,
+    "spinup_columns": 2,
+    "scope": "design-matrix compatibility only; no forcing artifact exists, no forcing model was trained, and no real SR/flux prediction was made"
+  },
+  "drop21_corr080": {
+    "passed": true,
+    "interface": "[engineered forcing | parameters | spinup]",
+    "ordered_spinup_targets": [
+      "TOTSOMC",
+      "TOTSOMN"
+    ],
+    "shape": [
+      3,
+      21
+    ],
+    "dtype": "float64",
+    "forcing_columns": 5,
+    "parameter_columns": 14,
+    "spinup_columns": 2,
+    "scope": "design-matrix compatibility only; no forcing artifact exists, no forcing model was trained, and no real SR/flux prediction was made"
+  }
+}

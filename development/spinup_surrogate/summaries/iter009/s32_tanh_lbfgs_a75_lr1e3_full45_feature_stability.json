@@ -1,0 +1,2173 @@
+{
+  "schema_version": "spinup-feature-stability-compact-v1",
+  "variant": "s32_tanh_lbfgs_a75_lr1e3_full45",
+  "stats_dir": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/UQ_output/spinup_surrogate_iter009_s32_tanh_lbfgs_a75_lr1e3_full45/surrogate_spinup",
+  "file_count": 5,
+  "seeds": [
+    10001,
+    10002,
+    10003,
+    10004,
+    10005
+  ],
+  "top_k": 10,
+  "corr_thresholds_reported": [
+    0.8,
+    0.9,
+    0.95,
+    0.98
+  ],
+  "full_report": {
+    "sha256": "f3b5d2703f2fea89a7e9b25c7544be7bb99433ef1c58197a7e1d3eb43432f307",
+    "size_bytes": 533730,
+    "backup_path": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/UQ_output/spinup_surrogate_summary/iter009/s32_tanh_lbfgs_a75_lr1e3_full45_feature_stability.json"
+  },
+  "by_target": {
+    "TOTSOMC": {
+      "metrics": {
+        "r2_val": {
+          "count": 5,
+          "median": 0.7392798356615823,
+          "p25": 0.6957142958090816,
+          "p75": 0.7637086593426666,
+          "min": 0.6219738587074868,
+          "max": 0.7884695065372386
+        },
+        "r2_gap": {
+          "count": 5,
+          "median": -0.00438845698755419,
+          "p25": -0.038357660365651025,
+          "p75": 0.04790176926938683,
+          "min": -0.055758042087077464,
+          "max": 0.14166286422097962
+        },
+        "rmse_ratio": {
+          "count": 5,
+          "median": 0.9637137688377245,
+          "p25": 0.8742767727358882,
+          "p75": 1.4112854833710011,
+          "min": 0.7029751415542782,
+          "max": 1.4221842767019504
+        },
+        "overfit_warning_fraction": 0.0
+      },
+      "features": [
+        {
+          "feature": "parm_6",
+          "selected_frequency": 1.0,
+          "top_k_frequency": 1.0,
+          "median_rank": 1.0,
+          "rank_iqr": 0.0,
+          "median_r2_drop": 0.36721655803636477,
+          "median_rmse_increase": 2682.046045652061,
+          "positive_r2_drop_fraction": 1.0,
+          "positive_rmse_increase_fraction": 1.0,
+          "strong_candidate": true
+        },
+        {
+          "feature": "parm_13",
+          "selected_frequency": 1.0,
+          "top_k_frequency": 1.0,
+          "median_rank": 2.0,
+          "rank_iqr": 0.0,
+          "median_r2_drop": 0.24596935010285437,
+          "median_rmse_increase": 1802.2154047272584,
+          "positive_r2_drop_fraction": 1.0,
+          "positive_rmse_increase_fraction": 1.0,
+          "strong_candidate": true
+        },
+        {
+          "feature": "parm_12",
+          "selected_frequency": 1.0,
+          "top_k_frequency": 1.0,
+          "median_rank": 3.0,
+          "rank_iqr": 0.0,
+          "median_r2_drop": 0.1357115991620073,
+          "median_rmse_increase": 1070.8060845887221,
+          "positive_r2_drop_fraction": 1.0,
+          "positive_rmse_increase_fraction": 1.0,
+          "strong_candidate": true
+        },
+        {
+          "feature": "parm_9",
+          "selected_frequency": 1.0,
+          "top_k_frequency": 1.0,
+          "median_rank": 4.0,
+          "rank_iqr": 0.0,
+          "median_r2_drop": 0.11107940952367303,
+          "median_rmse_increase": 858.4841398036675,
+          "positive_r2_drop_fraction": 1.0,
+          "positive_rmse_increase_fraction": 1.0,
+          "strong_candidate": true
+        },
+        {
+          "feature": "parm_10",
+          "selected_frequency": 1.0,
+          "top_k_frequency": 1.0,
+          "median_rank": 5.0,
+          "rank_iqr": 0.0,
+          "median_r2_drop": 0.06518794267797011,
+          "median_rmse_increase": 492.3308292953608,
+          "positive_r2_drop_fraction": 1.0,
+          "positive_rmse_increase_fraction": 1.0,
+          "strong_candidate": true
+        },
+        {
+          "feature": "PSRF_clim_std",
+          "selected_frequency": 1.0,
+          "top_k_frequency": 1.0,
+          "median_rank": 6.0,
+          "rank_iqr": 0.0,
+          "median_r2_drop": 0.016573450804322862,
+          "median_rmse_increase": 219.42000771271785,
+          "positive_r2_drop_fraction": 1.0,
+          "positive_rmse_increase_fraction": 1.0,
+          "strong_candidate": true
+        },
+        {
+          "feature": "RH_clim_seasonal_amp",
+          "selected_frequency": 1.0,
+          "top_k_frequency": 1.0,
+          "median_rank": 7.0,
+          "rank_iqr": 0.0,
+          "median_r2_drop": 0.01167888166955336,
+          "median_rmse_increase": 156.72524633152887,
+          "positive_r2_drop_fraction": 1.0,
+          "positive_rmse_increase_fraction": 1.0,
+          "strong_candidate": true
+        },
+        {
+          "feature": "PSRF_clim_seasonal_amp",
+          "selected_frequency": 1.0,
+          "top_k_frequency": 0.8,
+          "median_rank": 8.0,
+          "rank_iqr": 0.0,
+          "median_r2_drop": 0.01052813563810033,
+          "median_rmse_increase": 106.06450137134902,
+          "positive_r2_drop_fraction": 1.0,
+          "positive_rmse_increase_fraction": 1.0,
+          "strong_candidate": true
+        },
+        {
+          "feature": "WIND_clim_std",
+          "selected_frequency": 1.0,
+          "top_k_frequency": 0.6,
+          "median_rank": 10.0,
+          "rank_iqr": 4.0,
+          "median_r2_drop": 0.006714998609151049,
+          "median_rmse_increase": 68.83687336194873,
+          "positive_r2_drop_fraction": 1.0,
+          "positive_rmse_increase_fraction": 1.0,
+          "strong_candidate": true
+        },
+        {
+          "feature": "RH_clim_mean",
+          "selected_frequency": 1.0,
+          "top_k_frequency": 0.6,
+          "median_rank": 10.0,
+          "rank_iqr": 7.0,
+          "median_r2_drop": 0.0027676554546334636,
+          "median_rmse_increase": 70.46498980755553,
+          "positive_r2_drop_fraction": 1.0,
+          "positive_rmse_increase_fraction": 1.0,
+          "strong_candidate": true
+        },
+        {
+          "feature": "parm_8",
+          "selected_frequency": 1.0,
+          "top_k_frequency": 0.4,
+          "median_rank": 12.0,
+          "rank_iqr": 4.0,
+          "median_r2_drop": 0.010745846831881567,
+          "median_rmse_increase": 71.19364928561595,
+          "positive_r2_drop_fraction": 1.0,
+          "positive_rmse_increase_fraction": 1.0,
+          "strong_candidate": false
+        },
+        {
+          "feature": "FSDS_clim_mean",
+          "selected_frequency": 1.0,
+          "top_k_frequency": 0.4,
+          "median_rank": 16.0,
+          "rank_iqr": 8.0,
+          "median_r2_drop": 0.0004300461252854937,
+          "median_rmse_increase": 61.01149836684317,
+          "positive_r2_drop_fraction": 0.6,
+          "positive_rmse_increase_fraction": 1.0,
+          "strong_candidate": false
+        },
+        {
+          "feature": "FSDS_clim_seasonal_amp",
+          "selected_frequency": 1.0,
+          "top_k_frequency": 0.2,
+          "median_rank": 12.0,
+          "rank_iqr": 6.0,
+          "median_r2_drop": 0.0054019659145893295,
+          "median_rmse_increase": 52.544942903871856,
+          "positive_r2_drop_fraction": 1.0,
+          "positive_rmse_increase_fraction": 1.0,
+          "strong_candidate": false
+        },
+        {
+          "feature": "parm_5",
+          "selected_frequency": 1.0,
+          "top_k_frequency": 0.0,
+          "median_rank": 17.0,
+          "rank_iqr": 5.0,
+          "median_r2_drop": 0.006996600074551662,
+          "median_rmse_increase": 46.232225210566526,
+          "positive_r2_drop_fraction": 1.0,
+          "positive_rmse_increase_fraction": 1.0,
+          "strong_candidate": false
+        },
+        {
+          "feature": "parm_11",
+          "selected_frequency": 1.0,
+          "top_k_frequency": 0.0,
+          "median_rank": 18.0,
+          "rank_iqr": 3.0,
+          "median_r2_drop": 0.005282779591109413,
+          "median_rmse_increase": 41.254867312362876,
+          "positive_r2_drop_fraction": 0.8,
+          "positive_rmse_increase_fraction": 0.8,
+          "strong_candidate": false
+        },
+        {
+          "feature": "ORGANIC",
+          "selected_frequency": 1.0,
+          "top_k_frequency": 0.0,
+          "median_rank": 13.0,
+          "rank_iqr": 3.0,
+          "median_r2_drop": 0.005086325907019462,
+          "median_rmse_increase": 50.39623301356369,
+          "positive_r2_drop_fraction": 1.0,
+          "positive_rmse_increase_fraction": 1.0,
+          "strong_candidate": false
+        },
+        {
+          "feature": "PRECTmms_clim_max",
+          "selected_frequency": 1.0,
+          "top_k_frequency": 0.0,
+          "median_rank": 14.0,
+          "rank_iqr": 2.0,
+          "median_r2_drop": 0.004110361427342002,
+          "median_rmse_increase": 42.74010690562295,
+          "positive_r2_drop_fraction": 1.0,
+          "positive_rmse_increase_fraction": 1.0,
+          "strong_candidate": false
+        },
+        {
+          "feature": "TBOT_clim_min",
+          "selected_frequency": 1.0,
+          "top_k_frequency": 0.0,
+          "median_rank": 14.0,
+          "rank_iqr": 0.0,
+          "median_r2_drop": 0.003539060054521731,
+          "median_rmse_increase": 52.188477565793164,
+          "positive_r2_drop_fraction": 1.0,
+          "positive_rmse_increase_fraction": 1.0,
+          "strong_candidate": false
+        },
+        {
+          "feature": "parm_1",
+          "selected_frequency": 1.0,
+          "top_k_frequency": 0.0,
+          "median_rank": 21.0,
+          "rank_iqr": 2.0,
+          "median_r2_drop": 0.0033171409854119704,
+          "median_rmse_increase": 25.12034518418318,
+          "positive_r2_drop_fraction": 0.8,
+          "positive_rmse_increase_fraction": 1.0,
+          "strong_candidate": false
+        },
+        {
+          "feature": "TBOT_clim_mean",
+          "selected_frequency": 1.0,
+          "top_k_frequency": 0.0,
+          "median_rank": 23.0,
+          "rank_iqr": 5.0,
+          "median_r2_drop": 0.0022430849822006466,
+          "median_rmse_increase": 23.301495458914303,
+          "positive_r2_drop_fraction": 1.0,
+          "positive_rmse_increase_fraction": 1.0,
+          "strong_candidate": false
+        },
+        {
+          "feature": "FSDS_clim_max",
+          "selected_frequency": 1.0,
+          "top_k_frequency": 0.0,
+          "median_rank": 28.0,
+          "rank_iqr": 9.0,
+          "median_r2_drop": 0.0018017179177328702,
+          "median_rmse_increase": 11.535858853144248,
+          "positive_r2_drop_fraction": 1.0,
+          "positive_rmse_increase_fraction": 1.0,
+          "strong_candidate": false
+        },
+        {
+          "feature": "WIND_clim_mean",
+          "selected_frequency": 1.0,
+          "top_k_frequency": 0.0,
+          "median_rank": 22.0,
+          "rank_iqr": 2.0,
+          "median_r2_drop": 0.0016474924525009538,
+          "median_rmse_increase": 21.59634697582794,
+          "positive_r2_drop_fraction": 1.0,
+          "positive_rmse_increase_fraction": 1.0,
+          "strong_candidate": false
+        },
+        {
+          "feature": "WIND_clim_min",
+          "selected_frequency": 1.0,
+          "top_k_frequency": 0.0,
+          "median_rank": 37.0,
+          "rank_iqr": 8.0,
+          "median_r2_drop": 0.0014225799835580477,
+          "median_rmse_increase": -6.3522730826622364,
+          "positive_r2_drop_fraction": 0.8,
+          "positive_rmse_increase_fraction": 0.4,
+          "strong_candidate": false
+        },
+        {
+          "feature": "parm_4",
+          "selected_frequency": 1.0,
+          "top_k_frequency": 0.0,
+          "median_rank": 27.0,
+          "rank_iqr": 21.0,
+          "median_r2_drop": 0.0013624967356015566,
+          "median_rmse_increase": 13.855517774169243,
+          "positive_r2_drop_fraction": 0.6,
+          "positive_rmse_increase_fraction": 0.6,
+          "strong_candidate": false
+        },
+        {
+          "feature": "TBOT_clim_max",
+          "selected_frequency": 1.0,
+          "top_k_frequency": 0.0,
+          "median_rank": 30.0,
+          "rank_iqr": 5.0,
+          "median_r2_drop": 0.0012036304569451733,
+          "median_rmse_increase": 8.55910353124284,
+          "positive_r2_drop_fraction": 1.0,
+          "positive_rmse_increase_fraction": 0.8,
+          "strong_candidate": false
+        },
+        {
+          "feature": "FLDS_clim_min",
+          "selected_frequency": 1.0,
+          "top_k_frequency": 0.0,
+          "median_rank": 29.0,
+          "rank_iqr": 4.0,
+          "median_r2_drop": 0.0009743907060711654,
+          "median_rmse_increase": 10.253026412618283,
+          "positive_r2_drop_fraction": 0.8,
+          "positive_rmse_increase_fraction": 1.0,
+          "strong_candidate": false
+        },
+        {
+          "feature": "FLDS_clim_seasonal_amp",
+          "selected_frequency": 1.0,
+          "top_k_frequency": 0.0,
+          "median_rank": 34.0,
+          "rank_iqr": 11.0,
+          "median_r2_drop": 0.0009422117793943807,
+          "median_rmse_increase": 3.4567346698469237,
+          "positive_r2_drop_fraction": 0.6,
+          "positive_rmse_increase_fraction": 0.6,
+          "strong_candidate": false
+        },
+        {
+          "feature": "FLDS_clim_std",
+          "selected_frequency": 1.0,
+          "top_k_frequency": 0.0,
+          "median_rank": 42.0,
+          "rank_iqr": 8.0,
+          "median_r2_drop": 0.0008344640223413302,
+          "median_rmse_increase": -5.63376796137095,
+          "positive_r2_drop_fraction": 0.8,
+          "positive_rmse_increase_fraction": 0.2,
+          "strong_candidate": false
+        },
+        {
+          "feature": "FLDS_clim_max",
+          "selected_frequency": 1.0,
+          "top_k_frequency": 0.0,
+          "median_rank": 38.0,
+          "rank_iqr": 8.0,
+          "median_r2_drop": 0.0006898764747037545,
+          "median_rmse_increase": -0.5130595522936119,
+          "positive_r2_drop_fraction": 1.0,
+          "positive_rmse_increase_fraction": 0.4,
+          "strong_candidate": false
+        },
+        {
+          "feature": "TBOT_clim_std",
+          "selected_frequency": 1.0,
+          "top_k_frequency": 0.0,
+          "median_rank": 34.0,
+          "rank_iqr": 4.0,
+          "median_r2_drop": 0.0005028098987567564,
+          "median_rmse_increase": 2.6675872973296464,
+          "positive_r2_drop_fraction": 1.0,
+          "positive_rmse_increase_fraction": 0.8,
+          "strong_candidate": false
+        },
+        {
+          "feature": "parm_2",
+          "selected_frequency": 1.0,
+          "top_k_frequency": 0.0,
+          "median_rank": 31.0,
+          "rank_iqr": 11.0,
+          "median_r2_drop": 0.0004805321027395587,
+          "median_rmse_increase": 5.079985169511929,
+          "positive_r2_drop_fraction": 0.6,
+          "positive_rmse_increase_fraction": 0.6,
+          "strong_candidate": false
+        },
+        {
+          "feature": "PRECTmms_clim_std",
+          "selected_frequency": 1.0,
+          "top_k_frequency": 0.0,
+          "median_rank": 26.0,
+          "rank_iqr": 2.0,
+          "median_r2_drop": 0.00045915174700834893,
+          "median_rmse_increase": 14.774019071946896,
+          "positive_r2_drop_fraction": 0.6,
+          "positive_rmse_increase_fraction": 0.8,
+          "strong_candidate": false
+        },
+        {
+          "feature": "parm_3",
+          "selected_frequency": 1.0,
+          "top_k_frequency": 0.0,
+          "median_rank": 31.0,
+          "rank_iqr": 8.0,
+          "median_r2_drop": 0.00042007942770132256,
+          "median_rmse_increase": 6.741981069254393,
+          "positive_r2_drop_fraction": 0.6,
+          "positive_rmse_increase_fraction": 0.8,
+          "strong_candidate": false
+        },
+        {
+          "feature": "PSRF_clim_mean",
+          "selected_frequency": 1.0,
+          "top_k_frequency": 0.0,
+          "median_rank": 33.0,
+          "rank_iqr": 9.0,
+          "median_r2_drop": 0.00041579050294783537,
+          "median_rmse_increase": 2.3456575520699516,
+          "positive_r2_drop_fraction": 0.8,
+          "positive_rmse_increase_fraction": 0.6,
+          "strong_candidate": false
+        },
+        {
+          "feature": "PCT_CLAY",
+          "selected_frequency": 1.0,
+          "top_k_frequency": 0.0,
+          "median_rank": 37.0,
+          "rank_iqr": 8.0,
+          "median_r2_drop": 0.0003650106220038918,
+          "median_rmse_increase": 0.08211169268111007,
+          "positive_r2_drop_fraction": 0.8,
+          "positive_rmse_increase_fraction": 0.6,
+          "strong_candidate": false
+        },
+        {
+          "feature": "FLDS_clim_mean",
+          "selected_frequency": 1.0,
+          "top_k_frequency": 0.0,
+          "median_rank": 36.0,
+          "rank_iqr": 2.0,
+          "median_r2_drop": 0.0003540450625283409,
+          "median_rmse_increase": 0.6769066392869263,
+          "positive_r2_drop_fraction": 1.0,
+          "positive_rmse_increase_fraction": 0.8,
+          "strong_candidate": false
+        },
+        {
+          "feature": "PCT_SAND",
+          "selected_frequency": 1.0,
+          "top_k_frequency": 0.0,
+          "median_rank": 33.0,
+          "rank_iqr": 2.0,
+          "median_r2_drop": 0.0003016183599612865,
+          "median_rmse_increase": 0.7514105671148172,
+          "positive_r2_drop_fraction": 0.8,
+          "positive_rmse_increase_fraction": 0.8,
+          "strong_candidate": false
+        },
+        {
+          "feature": "WIND_clim_max",
+          "selected_frequency": 1.0,
+          "top_k_frequency": 0.0,
+          "median_rank": 36.0,
+          "rank_iqr": 5.0,
+          "median_r2_drop": 0.00020646177087997597,
+          "median_rmse_increase": 0.533226862881861,
+          "positive_r2_drop_fraction": 0.8,
+          "positive_rmse_increase_fraction": 0.6,
+          "strong_candidate": false
+        },
+        {
+          "feature": "WIND_clim_seasonal_amp",
+          "selected_frequency": 1.0,
+          "top_k_frequency": 0.0,
+          "median_rank": 30.0,
+          "rank_iqr": 3.0,
+          "median_r2_drop": 0.00010853720288993285,
+          "median_rmse_increase": 6.878213297090838,
+          "positive_r2_drop_fraction": 0.8,
+          "positive_rmse_increase_fraction": 1.0,
+          "strong_candidate": false
+        },
+        {
+          "feature": "parm_7",
+          "selected_frequency": 1.0,
+          "top_k_frequency": 0.0,
+          "median_rank": 36.0,
+          "rank_iqr": 14.0,
+          "median_r2_drop": 6.725138398527841e-07,
+          "median_rmse_increase": -0.535786472832342,
+          "positive_r2_drop_fraction": 0.6,
+          "positive_rmse_increase_fraction": 0.4,
+          "strong_candidate": false
+        },
+        {
+          "feature": "RH_clim_std",
+          "selected_frequency": 1.0,
+          "top_k_frequency": 0.0,
+          "median_rank": 15.0,
+          "rank_iqr": 9.0,
+          "median_r2_drop": -0.0008744451564782485,
+          "median_rmse_increase": 54.778881162552466,
+          "positive_r2_drop_fraction": 0.4,
+          "positive_rmse_increase_fraction": 0.8,
+          "strong_candidate": false
+        },
+        {
+          "feature": "RH_clim_min",
+          "selected_frequency": 1.0,
+          "top_k_frequency": 0.0,
+          "median_rank": 25.0,
+          "rank_iqr": 15.0,
+          "median_r2_drop": -0.0019344947050054379,
+          "median_rmse_increase": 19.249005076606977,
+          "positive_r2_drop_fraction": 0.4,
+          "positive_rmse_increase_fraction": 0.6,
+          "strong_candidate": false
+        },
+        {
+          "feature": "parm_0",
+          "selected_frequency": 1.0,
+          "top_k_frequency": 0.0,
+          "median_rank": 44.0,
+          "rank_iqr": 2.0,
+          "median_r2_drop": -0.0024246653473338486,
+          "median_rmse_increase": -14.058362466138078,
+          "positive_r2_drop_fraction": 0.0,
+          "positive_rmse_increase_fraction": 0.0,
+          "strong_candidate": false
+        },
+        {
+          "feature": "PRECTmms_clim_seasonal_amp",
+          "selected_frequency": 1.0,
+          "top_k_frequency": 0.0,
+          "median_rank": 41.0,
+          "rank_iqr": 16.0,
+          "median_r2_drop": -0.00287117552654631,
+          "median_rmse_increase": -13.612939868825492,
+          "positive_r2_drop_fraction": 0.4,
+          "positive_rmse_increase_fraction": 0.4,
+          "strong_candidate": false
+        },
+        {
+          "feature": "PRECTmms_clim_mean",
+          "selected_frequency": 1.0,
+          "top_k_frequency": 0.0,
+          "median_rank": 34.0,
+          "rank_iqr": 21.0,
+          "median_r2_drop": -0.0035988778821222367,
+          "median_rmse_increase": 2.1487503593334623,
+          "positive_r2_drop_fraction": 0.4,
+          "positive_rmse_increase_fraction": 0.6,
+          "strong_candidate": false
+        }
+      ]
+    },
+    "TOTSOMN": {
+      "metrics": {
+        "r2_val": {
+          "count": 5,
+          "median": 0.7390754815453286,
+          "p25": 0.6938037561351573,
+          "p75": 0.7642035755841227,
+          "min": 0.6222731704872192,
+          "max": 0.7856303377911845
+        },
+        "r2_gap": {
+          "count": 5,
+          "median": -0.003758073723671429,
+          "p25": -0.0385041728736758,
+          "p75": 0.047062694974648434,
+          "min": -0.05423485171705833,
+          "max": 0.14138686342217344
+        },
+        "rmse_ratio": {
+          "count": 5,
+          "median": 0.9644599137107164,
+          "p25": 0.8759144644222208,
+          "p75": 1.4100160194998779,
+          "min": 0.7061676692480547,
+          "max": 1.4205228887458206
+        },
+        "overfit_warning_fraction": 0.0
+      },
+      "features": [
+        {
+          "feature": "parm_6",
+          "selected_frequency": 1.0,
+          "top_k_frequency": 1.0,
+          "median_rank": 1.0,
+          "rank_iqr": 0.0,
+          "median_r2_drop": 0.3690787792436062,
+          "median_rmse_increase": 264.3764375961812,
+          "positive_r2_drop_fraction": 1.0,
+          "positive_rmse_increase_fraction": 1.0,
+          "strong_candidate": true
+        },
+        {
+          "feature": "parm_13",
+          "selected_frequency": 1.0,
+          "top_k_frequency": 1.0,
+          "median_rank": 2.0,
+          "rank_iqr": 0.0,
+          "median_r2_drop": 0.2622051117904088,
+          "median_rmse_increase": 195.7402655627368,
+          "positive_r2_drop_fraction": 1.0,
+          "positive_rmse_increase_fraction": 1.0,
+          "strong_candidate": true
+        },
+        {
+          "feature": "parm_12",
+          "selected_frequency": 1.0,
+          "top_k_frequency": 1.0,
+          "median_rank": 3.0,
+          "rank_iqr": 0.0,
+          "median_r2_drop": 0.15240133950692347,
+          "median_rmse_increase": 112.61986359651782,
+          "positive_r2_drop_fraction": 1.0,
+          "positive_rmse_increase_fraction": 1.0,
+          "strong_candidate": true
+        },
+        {
+          "feature": "parm_9",
+          "selected_frequency": 1.0,
+          "top_k_frequency": 1.0,
+          "median_rank": 4.0,
+          "rank_iqr": 0.0,
+          "median_r2_drop": 0.11743238011664937,
+          "median_rmse_increase": 89.60619190447112,
+          "positive_r2_drop_fraction": 1.0,
+          "positive_rmse_increase_fraction": 1.0,
+          "strong_candidate": true
+        },
+        {
+          "feature": "parm_10",
+          "selected_frequency": 1.0,
+          "top_k_frequency": 1.0,
+          "median_rank": 5.0,
+          "rank_iqr": 0.0,
+          "median_r2_drop": 0.07339310368501609,
+          "median_rmse_increase": 55.67350245861955,
+          "positive_r2_drop_fraction": 1.0,
+          "positive_rmse_increase_fraction": 1.0,
+          "strong_candidate": true
+        },
+        {
+          "feature": "PSRF_clim_std",
+          "selected_frequency": 1.0,
+          "top_k_frequency": 1.0,
+          "median_rank": 6.0,
+          "rank_iqr": 1.0,
+          "median_r2_drop": 0.01495230198278183,
+          "median_rmse_increase": 24.825408768857585,
+          "positive_r2_drop_fraction": 1.0,
+          "positive_rmse_increase_fraction": 1.0,
+          "strong_candidate": true
+        },
+        {
+          "feature": "RH_clim_seasonal_amp",
+          "selected_frequency": 1.0,
+          "top_k_frequency": 1.0,
+          "median_rank": 7.0,
+          "rank_iqr": 0.0,
+          "median_r2_drop": 0.011473120481296714,
+          "median_rmse_increase": 12.982441555735662,
+          "positive_r2_drop_fraction": 1.0,
+          "positive_rmse_increase_fraction": 1.0,
+          "strong_candidate": true
+        },
+        {
+          "feature": "PSRF_clim_seasonal_amp",
+          "selected_frequency": 1.0,
+          "top_k_frequency": 0.8,
+          "median_rank": 8.0,
+          "rank_iqr": 2.0,
+          "median_r2_drop": 0.014200237099747923,
+          "median_rmse_increase": 13.411703859582985,
+          "positive_r2_drop_fraction": 1.0,
+          "positive_rmse_increase_fraction": 1.0,
+          "strong_candidate": true
+        },
+        {
+          "feature": "RH_clim_mean",
+          "selected_frequency": 1.0,
+          "top_k_frequency": 0.6,
+          "median_rank": 10.0,
+          "rank_iqr": 5.0,
+          "median_r2_drop": 0.003802104269423151,
+          "median_rmse_increase": 6.8898038722339265,
+          "positive_r2_drop_fraction": 0.8,
+          "positive_rmse_increase_fraction": 0.8,
+          "strong_candidate": true
+        },
+        {
+          "feature": "parm_8",
+          "selected_frequency": 1.0,
+          "top_k_frequency": 0.4,
+          "median_rank": 11.0,
+          "rank_iqr": 3.0,
+          "median_r2_drop": 0.009353140016797865,
+          "median_rmse_increase": 7.3865192612569786,
+          "positive_r2_drop_fraction": 1.0,
+          "positive_rmse_increase_fraction": 1.0,
+          "strong_candidate": false
+        },
+        {
+          "feature": "FSDS_clim_mean",
+          "selected_frequency": 1.0,
+          "top_k_frequency": 0.4,
+          "median_rank": 18.0,
+          "rank_iqr": 8.0,
+          "median_r2_drop": -4.830301655228686e-05,
+          "median_rmse_increase": 5.257318977504696,
+          "positive_r2_drop_fraction": 0.4,
+          "positive_rmse_increase_fraction": 1.0,
+          "strong_candidate": false
+        },
+        {
+          "feature": "parm_11",
+          "selected_frequency": 1.0,
+          "top_k_frequency": 0.2,
+          "median_rank": 15.0,
+          "rank_iqr": 6.0,
+          "median_r2_drop": 0.006787497835636702,
+          "median_rmse_increase": 4.644481268569223,
+          "positive_r2_drop_fraction": 1.0,
+          "positive_rmse_increase_fraction": 1.0,
+          "strong_candidate": false
+        },
+        {
+          "feature": "ORGANIC",
+          "selected_frequency": 1.0,
+          "top_k_frequency": 0.2,
+          "median_rank": 14.0,
+          "rank_iqr": 3.0,
+          "median_r2_drop": 0.00547731400049066,
+          "median_rmse_increase": 5.9955454643411485,
+          "positive_r2_drop_fraction": 0.8,
+          "positive_rmse_increase_fraction": 1.0,
+          "strong_candidate": false
+        },
+        {
+          "feature": "FSDS_clim_seasonal_amp",
+          "selected_frequency": 1.0,
+          "top_k_frequency": 0.2,
+          "median_rank": 15.0,
+          "rank_iqr": 4.0,
+          "median_r2_drop": 0.0050939462726078966,
+          "median_rmse_increase": 5.839458134727636,
+          "positive_r2_drop_fraction": 1.0,
+          "positive_rmse_increase_fraction": 1.0,
+          "strong_candidate": false
+        },
+        {
+          "feature": "RH_clim_std",
+          "selected_frequency": 1.0,
+          "top_k_frequency": 0.2,
+          "median_rank": 17.0,
+          "rank_iqr": 8.0,
+          "median_r2_drop": -0.001160555925758186,
+          "median_rmse_increase": 5.279387147060717,
+          "positive_r2_drop_fraction": 0.4,
+          "positive_rmse_increase_fraction": 1.0,
+          "strong_candidate": false
+        },
+        {
+          "feature": "parm_5",
+          "selected_frequency": 1.0,
+          "top_k_frequency": 0.0,
+          "median_rank": 14.0,
+          "rank_iqr": 10.0,
+          "median_r2_drop": 0.006452577268485943,
+          "median_rmse_increase": 5.541024102608475,
+          "positive_r2_drop_fraction": 1.0,
+          "positive_rmse_increase_fraction": 1.0,
+          "strong_candidate": false
+        },
+        {
+          "feature": "WIND_clim_std",
+          "selected_frequency": 1.0,
+          "top_k_frequency": 0.0,
+          "median_rank": 14.0,
+          "rank_iqr": 4.0,
+          "median_r2_drop": 0.006212494330148088,
+          "median_rmse_increase": 6.840222274563338,
+          "positive_r2_drop_fraction": 1.0,
+          "positive_rmse_increase_fraction": 1.0,
+          "strong_candidate": false
+        },
+        {
+          "feature": "TBOT_clim_min",
+          "selected_frequency": 1.0,
+          "top_k_frequency": 0.0,
+          "median_rank": 15.0,
+          "rank_iqr": 2.0,
+          "median_r2_drop": 0.004873768368052728,
+          "median_rmse_increase": 5.507923909921857,
+          "positive_r2_drop_fraction": 1.0,
+          "positive_rmse_increase_fraction": 1.0,
+          "strong_candidate": false
+        },
+        {
+          "feature": "parm_1",
+          "selected_frequency": 1.0,
+          "top_k_frequency": 0.0,
+          "median_rank": 20.0,
+          "rank_iqr": 2.0,
+          "median_r2_drop": 0.004088490240209436,
+          "median_rmse_increase": 3.0139272163169153,
+          "positive_r2_drop_fraction": 0.8,
+          "positive_rmse_increase_fraction": 1.0,
+          "strong_candidate": false
+        },
+        {
+          "feature": "PRECTmms_clim_max",
+          "selected_frequency": 1.0,
+          "top_k_frequency": 0.0,
+          "median_rank": 18.0,
+          "rank_iqr": 6.0,
+          "median_r2_drop": 0.0029857760990155274,
+          "median_rmse_increase": 3.3247975529243377,
+          "positive_r2_drop_fraction": 1.0,
+          "positive_rmse_increase_fraction": 1.0,
+          "strong_candidate": false
+        },
+        {
+          "feature": "TBOT_clim_mean",
+          "selected_frequency": 1.0,
+          "top_k_frequency": 0.0,
+          "median_rank": 19.0,
+          "rank_iqr": 13.0,
+          "median_r2_drop": 0.002305870663211071,
+          "median_rmse_increase": 3.0730777994518803,
+          "positive_r2_drop_fraction": 0.8,
+          "positive_rmse_increase_fraction": 0.8,
+          "strong_candidate": false
+        },
+        {
+          "feature": "PCT_CLAY",
+          "selected_frequency": 1.0,
+          "top_k_frequency": 0.0,
+          "median_rank": 30.0,
+          "rank_iqr": 6.0,
+          "median_r2_drop": 0.0017989935532674584,
+          "median_rmse_increase": 0.6021056655288817,
+          "positive_r2_drop_fraction": 0.8,
+          "positive_rmse_increase_fraction": 0.8,
+          "strong_candidate": false
+        },
+        {
+          "feature": "WIND_clim_min",
+          "selected_frequency": 1.0,
+          "top_k_frequency": 0.0,
+          "median_rank": 34.0,
+          "rank_iqr": 4.0,
+          "median_r2_drop": 0.0013509798178794746,
+          "median_rmse_increase": 0.19898640261193634,
+          "positive_r2_drop_fraction": 1.0,
+          "positive_rmse_increase_fraction": 0.6,
+          "strong_candidate": false
+        },
+        {
+          "feature": "FSDS_clim_max",
+          "selected_frequency": 1.0,
+          "top_k_frequency": 0.0,
+          "median_rank": 32.0,
+          "rank_iqr": 8.0,
+          "median_r2_drop": 0.0012904271899167458,
+          "median_rmse_increase": 0.5739485391323882,
+          "positive_r2_drop_fraction": 1.0,
+          "positive_rmse_increase_fraction": 0.6,
+          "strong_candidate": false
+        },
+        {
+          "feature": "PRECTmms_clim_std",
+          "selected_frequency": 1.0,
+          "top_k_frequency": 0.0,
+          "median_rank": 24.0,
+          "rank_iqr": 3.0,
+          "median_r2_drop": 0.001272598313189932,
+          "median_rmse_increase": 1.6086148704207517,
+          "positive_r2_drop_fraction": 0.8,
+          "positive_rmse_increase_fraction": 1.0,
+          "strong_candidate": false
+        },
+        {
+          "feature": "TBOT_clim_max",
+          "selected_frequency": 1.0,
+          "top_k_frequency": 0.0,
+          "median_rank": 31.0,
+          "rank_iqr": 4.0,
+          "median_r2_drop": 0.0010621499203732065,
+          "median_rmse_increase": 0.6542124692557394,
+          "positive_r2_drop_fraction": 0.8,
+          "positive_rmse_increase_fraction": 0.8,
+          "strong_candidate": false
+        },
+        {
+          "feature": "WIND_clim_max",
+          "selected_frequency": 1.0,
+          "top_k_frequency": 0.0,
+          "median_rank": 28.0,
+          "rank_iqr": 9.0,
+          "median_r2_drop": 0.0009405070544691307,
+          "median_rmse_increase": 0.6641442450378179,
+          "positive_r2_drop_fraction": 0.6,
+          "positive_rmse_increase_fraction": 0.6,
+          "strong_candidate": false
+        },
+        {
+          "feature": "FLDS_clim_min",
+          "selected_frequency": 1.0,
+          "top_k_frequency": 0.0,
+          "median_rank": 27.0,
+          "rank_iqr": 6.0,
+          "median_r2_drop": 0.0009343828940131388,
+          "median_rmse_increase": 1.0357001443238687,
+          "positive_r2_drop_fraction": 0.8,
+          "positive_rmse_increase_fraction": 0.8,
+          "strong_candidate": false
+        },
+        {
+          "feature": "PSRF_clim_mean",
+          "selected_frequency": 1.0,
+          "top_k_frequency": 0.0,
+          "median_rank": 30.0,
+          "rank_iqr": 7.0,
+          "median_r2_drop": 0.0009242559477479206,
+          "median_rmse_increase": 0.606938218674145,
+          "positive_r2_drop_fraction": 1.0,
+          "positive_rmse_increase_fraction": 0.8,
+          "strong_candidate": false
+        },
+        {
+          "feature": "parm_7",
+          "selected_frequency": 1.0,
+          "top_k_frequency": 0.0,
+          "median_rank": 26.0,
+          "rank_iqr": 4.0,
+          "median_r2_drop": 0.000876879365135641,
+          "median_rmse_increase": 1.2416225148532334,
+          "positive_r2_drop_fraction": 0.8,
+          "positive_rmse_increase_fraction": 1.0,
+          "strong_candidate": false
+        },
+        {
+          "feature": "parm_3",
+          "selected_frequency": 1.0,
+          "top_k_frequency": 0.0,
+          "median_rank": 26.0,
+          "rank_iqr": 9.0,
+          "median_r2_drop": 0.00077776303360369,
+          "median_rmse_increase": 1.3967158113796145,
+          "positive_r2_drop_fraction": 0.8,
+          "positive_rmse_increase_fraction": 0.8,
+          "strong_candidate": false
+        },
+        {
+          "feature": "WIND_clim_mean",
+          "selected_frequency": 1.0,
+          "top_k_frequency": 0.0,
+          "median_rank": 23.0,
+          "rank_iqr": 4.0,
+          "median_r2_drop": 0.0007224230275193477,
+          "median_rmse_increase": 1.643641559804351,
+          "positive_r2_drop_fraction": 0.6,
+          "positive_rmse_increase_fraction": 1.0,
+          "strong_candidate": false
+        },
+        {
+          "feature": "parm_2",
+          "selected_frequency": 1.0,
+          "top_k_frequency": 0.0,
+          "median_rank": 35.0,
+          "rank_iqr": 2.0,
+          "median_r2_drop": 0.0007184807154713702,
+          "median_rmse_increase": 0.20958652514508458,
+          "positive_r2_drop_fraction": 0.8,
+          "positive_rmse_increase_fraction": 0.8,
+          "strong_candidate": false
+        },
+        {
+          "feature": "FLDS_clim_std",
+          "selected_frequency": 1.0,
+          "top_k_frequency": 0.0,
+          "median_rank": 40.0,
+          "rank_iqr": 7.0,
+          "median_r2_drop": 0.0006773112889143229,
+          "median_rmse_increase": -0.087632197657733,
+          "positive_r2_drop_fraction": 0.8,
+          "positive_rmse_increase_fraction": 0.4,
+          "strong_candidate": false
+        },
+        {
+          "feature": "FLDS_clim_max",
+          "selected_frequency": 1.0,
+          "top_k_frequency": 0.0,
+          "median_rank": 38.0,
+          "rank_iqr": 3.0,
+          "median_r2_drop": 0.0006310068548651265,
+          "median_rmse_increase": 0.13039596782314078,
+          "positive_r2_drop_fraction": 1.0,
+          "positive_rmse_increase_fraction": 0.6,
+          "strong_candidate": false
+        },
+        {
+          "feature": "TBOT_clim_std",
+          "selected_frequency": 1.0,
+          "top_k_frequency": 0.0,
+          "median_rank": 36.0,
+          "rank_iqr": 7.0,
+          "median_r2_drop": 0.0005917250884812097,
+          "median_rmse_increase": 0.18287082189122117,
+          "positive_r2_drop_fraction": 0.8,
+          "positive_rmse_increase_fraction": 0.8,
+          "strong_candidate": false
+        },
+        {
+          "feature": "FLDS_clim_seasonal_amp",
+          "selected_frequency": 1.0,
+          "top_k_frequency": 0.0,
+          "median_rank": 39.0,
+          "rank_iqr": 9.0,
+          "median_r2_drop": 0.0005198072050694863,
+          "median_rmse_increase": -0.16528030781059044,
+          "positive_r2_drop_fraction": 0.8,
+          "positive_rmse_increase_fraction": 0.4,
+          "strong_candidate": false
+        },
+        {
+          "feature": "WIND_clim_seasonal_amp",
+          "selected_frequency": 1.0,
+          "top_k_frequency": 0.0,
+          "median_rank": 29.0,
+          "rank_iqr": 4.0,
+          "median_r2_drop": 0.00029601937313421256,
+          "median_rmse_increase": 0.5797294199547594,
+          "positive_r2_drop_fraction": 0.6,
+          "positive_rmse_increase_fraction": 0.8,
+          "strong_candidate": false
+        },
+        {
+          "feature": "FLDS_clim_mean",
+          "selected_frequency": 1.0,
+          "top_k_frequency": 0.0,
+          "median_rank": 38.0,
+          "rank_iqr": 3.0,
+          "median_r2_drop": 0.00020236858402344904,
+          "median_rmse_increase": -0.014263486715222484,
+          "positive_r2_drop_fraction": 1.0,
+          "positive_rmse_increase_fraction": 0.4,
+          "strong_candidate": false
+        },
+        {
+          "feature": "RH_clim_min",
+          "selected_frequency": 1.0,
+          "top_k_frequency": 0.0,
+          "median_rank": 21.0,
+          "rank_iqr": 7.0,
+          "median_r2_drop": 0.00018877791562396662,
+          "median_rmse_increase": 2.3369345721830683,
+          "positive_r2_drop_fraction": 0.6,
+          "positive_rmse_increase_fraction": 0.8,
+          "strong_candidate": false
+        },
+        {
+          "feature": "PCT_SAND",
+          "selected_frequency": 1.0,
+          "top_k_frequency": 0.0,
+          "median_rank": 34.0,
+          "rank_iqr": 4.0,
+          "median_r2_drop": 6.919904928158471e-05,
+          "median_rmse_increase": 0.05012579420038321,
+          "positive_r2_drop_fraction": 0.6,
+          "positive_rmse_increase_fraction": 0.6,
+          "strong_candidate": false
+        },
+        {
+          "feature": "parm_4",
+          "selected_frequency": 1.0,
+          "top_k_frequency": 0.0,
+          "median_rank": 40.0,
+          "rank_iqr": 19.0,
+          "median_r2_drop": -0.0014151282745373667,
+          "median_rmse_increase": -1.7083258391002403,
+          "positive_r2_drop_fraction": 0.4,
+          "positive_rmse_increase_fraction": 0.4,
+          "strong_candidate": false
+        },
+        {
+          "feature": "parm_0",
+          "selected_frequency": 1.0,
+          "top_k_frequency": 0.0,
+          "median_rank": 44.0,
+          "rank_iqr": 1.0,
+          "median_r2_drop": -0.001792771341242727,
+          "median_rmse_increase": -1.442689654786875,
+          "positive_r2_drop_fraction": 0.0,
+          "positive_rmse_increase_fraction": 0.0,
+          "strong_candidate": false
+        },
+        {
+          "feature": "PRECTmms_clim_mean",
+          "selected_frequency": 1.0,
+          "top_k_frequency": 0.0,
+          "median_rank": 26.0,
+          "rank_iqr": 22.0,
+          "median_r2_drop": -0.001822066768262423,
+          "median_rmse_increase": 1.3584793149177585,
+          "positive_r2_drop_fraction": 0.4,
+          "positive_rmse_increase_fraction": 0.6,
+          "strong_candidate": false
+        },
+        {
+          "feature": "PRECTmms_clim_seasonal_amp",
+          "selected_frequency": 1.0,
+          "top_k_frequency": 0.0,
+          "median_rank": 41.0,
+          "rank_iqr": 2.0,
+          "median_r2_drop": -0.0020961062718499457,
+          "median_rmse_increase": -0.6736868614475497,
+          "positive_r2_drop_fraction": 0.2,
+          "positive_rmse_increase_fraction": 0.4,
+          "strong_candidate": false
+        }
+      ]
+    }
+  },
+  "feature_selection_summary": {
+    "selected_features": [
+      {
+        "feature": "FLDS_clim_max",
+        "count": 5,
+        "frequency": 1.0
+      },
+      {
+        "feature": "FLDS_clim_mean",
+        "count": 5,
+        "frequency": 1.0
+      },
+      {
+        "feature": "FLDS_clim_min",
+        "count": 5,
+        "frequency": 1.0
+      },
+      {
+        "feature": "FLDS_clim_seasonal_amp",
+        "count": 5,
+        "frequency": 1.0
+      },
+      {
+        "feature": "FLDS_clim_std",
+        "count": 5,
+        "frequency": 1.0
+      },
+      {
+        "feature": "FSDS_clim_max",
+        "count": 5,
+        "frequency": 1.0
+      },
+      {
+        "feature": "FSDS_clim_mean",
+        "count": 5,
+        "frequency": 1.0
+      },
+      {
+        "feature": "FSDS_clim_seasonal_amp",
+        "count": 5,
+        "frequency": 1.0
+      },
+      {
+        "feature": "ORGANIC",
+        "count": 5,
+        "frequency": 1.0
+      },
+      {
+        "feature": "PCT_CLAY",
+        "count": 5,
+        "frequency": 1.0
+      },
+      {
+        "feature": "PCT_SAND",
+        "count": 5,
+        "frequency": 1.0
+      },
+      {
+        "feature": "PRECTmms_clim_max",
+        "count": 5,
+        "frequency": 1.0
+      },
+      {
+        "feature": "PRECTmms_clim_mean",
+        "count": 5,
+        "frequency": 1.0
+      },
+      {
+        "feature": "PRECTmms_clim_seasonal_amp",
+        "count": 5,
+        "frequency": 1.0
+      },
+      {
+        "feature": "PRECTmms_clim_std",
+        "count": 5,
+        "frequency": 1.0
+      },
+      {
+        "feature": "PSRF_clim_mean",
+        "count": 5,
+        "frequency": 1.0
+      },
+      {
+        "feature": "PSRF_clim_seasonal_amp",
+        "count": 5,
+        "frequency": 1.0
+      },
+      {
+        "feature": "PSRF_clim_std",
+        "count": 5,
+        "frequency": 1.0
+      },
+      {
+        "feature": "RH_clim_mean",
+        "count": 5,
+        "frequency": 1.0
+      },
+      {
+        "feature": "RH_clim_min",
+        "count": 5,
+        "frequency": 1.0
+      },
+      {
+        "feature": "RH_clim_seasonal_amp",
+        "count": 5,
+        "frequency": 1.0
+      },
+      {
+        "feature": "RH_clim_std",
+        "count": 5,
+        "frequency": 1.0
+      },
+      {
+        "feature": "TBOT_clim_max",
+        "count": 5,
+        "frequency": 1.0
+      },
+      {
+        "feature": "TBOT_clim_mean",
+        "count": 5,
+        "frequency": 1.0
+      },
+      {
+        "feature": "TBOT_clim_min",
+        "count": 5,
+        "frequency": 1.0
+      },
+      {
+        "feature": "TBOT_clim_std",
+        "count": 5,
+        "frequency": 1.0
+      },
+      {
+        "feature": "WIND_clim_max",
+        "count": 5,
+        "frequency": 1.0
+      },
+      {
+        "feature": "WIND_clim_mean",
+        "count": 5,
+        "frequency": 1.0
+      },
+      {
+        "feature": "WIND_clim_min",
+        "count": 5,
+        "frequency": 1.0
+      },
+      {
+        "feature": "WIND_clim_seasonal_amp",
+        "count": 5,
+        "frequency": 1.0
+      },
+      {
+        "feature": "WIND_clim_std",
+        "count": 5,
+        "frequency": 1.0
+      },
+      {
+        "feature": "parm_0",
+        "count": 5,
+        "frequency": 1.0
+      },
+      {
+        "feature": "parm_1",
+        "count": 5,
+        "frequency": 1.0
+      },
+      {
+        "feature": "parm_10",
+        "count": 5,
+        "frequency": 1.0
+      },
+      {
+        "feature": "parm_11",
+        "count": 5,
+        "frequency": 1.0
+      },
+      {
+        "feature": "parm_12",
+        "count": 5,
+        "frequency": 1.0
+      },
+      {
+        "feature": "parm_13",
+        "count": 5,
+        "frequency": 1.0
+      },
+      {
+        "feature": "parm_2",
+        "count": 5,
+        "frequency": 1.0
+      },
+      {
+        "feature": "parm_3",
+        "count": 5,
+        "frequency": 1.0
+      },
+      {
+        "feature": "parm_4",
+        "count": 5,
+        "frequency": 1.0
+      },
+      {
+        "feature": "parm_5",
+        "count": 5,
+        "frequency": 1.0
+      },
+      {
+        "feature": "parm_6",
+        "count": 5,
+        "frequency": 1.0
+      },
+      {
+        "feature": "parm_7",
+        "count": 5,
+        "frequency": 1.0
+      },
+      {
+        "feature": "parm_8",
+        "count": 5,
+        "frequency": 1.0
+      },
+      {
+        "feature": "parm_9",
+        "count": 5,
+        "frequency": 1.0
+      }
+    ],
+    "requested_explicit_subset_features": [
+      {
+        "feature": "FLDS_clim_max",
+        "count": 5,
+        "frequency": 1.0
+      },
+      {
+        "feature": "FLDS_clim_mean",
+        "count": 5,
+        "frequency": 1.0
+      },
+      {
+        "feature": "FLDS_clim_min",
+        "count": 5,
+        "frequency": 1.0
+      },
+      {
+        "feature": "FLDS_clim_seasonal_amp",
+        "count": 5,
+        "frequency": 1.0
+      },
+      {
+        "feature": "FLDS_clim_std",
+        "count": 5,
+        "frequency": 1.0
+      },
+      {
+        "feature": "FSDS_clim_max",
+        "count": 5,
+        "frequency": 1.0
+      },
+      {
+        "feature": "FSDS_clim_mean",
+        "count": 5,
+        "frequency": 1.0
+      },
+      {
+        "feature": "FSDS_clim_seasonal_amp",
+        "count": 5,
+        "frequency": 1.0
+      },
+      {
+        "feature": "ORGANIC",
+        "count": 5,
+        "frequency": 1.0
+      },
+      {
+        "feature": "PCT_CLAY",
+        "count": 5,
+        "frequency": 1.0
+      },
+      {
+        "feature": "PCT_SAND",
+        "count": 5,
+        "frequency": 1.0
+      },
+      {
+        "feature": "PRECTmms_clim_max",
+        "count": 5,
+        "frequency": 1.0
+      },
+      {
+        "feature": "PRECTmms_clim_mean",
+        "count": 5,
+        "frequency": 1.0
+      },
+      {
+        "feature": "PRECTmms_clim_seasonal_amp",
+        "count": 5,
+        "frequency": 1.0
+      },
+      {
+        "feature": "PRECTmms_clim_std",
+        "count": 5,
+        "frequency": 1.0
+      },
+      {
+        "feature": "PSRF_clim_mean",
+        "count": 5,
+        "frequency": 1.0
+      },
+      {
+        "feature": "PSRF_clim_seasonal_amp",
+        "count": 5,
+        "frequency": 1.0
+      },
+      {
+        "feature": "PSRF_clim_std",
+        "count": 5,
+        "frequency": 1.0
+      },
+      {
+        "feature": "RH_clim_mean",
+        "count": 5,
+        "frequency": 1.0
+      },
+      {
+        "feature": "RH_clim_min",
+        "count": 5,
+        "frequency": 1.0
+      },
+      {
+        "feature": "RH_clim_seasonal_amp",
+        "count": 5,
+        "frequency": 1.0
+      },
+      {
+        "feature": "RH_clim_std",
+        "count": 5,
+        "frequency": 1.0
+      },
+      {
+        "feature": "TBOT_clim_max",
+        "count": 5,
+        "frequency": 1.0
+      },
+      {
+        "feature": "TBOT_clim_mean",
+        "count": 5,
+        "frequency": 1.0
+      },
+      {
+        "feature": "TBOT_clim_min",
+        "count": 5,
+        "frequency": 1.0
+      },
+      {
+        "feature": "TBOT_clim_std",
+        "count": 5,
+        "frequency": 1.0
+      },
+      {
+        "feature": "WIND_clim_max",
+        "count": 5,
+        "frequency": 1.0
+      },
+      {
+        "feature": "WIND_clim_mean",
+        "count": 5,
+        "frequency": 1.0
+      },
+      {
+        "feature": "WIND_clim_min",
+        "count": 5,
+        "frequency": 1.0
+      },
+      {
+        "feature": "WIND_clim_seasonal_amp",
+        "count": 5,
+        "frequency": 1.0
+      },
+      {
+        "feature": "WIND_clim_std",
+        "count": 5,
+        "frequency": 1.0
+      },
+      {
+        "feature": "parm_0",
+        "count": 5,
+        "frequency": 1.0
+      },
+      {
+        "feature": "parm_1",
+        "count": 5,
+        "frequency": 1.0
+      },
+      {
+        "feature": "parm_10",
+        "count": 5,
+        "frequency": 1.0
+      },
+      {
+        "feature": "parm_11",
+        "count": 5,
+        "frequency": 1.0
+      },
+      {
+        "feature": "parm_12",
+        "count": 5,
+        "frequency": 1.0
+      },
+      {
+        "feature": "parm_13",
+        "count": 5,
+        "frequency": 1.0
+      },
+      {
+        "feature": "parm_2",
+        "count": 5,
+        "frequency": 1.0
+      },
+      {
+        "feature": "parm_3",
+        "count": 5,
+        "frequency": 1.0
+      },
+      {
+        "feature": "parm_4",
+        "count": 5,
+        "frequency": 1.0
+      },
+      {
+        "feature": "parm_5",
+        "count": 5,
+        "frequency": 1.0
+      },
+      {
+        "feature": "parm_6",
+        "count": 5,
+        "frequency": 1.0
+      },
+      {
+        "feature": "parm_7",
+        "count": 5,
+        "frequency": 1.0
+      },
+      {
+        "feature": "parm_8",
+        "count": 5,
+        "frequency": 1.0
+      },
+      {
+        "feature": "parm_9",
+        "count": 5,
+        "frequency": 1.0
+      }
+    ]
+  },
+  "correlation_summary": {
+    "thresholded_pair_frequency": {
+      "0.80": [
+        {
+          "feature_i": "FLDS_clim_max",
+          "feature_j": "FLDS_clim_mean",
+          "seed_count": 5,
+          "seed_frequency": 1.0,
+          "median_abs_corr": 0.9785303688108001
+        },
+        {
+          "feature_i": "FLDS_clim_max",
+          "feature_j": "PRECTmms_clim_std",
+          "seed_count": 5,
+          "seed_frequency": 1.0,
+          "median_abs_corr": 0.969282103801294
+        },
+        {
+          "feature_i": "FLDS_clim_mean",
+          "feature_j": "PRECTmms_clim_std",
+          "seed_count": 5,
+          "seed_frequency": 1.0,
+          "median_abs_corr": 0.9516380566147163
+        },
+        {
+          "feature_i": "FLDS_clim_mean",
+          "feature_j": "PSRF_clim_mean",
+          "seed_count": 5,
+          "seed_frequency": 1.0,
+          "median_abs_corr": 0.9508423256257021
+        },
+        {
+          "feature_i": "PCT_CLAY",
+          "feature_j": "PCT_SAND",
+          "seed_count": 5,
+          "seed_frequency": 1.0,
+          "median_abs_corr": 0.9480045579496855
+        },
+        {
+          "feature_i": "FLDS_clim_max",
+          "feature_j": "PSRF_clim_mean",
+          "seed_count": 5,
+          "seed_frequency": 1.0,
+          "median_abs_corr": 0.9353997692311506
+        },
+        {
+          "feature_i": "ORGANIC",
+          "feature_j": "PRECTmms_clim_max",
+          "seed_count": 5,
+          "seed_frequency": 1.0,
+          "median_abs_corr": 0.9328007044600984
+        },
+        {
+          "feature_i": "FLDS_clim_seasonal_amp",
+          "feature_j": "FLDS_clim_std",
+          "seed_count": 5,
+          "seed_frequency": 1.0,
+          "median_abs_corr": 0.9304848849174758
+        },
+        {
+          "feature_i": "PSRF_clim_mean",
+          "feature_j": "RH_clim_min",
+          "seed_count": 5,
+          "seed_frequency": 1.0,
+          "median_abs_corr": 0.9299635382610507
+        },
+        {
+          "feature_i": "PRECTmms_clim_max",
+          "feature_j": "PRECTmms_clim_std",
+          "seed_count": 5,
+          "seed_frequency": 1.0,
+          "median_abs_corr": 0.9242881512509099
+        },
+        {
+          "feature_i": "FLDS_clim_mean",
+          "feature_j": "TBOT_clim_mean",
+          "seed_count": 5,
+          "seed_frequency": 1.0,
+          "median_abs_corr": 0.9096903313635202
+        },
+        {
+          "feature_i": "PRECTmms_clim_mean",
+          "feature_j": "TBOT_clim_max",
+          "seed_count": 5,
+          "seed_frequency": 1.0,
+          "median_abs_corr": 0.9074392971383946
+        },
+        {
+          "feature_i": "TBOT_clim_min",
+          "feature_j": "TBOT_clim_std",
+          "seed_count": 5,
+          "seed_frequency": 1.0,
+          "median_abs_corr": 0.9051520859895604
+        },
+        {
+          "feature_i": "PRECTmms_clim_mean",
+          "feature_j": "RH_clim_std",
+          "seed_count": 5,
+          "seed_frequency": 1.0,
+          "median_abs_corr": 0.9040207083971765
+        },
+        {
+          "feature_i": "FLDS_clim_max",
+          "feature_j": "RH_clim_min",
+          "seed_count": 5,
+          "seed_frequency": 1.0,
+          "median_abs_corr": 0.9025495968878772
+        },
+        {
+          "feature_i": "PRECTmms_clim_mean",
+          "feature_j": "RH_clim_mean",
+          "seed_count": 5,
+          "seed_frequency": 1.0,
+          "median_abs_corr": 0.89698641164338
+        },
+        {
+          "feature_i": "RH_clim_mean",
+          "feature_j": "RH_clim_std",
+          "seed_count": 5,
+          "seed_frequency": 1.0,
+          "median_abs_corr": 0.8967890136377163
+        },
+        {
+          "feature_i": "FLDS_clim_mean",
+          "feature_j": "RH_clim_min",
+          "seed_count": 5,
+          "seed_frequency": 1.0,
+          "median_abs_corr": 0.8938924511934719
+        },
+        {
+          "feature_i": "WIND_clim_mean",
+          "feature_j": "WIND_clim_seasonal_amp",
+          "seed_count": 5,
+          "seed_frequency": 1.0,
+          "median_abs_corr": 0.8906683097050919
+        },
+        {
+          "feature_i": "WIND_clim_max",
+          "feature_j": "WIND_clim_seasonal_amp",
+          "seed_count": 5,
+          "seed_frequency": 1.0,
+          "median_abs_corr": 0.8905360972480882
+        },
+        {
+          "feature_i": "PRECTmms_clim_std",
+          "feature_j": "RH_clim_min",
+          "seed_count": 5,
+          "seed_frequency": 1.0,
+          "median_abs_corr": 0.8887782980606355
+        },
+        {
+          "feature_i": "PRECTmms_clim_std",
+          "feature_j": "PSRF_clim_mean",
+          "seed_count": 5,
+          "seed_frequency": 1.0,
+          "median_abs_corr": 0.8866114879807429
+        },
+        {
+          "feature_i": "PSRF_clim_seasonal_amp",
+          "feature_j": "WIND_clim_std",
+          "seed_count": 5,
+          "seed_frequency": 1.0,
+          "median_abs_corr": 0.8828705185441125
+        },
+        {
+          "feature_i": "PRECTmms_clim_seasonal_amp",
+          "feature_j": "TBOT_clim_max",
+          "seed_count": 5,
+          "seed_frequency": 1.0,
+          "median_abs_corr": 0.8813015183888809
+        },
+        {
+          "feature_i": "FLDS_clim_seasonal_amp",
+          "feature_j": "WIND_clim_mean",
+          "seed_count": 5,
+          "seed_frequency": 1.0,
+          "median_abs_corr": 0.8801515656260525
+        },
+        {
+          "feature_i": "FLDS_clim_max",
+          "feature_j": "PRECTmms_clim_max",
+          "seed_count": 5,
+          "seed_frequency": 1.0,
+          "median_abs_corr": 0.8770728784841475
+        },
+        {
+          "feature_i": "FLDS_clim_min",
+          "feature_j": "TBOT_clim_min",
+          "seed_count": 5,
+          "seed_frequency": 1.0,
+          "median_abs_corr": 0.8769340677747081
+        },
+        {
+          "feature_i": "PRECTmms_clim_mean",
+          "feature_j": "PRECTmms_clim_seasonal_amp",
+          "seed_count": 5,
+          "seed_frequency": 1.0,
+          "median_abs_corr": 0.8737108450360122
+        },
+        {
+          "feature_i": "RH_clim_min",
+          "feature_j": "RH_clim_std",
+          "seed_count": 5,
+          "seed_frequency": 1.0,
+          "median_abs_corr": 0.8719587826008722
+        },
+        {
+          "feature_i": "WIND_clim_seasonal_amp",
+          "feature_j": "WIND_clim_std",
+          "seed_count": 5,
+          "seed_frequency": 1.0,
+          "median_abs_corr": 0.871630805236086
+        },
+        {
+          "feature_i": "FSDS_clim_max",
+          "feature_j": "TBOT_clim_max",
+          "seed_count": 5,
+          "seed_frequency": 1.0,
+          "median_abs_corr": 0.8684751686326055
+        },
+        {
+          "feature_i": "FLDS_clim_max",
+          "feature_j": "TBOT_clim_mean",
+          "seed_count": 5,
+          "seed_frequency": 1.0,
+          "median_abs_corr": 0.8632816332433614
+        },
+        {
+          "feature_i": "FLDS_clim_min",
+          "feature_j": "PSRF_clim_mean",
+          "seed_count": 5,
+          "seed_frequency": 1.0,
+          "median_abs_corr": 0.8587678859854692
+        },
+        {
+          "feature_i": "FSDS_clim_seasonal_amp",
+          "feature_j": "ORGANIC",
+          "seed_count": 5,
+          "seed_frequency": 1.0,
+          "median_abs_corr": 0.8581467847274344
+        },
+        {
+          "feature_i": "PRECTmms_clim_mean",
+          "feature_j": "RH_clim_min",
+          "seed_count": 5,
+          "seed_frequency": 1.0,
+          "median_abs_corr": 0.8546775133004698
+        },
+        {
+          "feature_i": "FLDS_clim_mean",
+          "feature_j": "PRECTmms_clim_max",
+          "seed_count": 5,
+          "seed_frequency": 1.0,
+          "median_abs_corr": 0.8424586095502627
+        },
+        {
+          "feature_i": "WIND_clim_max",
+          "feature_j": "WIND_clim_std",
+          "seed_count": 5,
+          "seed_frequency": 1.0,
+          "median_abs_corr": 0.8407299085895433
+        },
+        {
+          "feature_i": "FLDS_clim_std",
+          "feature_j": "FSDS_clim_seasonal_amp",
+          "seed_count": 5,
+          "seed_frequency": 1.0,
+          "median_abs_corr": 0.8374113595029796
+        },
+        {
+          "feature_i": "FSDS_clim_seasonal_amp",
+          "feature_j": "WIND_clim_mean",
+          "seed_count": 5,
+          "seed_frequency": 1.0,
+          "median_abs_corr": 0.8368838517538214
+        },
+        {
+          "feature_i": "FLDS_clim_seasonal_amp",
+          "feature_j": "FSDS_clim_seasonal_amp",
+          "seed_count": 5,
+          "seed_frequency": 1.0,
+          "median_abs_corr": 0.8344462407420188
+        },
+        {
+          "feature_i": "PRECTmms_clim_mean",
+          "feature_j": "PSRF_clim_mean",
+          "seed_count": 5,
+          "seed_frequency": 1.0,
+          "median_abs_corr": 0.8344297092764918
+        },
+        {
+          "feature_i": "PRECTmms_clim_std",
+          "feature_j": "TBOT_clim_mean",
+          "seed_count": 5,
+          "seed_frequency": 1.0,
+          "median_abs_corr": 0.8322759772269315
+        },
+        {
+          "feature_i": "FSDS_clim_max",
+          "feature_j": "FSDS_clim_mean",
+          "seed_count": 5,
+          "seed_frequency": 1.0,
+          "median_abs_corr": 0.8318334991106132
+        },
+        {
+          "feature_i": "FSDS_clim_max",
+          "feature_j": "RH_clim_std",
+          "seed_count": 5,
+          "seed_frequency": 1.0,
+          "median_abs_corr": 0.8312151367776329
+        },
+        {
+          "feature_i": "FLDS_clim_std",
+          "feature_j": "WIND_clim_mean",
+          "seed_count": 5,
+          "seed_frequency": 1.0,
+          "median_abs_corr": 0.8305999326109269
+        },
+        {
+          "feature_i": "PSRF_clim_mean",
+          "feature_j": "TBOT_clim_max",
+          "seed_count": 5,
+          "seed_frequency": 1.0,
+          "median_abs_corr": 0.8253613136822301
+        },
+        {
+          "feature_i": "FLDS_clim_min",
+          "feature_j": "TBOT_clim_std",
+          "seed_count": 5,
+          "seed_frequency": 1.0,
+          "median_abs_corr": 0.8246999477814252
+        },
+        {
+          "feature_i": "FLDS_clim_min",
+          "feature_j": "TBOT_clim_max",
+          "seed_count": 5,
+          "seed_frequency": 1.0,
+          "median_abs_corr": 0.8227519502860875
+        },
+        {
+          "feature_i": "FSDS_clim_max",
+          "feature_j": "PRECTmms_clim_mean",
+          "seed_count": 5,
+          "seed_frequency": 1.0,
+          "median_abs_corr": 0.820755897839793
+        },
+        {
+          "feature_i": "PSRF_clim_seasonal_amp",
+          "feature_j": "TBOT_clim_max",
+          "seed_count": 5,
+          "seed_frequency": 1.0,
+          "median_abs_corr": 0.8161619593145535
+        },
+        {
+          "feature_i": "FSDS_clim_seasonal_amp",
+          "feature_j": "RH_clim_seasonal_amp",
+          "seed_count": 5,
+          "seed_frequency": 1.0,
+          "median_abs_corr": 0.8133814249641412
+        },
+        {
+          "feature_i": "RH_clim_mean",
+          "feature_j": "RH_clim_min",
+          "seed_count": 5,
+          "seed_frequency": 1.0,
+          "median_abs_corr": 0.8131278918734036
+        },
+        {
+          "feature_i": "FSDS_clim_seasonal_amp",
+          "feature_j": "PRECTmms_clim_max",
+          "seed_count": 5,
+          "seed_frequency": 1.0,
+          "median_abs_corr": 0.8122776724517874
+        },
+        {
+          "feature_i": "TBOT_clim_mean",
+          "feature_j": "TBOT_clim_std",
+          "seed_count": 5,
+          "seed_frequency": 1.0,
+          "median_abs_corr": 0.8054152772437602
+        },
+        {
+          "feature_i": "TBOT_clim_mean",
+          "feature_j": "TBOT_clim_min",
+          "seed_count": 5,
+          "seed_frequency": 1.0,
+          "median_abs_corr": 0.8027948719610125
+        },
+        {
+          "feature_i": "PSRF_clim_mean",
+          "feature_j": "TBOT_clim_mean",
+          "seed_count": 5,
+          "seed_frequency": 1.0,
+          "median_abs_corr": 0.8000514928571811
+        }
+      ],
+      "0.90": [
+        {
+          "feature_i": "FLDS_clim_max",
+          "feature_j": "FLDS_clim_mean",
+          "seed_count": 5,
+          "seed_frequency": 1.0,
+          "median_abs_corr": 0.9785303688108001
+        },
+        {
+          "feature_i": "FLDS_clim_max",
+          "feature_j": "PRECTmms_clim_std",
+          "seed_count": 5,
+          "seed_frequency": 1.0,
+          "median_abs_corr": 0.969282103801294
+        },
+        {
+          "feature_i": "FLDS_clim_mean",
+          "feature_j": "PRECTmms_clim_std",
+          "seed_count": 5,
+          "seed_frequency": 1.0,
+          "median_abs_corr": 0.9516380566147163
+        },
+        {
+          "feature_i": "FLDS_clim_mean",
+          "feature_j": "PSRF_clim_mean",
+          "seed_count": 5,
+          "seed_frequency": 1.0,
+          "median_abs_corr": 0.9508423256257021
+        },
+        {
+          "feature_i": "PCT_CLAY",
+          "feature_j": "PCT_SAND",
+          "seed_count": 5,
+          "seed_frequency": 1.0,
+          "median_abs_corr": 0.9480045579496855
+        },
+        {
+          "feature_i": "FLDS_clim_max",
+          "feature_j": "PSRF_clim_mean",
+          "seed_count": 5,
+          "seed_frequency": 1.0,
+          "median_abs_corr": 0.9353997692311506
+        },
+        {
+          "feature_i": "ORGANIC",
+          "feature_j": "PRECTmms_clim_max",
+          "seed_count": 5,
+          "seed_frequency": 1.0,
+          "median_abs_corr": 0.9328007044600984
+        },
+        {
+          "feature_i": "FLDS_clim_seasonal_amp",
+          "feature_j": "FLDS_clim_std",
+          "seed_count": 5,
+          "seed_frequency": 1.0,
+          "median_abs_corr": 0.9304848849174758
+        },
+        {
+          "feature_i": "PSRF_clim_mean",
+          "feature_j": "RH_clim_min",
+          "seed_count": 5,
+          "seed_frequency": 1.0,
+          "median_abs_corr": 0.9299635382610507
+        },
+        {
+          "feature_i": "PRECTmms_clim_max",
+          "feature_j": "PRECTmms_clim_std",
+          "seed_count": 5,
+          "seed_frequency": 1.0,
+          "median_abs_corr": 0.9242881512509099
+        },
+        {
+          "feature_i": "FLDS_clim_mean",
+          "feature_j": "TBOT_clim_mean",
+          "seed_count": 5,
+          "seed_frequency": 1.0,
+          "median_abs_corr": 0.9096903313635202
+        },
+        {
+          "feature_i": "PRECTmms_clim_mean",
+          "feature_j": "TBOT_clim_max",
+          "seed_count": 5,
+          "seed_frequency": 1.0,
+          "median_abs_corr": 0.9074392971383946
+        },
+        {
+          "feature_i": "TBOT_clim_min",
+          "feature_j": "TBOT_clim_std",
+          "seed_count": 5,
+          "seed_frequency": 1.0,
+          "median_abs_corr": 0.9051520859895604
+        },
+        {
+          "feature_i": "PRECTmms_clim_mean",
+          "feature_j": "RH_clim_std",
+          "seed_count": 5,
+          "seed_frequency": 1.0,
+          "median_abs_corr": 0.9040207083971765
+        },
+        {
+          "feature_i": "FLDS_clim_max",
+          "feature_j": "RH_clim_min",
+          "seed_count": 5,
+          "seed_frequency": 1.0,
+          "median_abs_corr": 0.9025495968878772
+        }
+      ],
+      "0.95": [
+        {
+          "feature_i": "FLDS_clim_max",
+          "feature_j": "FLDS_clim_mean",
+          "seed_count": 5,
+          "seed_frequency": 1.0,
+          "median_abs_corr": 0.9785303688108001
+        },
+        {
+          "feature_i": "FLDS_clim_max",
+          "feature_j": "PRECTmms_clim_std",
+          "seed_count": 5,
+          "seed_frequency": 1.0,
+          "median_abs_corr": 0.969282103801294
+        },
+        {
+          "feature_i": "FLDS_clim_mean",
+          "feature_j": "PRECTmms_clim_std",
+          "seed_count": 5,
+          "seed_frequency": 1.0,
+          "median_abs_corr": 0.9516380566147163
+        },
+        {
+          "feature_i": "FLDS_clim_mean",
+          "feature_j": "PSRF_clim_mean",
+          "seed_count": 5,
+          "seed_frequency": 1.0,
+          "median_abs_corr": 0.9508423256257021
+        }
+      ],
+      "0.98": []
+    },
+    "surviving_representatives": []
+  },
+  "cross_target_strong_top_k_features": [
+    "PSRF_clim_std",
+    "RH_clim_seasonal_amp",
+    "parm_10",
+    "parm_12",
+    "parm_13",
+    "parm_6",
+    "parm_9",
+    "PSRF_clim_seasonal_amp",
+    "RH_clim_mean"
+  ]
+}

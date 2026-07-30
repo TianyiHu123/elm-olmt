@@ -9,7 +9,7 @@ import pickle
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
+from typing import Any, Dict, List, Mapping, Optional, Sequence, Tuple, Union
 
 import matplotlib
 
@@ -1368,6 +1368,37 @@ def _train_surrogate_with_prepared_blocks(
     print(f"\nSaved surrogate artifacts to: {uq_out}")
     return artifact
 
+def compose_forcing_surrogate_design_matrix(
+    forcing_engineered: np.ndarray,
+    parms: np.ndarray,
+    spinup: np.ndarray,
+    training_layout: Mapping[str, Any],
+) -> np.ndarray:
+    """Compose the strict ``[engineered forcing | parameters | spinup]`` matrix."""
+    fe = np.asarray(forcing_engineered, dtype=np.float64)
+    pr = np.asarray(parms, dtype=np.float64).ravel()
+    sp = np.asarray(spinup, dtype=np.float64).ravel()
+    nf = int(training_layout["n_forcing_cols"])
+    nparam = int(training_layout["n_params"])
+    nsp = int(training_layout["n_spinup"])
+    if fe.ndim != 2 or fe.shape[1] != nf:
+        raise ValueError(
+            f"forcing_engineered must have shape (nhours, {nf}), got {fe.shape}"
+        )
+    if pr.size != nparam:
+        raise ValueError(f"parms must have length {nparam}, got {pr.size}")
+    if sp.size != nsp:
+        raise ValueError(f"spinup must have length {nsp}, got {sp.size}")
+    if np.any(~np.isfinite(fe)) or np.any(~np.isfinite(pr)) or np.any(~np.isfinite(sp)):
+        raise ValueError("forcing/parameter/spinup bridge inputs must be finite")
+    nh = fe.shape[0]
+    X = np.empty((nh, nf + nparam + nsp), dtype=np.float64)
+    X[:, :nf] = fe
+    X[:, nf : nf + nparam] = pr
+    X[:, nf + nparam :] = sp
+    return X
+
+
 def run_surrogate_forcing(
     self: Any,
     parms: Optional[np.ndarray],
@@ -1398,25 +1429,9 @@ def run_surrogate_forcing(
             )
         if parms is None:
             raise ValueError("parms is required when building X from forcing_engineered and spinup.")
-        fe = np.asarray(forcing_engineered, dtype=np.float64)
-        pr = np.asarray(parms, dtype=np.float64).ravel()
-        sp = np.asarray(spinup, dtype=np.float64).ravel()
-        nf = int(meta["n_forcing_cols"])
-        nparam = int(meta["n_params"])
-        nsp = int(meta["n_spinup"])
-        if fe.ndim != 2 or fe.shape[1] != nf:
-            raise ValueError(
-                f"forcing_engineered must have shape (nhours, {nf}), got {fe.shape}"
-            )
-        if pr.size != nparam:
-            raise ValueError(f"parms must have length {nparam}, got {pr.size}")
-        if sp.size != nsp:
-            raise ValueError(f"spinup must have length {nsp}, got {sp.size}")
-        nh = fe.shape[0]
-        X = np.empty((nh, nf + nparam + nsp), dtype=np.float64)
-        X[:, :nf] = fe
-        X[:, nf : nf + nparam] = pr
-        X[:, nf + nparam :] = sp
+        X = compose_forcing_surrogate_design_matrix(
+            forcing_engineered, parms, spinup, meta
+        )
     else:
         X = np.asarray(X, dtype=np.float64)
 

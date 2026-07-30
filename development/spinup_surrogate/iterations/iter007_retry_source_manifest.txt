@@ -1,0 +1,17 @@
+# iter007 cache-isolated retry source manifest
+#
+# Captured before retry submission on 2026-07-20. The tracked-diff hash excludes this
+# manifest and the separately listed untracked aggregation script.
+
+source_head=7cb12968bd3a0a8ca1f52b1d29601eaaa25e5f2c
+tracked_diff_sha256=e549c9d7cb5b5d607a7bdb493e4b08a010a696469b0ca50496fcd788a79d65a1
+tracked_diff_scope=repository working-tree diff excluding this manifest and untracked files
+retry_script_sha256=904ce98e33054c93bd880a5e02eaaf1f52d7aec7fceff19fd0f7d5e158eb8c6a
+aggregation_script_sha256=475ecbed34f17734b2b42095954535883371626031e3ace0a1c0214ba15dba89
+
+Relevant retry controls:
+
+- development/spinup_surrogate/slurm/iter007/case.train_surrogate_spinup_iter007_mlp_tuning.slurm
+- development/spinup_surrogate/slurm/iter007/aggregate_iter007_mlp_tuning.slurm
+- development/spinup_surrogate/iterations/iter007.md
+- development/spinup_surrogate/handoff/CURRENT.md

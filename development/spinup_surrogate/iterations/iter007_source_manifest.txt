@@ -1,0 +1,18 @@
+# iter007 pre-submit source manifest
+#
+# Captured before submission on 2026-07-20. The SHA-256 below is the binary `git diff`
+# from repository HEAD, intentionally excluding this manifest itself because it records the hash.
+
+source_head=b4db7a7
+diff_sha256=386fcdd92d7c2104ee0065c03173356427d0abee8209a2ba27fe09c47d45d8e4
+diff_scope=repository working-tree diff excluding development/spinup_surrogate/iterations/iter007_source_manifest.txt
+
+Relevant changed/tracked controls:
+
+- development/spinup_surrogate/WORKFLOW.md
+- development/spinup_surrogate/handoff/CURRENT.md
+- development/spinup_surrogate/iterations/iter007.md
+- development/spinup_surrogate/slurm/iter007/case.train_surrogate_spinup_iter007_mlp_tuning.slurm
+- development/spinup_surrogate/summaries/iter007/README.md
+- model_ELM/surrogate_NN_Spinup.py
+- train_surrogate_spinup.py

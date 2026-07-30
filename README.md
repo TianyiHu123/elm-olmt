@@ -243,6 +243,250 @@ python train_surrogate_forcing.py \
 
 Stats JSON files are written under **`/path/to/scratch/UQ_output/<CASE_NAME>/surrogate_forcing/`** (or under `--run-name` when you use it). Aggregate those JSON files offline to summarize R² distributions.
 
+## Standalone Spinup Surrogate
+
+Standalone spinup-state surrogate training is provided by [`train_surrogate_spinup.py`](train_surrogate_spinup.py) and implemented in [`model_ELM/surrogate_NN_Spinup.py`](model_ELM/surrogate_NN_Spinup.py).
+
+### Final spinup-surrogate models
+
+Iter012 publishes two trusted-source, versioned `spinup-surrogate-v1` artifacts. Both use one
+independent `(32,)`, `tanh`, `lbfgs`, alpha-40 `MLPRegressor` per target, separate X/Y
+`StandardScaler` objects, estimator seed 42, and a full-data fit over 900 rows from ABBY, JERC,
+OSBS, SOAP, RMNP, TALL, TEAK, WREF, and YELL. The full-data diagnostics are not validation
+metrics: scientific performance remains the Iter011 100-seed `by_member` evidence.
+
+| Version | Role | Features | Artifact |
+| --- | --- | ---: | --- |
+| `drop32` | Recommended accuracy-oriented release | 32 | `/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/UQ_output/spinup_surrogate_iter012_drop32/surrogate_spinup/spinup_surrogate_iter012_drop32.pkl` |
+| `drop21_corr080` | Compact tradeoff accepted by the user | 21 | `/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/UQ_output/spinup_surrogate_iter012_drop21_corr080/surrogate_spinup/spinup_surrogate_iter012_drop21_corr080.pkl` |
+
+These artifact paths are temporary Puma locations, not permanent or portable release URLs.
+When the artifacts move to another HPC system, update the paths and examples in this section to
+the new site-specific storage locations. Puma `/xdisk` storage is temporary and unbacked, so keep
+any required durable copy separately.
+
+Ordered outputs are `TOTSOMC` in `gC/m^2` and `TOTSOMN` in `gN/m^2`. The trained scalars are,
+respectively, `numpy.nansum(totsomc[:])` and the sum of `numpy.nansum` over
+`litr1n,litr2n,litr3n,cwdn,soil1n,soil2n,soil3n,soil4n`. Restart component attributes are empty;
+the aggregate names and units are provenance-bound to 27 colocated native ELM history records
+from the exact same ELM version. See
+`development/spinup_surrogate/summaries/iter012/iter012_release_decision.json`.
+
+Both versions accept 14 physical parameters in this exact order:
+`k_l1,k_l2,k_l3,k_s1,k_s2,k_s3,k_s4,k_frag,rf_l1s1,rf_l2s2,rf_l3s3,rf_s1s2,rf_s2s3,rf_s3s4`.
+Their artifact aliases are `parm_0` through `parm_13`. Inputs also include surface fields
+`PCT_SAND,PCT_CLAY,ORGANIC` and compact climatology features engineered from
+`PRECTmms,FSDS,TBOT,RH`. The 21-feature version omits `PCT_CLAY` and additional correlated
+climatology columns. Exact selected order is mandatory:
+
+```text
+drop32:
+parm_0,parm_1,parm_2,parm_3,parm_4,parm_5,parm_6,parm_7,parm_8,parm_9,parm_10,parm_11,parm_12,parm_13,PCT_SAND,PCT_CLAY,ORGANIC,PRECTmms_clim_mean,PRECTmms_clim_std,PRECTmms_clim_max,PRECTmms_clim_seasonal_amp,FSDS_clim_mean,FSDS_clim_max,FSDS_clim_seasonal_amp,TBOT_clim_mean,TBOT_clim_std,TBOT_clim_min,TBOT_clim_max,RH_clim_mean,RH_clim_std,RH_clim_min,RH_clim_seasonal_amp
+
+drop21_corr080:
+parm_0,parm_1,parm_2,parm_3,parm_4,parm_5,parm_6,parm_7,parm_8,parm_9,parm_10,parm_11,parm_12,parm_13,PCT_SAND,ORGANIC,PRECTmms_clim_mean,PRECTmms_clim_std,FSDS_clim_mean,TBOT_clim_std,RH_clim_seasonal_amp
+```
+
+Predict existing members with a trusted artifact:
+
+```bash
+python predict_surrogate_spinup.py \
+  --workdir /xdisk/chopinsong/tianyihu/elm-olmt \
+  --case ABBY_ppe6_I20TRCNPRDCTCBC \
+  --artifact /xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/UQ_output/spinup_surrogate_iter012_drop32/surrogate_spinup \
+  --feature-subset parm_0,parm_1,parm_2,parm_3,parm_4,parm_5,parm_6,parm_7,parm_8,parm_9,parm_10,parm_11,parm_12,parm_13,PCT_SAND,PCT_CLAY,ORGANIC,PRECTmms_clim_mean,PRECTmms_clim_std,PRECTmms_clim_max,PRECTmms_clim_seasonal_amp,FSDS_clim_mean,FSDS_clim_max,FSDS_clim_seasonal_amp,TBOT_clim_mean,TBOT_clim_std,TBOT_clim_min,TBOT_clim_max,RH_clim_mean,RH_clim_std,RH_clim_min,RH_clim_seasonal_amp \
+  --members 1,2
+```
+
+For new parameters, `--parameters-json` accepts a JSON **file path only**. A named
+`params.json` file for one parameter set has this form (the values below are illustrative and
+must be replaced with values inside the artifact's stored `ensemble_pmin/pmax`):
+
+```json
+{
+  "k_l1": 0.5,
+  "k_l2": 0.5,
+  "k_l3": 0.5,
+  "k_s1": 0.5,
+  "k_s2": 0.5,
+  "k_s3": 0.5,
+  "k_s4": 0.5,
+  "k_frag": 0.5,
+  "rf_l1s1": 0.5,
+  "rf_l2s2": 0.5,
+  "rf_l3s3": 0.5,
+  "rf_s1s2": 0.5,
+  "rf_s2s3": 0.5,
+  "rf_s3s4": 0.5
+}
+```
+
+Run it with:
+
+```bash
+python predict_surrogate_spinup.py \
+  --workdir /xdisk/chopinsong/tianyihu/elm-olmt \
+  --case ABBY_ppe6_I20TRCNPRDCTCBC \
+  --artifact /xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/UQ_output/spinup_surrogate_iter012_drop32/surrogate_spinup \
+  --feature-subset parm_0,parm_1,parm_2,parm_3,parm_4,parm_5,parm_6,parm_7,parm_8,parm_9,parm_10,parm_11,parm_12,parm_13,PCT_SAND,PCT_CLAY,ORGANIC,PRECTmms_clim_mean,PRECTmms_clim_std,PRECTmms_clim_max,PRECTmms_clim_seasonal_amp,FSDS_clim_mean,FSDS_clim_max,FSDS_clim_seasonal_amp,TBOT_clim_mean,TBOT_clim_std,TBOT_clim_min,TBOT_clim_max,RH_clim_mean,RH_clim_std,RH_clim_min,RH_clim_seasonal_amp \
+  --parameters-json params.json \
+  --output-json spinup_predictions.json
+```
+
+A positional batch file is also supported. Each row must contain exactly 14 values in the
+physical order listed above:
+
+```json
+[
+  [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5],
+  [0.6, 0.4, 0.7, 0.3, 0.6, 0.8, 0.4, 0.5, 0.4, 0.6, 0.5, 0.7, 0.3, 0.6]
+]
+```
+
+Use the batch with `--parameters-json params_batch.json`. Values outside stored
+`ensemble_pmin/pmax` are rejected; values inside those bounds but outside the empirical training
+range emit warnings. Missing, duplicate, extra, or misordered parameters/features are rejected
+with the required order. Inline JSON is intentionally not accepted.
+
+Artifacts are Python pickles: loading can execute code. Load only trusted artifacts, verify the
+colocated manifest SHA-256, and use a compatible Python/scikit-learn environment. The validated
+domain is the nine training sites and their parameter bounds; new sites and extrapolation beyond
+the observed feature ranges are not established.
+
+The validated future forcing bridge is:
+
+```text
+parameters + surface + compact climatology
+  -> spinup surrogate -> ordered [TOTSOMC,TOTSOMN]
+  -> compose_forcing_surrogate_design_matrix(
+       engineered_forcing, parameters, spinup,
+       {"n_forcing_cols": ..., "n_params": 14, "n_spinup": 2})
+  -> forcing surrogate
+```
+
+Iter012 validated only the order, shape, and `float64` design-matrix contract. No forcing
+artifact was available, no forcing model was trained, and no real SR/flux prediction was made.
+
+### Key points
+
+- selectable backend with `--model-type`:
+  - `nn` (default, `MLPRegressor`)
+  - `random_forest` (`RandomForestRegressor`)
+- conservative default hyperparameter grids are used for both `nn` and `random_forest` to reduce overfitting risk on small spinup datasets
+- split modes `by_member`, `by_site`, and `by_case` now randomize group selection by `--train-fraction`
+- set `--split-random-state` to make those randomized splits reproducible
+- training prints a warning when potential overfitting is detected from train-vs-validation metric gaps
+- feature ablation and diagnostics controls:
+  - `--feature-set all|params_only|params_surface|params_clim`
+  - `--clim-feature-include <glob1,glob2,...>` to keep a climatology subset
+  - `--apply-variance-filter --variance-threshold <v>`
+  - `--apply-corr-filter --corr-threshold <r>`
+  - permutation importance written in stats JSON via `--permutation-repeats`
+- stats JSON now includes:
+  - selected input feature list and full feature list
+  - `feature_diagnostics` (variance/correlation/filter decisions)
+  - per-target `permutation_importance_rmse`
+
+### Typical commands
+
+Dry-run (shape/IO check only):
+
+```bash
+python train_surrogate_spinup.py \
+  --case <CASE_NAME> \
+  --spinup-case <SPINUP_CASE_NAME> \
+  --split-mode by_member \
+  --train-fraction 0.8 \
+  --split-random-state 2026 \
+  --model-type nn \
+  --dry-run
+```
+
+Random-forest training example:
+
+```bash
+python train_surrogate_spinup.py \
+  --case <CASE_NAME> \
+  --spinup-case <SPINUP_CASE_NAME> \
+  --spinup-vars TOTSOMC,TOTSOMN \
+  --surface-vars PCT_SAND,PCT_CLAY,ORGANIC \
+  --forcing-vars PRECTmms,FSDS,FLDS,TBOT,RH,WIND,PSRF \
+  --split-mode by_member \
+  --train-fraction 0.8 \
+  --split-random-state 2026 \
+  --model-type random_forest \
+  --quick-grid \
+  --n-jobs 8 \
+  --cv-folds 3 \
+  --outputdir /pscratch/sd/t/tianyihu/E3SM_out/SOIL_project \
+  --run-name spinup_surrogate_rf_test
+```
+
+Feature-ablation / diagnostics example (`params+surface`, no climatology block):
+
+```bash
+python train_surrogate_spinup.py \
+  --case <CASE_NAME> \
+  --spinup-case <SPINUP_CASE_NAME> \
+  --model-type nn \
+  --feature-set params_surface \
+  --apply-variance-filter \
+  --variance-threshold 1.0e-10 \
+  --apply-corr-filter \
+  --corr-threshold 0.98 \
+  --permutation-repeats 8 \
+  --split-mode by_member \
+  --train-fraction 0.8 \
+  --split-random-state 2026 \
+  --stats-only \
+  --run-name spinup_surrogate_ablation_ps
+```
+
+Reduced-climatology example (keep only mean/std/seasonal amplitude metrics):
+
+```bash
+python train_surrogate_spinup.py \
+  --case <CASE_NAME> \
+  --spinup-case <SPINUP_CASE_NAME> \
+  --model-type nn \
+  --feature-set all \
+  --clim-feature-include "*_clim_mean,*_clim_std,*_clim_seasonal_amp" \
+  --apply-corr-filter \
+  --corr-threshold 0.98 \
+  --permutation-repeats 8 \
+  --split-random-state 2026 \
+  --stats-only \
+  --run-name spinup_surrogate_reduced_clim
+```
+
+Batch templates:
+- [`examples/slurm/case.train_surrogate_spinup_quick.slurm`](examples/slurm/case.train_surrogate_spinup_quick.slurm)
+- [`examples/slurm/case.train_surrogate_spinup_iter1.slurm`](examples/slurm/case.train_surrogate_spinup_iter1.slurm) (seed-array + variant-driven overfitting diagnostics)
+
+Stats aggregation helper:
+
+```bash
+python summarize_spinup_stats.py \
+  --stats-dir /pscratch/sd/t/tianyihu/E3SM_out/SOIL_project/UQ_output/<RUN_NAME>/surrogate_spinup \
+  --glob "surrogate_spinup_stats_seed*.json" \
+  --output-json /pscratch/sd/t/tianyihu/E3SM_out/SOIL_project/UQ_output/<RUN_NAME>/surrogate_spinup/summary.json
+```
+
+### HPC validation checklist
+
+1. Dry-run shape/IO checks for both model backends:
+   - `--model-type nn --dry-run`
+   - `--model-type random_forest --dry-run`
+2. Split reproducibility checks:
+   - run the same command twice with fixed `--split-random-state` and verify matching `split_details` in `surrogate_spinup_stats_*.json`
+   - rerun with a different seed and verify changed split group IDs
+3. Overfitting warning checks:
+   - inspect stdout/stderr for `Warning: potential overfitting ...`
+   - confirm `overfit_warning`, `r2_gap`, and `rmse_ratio` fields in stats JSON
+4. Inference compatibility:
+   - load `surrogate_spinup_artifacts.pkl` with `load_surrogate_spinup_artifacts(...)`
+   - run `predict_spinup_state(...)` and confirm finite predictions for each requested spinup variable
+
 ### Perlmutter GSA smoke test (new GSA functions)
 
 Use this quick flow to validate:

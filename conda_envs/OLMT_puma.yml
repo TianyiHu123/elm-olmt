@@ -1,0 +1,42 @@
+# Portable micromamba environment for the University of Arizona HPC.
+#
+# Create this environment from a compute-node interactive session.  Do not add
+# a prefix: micromamba will place it below MAMBA_ROOT_PREFIX.
+name: OLMT_puma
+
+channels:
+  # UArizona recommends conda-forge and avoiding the Anaconda/defaults channel.
+  - conda-forge
+  - nodefaults
+
+dependencies:
+  # Python 3.11 is supported by OLMT's newer baseline environment and by the
+  # UArizona HPC software stack.  Keep NumPy 1.x for legacy OLMT/pickle safety.
+  - python=3.11
+  - pip
+  - numpy>=1.26,<2
+
+  # Scientific data and NetCDF I/O
+  - scipy>=1.11,<2
+  - pandas>=2,<3
+  - netcdf4>=1.6,<2
+  - cftime>=1.6,<2
+  - h5py>=3.10,<4
+  - xarray>=2024.7
+
+  # Analysis, surrogate modeling, sensitivity analysis, and MCMC
+  - scikit-learn>=1.2,<2
+  - salib>=1.4.7,<2
+  - emcee>=3.1,<4
+  - corner>=2.2,<3
+  - pathos>=0.3,<1
+  - dask>=2024.1
+
+  # Plotting, mapping, and site lookup.  Tk supports OLMT's optional GUI.
+  - matplotlib-base>=3.8,<4
+  - cartopy>=0.22,<1
+  - geopy>=2.4,<3
+  - tk>=8.6
+
+  # OLMT invokes ncks, ncrcat, ncap2, nccopy, and ncpdq as subprocesses.
+  - nco>=5,<6

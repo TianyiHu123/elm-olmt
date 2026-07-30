@@ -1,0 +1,245 @@
+{
+  "iteration": "iter012",
+  "passed": true,
+  "release_decision": "release both user-accepted versions; drop32 is recommended for accuracy and drop21_corr080 is the compact tradeoff with Iter011 gate failures preserved",
+  "variants": {
+    "drop32": {
+      "manifest_gate": {
+        "artifact": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/UQ_output/spinup_surrogate_iter012_drop32/surrogate_spinup/spinup_surrogate_iter012_drop32.pkl",
+        "artifact_size_bytes": 80440,
+        "artifact_sha256": "56bbd151103add74b5a0794e8d1bf4496c186d3a72e70b1b65c5ab247abd317e",
+        "manifest": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/UQ_output/spinup_surrogate_iter012_drop32/surrogate_spinup/artifact_manifest.json",
+        "validation_report": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/UQ_output/spinup_surrogate_iter012_drop32/surrogate_spinup/validation_report.json"
+      },
+      "fresh_process_gate": {
+        "returncode": 0,
+        "stdout": "drop32 spinup-surrogate-v1 /xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/UQ_output/spinup_surrogate_iter012_drop32/surrogate_spinup/spinup_surrogate_iter012_drop32.pkl"
+      },
+      "operational_gates": {
+        "one_member_each_training_case": {
+          "ABBY_ppe6_I20TRCNPRDCTCBC": [
+            7429.061863347216,
+            746.4421078248029
+          ],
+          "JERC_ppe6_I20TRCNPRDCTCBC": [
+            210.58143876066242,
+            24.152700493024554
+          ],
+          "OSBS_ppe6_I20TRCNPRDCTCBC": [
+            6018.239906844666,
+            608.6259863363607
+          ],
+          "SOAP_ppe6_I20TRCNPRDCTCBC": [
+            28246.613836280565,
+            2836.5422947164802
+          ],
+          "RMNP_ppe6_I20TRCNPRDCTCBC": [
+            8190.303053746103,
+            822.7629356428005
+          ],
+          "TALL_ppe6_I20TRCNPRDCTCBC": [
+            2204.623751365636,
+            223.9746767138738
+          ],
+          "TEAK_ppe6_I20TRCNPRDCTCBC": [
+            9403.692419485145,
+            947.1944575049205
+          ],
+          "WREF_ppe6_I20TRCNPRDCTCBC": [
+            1721.9363524708724,
+            175.13607496653287
+          ],
+          "YELL_ppe6_I20TRCNPRDCTCBC": [
+            4811.958843498003,
+            484.8407654138358
+          ]
+        },
+        "abby_members_1_4_batch_single_call": true,
+        "abby_members_1_4_batch_shape": [
+          4,
+          2
+        ],
+        "abby_members_1_4_predictions": [
+          [
+            7429.061863347216,
+            746.4421078248033
+          ],
+          [
+            14073.833501958728,
+            1411.8779763314753
+          ],
+          [
+            2522.882711167844,
+            255.592403241988
+          ],
+          [
+            308.8288656996556,
+            32.31362963668744
+          ]
+        ],
+        "midpoint_named_positional_identical": true,
+        "midpoint_prediction": [
+          2402.8919947999193,
+          242.54322387795503
+        ],
+        "empirical_range_warning": {
+          "parameter": "k_l1",
+          "alias": "parm_0",
+          "value": 0.2,
+          "messages": [
+            "Feature 'parm_0' is within declared parameter bounds where applicable but outside empirical training range [0.2000008669639704, 3.5873724684552606]: observed=[0.2, 0.2]"
+          ]
+        },
+        "negative_gates": {
+          "feature_order": true,
+          "feature_missing": true,
+          "feature_extra": true,
+          "feature_duplicate": true,
+          "missing_parameter": true,
+          "extra_parameter": true,
+          "duplicate_parameter": true,
+          "parameter_bounds": true,
+          "schema": true
+        }
+      },
+      "passed": true
+    },
+    "drop21_corr080": {
+      "manifest_gate": {
+        "artifact": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/UQ_output/spinup_surrogate_iter012_drop21_corr080/surrogate_spinup/spinup_surrogate_iter012_drop21_corr080.pkl",
+        "artifact_size_bytes": 68048,
+        "artifact_sha256": "1427dc565af858e9c089a5b9545a7f127e42789ef1fe5c9af3af7f8cb12a3023",
+        "manifest": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/UQ_output/spinup_surrogate_iter012_drop21_corr080/surrogate_spinup/artifact_manifest.json",
+        "validation_report": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/UQ_output/spinup_surrogate_iter012_drop21_corr080/surrogate_spinup/validation_report.json"
+      },
+      "fresh_process_gate": {
+        "returncode": 0,
+        "stdout": "drop21_corr080 spinup-surrogate-v1 /xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/UQ_output/spinup_surrogate_iter012_drop21_corr080/surrogate_spinup/spinup_surrogate_iter012_drop21_corr080.pkl"
+      },
+      "operational_gates": {
+        "one_member_each_training_case": {
+          "ABBY_ppe6_I20TRCNPRDCTCBC": [
+            6444.502703220697,
+            650.1968635894139
+          ],
+          "JERC_ppe6_I20TRCNPRDCTCBC": [
+            393.7925310513883,
+            41.71102230848362
+          ],
+          "OSBS_ppe6_I20TRCNPRDCTCBC": [
+            6167.458604780596,
+            623.8549850527842
+          ],
+          "SOAP_ppe6_I20TRCNPRDCTCBC": [
+            26760.49996982728,
+            2686.893492330805
+          ],
+          "RMNP_ppe6_I20TRCNPRDCTCBC": [
+            9139.67026342018,
+            918.8788423097803
+          ],
+          "TALL_ppe6_I20TRCNPRDCTCBC": [
+            1984.0189215616047,
+            201.07941426078673
+          ],
+          "TEAK_ppe6_I20TRCNPRDCTCBC": [
+            10215.971334064136,
+            1029.3746737374977
+          ],
+          "WREF_ppe6_I20TRCNPRDCTCBC": [
+            2257.797969027195,
+            228.98945483793216
+          ],
+          "YELL_ppe6_I20TRCNPRDCTCBC": [
+            4850.632925453547,
+            487.08140306775726
+          ]
+        },
+        "abby_members_1_4_batch_single_call": true,
+        "abby_members_1_4_batch_shape": [
+          4,
+          2
+        ],
+        "abby_members_1_4_predictions": [
+          [
+            6444.502703220697,
+            650.1968635894139
+          ],
+          [
+            12250.009889212202,
+            1230.7888917074188
+          ],
+          [
+            2245.146250782559,
+            228.1733084538639
+          ],
+          [
+            451.24735518854595,
+            46.54662063734577
+          ]
+        ],
+        "midpoint_named_positional_identical": true,
+        "midpoint_prediction": [
+          2146.5756228914224,
+          216.22139940258364
+        ],
+        "empirical_range_warning": {
+          "parameter": "k_l1",
+          "alias": "parm_0",
+          "value": 0.2,
+          "messages": [
+            "Feature 'parm_0' is within declared parameter bounds where applicable but outside empirical training range [0.2000008669639704, 3.5873724684552606]: observed=[0.2, 0.2]"
+          ]
+        },
+        "negative_gates": {
+          "feature_order": true,
+          "feature_missing": true,
+          "feature_extra": true,
+          "feature_duplicate": true,
+          "missing_parameter": true,
+          "extra_parameter": true,
+          "duplicate_parameter": true,
+          "parameter_bounds": true,
+          "schema": true
+        }
+      },
+      "passed": true
+    }
+  },
+  "forcing_bridge": {
+    "drop32": {
+      "passed": true,
+      "interface": "[engineered forcing | parameters | spinup]",
+      "ordered_spinup_targets": [
+        "TOTSOMC",
+        "TOTSOMN"
+      ],
+      "shape": [
+        3,
+        21
+      ],
+      "dtype": "float64",
+      "forcing_columns": 5,
+      "parameter_columns": 14,
+      "spinup_columns": 2,
+      "scope": "design-matrix compatibility only; no forcing artifact exists, no forcing model was trained, and no real SR/flux prediction was made"
+    },
+    "drop21_corr080": {
+      "passed": true,
+      "interface": "[engineered forcing | parameters | spinup]",
+      "ordered_spinup_targets": [
+        "TOTSOMC",
+        "TOTSOMN"
+      ],
+      "shape": [
+        3,
+        21
+      ],
+      "dtype": "float64",
+      "forcing_columns": 5,
+      "parameter_columns": 14,
+      "spinup_columns": 2,
+      "scope": "design-matrix compatibility only; no forcing artifact exists, no forcing model was trained, and no real SR/flux prediction was made"
+    }
+  }
+}

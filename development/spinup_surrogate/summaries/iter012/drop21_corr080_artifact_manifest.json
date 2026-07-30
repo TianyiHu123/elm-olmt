@@ -1,0 +1,11 @@
+{
+  "release_version": "iter012-v1",
+  "schema_version": "spinup-surrogate-v1",
+  "variant": "drop21_corr080",
+  "artifact_filename": "spinup_surrogate_iter012_drop21_corr080.pkl",
+  "artifact_size_bytes": 68048,
+  "artifact_sha256": "1427dc565af858e9c089a5b9545a7f127e42789ef1fe5c9af3af7f8cb12a3023",
+  "created_utc": "2026-07-29T03:54:27.454397+00:00",
+  "source_manifest_sha256": "1225db62b484cce11ce8e633c9fe1c8e47b5095c1323f2687c9e4c6454335875",
+  "submission_config_sha256": "5d30bdc30681db1128499dfea3311bde6b394fbb831fab320f735e21661c48dc"
+}

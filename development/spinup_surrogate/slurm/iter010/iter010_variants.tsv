@@ -1,0 +1,16 @@
+variant	alpha	feature_policy	forcing_vars	feature_subset_policy	apply_corr_filter	corr_threshold
+s32_tanh_lbfgs_a40_lr1e3_full45	40	full45	PRECTmms,FSDS,FLDS,TBOT,RH,WIND,PSRF	strict	false	NA
+s32_tanh_lbfgs_a40_lr1e3_corr080_prioritydrop	40	corr080_prioritydrop	PRECTmms,FSDS,FLDS,TBOT,RH,WIND,PSRF	eligible_pool	true	0.80
+s32_tanh_lbfgs_a40_lr1e3_drop_flds_wind_psrf	40	drop_flds_wind_psrf	PRECTmms,FSDS,TBOT,RH	strict	false	NA
+s32_tanh_lbfgs_a42p5_lr1e3_full45	42.5	full45	PRECTmms,FSDS,FLDS,TBOT,RH,WIND,PSRF	strict	false	NA
+s32_tanh_lbfgs_a42p5_lr1e3_corr080_prioritydrop	42.5	corr080_prioritydrop	PRECTmms,FSDS,FLDS,TBOT,RH,WIND,PSRF	eligible_pool	true	0.80
+s32_tanh_lbfgs_a42p5_lr1e3_drop_flds_wind_psrf	42.5	drop_flds_wind_psrf	PRECTmms,FSDS,TBOT,RH	strict	false	NA
+s32_tanh_lbfgs_a45_lr1e3_full45	45	full45	PRECTmms,FSDS,FLDS,TBOT,RH,WIND,PSRF	strict	false	NA
+s32_tanh_lbfgs_a45_lr1e3_corr080_prioritydrop	45	corr080_prioritydrop	PRECTmms,FSDS,FLDS,TBOT,RH,WIND,PSRF	eligible_pool	true	0.80
+s32_tanh_lbfgs_a45_lr1e3_drop_flds_wind_psrf	45	drop_flds_wind_psrf	PRECTmms,FSDS,TBOT,RH	strict	false	NA
+s32_tanh_lbfgs_a47p5_lr1e3_full45	47.5	full45	PRECTmms,FSDS,FLDS,TBOT,RH,WIND,PSRF	strict	false	NA
+s32_tanh_lbfgs_a47p5_lr1e3_corr080_prioritydrop	47.5	corr080_prioritydrop	PRECTmms,FSDS,FLDS,TBOT,RH,WIND,PSRF	eligible_pool	true	0.80
+s32_tanh_lbfgs_a47p5_lr1e3_drop_flds_wind_psrf	47.5	drop_flds_wind_psrf	PRECTmms,FSDS,TBOT,RH	strict	false	NA
+s32_tanh_lbfgs_a50_lr1e3_full45	50	full45	PRECTmms,FSDS,FLDS,TBOT,RH,WIND,PSRF	strict	false	NA
+s32_tanh_lbfgs_a50_lr1e3_corr080_prioritydrop	50	corr080_prioritydrop	PRECTmms,FSDS,FLDS,TBOT,RH,WIND,PSRF	eligible_pool	true	0.80
+s32_tanh_lbfgs_a50_lr1e3_drop_flds_wind_psrf	50	drop_flds_wind_psrf	PRECTmms,FSDS,TBOT,RH	strict	false	NA
