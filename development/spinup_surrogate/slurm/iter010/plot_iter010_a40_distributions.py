@@ -2,7 +2,8 @@
 """Plot per-variant train/test R2 and RMSE distributions for any iteration.
 
 Example (after an iteration has produced its stats files):
-  plot_iter010_a40_distributions.py --iteration iter011 --variant control --variant candidate \
+  development/spinup_surrogate/slurm/iter010/plot_iter010_a40_distributions.py \
+      --iteration iter011 --variant control --variant candidate \
       --output-dir /path/to/plots
 """
 import argparse

@@ -14,4 +14,4 @@ set -euo pipefail
 cd /xdisk/chopinsong/tianyihu/elm-olmt
 export MPLCONFIGDIR="/tmp/mplconfig_iter010_${SLURM_JOB_ID}"
 mkdir -p "$MPLCONFIGDIR"
-python development/spinup_surrogate/tools/plot_iter010_a40_distributions.py
+python development/spinup_surrogate/slurm/iter010/plot_iter010_a40_distributions.py

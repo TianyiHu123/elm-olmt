@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Inspect, transactionally repath, or recover the nine Puma case pickles.
+"""Migrate the nine spinup-surrogate case pickles from Perlmutter to Puma.
 
 Run this utility only on a Puma compute node under the migration runtime contract
 recorded in ``handoff/CURRENT.md``.  It intentionally loads one pickle at a time.

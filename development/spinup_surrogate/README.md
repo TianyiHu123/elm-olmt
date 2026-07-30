@@ -9,6 +9,8 @@ This folder tracks iterative development for the standalone spinup surrogate.
 - Enable smooth handoff to new chat sessions with minimal context loss.
 - Use one repository-tracked workflow instead of project-specific agent skills.
 
+Site path note: heavy run outputs use `/pscratch/...` on Perlmutter and `/xdisk/...` on Puma.
+
 ## Structure
 
 - `WORKFLOW.md`: canonical instructions for planning, execution, closeout, and portability.
@@ -16,6 +18,8 @@ This folder tracks iterative development for the standalone spinup surrogate.
 - `iterations/iterXXX.md`: detailed notes for each iteration.
 - `summaries/`: copied small summary JSON files used for comparisons.
 - `slurm/`: iteration-specific Slurm scripts (or references).
+- `tools/`: reusable analysis and validation utilities shared across iterations.
+- `migrations/`: site-transition-specific migration utilities outside the iteration lifecycle.
 - `handoff/CURRENT.md`: live control record for the active iteration and next session.
 - `templates/`: blank iteration and handoff scaffolds; not runtime artifacts.
 - `../hpc/`: shared site profiles, beginning with `perlmutter.md`.

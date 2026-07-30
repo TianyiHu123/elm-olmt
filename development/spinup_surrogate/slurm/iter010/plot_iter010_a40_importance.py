@@ -2,7 +2,8 @@
 """Plot cross-variant permutation importance from any iteration's aggregate JSON.
 
 Example (after aggregation):
-  plot_iter010_a40_importance.py --iteration iter011 --variant control --variant candidate \
+  development/spinup_surrogate/slurm/iter010/plot_iter010_a40_importance.py \
+      --iteration iter011 --variant control --variant candidate \
       --label drop32 --label drop32_corr080 --output-dir /path/to/plots
 """
 import argparse

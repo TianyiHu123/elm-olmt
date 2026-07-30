@@ -64,7 +64,7 @@ This is 20 Slurm array tasks total.
   - `/pscratch/sd/t/tianyihu/E3SM_out/SOIL_project/UQ_output/spinup_surrogate_iter6_all_params_all_surface_core_clim`
   - `/pscratch/sd/t/tianyihu/E3SM_out/SOIL_project/UQ_output/spinup_surrogate_iter6_core_tri_group`
 - Summary root: `development/spinup_surrogate/summaries/iter006/`
-- Feature-stability analyzer: `development/spinup_surrogate/analyze_feature_stability.py`
+- Feature-stability analyzer: `development/spinup_surrogate/tools/analyze_feature_stability.py`
 
 ## Provenance and Submission Log
 
@@ -178,7 +178,7 @@ Status note:
 On success path:
 
 1. Aggregate each variant with `summarize_spinup_stats.py`.
-2. Run `development/spinup_surrogate/analyze_feature_stability.py` for each variant.
+2. Run `development/spinup_surrogate/tools/analyze_feature_stability.py` for each variant.
 3. Compare control vs reduced variants using median/tail/IQR/warning/stability gates.
 4. Select the simplest passing configuration or retain `all_control` if no reduced configuration passes.
 5. Update `registry.csv` and `handoff/CURRENT.md`.

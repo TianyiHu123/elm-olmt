@@ -1,39 +1,49 @@
-# University of Arizona Puma Guide for This Repository
+# University of Arizona Puma Profile for This Repository
 
-This is the repository-specific Puma profile for
-`/xdisk/chopinsong/tianyihu/elm-olmt`. It combines reusable Puma operating guidance with
-repository rules, workload-specific examples, and historical observations.
+This profile defines Puma site mechanics and repository-wide execution rules for
+`/xdisk/chopinsong/tianyihu/elm-olmt`. It is intended for any current or future workflow in this
+checkout.
 
 The labels below define scope:
 
-- **SITE RULE**: Puma/Slurm behavior that should be rechecked against the official site
+- **SITE RULE**: Puma or Slurm behavior that should be rechecked against official site
   documentation when it may have changed.
-- **REPOSITORY RULE**: required for jobs launched from this checkout.
-- **WORKLOAD RULE**: applies to a particular repository workload, currently spinup-surrogate.
-- **EXAMPLE**: a template or command shape; substitute the active contract's values.
-- **HISTORICAL**: an observed incident or migration fact, not a general execution default.
+- **REPOSITORY RULE**: required for work launched from this checkout.
+- **EXAMPLE**: a command shape or historical workload snapshot; it is not a default contract.
+- **HISTORICAL**: an observed incident or result, not a permanent Puma guarantee.
 
-`development/spinup_surrogate/WORKFLOW.md` remains the canonical lifecycle policy. This file
-provides the Puma mechanics that the workflow references. A runtime contract must still state the
-active site, finite scope, resource cap, retry boundary, monitoring authority, and closeout
-authority before scheduler or compute-node work begins.
+The governing workflow document that directs readers to this Puma profile remains the canonical
+lifecycle policy for that workload. This profile defines site mechanics and repository execution
+constraints only; it does not define or broaden workload scope, scheduler authority, retry policy,
+completion criteria, aggregation rules, selection rules, or closeout authority.
 
-## 1. Puma site baseline
+Before scheduler or compute-node work begins, follow the authorization and runtime-contract
+requirements of the governing workflow and repository guidance. A runtime contract must identify
+the active site, finite scope, resource cap, retry boundary, monitoring authority, and closeout
+authority.
+
+## 1. Puma site mechanics
 
 ### 1.1 Official references
 
-The official site documentation is authoritative for changing site policy:
+Official UArizona HPC documentation is authoritative for changing site policy:
 
+- [UArizona HPC Documentation](https://hpcdocs.hpc.arizona.edu/)
+- [Running Jobs Overview](https://hpcdocs.hpc.arizona.edu/running_jobs/overview/)
 - [Interactive Jobs](https://hpcdocs.hpc.arizona.edu/running_jobs/interactive_jobs/)
+- [Batch Jobs Tutorial](https://hpcdocs.hpc.arizona.edu/running_jobs/batch_jobs/intro/)
 - [Batch Directives](https://hpcdocs.hpc.arizona.edu/running_jobs/batch_jobs/batch_directives/)
+- [Array Jobs](https://hpcdocs.hpc.arizona.edu/running_jobs/batch_jobs/array_jobs/)
 - [CPUs and Memory](https://hpcdocs.hpc.arizona.edu/running_jobs/cpus_and_memory/)
 - [Monitoring Jobs and Resources](https://hpcdocs.hpc.arizona.edu/running_jobs/monitoring_jobs_and_resources/)
-- [Batch Jobs and Slurm](https://uarizona.atlassian.net/wiki/spaces/UAHPC/pages/75989977)
-- [HPC High Performance Storage](https://uarizona.atlassian.net/wiki/spaces/UAHPC/pages/75990091/HPC%2BStorage)
+- [Resource Optimization](https://hpcdocs.hpc.arizona.edu/running_jobs/resource_optimization/)
+- [Job Limits](https://hpcdocs.hpc.arizona.edu/running_jobs/job_limits/)
+- [HPC Storage](https://hpcdocs.hpc.arizona.edu/storage_and_transfers/storage/hpc_storage/)
+- [Software Modules](https://hpcdocs.hpc.arizona.edu/software/modules/)
 - [Micromamba](https://hpcdocs.hpc.arizona.edu/software/popular_software/mamba/)
 
-The repository profile records operational facts and conventions used by this project; agents
-should verify account, partition, limits, and storage availability before a new runtime contract.
+Verify account access, partition availability, limits, and storage status before approving a new
+runtime contract.
 
 ### 1.2 Login nodes, compute nodes, and scheduler use
 
@@ -41,45 +51,57 @@ should verify account, partition, limits, and storage availability before a new 
 monitoring. Do not use login-node Python as the project runtime. Load modules and run project
 Python only inside an allocated compute-node shell or a Slurm batch job.
 
-**REPOSITORY RULE:** large, long, multi-CPU, high-memory, or matrix workloads must run through
-Slurm. Read-only inspection and static validation do not require a scheduler allocation, but
-training, data generation, model runs, environment installation, and other compute work do.
+**REPOSITORY RULE:** large, long, multi-CPU, high-memory, sweep, matrix, training, data-generation,
+model, or environment-installation workloads must run through Slurm. Read-only inspection and
+static validation do not require an allocation.
 
-**EXAMPLE: interactive setup allocation**
+**AGENT RULE:** agents must use bounded Slurm batch jobs by default. Do not use `interactive` or
+`salloc` for agent-operated work unless the user explicitly requires an interactive allocation.
+The following interactive example is for a human operator.
+
+**EXAMPLE: human interactive setup allocation**
 
 ```bash
-interactive -a <ACCOUNT> -t <HH:MM:SS> -n 1 -m 5gb
+interactive -a chopinsong -t <HH:MM:SS> -n 1 -m 5gb
 ```
 
-Wait for the prompt to change from a login host such as `wentletrap` or `junonia` to a Puma
-compute-node hostname before loading modules or running project commands. Use `interactive -h` when
-the setup allocation needs different options. If the wrapper fails, follow the historical-incident
-guidance in Section 6.2 and do not silently run the workload on the login node.
+Wait for the prompt to change from a login host such as `wentletrap` or `junonia` to a compute-node
+hostname before loading modules or running project commands. On Puma, the current `interactive`
+helper submits through `srun`; direct `salloc` commands remain supported when more customization is
+needed. Use `interactive -h` when the setup allocation needs different options. If the helper
+fails, follow Section 4.1 and do not silently run the workload on the login node.
 
-### 1.3 Accounts, partitions, and resource semantics
+### 1.3 Repository account, partition, and resource semantics
 
-The current repository deployment uses account `chopinsong` and partition `standard`. Confirm
-these values and current group limits before submission; they are not a substitute for a runtime
-contract.
+The Puma defaults for this repository are:
 
-**SITE RULE, as used by this repository:** Puma standard nodes provide approximately 5 GB of
-memory per requested CPU. For a CPU-limited job, request the CPU count and normally omit both
-`--mem` and `--mem-per-cpu`, allowing Slurm to derive the standard allocation. For a
-memory-limited job, convert the required memory to CPUs with `ceil(total_GB / 5)` or use an
-explicit total-memory request after confirming its placement semantics. Do not set a
-nonstandard `--mem-per-cpu` value without a site-specific reason; it may route the job to scarce
-high-memory nodes or produce an unexpected allocation.
+```text
+account: chopinsong
+partition: standard
+```
 
-Do not carry Perlmutter-only directives such as `--qos=shared` or `--constraint=cpu` into Puma
-scripts. Request GPUs or a high-memory constraint only when the active runtime contract requires
-them.
+Use `chopinsong` and `standard` unless the user explicitly selects another authorized account or
+partition for the active runtime contract. Confirm the selected account's project group and
+current limits before submission.
+
+**SITE RULE, as used by this repository:** Puma standard nodes provide 5 GB of memory per requested
+CPU. For a CPU-limited job, request the CPU count and normally omit both `--mem` and
+`--mem-per-cpu`, allowing Slurm to derive the standard allocation. For a memory-limited job,
+either convert required memory to CPUs with `ceil(total_GB / 5)` or request total memory with
+`--mem=<TOTAL>`. Do not specify both a CPU count and total memory for the latter shape; Puma's
+scheduler derives the corresponding CPU allocation from the standard ratio.
+
+Do not set a nonstandard `--mem-per-cpu` value without a site-specific reason; it may route the job
+to scarce high-memory nodes or produce an unexpected allocation. Do not carry Perlmutter-only
+directives such as `--qos=shared` or `--constraint=cpu` into Puma scripts. Request GPUs or a
+high-memory constraint only when the active runtime contract requires them.
 
 **EXAMPLE: generic CPU-limited header**
 
 ```bash
 #!/usr/bin/env bash
-#SBATCH --account=<ACCOUNT>
-#SBATCH --partition=<PARTITION>
+#SBATCH --account=chopinsong
+#SBATCH --partition=standard
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=<CPUS>
@@ -88,134 +110,49 @@ them.
 #SBATCH --error=job_%j.err
 ```
 
-### 1.4 Scheduler command reference
+### 1.4 Scheduler operation and monitoring
 
-Use the supported Puma command interface documented by UArizona HPC first. The monitoring
-documentation lists the supported forms for `squeue`, `scontrol`, `scancel`, `job-history`,
-`seff`, and `job-limits`: [Monitoring Jobs and Resources](https://hpcdocs.hpc.arizona.edu/running_jobs/monitoring_jobs_and_resources/).
-Record job IDs and terminal accounting in the active workload record.
+Agents must run every Slurm-related read-only command outside the agent sandbox. This includes
+`squeue`, read-only `scontrol` queries, `sacct`, `seff`, `job-history`, and `job-limits`. Do not
+probe these commands inside the sandbox first and do not use an in-sandbox result as scheduler or
+job-state evidence.
 
-At session bootstrap, record command resolution with `type -a` or `command -v` for the Slurm
-commands used by the workload. Do not replace the supported command interface with an absolute
-`/usr/bin/<command>` path merely as a convention. An absolute binary is a fallback only when the
-supported command is demonstrably malfunctioning or unavailable; record the failure, command
-paths, timestamps, and resulting state when using that fallback.
+Outside-sandbox monitoring access is not scheduler authority. Submission with `sbatch`,
+cancellation with `scancel`, retries, configuration changes, and other scheduler mutations still
+require authorization from the governing workflow and active runtime contract.
 
-| Purpose | Command shape |
-| --- | --- |
-| Submit | `sbatch --export=ALL,<KEY=VALUE,...> <script>` |
-| Queue state and pending reason | `squeue --job=<JOB_ID>` |
-| Detailed active-job state | `scontrol show job <JOB_ID>` |
-| Terminal accounting | `sacct --jobs=<JOB_ID> --format=JobID,JobName,Partition,Account,AllocTRES,State,ExitCode,MaxRSS` |
-| Readable job history | `job-history <JOB_ID>` |
-| Efficiency report | `seff <JOB_ID>` |
-| Group limits and usage | `job-limits <ACCOUNT>` |
-| Cancel, only when authorized | `scancel <JOB_ID_OR_IDS>` |
-
-### 1.5 Codex Slurm execution-context gate
-
-Codex's default filesystem sandbox can run in a user namespace that drops supplemental HPC
-groups or blocks Slurm connectivity. Before a Codex agent relies on any supported Slurm command,
-verify its effective group and execution context:
-
-```bash
-id
-id -Gn
-```
-
-For a job using this repository's current `chopinsong` account, the effective groups must include
-`chopinsong`. If an authorized runtime contract selects another account, verify that the effective
-groups include that account's required project group instead. If the required group is absent, the
-Puma command wrappers used by `scontrol`, `sacct`, and `seff` can fail while attempting their group
-transition. The sandbox can also produce Slurm connection, socket, controller, authentication, or
-resource errors that do not occur in the host HPC context.
-
-Once the default sandbox is known to lack the required project group or Slurm connectivity, route
-all Slurm commands directly through the product's approved outside-sandbox execution context. Do
-not keep probing Slurm inside the affected sandbox. A Slurm error produced there is
-**observation-context failure**, not evidence that Puma's scheduler or controller has failed. In
-particular, never use an in-sandbox `scontrol ping` result to diagnose scheduler health.
-
-The primary agent must run read-only monitoring and post-job accounting outside the affected
-user-namespace sandbox. This is a monitoring-context correction, not scheduler authority: it does
-not authorize submission, cancellation, retries, configuration changes, or any other mutation.
-
-Maintain reusable approval only for the read-only command families needed for normal monitoring:
-`squeue --job=...`, `scontrol show job ...`, `sacct --jobs=...`, `seff <JOB_ID>`,
-`job-history <JOB_ID>`, and `job-limits <ACCOUNT>`. Do not grant reusable approval for `scontrol`
-generally. Keep `sbatch`, `scancel`, `scontrol` mutations, and other state-changing commands under
-the runtime contract and their separate approval boundary. When the runtime contract authorizes
-such an action, it must also state whether that command may be executed outside the sandbox.
-
-Use commands according to job state:
+Use the following command shapes:
 
 | State or need | Command |
 | --- | --- |
+| Submit an authorized batch job | `sbatch --export=ALL,<KEY=VALUE,...> <script>` |
 | Active or pending job, including an array | `squeue --job=<PARENT_JOB_ID> -r` |
 | Detailed active-job configuration | `scontrol show job <PARENT_JOB_ID>` |
 | Completed-job accounting, whole array | `sacct --jobs=<PARENT_JOB_ID> --format=JobID,JobName,State,ExitCode,Elapsed,TotalCPU,AllocCPUS,MaxRSS,AllocTRES` |
 | Completed-job accounting, one leaf | `sacct --jobs=<JOB_ID>_<ARRAY_INDEX> --format=JobID,JobName,State,ExitCode,Elapsed,TotalCPU,AllocCPUS,MaxRSS,AllocTRES` |
 | CPU and memory efficiency for one leaf | `seff <JOB_ID>_<ARRAY_INDEX>` |
 | Readable terminal history | `job-history <JOB_ID_OR_ARRAY_ELEMENT>` |
+| Group limits and usage | `job-limits <ACCOUNT>` |
+| Cancel, only when authorized | `scancel <JOB_ID_OR_IDS>` |
 
 Use the parent ID to reconcile every array element and overall terminal completeness. Use a
 concrete element ID only for leaf-specific diagnosis or efficiency reporting.
 
-`squeue` and `scontrol` reporting `Invalid job id specified` for a completed job is expected;
-use `sacct`, `seff`, or `job-history` for terminal evidence. A successful query with a valid empty
-result means that no matching job was found in that interface; a nonzero exit, timeout, malformed
+`squeue` and `scontrol` reporting `Invalid job id specified` for a completed job is expected; use
+`sacct`, `seff`, or `job-history` for terminal evidence. A successful query with a valid empty
+result means no matching job was found in that interface. A nonzero exit, timeout, malformed
 response, or connection error leaves state unknown.
 
-Record the exact query command, execution context, scope, timestamp, exit status, and response in
-the workload ledger. Apply these evidence rules:
+If an outside-sandbox query fails, preserve job state as unknown and retry the same job-scoped
+query with bounded backoff. A query or transport failure is not a workload failure and must not
+consume a workload retry, authorize cancellation or resubmission, or support a completion claim.
 
-- A connection, controller, socket, authentication, group-transition, or resource error from the
-  affected Codex sandbox is inadmissible as scheduler-health or job-state evidence. Repeat the
-  exact job-scoped query through the approved outside-sandbox context without first diagnosing a
-  Puma scheduler problem.
-- If that outside-sandbox query succeeds, use its result as the authoritative scheduler evidence.
-  If it fails, classify the observation as an authoritative query failure and preserve job state
-  as unknown. Retry the same job-scoped query with bounded backoff at least once.
-- Prefer a parent-job ID over a user-wide query. For an array, use `squeue --job=<JOB_ID> -r` to
-  list its individual elements and `sacct --jobs=<JOB_ID>` for terminal accounting. If retries
-  continue to fail, preserve the state as unknown and reconcile later using scheduler queries,
-  job logs, and exact output-artifact validation.
-- A query or transport failure is not a workload failure and must not consume a workload retry,
-  authorize cancellation or resubmission, or support a completion claim. Classify a resource or
-  scheduler job failure only from authoritative job-state or terminal-accounting evidence.
+Record submitted job IDs and the exact monitoring command, scope, timestamp, exit status,
+response, and terminal accounting in the active workload record.
 
-If an authorized `sbatch` invocation is accidentally attempted inside the affected sandbox and
-returns an error or no parseable job ID, submission state is unknown. Before resubmitting, use
-approved outside-sandbox `squeue` and `sacct` queries to prove that the attempted submission did not
-create a matching job. This reconciliation is required to prevent duplicate jobs.
+## 2. Repository-wide Puma integration
 
-**Array monitoring example (Puma):** UArizona's array-job convention returns one parent ID from
-`sbatch`; `squeue --job=<JOB_ID> -r` expands that parent into rows such as
-`<JOB_ID>_<ARRAY_INDEX>`. Use the same parent ID for accounting:
-
-```bash
-job_id="3186754"
-
-squeue --job="${job_id}" -r
-
-sacct --jobs="${job_id}" \
-  --format=JobID,JobName,State,ExitCode,Elapsed,AllocTRES,MaxRSS
-```
-
-This follows the [UArizona array-job example](https://hpcdocs.hpc.arizona.edu/running_jobs/batch_jobs/array_jobs/#example-jobs).
-Record the parent ID, array range, per-element terminal states, and any retry evidence in the
-workload record.
-
-For arrays, monitor the parent job and inspect individual array elements when diagnosing a partial
-failure. Use `squeue` while jobs are active and `sacct` after they reach terminal state. Do not
-classify a job from queue state alone; record exit code, allocation, elapsed time, and memory.
-
-## 2. Repository-wide Puma rules
-
-These rules apply to any workload launched from this checkout, independent of whether it is a
-spinup-surrogate run.
-
-### 2.1 Fixed repository root and early validation
+### 2.1 Fixed repository root and generic early validation
 
 The repository root is fixed at:
 
@@ -224,223 +161,160 @@ readonly REPO_ROOT=/xdisk/chopinsong/tianyihu/elm-olmt
 ```
 
 Canonical and submitted scripts must use this literal path. Do not derive it from `$0`, a copied
-script location, `SLURM_SUBMIT_DIR`, the current directory, or an environment override. Before
-loading the environment or touching outputs, validate the repository controls needed by the
-workload:
+script location, `SLURM_SUBMIT_DIR`, the current directory, or an environment override.
+
+Before loading the environment or touching outputs, validate the selected workload's governing
+files:
 
 ```bash
-test -f "${REPO_ROOT}/train_surrogate_spinup.py"
-test -f "${REPO_ROOT}/development/spinup_surrogate/WORKFLOW.md"
-test -f "${REPO_ROOT}/development/hpc/puma.md"
+readonly REPO_ROOT=/xdisk/chopinsong/tianyihu/elm-olmt
+readonly PUMA_PROFILE="${REPO_ROOT}/development/hpc/puma.md"
+readonly WORKFLOW_FILE="${REPO_ROOT}/<PATH_TO_WORKFLOW>"
+readonly WORKLOAD_ENTRYPOINT="${REPO_ROOT}/<PATH_TO_ENTRYPOINT>"
+
+test -f "${PUMA_PROFILE}"
+test -f "${WORKFLOW_FILE}"
+test -f "${WORKLOAD_ENTRYPOINT}"
 test -f "${REPO_ROOT}/conda_envs/OLMT_puma.yml"
+
 cd "${REPO_ROOT}"
+test "$(pwd -P)" = "${REPO_ROOT}"
 ```
 
-An iteration or workload script must add early checks for its own tracked record and canonical
-artifacts. A Python utility launched by absolute path must explicitly put `REPO_ROOT` on
+A workflow script must add early checks for its tracked record, configuration, manifest, and
+canonical artifacts. A Python utility launched by absolute path must explicitly put `REPO_ROOT` on
 `sys.path` before importing repository modules.
 
 ### 2.2 Repository environment
 
-The current repository environment is named `OLMT_puma`. Prefer direct invocation through
-micromamba rather than relying on shell activation:
+`OLMT_puma` is the Puma environment for this repository. Use it for repository Python workloads
+unless the user explicitly authorizes a different environment for the active workflow.
+
+Prefer direct invocation through micromamba rather than relying on shell activation:
 
 ```bash
-module load micromamba
+readonly MICROMAMBA_MODULE="micromamba/<VALIDATED_VERSION>"
+module load "${MICROMAMBA_MODULE}"
 micromamba env list
 micromamba run -n OLMT_puma python --version
-micromamba run -n OLMT_puma python <SCRIPT> <ARGUMENTS>
+micromamba run -n OLMT_puma python "${SCRIPT}" "${ARGUMENTS[@]}"
 ```
 
-Environment creation or repair is compute-node work and requires explicit execution authority.
-Do not install or repair the environment from a login node.
+For a new workflow, record and pin the validated micromamba module version. Existing historical
+scripts that load the site's default module remain provenance and should not be rewritten solely
+to adopt this convention.
 
-The environment currently uses a home-directory micromamba root. Monitor the home quota separately
-from job memory, and do not relocate or recreate the environment as part of an experiment unless
-that change has its own authorization and provenance record.
+Environment creation or repair is compute-node work and requires explicit execution authority. Do
+not install or repair the environment from a login node.
+
+The environment currently uses a home-directory micromamba root. Monitor home quota separately
+from job memory, and do not relocate or recreate the environment as part of a workload unless that
+change has its own authorization and provenance.
 
 ### 2.3 Storage and provenance
 
-`/xdisk` is temporary and unbacked. Before a new workload, check capacity and retention/expiration
-status, and keep an external copy of irreplaceable inputs and results. Do not treat a successful
-Slurm completion as archival protection.
+`/xdisk` is temporary storage with allocations lasting up to 300 days. UArizona HPC storage is not
+backed up. Storage snapshots may sometimes permit prompt recovery, but recovery is not guaranteed
+and snapshots are not backups. Before a new workload, check capacity and expiration status, and
+keep an external copy of irreplaceable inputs and results. Do not treat successful Slurm
+completion as archival protection.
 
 Every production workload should preserve, as applicable:
 
-- the repository commit and dirty-diff/source-manifest state;
+- the repository commit and dirty-diff or source-manifest state;
 - the canonical script and its hash;
 - the exact submitted script and configuration hashes;
 - the exact submission command and log paths;
-- job IDs, terminal state, exit code, allocation, elapsed time, and memory evidence.
+- the returned job IDs;
+- terminal state, exit code, allocation, elapsed time, and memory evidence.
 
-### 2.4 Slurm script authoring and submission layout
+### 2.4 Slurm script authoring
 
-**REPOSITORY RULE:** create or copy the self-describing submitted Slurm script into the
-user-specified run, case, or variant directory before submission. Submit the copied script from
-inside that directory. Do not submit the repository canonical script directly, and do not rely on
-an absolute script path plus a different caller directory as a substitute for this procedure.
-
-Canonical scripts must be human-readable and auditable. In particular:
+Canonical scripts must be human-readable and auditable:
 
 - define one variable per line, especially when a later variable depends on an earlier one;
 - do not combine dependent assignments in one `readonly` command;
 - put long commands on multiple lines with one option per line;
-- group the script into recognizable sections for directives, paths, validation, environment,
-  provenance, and execution;
-- include explicit `#SBATCH --output` and `#SBATCH --error` directives in every submission
-  script. Use `%A_%a` for array jobs and `%j` for non-array jobs.
+- group directives, paths, validation, environment, provenance, and execution into recognizable
+  sections;
+- include explicit `#SBATCH --output` and `#SBATCH --error` directives;
+- use `%A_%a` for array jobs and `%j` for non-array jobs.
 
-The Iter007 script
-`development/spinup_surrogate/slurm/iter007/case.train_surrogate_spinup_iter007_mlp_tuning.slurm`
-is the repository formatting example. Command-line output/error overrides may be used for a
-special submission, but the script itself must remain self-describing.
+Command-line output or error overrides may be used for a special submission, but the canonical
+script must remain self-describing and the override must be recorded.
 
-The required submission shape is:
+### 2.5 Submitted-copy and run-directory layout
+
+**REPOSITORY RULE:** create or copy a self-describing submitted Slurm script into the
+user-specified run, case, or variant directory before submission. Submit the copied script from
+inside that directory. Do not submit the repository canonical script directly.
+
+The generic submission shape is:
 
 ```bash
 readonly RUN_DIR="<USER_SPECIFIED_RUN_OR_CASE_DIR>"
-readonly SUBMITTED_SCRIPT="${RUN_DIR}/submit_<VARIANT>.slurm"
+readonly CANONICAL_SCRIPT="${REPO_ROOT}/<PATH_TO_CANONICAL_SCRIPT>"
+readonly SUBMITTED_SCRIPT="${RUN_DIR}/submit_<RUN_NAME>.slurm"
 readonly SUBMISSION_CONFIG="${RUN_DIR}/submission_config.env"
 
 mkdir -p "${RUN_DIR}"
 cp "${CANONICAL_SCRIPT}" "${SUBMITTED_SCRIPT}"
+
 test -f "${SUBMITTED_SCRIPT}"
 test -f "${SUBMISSION_CONFIG}"
 
 cd "${RUN_DIR}"
 test "$(pwd -P)" = "${RUN_DIR}"
-sbatch --parsable \
-  --export="ALL,SUBMISSION_CONFIG=${SUBMISSION_CONFIG}" \
-  "./submit_<VARIANT>.slurm" </dev/null
-```
 
-Record the copied script path/hash, configuration path/hash, run directory, exact submission
-command, and returned job ID immediately. Use `</dev/null` when the submission is performed from a
-manifest-reading loop so `sbatch` cannot inherit the manifest's stdin.
-
-The spinup-surrogate default output root is intentionally defined in the workload section below;
-it is not a repository-wide output convention.
-
-### 2.5 Workflow authority
-
-Workload-specific lifecycle policy is defined by that workload's workflow document. For
-spinup-surrogate work, `development/spinup_surrogate/WORKFLOW.md` is authoritative for runtime
-contracts, authorization, retries, monitoring, failure handling, aggregation, selection, and
-closeout.
-
-This Puma profile defines site mechanics and repository execution constraints only. Agents must
-read the applicable workflow document and workload record before execution and must not infer
-lifecycle rules from this section.
-
-## 3. Spinup-surrogate workload profile
-
-Everything in this section is a **WORKLOAD RULE** for the current spinup-surrogate workflow, not a
-general Puma requirement.
-
-### 3.1 Current resource and execution shape
-
-The current spinup-surrogate deployment uses:
-
-- account `chopinsong`, partition `standard`;
-- one node and one Slurm task;
-- 10 CPUs, implying approximately 50 GB on the standard memory-per-CPU policy;
-- a 30-minute production walltime shape, unless the active contract states otherwise;
-- `N_JOBS=4` and `PRE_DISPATCH=n_jobs`;
-- one-thread BLAS/OpenMP settings;
-- task-local `XDG_CACHE_HOME` isolation.
-
-`N_JOBS=4` is retained for compatibility with the legacy `GridSearchCV` path. The current fixed
-parameter LBFGS path does not create fitting workers from `N_JOBS`, and the current permutation
-importance loop is sequential. Increasing `N_JOBS` does not automatically make this workload use
-all allocated CPUs.
-
-Launch the workload as one Python process inside the single-task allocation. Do not add `srun`
-solely because the job was submitted through Slurm. Use `srun` only for multiple Slurm tasks, MPI
-ranks, or a separately authorized site requirement.
-
-### 3.2 Spinup output root and cache isolation
-
-The current spinup-surrogate default output root is:
-
-```text
-/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/UQ_output
-```
-
-Each canonical script must support an explicit output override, and each production variant must
-use a task-local cache directory rather than a shared cache. Do not infer this output root for
-unrelated repository workloads.
-
-### 3.3 Variant-local submission artifacts
-
-For a production matrix variant, keep logs and the submitted copy under the variant's output
-directory:
-
-```text
-<OUTPUT_ROOT>/UQ_output/<RUN_SLUG>/
-  slurm_%A_%a.out
-  slurm_%A_%a.err
-  submit_<VARIANT>.slurm
-  submission_config.env
-```
-
-The submitted script must be self-describing for exactly one locked variant. Either render locked
-variables into the submitted copy or source an immutable `submission_config.env`. Do not submit the
-repository canonical script directly. Record canonical and submitted paths/hashes, configuration
-hash, exact `sbatch` command, and both log paths in the workload record.
-
-**EXAMPLE: materialization and submission shape**
-
-The following is a template, not a complete command until all placeholders are defined and the
-configuration has been validated against the manifest:
-
-```bash
-readonly VARIANT_DIR="${OUTPUT_ROOT}/UQ_output/${RUN_SLUG}"
-readonly SUBMITTED_SCRIPT="${VARIANT_DIR}/submit_${VARIANT}.slurm"
-readonly SUBMISSION_CONFIG="${VARIANT_DIR}/submission_config.env"
-
-mkdir -p "${VARIANT_DIR}"
-
-cp "${CANONICAL_SCRIPT}" "${SUBMITTED_SCRIPT}"
-test -f "${SUBMISSION_CONFIG}"
-test -f "${SUBMITTED_SCRIPT}"
-
-cd "${VARIANT_DIR}"
-test "$(pwd -P)" = "${VARIANT_DIR}"
 job_id=$(
   sbatch --parsable \
-    --export="ALL,SUBMISSION_CONFIG=${SUBMISSION_CONFIG},VARIANT=${VARIANT},N_JOBS=${N_JOBS},PRE_DISPATCH=${PRE_DISPATCH}" \
-    "./submit_${VARIANT}.slurm" </dev/null
+    --export="ALL,SUBMISSION_CONFIG=${SUBMISSION_CONFIG}" \
+    "./submit_<RUN_NAME>.slurm" </dev/null
 )
+
 test -n "${job_id}"
-echo "submitted variant=${VARIANT} job_id=${job_id} run_dir=${VARIANT_DIR}"
+echo "submitted job_id=${job_id} run_dir=${RUN_DIR}"
 ```
 
-The submitted script itself must contain the authoritative output and error directives, for
-example:
+Use `</dev/null` when submission occurs inside a manifest-reading loop so `sbatch` cannot inherit
+the manifest's stdin.
+
+Record the canonical and submitted paths and hashes, configuration path and hash, run directory,
+exact submission command, returned job ID, and log paths immediately.
+
+### 2.6 Workflow authority
+
+The governing workflow document that references this profile owns:
+
+- workload scope and scientific controls;
+- authorization and runtime-contract boundaries;
+- preflight requirements;
+- retry and cancellation policy;
+- monitoring completion criteria;
+- failure handling;
+- aggregation and selection;
+- record updates and closeout.
+
+This profile supplies Puma mechanics only. Read the governing workflow and its active workload
+record before execution. Do not infer lifecycle authority from a resource example in this file.
+
+## 3. Generic job operation
+
+### 3.1 Bounded preflight shape
+
+When the governing workflow requires a no-workload or no-training preflight, materialize its
+tracked script into a dedicated run directory and submit it from there:
 
 ```bash
-#SBATCH --output=slurm_%A_%a.out
-#SBATCH --error=slurm_%A_%a.err
-```
-
-Place logs at the variant root, not at the shared output root or in an additional nested
-per-variant directory. If a command-line output/error override is used, record the override and
-verify that it still resolves inside the same run directory.
-
-### 3.4 Spinup preflight example
-
-Use a bounded one-CPU/approximately-5-GB allocation for a no-training preflight when authorized.
-The time limit and tracked utility are workload-contract values. Materialize the tracked preflight
-script into the user-specified preflight run directory and submit it from there:
-
-```bash
-readonly REPO_ROOT=/xdisk/chopinsong/tianyihu/elm-olmt
 readonly PREFLIGHT_DIR="<USER_SPECIFIED_PREFLIGHT_RUN_DIR>"
-readonly PREFLIGHT_SCRIPT="${PREFLIGHT_DIR}/validate_<ITERATION>.slurm"
+readonly TRACKED_PREFLIGHT="${REPO_ROOT}/<PATH_TO_TRACKED_PREFLIGHT>"
+readonly PREFLIGHT_SCRIPT="${PREFLIGHT_DIR}/validate_<RUN_NAME>.slurm"
 
 mkdir -p "${PREFLIGHT_DIR}"
-cp "${REPO_ROOT}/<TRACKED_PREFLIGHT>" "${PREFLIGHT_SCRIPT}"
+cp "${TRACKED_PREFLIGHT}" "${PREFLIGHT_SCRIPT}"
+
 test -f "${PREFLIGHT_SCRIPT}"
+
 cd "${PREFLIGHT_DIR}"
 test "$(pwd -P)" = "${PREFLIGHT_DIR}"
 
@@ -453,131 +327,149 @@ job_id=$(
     --cpus-per-task=1 \
     --time=<PREFLIGHT_TIME> \
     --job-name=puma-preflight \
-    "./validate_<ITERATION>.slurm" </dev/null
+    "./validate_<RUN_NAME>.slurm" </dev/null
 )
+
 test -n "${job_id}"
 echo "submitted preflight job_id=${job_id} run_dir=${PREFLIGHT_DIR}"
 ```
 
-The copied preflight script must contain explicit `#SBATCH --output` and `#SBATCH --error`
-directives, for example `puma_preflight_%j.out` and `puma_preflight_%j.err`.
+The copied preflight must contain explicit output and error directives. It must establish the
+fixed repository root before importing repository modules. The governing workflow defines whether
+a validation-only correction or retry is permitted.
 
-The preflight must establish the fixed repository root before importing repository modules. A
-preflight failure before training is an application/configuration failure unless the active
-workflow contract explicitly provides a separate validation-only correction and retry.
+### 3.2 Submission reconciliation
 
-### 3.5 Spinup monitoring and closeout
+If an authorized `sbatch` invocation returns an error or no parseable job ID, submission state is
+unknown. Before resubmitting, use approved outside-sandbox `squeue` and `sacct` queries to prove
+that the attempted submission did not create a matching job. Reconcile by job name, user,
+submission window, script, and run directory to prevent duplicate jobs.
 
-For a variant matrix, submit one job or array per variant and monitor the complete job set
-concurrently. Use `squeue` while active and `sacct` after terminal state. Preserve per-leaf state,
-exit code, allocation, elapsed time, MaxRSS, retry classification, aggregation evidence, selection
-metrics, and closeout records. The retry and closeout rules come from the active
-`WORKFLOW.md` contract, not from this resource example.
+### 3.3 Array monitoring and terminal accounting
 
-## 4. Puma migration workload example
-
-This section is a **WORKLOAD EXAMPLE** for the temporary Perlmutter-to-Puma case migration. It is
-not required for ordinary repository jobs or spinup-surrogate training.
-
-### 4.1 Current migration mapping
-
-For the nine migrated case pickles:
-
-- `case.runroot` maps to
-  `/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe`;
-- `case.metdir` maps per site to
-  `/xdisk/chopinsong/tianyihu/E3SM_out/PTCLM/NEON/CTSM_NEON/<SITE>/1x1pt_<SITE>/CLM1PT_data`;
-- `finidat`, `dependcase`, and unrelated historical path metadata remain unchanged;
-- restart lookup continues under `case.runroot/UQ/case.dependcase/gNNNNN/` using the basename of
-  `case.finidat`.
-
-Use `development/spinup_surrogate/migrate_case_pickles.py` only on a Puma compute node with an
-explicit migration contract. Its inspect/apply modes validate the complete nine-case set,
-including resolved restart files, ensemble surface files, forcing sequences, required NetCDF
-variables, spinup-cycle coverage, and pickle invariants. It preserves each original as
-`<case>.pkl.perlmutter.bak`; backups are not removed automatically. Apply stages and reloads every
-pickle before activating it. Recovery restores the original set while preserving backups and any
-already activated Puma pickles as staged files.
-
-### 4.2 Migration command example
-
-The ordered case list is:
+UArizona's array-job convention returns one parent ID from `sbatch`. Use the parent ID for queue
+expansion and terminal accounting:
 
 ```bash
-readonly REPO_ROOT=/xdisk/chopinsong/tianyihu/elm-olmt
-readonly MIGRATION_CASES=ABBY_ppe6_I20TRCNPRDCTCBC,JERC_ppe6_I20TRCNPRDCTCBC,OSBS_ppe6_I20TRCNPRDCTCBC,SOAP_ppe6_I20TRCNPRDCTCBC,RMNP_ppe6_I20TRCNPRDCTCBC,TALL_ppe6_I20TRCNPRDCTCBC,TEAK_ppe6_I20TRCNPRDCTCBC,WREF_ppe6_I20TRCNPRDCTCBC,YELL_ppe6_I20TRCNPRDCTCBC
-readonly MIGRATION_TOOL=${REPO_ROOT}/development/spinup_surrogate/migrate_case_pickles.py
+readonly JOB_ID="<PARENT_JOB_ID>"
 
-micromamba run -n OLMT_puma python "${MIGRATION_TOOL}" \
-  --inspect \
-  --pickle-dir "${REPO_ROOT}/pklfiles" \
-  --cases "${MIGRATION_CASES}" \
-  --run-root /xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe \
-  --met-root /xdisk/chopinsong/tianyihu/E3SM_out/PTCLM/NEON/CTSM_NEON
+squeue --job="${JOB_ID}" -r
 
-micromamba run -n OLMT_puma python "${MIGRATION_TOOL}" \
-  --apply \
-  --pickle-dir "${REPO_ROOT}/pklfiles" \
-  --cases "${MIGRATION_CASES}" \
-  --run-root /xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe \
-  --met-root /xdisk/chopinsong/tianyihu/E3SM_out/PTCLM/NEON/CTSM_NEON
+sacct --jobs="${JOB_ID}" \
+  --format=JobID,JobName,State,ExitCode,Elapsed,AllocTRES,MaxRSS
 ```
 
-Use identical arguments with `--recover` only to restore the original set after interrupted
-activation. Do not remove backups as part of the utility run.
+Monitor the complete job set, not only a representative leaf. Inspect individual elements when
+diagnosing partial failure. Use `squeue` while active and `sacct` after terminal state. Record the
+parent ID, array range, per-element terminal states, exit codes, allocation, elapsed time, memory,
+and retry evidence.
 
-## 5. Pre-submit and monitoring checklist
+### 3.4 Failure classification
 
-Apply the relevant portions of this checklist after the runtime contract is active:
+Capture authoritative accounting evidence and distinguish:
 
-1. Confirm the session is on the intended Puma site and select this profile.
-2. Confirm account, partition, CPU/memory shape, walltime, array scope, and retry boundary.
-3. Verify the repository root and required tracked controls.
-4. Verify the environment invocation and all workload-specific paths.
-5. Run static checks and the authorized no-training preflight, if required.
-6. Verify submitted copies, configuration manifests, log paths, and hashes.
-7. Show and record the exact `sbatch` command before submission.
-8. Record job IDs immediately after submission.
-9. Monitor with `squeue` while active and `sacct` after terminal state.
-10. Use `seff` when diagnosing CPU efficiency or memory headroom.
-11. Preserve logs, accounting evidence, failure classification, and workload results.
-12. Continue through aggregation and closeout when the active workflow contract requires it.
-
-## 6. Failure classification and historical observations
-
-### 6.1 Failure categories
-
-Capture accounting evidence and distinguish:
-
-- account, partition, or scheduler policy errors;
+- account, partition, or scheduler-policy errors;
 - resource exhaustion or timeouts;
-- environment/module activation failures;
+- environment or module-activation failures;
 - repository-root or launch-layout mismatches;
 - storage, quota, or expiration failures;
 - application, code, or configuration failures;
-- scientific validity rejections that do not block the iteration.
+- workflow-defined validation or acceptance rejections.
 
-Retry only the resource or scheduler failure classes permitted by the active workload contract.
-Application, code, configuration, and scientific-control changes require fresh authorization.
+Retry, cancellation, code changes, configuration changes, and scientific-control changes are
+governed by the active workflow and runtime contract. A scheduler-query or transport failure
+leaves state unknown and is not itself a workload failure.
 
-### 6.2 HISTORICAL: interactive-wrapper incident
+### 3.5 Pre-submit and monitoring checklist
 
-During the 2026-07-18 migration, `/usr/local/bin/interactive` and `/usr/local/bin/salloc`
-terminated before allocation with a `/bin/sg` segmentation fault. The underlying
-`/usr/bin/sbatch` path worked. This is an observed incident, not a permanent claim that
-interactive jobs are unavailable. If the issue recurs, capture the command and host evidence,
-verify whether the wrapper is currently healthy, and use an explicitly authorized bounded batch
-job when appropriate.
+Apply the relevant portions after the runtime contract is active:
 
-### 6.3 HISTORICAL: migration validation evidence
+1. Confirm the session is on Puma and select this profile.
+2. Read the governing workflow and active workload record.
+3. Confirm account, partition, CPU and memory shape, walltime, array scope, and retry boundary.
+4. Verify the fixed repository root, `OLMT_puma`, and workload-specific paths.
+5. Run static checks and the authorized preflight, if required.
+6. Verify submitted copies, configuration manifests, log paths, and hashes.
+7. Show and record the exact `sbatch` command before submission.
+8. Record returned job IDs immediately.
+9. Monitor with `squeue` while active and `sacct` after terminal state.
+10. Use `seff` when diagnosing CPU efficiency or memory headroom.
+11. Preserve logs, accounting evidence, failure classification, and workload results.
+12. Continue through aggregation and closeout when the governing workflow requires it.
 
-The migration validation observed 84 monthly forcing files for ABBY/JERC/OSBS/SOAP/RMNP/TALL and
-72 monthly files for TEAK/WREF/YELL. These observations support the recorded migration provenance;
-they are not general Puma storage or forcing guarantees.
+## 4. Historical Puma site observations
 
-### 6.4 HISTORICAL: spinup resource observations
+### 4.1 Interactive-wrapper incident
 
-Past spinup-surrogate leaves reached close to the standard memory ceiling while CPU efficiency was
-low. This is why the current workload profile retains a memory-oriented 10-CPU shape and explicit
-single-thread controls. Revisit the shape only with new accounting evidence and a new runtime
-contract; do not infer that every repository job should request 10 CPUs.
+**HISTORICAL:** on 2026-07-18, the then-resolved `/usr/local/bin/interactive` and
+`/usr/local/bin/salloc` commands terminated before allocation with a `/bin/sg` segmentation fault,
+while `/usr/bin/sbatch` worked. This is not a permanent claim that interactive jobs are
+unavailable. Current official documentation says Puma's `interactive` helper submits through
+`/usr/local/bin/srun` and that direct `salloc` commands should work.
+
+If the issue recurs, capture the command, host, time, and error; verify whether the wrapper is
+currently healthy; and use an explicitly authorized bounded batch job when appropriate. Do not
+fall back to running the workload on a login node.
+
+## 5. Workload-specific examples
+
+Everything in this section is an **EXAMPLE**, not a Puma or repository default. Resources, paths,
+controls, and retry behavior must not be copied into a new workload without a governing workflow,
+current evidence, and an explicit runtime contract.
+
+### 5.1 Spinup-surrogate matrix example
+
+The spinup-surrogate workflow is governed by
+`development/spinup_surrogate/WORKFLOW.md`. Historical Iter010 through Iter012 Puma runs used:
+
+- account `chopinsong` and partition `standard`;
+- one node and one Slurm task;
+- 10 CPUs, implying approximately 50 GB under the standard memory-per-CPU policy;
+- a 30-minute production walltime shape;
+- `N_JOBS=4` and `PRE_DISPATCH=n_jobs`;
+- one-thread BLAS and OpenMP settings;
+- task-local `XDG_CACHE_HOME` isolation.
+
+The historical output root was:
+
+```text
+/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/UQ_output
+```
+
+Each variant kept the submitted script, immutable configuration, and logs at its run root:
+
+```text
+<OUTPUT_ROOT>/UQ_output/<RUN_SLUG>/
+  slurm_%A_%a.out
+  slurm_%A_%a.err
+  submit_<VARIANT>.slurm
+  submission_config.env
+```
+
+The fixed-parameter LBFGS path did not create fitting workers from `N_JOBS`, and permutation
+importance was sequential. Increasing `N_JOBS` therefore did not automatically use all allocated
+CPUs. The workload launched one Python process inside one Slurm task; `srun` was not required.
+
+**HISTORICAL:** some spinup-surrogate leaves approached the standard memory ceiling while CPU
+efficiency remained low. The 10-CPU shape was retained for memory headroom, not as a general Puma
+recommendation. Future spinup work must revisit resources only through its governing workflow and
+new accounting evidence.
+
+### 5.2 Perlmutter-to-Puma case-pickle migration example
+
+The migration utility is:
+
+```text
+development/spinup_surrogate/migrations/perlmutter_to_puma_case_pickles.py
+```
+
+The historical mapping used:
+
+- run root:
+  `/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe`;
+- per-site meteorology root:
+  `/xdisk/chopinsong/tianyihu/E3SM_out/PTCLM/NEON/CTSM_NEON/<SITE>/1x1pt_<SITE>/CLM1PT_data`.
+
+The complete migration procedure, ordered case list, inspect/apply/recover commands, backup
+behavior, and historical validation evidence are recorded in
+[`development/spinup_surrogate/migrations/README.md`](../spinup_surrogate/migrations/README.md).

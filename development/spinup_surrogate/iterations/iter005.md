@@ -103,7 +103,7 @@ Iter001 medians are historical context only, not a pass/fail gate for this nine-
   - `/pscratch/sd/t/tianyihu/E3SM_out/SOIL_project/UQ_output/spinup_surrogate_iter5_multi_params_clim`
   - `/pscratch/sd/t/tianyihu/E3SM_out/SOIL_project/UQ_output/spinup_surrogate_iter5_multi_params_only`
 - Summary root: `development/spinup_surrogate/summaries/iter005/`
-- Feature-stability analyzer: `development/spinup_surrogate/analyze_feature_stability.py`
+- Feature-stability analyzer: `development/spinup_surrogate/tools/analyze_feature_stability.py`
 
 ## Provenance and Submission Log
 

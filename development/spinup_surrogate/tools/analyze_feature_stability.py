@@ -1,8 +1,9 @@
 #!/usr/bin/env python
-"""Aggregate seed-stable feature and correlation diagnostics from spinup stats JSON files."""
+"""Reusable aggregation of seed-stable feature and correlation diagnostics."""
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import re
 from pathlib import Path
@@ -56,15 +57,163 @@ def _as_pair_key(feature_i: str, feature_j: str) -> Tuple[str, str]:
 
 def _build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--stats-dir", required=True, help="Directory containing seed stats JSON files")
-    parser.add_argument("--variant", required=True)
+    source = parser.add_mutually_exclusive_group(required=True)
+    source.add_argument("--stats-dir", help="Directory containing seed stats JSON files")
+    source.add_argument(
+        "--compact-report",
+        type=Path,
+        help="Compact one existing full feature-stability report instead of reading seed stats",
+    )
+    parser.add_argument("--variant")
     parser.add_argument("--output-json", required=True)
     parser.add_argument("--top-k", type=int, default=10)
+    parser.add_argument(
+        "--detail-level",
+        choices=("compact", "full"),
+        default="compact",
+        help="Output schema when aggregating seed stats (default: compact)",
+    )
+    parser.add_argument(
+        "--full-output-json",
+        type=Path,
+        help="Optional full-detail copy written before compact output",
+    )
     return parser
 
 
+def _json_bytes(value: Dict[str, Any]) -> bytes:
+    return (json.dumps(value, indent=2) + "\n").encode("utf-8")
+
+
+def _write_json(path: Path, value: Dict[str, Any]) -> None:
+    path = path.expanduser().resolve()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_bytes(_json_bytes(value))
+
+
+def _compact_output(
+    full_output: Dict[str, Any],
+    full_report_bytes: bytes,
+    full_report_backup: Path | None,
+) -> Dict[str, Any]:
+    if "correlation_summary" not in full_output:
+        raise ValueError("Full report lacks correlation_summary and cannot use compact-v1 schema")
+
+    by_target: Dict[str, Any] = {}
+    for target, target_output in full_output["by_target"].items():
+        features = []
+        for feature in target_output["features"]:
+            features.append(
+                {
+                    "feature": feature["feature"],
+                    "selected_frequency": feature["selected_frequency"],
+                    "top_k_frequency": feature["top_k_frequency"],
+                    "median_rank": feature["median_rank"],
+                    "rank_iqr": feature["rank_iqr"],
+                    "median_r2_drop": feature["mean_r2_drop"]["median"],
+                    "median_rmse_increase": feature["mean_rmse_increase"]["median"],
+                    "positive_r2_drop_fraction": feature["positive_r2_drop_fraction"],
+                    "positive_rmse_increase_fraction": feature[
+                        "positive_rmse_increase_fraction"
+                    ],
+                    "strong_candidate": feature["strong_candidate"],
+                }
+            )
+        by_target[target] = {
+            "metrics": target_output["metrics"],
+            "features": features,
+        }
+
+    full_selection = full_output["feature_selection_summary"]
+    feature_selection = {
+        "selected_features": [
+            {
+                "feature": row["feature"],
+                "count": row["selected_count"],
+                "frequency": row["selected_frequency"],
+            }
+            for row in full_selection["selected_features"]
+        ],
+        "requested_explicit_subset_features": [
+            {
+                "feature": row["feature"],
+                "count": row["requested_count"],
+                "frequency": row["requested_frequency"],
+            }
+            for row in full_selection["requested_explicit_subset_features"]
+        ],
+    }
+
+    full_correlation = full_output["correlation_summary"]
+    thresholded_pairs = {}
+    for threshold, rows in full_correlation["thresholded_pair_frequency"].items():
+        thresholded_pairs[threshold] = [
+            {
+                "feature_i": row["feature_i"],
+                "feature_j": row["feature_j"],
+                "seed_count": row["seed_count_meeting_threshold"],
+                "seed_frequency": row["seed_frequency_meeting_threshold"],
+                "median_abs_corr": row["abs_corr_summary"]["median"],
+            }
+            for row in rows
+        ]
+
+    compact = {
+        "schema_version": "spinup-feature-stability-compact-v1",
+        "variant": full_output["variant"],
+        "stats_dir": full_output["stats_dir"],
+        "file_count": full_output["file_count"],
+        "seeds": full_output["seeds"],
+        "top_k": full_output["top_k"],
+        "corr_thresholds_reported": full_output["corr_thresholds_reported"],
+        "full_report": {
+            "sha256": hashlib.sha256(full_report_bytes).hexdigest(),
+            "size_bytes": len(full_report_bytes),
+            "backup_path": (
+                str(full_report_backup.expanduser().resolve())
+                if full_report_backup is not None
+                else None
+            ),
+        },
+        "by_target": by_target,
+        "feature_selection_summary": feature_selection,
+        "correlation_summary": {
+            "thresholded_pair_frequency": thresholded_pairs,
+            "surviving_representatives": full_correlation["surviving_representatives"],
+        },
+        "cross_target_strong_top_k_features": [
+            row["feature"]
+            for row in full_output["cross_target_agreement"]
+            if row["target_agreement_strong_top_k"]
+        ],
+    }
+    return compact
+
+
 def main() -> int:
-    args = _build_parser().parse_args()
+    parser = _build_parser()
+    args = parser.parse_args()
+    output_path = Path(args.output_json).expanduser().resolve()
+
+    if args.compact_report is not None:
+        if args.variant is not None:
+            parser.error("--variant cannot be used with --compact-report")
+        if args.detail_level != "compact":
+            parser.error("--compact-report requires --detail-level compact")
+        if args.full_output_json is not None:
+            parser.error("--full-output-json cannot be used with --compact-report")
+        full_path = args.compact_report.expanduser().resolve()
+        full_bytes = full_path.read_bytes()
+        full_output = json.loads(full_bytes)
+        _write_json(
+            output_path,
+            _compact_output(full_output, full_bytes, full_path),
+        )
+        print(f"Wrote compact feature stability summary: {output_path}")
+        return 0
+
+    if args.variant is None:
+        parser.error("--variant is required with --stats-dir")
     stats_dir = Path(args.stats_dir).expanduser().resolve()
     files = sorted(stats_dir.glob("surrogate_spinup_stats_seed*.json"))
     if not files:
@@ -381,9 +530,18 @@ def main() -> int:
     }
     output["cross_target_agreement"] = cross_target_rows
 
-    output_path = Path(args.output_json).expanduser().resolve()
-    output_path.parent.mkdir(parents=True, exist_ok=True)
-    output_path.write_text(json.dumps(output, indent=2), encoding="utf-8")
+    full_bytes = _json_bytes(output)
+    full_output_path = None
+    if args.full_output_json is not None:
+        full_output_path = args.full_output_json.expanduser().resolve()
+        if full_output_path == output_path:
+            parser.error("--full-output-json must differ from --output-json")
+        full_output_path.parent.mkdir(parents=True, exist_ok=True)
+        full_output_path.write_bytes(full_bytes)
+
+    if args.detail_level == "compact":
+        output = _compact_output(output, full_bytes, full_output_path)
+    _write_json(output_path, output)
     print(f"Wrote feature stability summary: {output_path}")
     return 0
 

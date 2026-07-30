@@ -40,7 +40,10 @@ def _parser() -> argparse.ArgumentParser:
     )
     mode.add_argument(
         "--parameters-json",
-        help="JSON object/path with exact physical names, or JSON list/list-of-lists",
+        help=(
+            "Path to a JSON file containing one exact physical-name object, "
+            "one positional list, or a positional list-of-lists batch"
+        ),
     )
     parser.add_argument(
         "--surface-member",
@@ -62,11 +65,22 @@ def _load_case(workdir: Path, name: str) -> Any:
         return pickle.load(fp)
 
 
-def _parse_json_argument(raw: str) -> Any:
-    path = Path(raw).expanduser()
-    if path.is_file():
-        return parse_physical_parameter_json(path.read_text(encoding="utf-8"))
-    return parse_physical_parameter_json(raw)
+def _load_parameter_json_file(raw: str) -> Any:
+    value = str(raw).strip()
+    if not value:
+        raise ValueError("--parameters-json requires a JSON file path")
+    if value.startswith(("{", "[")):
+        raise ValueError(
+            "--parameters-json accepts a JSON file path, not inline JSON"
+        )
+    path = Path(value).expanduser().resolve()
+    try:
+        is_file = path.is_file()
+    except OSError as exc:
+        raise ValueError(f"Invalid --parameters-json file path: {path}") from exc
+    if not is_file:
+        raise FileNotFoundError(f"Parameter JSON file not found: {path}")
+    return parse_physical_parameter_json(path.read_text(encoding="utf-8"))
 
 
 def _prediction_record(
@@ -132,7 +146,7 @@ def main() -> int:
                 float(v.strip()) for v in args.parameters.split(",") if v.strip()
             ]
         else:
-            supplied = _parse_json_argument(args.parameters_json)
+            supplied = _load_parameter_json_file(args.parameters_json)
         normalized = normalize_physical_parameters(artifact, supplied)
         components = case_inference_components(
             case,

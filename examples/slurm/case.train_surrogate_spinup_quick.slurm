@@ -77,4 +77,3 @@ python train_surrogate_spinup.py \
   --outputdir "${OUTPUTDIR}" \
   --run-name "${RUN_NAME}" \
   ${DRY_RUN_FLAG}
-

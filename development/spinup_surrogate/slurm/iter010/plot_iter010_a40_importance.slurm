@@ -13,4 +13,4 @@ set -euo pipefail
 cd /xdisk/chopinsong/tianyihu/elm-olmt
 export MPLCONFIGDIR="/tmp/mplconfig_iter010_importance_${SLURM_JOB_ID}"
 mkdir -p "$MPLCONFIGDIR"
-python development/spinup_surrogate/tools/plot_iter010_a40_importance.py
+python development/spinup_surrogate/slurm/iter010/plot_iter010_a40_importance.py

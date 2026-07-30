@@ -260,6 +260,11 @@ metrics: scientific performance remains the Iter011 100-seed `by_member` evidenc
 | `drop32` | Recommended accuracy-oriented release | 32 | `/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/UQ_output/spinup_surrogate_iter012_drop32/surrogate_spinup/spinup_surrogate_iter012_drop32.pkl` |
 | `drop21_corr080` | Compact tradeoff accepted by the user | 21 | `/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/UQ_output/spinup_surrogate_iter012_drop21_corr080/surrogate_spinup/spinup_surrogate_iter012_drop21_corr080.pkl` |
 
+These artifact paths are temporary Puma locations, not permanent or portable release URLs.
+When the artifacts move to another HPC system, update the paths and examples in this section to
+the new site-specific storage locations. Puma `/xdisk` storage is temporary and unbacked, so keep
+any required durable copy separately.
+
 Ordered outputs are `TOTSOMC` in `gC/m^2` and `TOTSOMN` in `gN/m^2`. The trained scalars are,
 respectively, `numpy.nansum(totsomc[:])` and the sum of `numpy.nansum` over
 `litr1n,litr2n,litr3n,cwdn,soil1n,soil2n,soil3n,soil4n`. Restart component attributes are empty;
@@ -293,11 +298,55 @@ python predict_surrogate_spinup.py \
   --members 1,2
 ```
 
-For new parameters, create `params.json` as either an exact physical-name object or a list in
-the physical order above, then replace `--members 1,2` with
-`--parameters-json params.json`. Values outside stored `ensemble_pmin/pmax` are rejected; values
-inside those bounds but outside the empirical training range emit warnings. Missing, duplicate,
-extra, or misordered parameters/features are rejected with the required order.
+For new parameters, `--parameters-json` accepts a JSON **file path only**. A named
+`params.json` file for one parameter set has this form (the values below are illustrative and
+must be replaced with values inside the artifact's stored `ensemble_pmin/pmax`):
+
+```json
+{
+  "k_l1": 0.5,
+  "k_l2": 0.5,
+  "k_l3": 0.5,
+  "k_s1": 0.5,
+  "k_s2": 0.5,
+  "k_s3": 0.5,
+  "k_s4": 0.5,
+  "k_frag": 0.5,
+  "rf_l1s1": 0.5,
+  "rf_l2s2": 0.5,
+  "rf_l3s3": 0.5,
+  "rf_s1s2": 0.5,
+  "rf_s2s3": 0.5,
+  "rf_s3s4": 0.5
+}
+```
+
+Run it with:
+
+```bash
+python predict_surrogate_spinup.py \
+  --workdir /xdisk/chopinsong/tianyihu/elm-olmt \
+  --case ABBY_ppe6_I20TRCNPRDCTCBC \
+  --artifact /xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/UQ_output/spinup_surrogate_iter012_drop32/surrogate_spinup \
+  --feature-subset parm_0,parm_1,parm_2,parm_3,parm_4,parm_5,parm_6,parm_7,parm_8,parm_9,parm_10,parm_11,parm_12,parm_13,PCT_SAND,PCT_CLAY,ORGANIC,PRECTmms_clim_mean,PRECTmms_clim_std,PRECTmms_clim_max,PRECTmms_clim_seasonal_amp,FSDS_clim_mean,FSDS_clim_max,FSDS_clim_seasonal_amp,TBOT_clim_mean,TBOT_clim_std,TBOT_clim_min,TBOT_clim_max,RH_clim_mean,RH_clim_std,RH_clim_min,RH_clim_seasonal_amp \
+  --parameters-json params.json \
+  --output-json spinup_predictions.json
+```
+
+A positional batch file is also supported. Each row must contain exactly 14 values in the
+physical order listed above:
+
+```json
+[
+  [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5],
+  [0.6, 0.4, 0.7, 0.3, 0.6, 0.8, 0.4, 0.5, 0.4, 0.6, 0.5, 0.7, 0.3, 0.6]
+]
+```
+
+Use the batch with `--parameters-json params_batch.json`. Values outside stored
+`ensemble_pmin/pmax` are rejected; values inside those bounds but outside the empirical training
+range emit warnings. Missing, duplicate, extra, or misordered parameters/features are rejected
+with the required order. Inline JSON is intentionally not accepted.
 
 Artifacts are Python pickles: loading can execute code. Load only trusted artifacts, verify the
 colocated manifest SHA-256, and use a compatible Python/scikit-learn environment. The validated

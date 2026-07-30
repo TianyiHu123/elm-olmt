@@ -481,4 +481,4 @@ runtime contract.
 - Iter010 summaries: `development/spinup_surrogate/summaries/iter010/`
 - Iter011 summaries: `development/spinup_surrogate/summaries/iter011/`
 - Iter012 release sidecars and decision: `development/spinup_surrogate/summaries/iter012/`
-- Feature analyzer: `development/spinup_surrogate/analyze_feature_stability.py`
+- Feature analyzer: `development/spinup_surrogate/tools/analyze_feature_stability.py`

@@ -19,7 +19,7 @@ readonly REPO_ROOT=/xdisk/chopinsong/tianyihu/elm-olmt
 readonly OUTPUT_ROOT=/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project
 readonly SUMMARY_ROOT="${REPO_ROOT}/development/spinup_surrogate/summaries/iter007"
 readonly SUMMARY_TOOL="${REPO_ROOT}/summarize_spinup_stats.py"
-readonly STABILITY_TOOL="${REPO_ROOT}/development/spinup_surrogate/analyze_feature_stability.py"
+readonly STABILITY_TOOL="${REPO_ROOT}/development/spinup_surrogate/tools/analyze_feature_stability.py"
 
 test -f "${REPO_ROOT}/train_surrogate_spinup.py"
 test -f "${SUMMARY_TOOL}"
