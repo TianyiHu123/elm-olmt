@@ -19,6 +19,8 @@ import numpy as np
 import xarray as xr
 from netCDF4 import Dataset
 from sklearn import preprocessing
+from sklearn.inspection import permutation_importance
+from sklearn.metrics import make_scorer
 from sklearn.model_selection import GridSearchCV
 from sklearn.neural_network import MLPRegressor
 
@@ -45,6 +47,7 @@ class _PreparedCaseTrainingBlock:
     case_name: str
     member_site_labels: np.ndarray
     params: np.ndarray
+    parameter_names: List[str]
     forcing_features: np.ndarray
     forcing_vars_used: List[str]
     forcing_feature_names: List[str]
@@ -388,6 +391,115 @@ def _safe_r2(y_true: np.ndarray, y_pred: np.ndarray) -> float:
     return float(corr**2)
 
 
+def _regression_metrics(y_true: np.ndarray, y_pred: np.ndarray) -> Dict[str, Any]:
+    """Return finite R2/RMSE metrics for one population."""
+    yt = np.asarray(y_true, dtype=np.float64).ravel()
+    yp = np.asarray(y_pred, dtype=np.float64).ravel()
+    if yt.size == 0 or yp.size != yt.size:
+        raise ValueError("Metric inputs must be non-empty arrays with identical lengths.")
+    if np.any(~np.isfinite(yt)) or np.any(~np.isfinite(yp)):
+        raise ValueError("Metric inputs must contain only finite values.")
+    return {
+        "r2": _safe_r2(yt, yp),
+        "rmse": float(np.sqrt(np.mean((yt - yp) ** 2))),
+        "n_rows": int(yt.size),
+    }
+
+
+def _overfitting_diagnostics(
+    train_metrics: Mapping[str, Any], test_metrics: Mapping[str, Any]
+) -> Dict[str, Any]:
+    train_r2 = float(train_metrics["r2"])
+    test_r2 = float(test_metrics["r2"])
+    train_rmse = float(train_metrics["rmse"])
+    test_rmse = float(test_metrics["rmse"])
+    r2_gap = train_r2 - test_r2
+    rmse_ratio = math.inf if train_rmse == 0.0 else test_rmse / train_rmse
+    r2_warning = bool(r2_gap > 0.15 and train_r2 > 0.6)
+    rmse_warning = bool(rmse_ratio > 1.5)
+    return {
+        "r2_gap": float(r2_gap),
+        "rmse_ratio": float(rmse_ratio),
+        "r2_warning": r2_warning,
+        "rmse_warning": rmse_warning,
+        "overfitting_warning": bool(r2_warning or rmse_warning),
+    }
+
+
+def _complete_regression_diagnostics(
+    y_train: np.ndarray,
+    yhat_train: np.ndarray,
+    y_test: np.ndarray,
+    yhat_test: np.ndarray,
+) -> Dict[str, Any]:
+    train = _regression_metrics(y_train, yhat_train)
+    test = _regression_metrics(y_test, yhat_test)
+    return {"train": train, "test": test, **_overfitting_diagnostics(train, test)}
+
+
+def _schema_sha256(feature_names: Sequence[str]) -> str:
+    encoded = json.dumps(list(feature_names), ensure_ascii=True, separators=(",", ":")).encode(
+        "utf-8"
+    )
+    return hashlib.sha256(encoded).hexdigest()
+
+
+def _permutation_importance_payload(
+    estimator: Any,
+    X_test: np.ndarray,
+    y_test_scaled: np.ndarray,
+    y_scale: float,
+    feature_names: Sequence[str],
+    *,
+    n_repeats: int,
+    random_state: int,
+) -> Dict[str, Any]:
+    """Calculate held-out R2 decrease and physical-unit RMSE increase."""
+    scoring = {
+        "r2": make_scorer(_safe_r2, greater_is_better=True),
+        "neg_rmse": "neg_root_mean_squared_error",
+    }
+    results = permutation_importance(
+        estimator,
+        X_test,
+        y_test_scaled,
+        scoring=scoring,
+        n_repeats=n_repeats,
+        random_state=random_state,
+        n_jobs=1,
+    )
+    r2_values = np.asarray(results["r2"].importances, dtype=np.float64)
+    rmse_values = np.asarray(results["neg_rmse"].importances, dtype=np.float64) * float(y_scale)
+    expected_shape = (len(feature_names), n_repeats)
+    if r2_values.shape != expected_shape or rmse_values.shape != expected_shape:
+        raise RuntimeError(
+            "Unexpected permutation-importance shapes: "
+            f"r2={r2_values.shape}, rmse={rmse_values.shape}, expected={expected_shape}"
+        )
+    if np.any(~np.isfinite(r2_values)) or np.any(~np.isfinite(rmse_values)):
+        raise ValueError("Permutation importance contains non-finite values.")
+    features = []
+    for idx, name in enumerate(feature_names):
+        features.append(
+            {
+                "feature": str(name),
+                "test_r2_decrease": r2_values[idx, :].tolist(),
+                "test_r2_decrease_mean": float(np.mean(r2_values[idx, :])),
+                "test_r2_decrease_std": float(np.std(r2_values[idx, :])),
+                "test_rmse_increase": rmse_values[idx, :].tolist(),
+                "test_rmse_increase_mean": float(np.mean(rmse_values[idx, :])),
+                "test_rmse_increase_std": float(np.std(rmse_values[idx, :])),
+            }
+        )
+    return {
+        "scoring": ["test_r2_decrease", "test_rmse_increase"],
+        "n_repeats": int(n_repeats),
+        "random_state": int(random_state),
+        "feature_count": len(feature_names),
+        "features": features,
+    }
+
+
 def _format_metric(value: float) -> str:
     if not np.isfinite(value):
         return "n/a"
@@ -598,6 +710,14 @@ def _resolve_output_label(case_names: Sequence[str], run_name: Optional[str]) ->
     return f"multicase_{len(case_names)}cases_{digest}"
 
 
+def _forcing_output_path(outputdir: Union[str, Path], output_label: str) -> Path:
+    """Resolve the direct forcing-output contract without an implicit path component."""
+    label = str(output_label).strip()
+    if not label or Path(label).name != label or label in {".", ".."}:
+        raise ValueError(f"Invalid forcing output label: {output_label!r}")
+    return Path(outputdir).expanduser().resolve() / label / "surrogate_forcing"
+
+
 def _resolve_forcing_memmap_paths(reuse_arg: Union[str, Path]) -> Tuple[Path, Path]:
     """Return ``(X_forcing_memmap.dat, X_forcing_memmap_layout.npz)`` paths."""
     p = Path(reuse_arg).expanduser().resolve()
@@ -630,12 +750,18 @@ def _save_forcing_layout_npz(
     site_names: Sequence[str],
     forcing_feature_names: Sequence[str],
     forcing_vars_used: Sequence[str],
+    parameter_names: Sequence[str],
     spinup_vars: Sequence[str],
     case_names: Sequence[str],
     n_forcing: int,
     n_params: int,
     n_spinup: int,
 ) -> None:
+    ordered_feature_names = [
+        *list(forcing_feature_names),
+        *list(parameter_names),
+        *list(spinup_vars),
+    ]
     np.savez_compressed(
         layout_path,
         rows=np.int64(rows),
@@ -648,7 +774,10 @@ def _save_forcing_layout_npz(
         site_names=np.asarray(site_names, dtype=object),
         forcing_feature_names=np.asarray(list(forcing_feature_names), dtype=object),
         forcing_vars_used=np.asarray(list(forcing_vars_used), dtype=object),
+        parameter_names=np.asarray(list(parameter_names), dtype=object),
         spinup_vars=np.asarray(list(spinup_vars), dtype=object),
+        ordered_feature_names=np.asarray(ordered_feature_names, dtype=object),
+        ordered_feature_schema_sha256=np.array(_schema_sha256(ordered_feature_names), dtype=object),
         case_names=np.asarray(list(case_names), dtype=object),
         n_forcing=np.int32(n_forcing),
         n_params=np.int32(n_params),
@@ -676,7 +805,10 @@ def _load_forcing_layout_dict(layout_path: Path) -> Dict[str, Any]:
             "site_names": [str(x) for x in data["site_names"].tolist()],
             "forcing_feature_names": [str(x) for x in data["forcing_feature_names"].tolist()],
             "forcing_vars_used": [str(x) for x in data["forcing_vars_used"].tolist()],
+            "parameter_names": [str(x) for x in data["parameter_names"].tolist()],
             "spinup_vars": [str(x) for x in data["spinup_vars"].tolist()],
+            "ordered_feature_names": [str(x) for x in data["ordered_feature_names"].tolist()],
+            "ordered_feature_schema_sha256": str(data["ordered_feature_schema_sha256"].item()),
             "case_names": [str(x) for x in data["case_names"].tolist()],
             "n_forcing": int(data["n_forcing"]),
             "n_params": int(data["n_params"]),
@@ -723,21 +855,26 @@ def _slurm_env_metadata() -> Dict[str, Optional[Union[str, int]]]:
     }
 
 
-def _sanitize_stats_for_json(stats: Dict[str, Dict[str, float]]) -> Dict[str, Dict[str, Optional[float]]]:
-    out: Dict[str, Dict[str, Optional[float]]] = {}
-    for var, d in stats.items():
-        out[var] = {}
-        for key, val in d.items():
-            if isinstance(val, float) and not math.isfinite(val):
-                out[var][key] = None
-            else:
-                out[var][key] = val
-    return out
+def _sanitize_for_json(value: Any) -> Any:
+    if isinstance(value, Mapping):
+        return {str(key): _sanitize_for_json(val) for key, val in value.items()}
+    if isinstance(value, (list, tuple)):
+        return [_sanitize_for_json(val) for val in value]
+    if isinstance(value, np.ndarray):
+        return _sanitize_for_json(value.tolist())
+    if isinstance(value, (np.integer,)):
+        return int(value)
+    if isinstance(value, (np.floating, float)):
+        numeric = float(value)
+        return numeric if math.isfinite(numeric) else None
+    if isinstance(value, (np.bool_, bool)):
+        return bool(value)
+    return value
 
 
 def _write_surrogate_forcing_stats_json(
     path: Path,
-    stats: Dict[str, Dict[str, float]],
+    stats: Dict[str, Dict[str, Any]],
     *,
     split_mode: str,
     train_fraction: float,
@@ -746,8 +883,12 @@ def _write_surrogate_forcing_stats_json(
     case_names: Sequence[str],
     outvars: Sequence[str],
     stats_run_id: str,
+    ordered_feature_names: Sequence[str],
+    ordered_feature_schema_sha256: str,
+    provenance: Mapping[str, Any],
 ) -> None:
     payload: Dict[str, Any] = {
+        "schema": "olmt-forcing-surrogate-stats-v2",
         "timestamp_utc": datetime.now(timezone.utc).isoformat(),
         "stats_run_id": stats_run_id,
         "split_mode": split_mode,
@@ -756,10 +897,27 @@ def _write_surrogate_forcing_stats_json(
         "output_label": output_label,
         "case_names": list(case_names),
         "outvars": list(outvars),
-        "by_variable": _sanitize_stats_for_json(stats),
+        "ordered_feature_names": list(ordered_feature_names),
+        "ordered_feature_schema_sha256": ordered_feature_schema_sha256,
+        "provenance": dict(provenance),
+        "by_variable": _sanitize_for_json(stats),
     }
     payload.update(_slurm_env_metadata())
     path.write_text(json.dumps(payload, indent=2, allow_nan=False), encoding="utf-8")
+
+
+def _case_parameter_names(case: Any, case_name: str, n_params: int) -> List[str]:
+    raw = getattr(case, "ensemble_parms", None)
+    if raw is None:
+        raise AttributeError(f"Case '{case_name}' missing required 'ensemble_parms' metadata")
+    names = [str(name) for name in list(raw)]
+    if len(names) != n_params:
+        raise ValueError(
+            f"Case '{case_name}' ensemble_parms has {len(names)} names, expected {n_params}."
+        )
+    if len(set(names)) != len(names) or any(not name for name in names):
+        raise ValueError(f"Case '{case_name}' ensemble_parms must be non-empty and unique.")
+    return names
 
 
 def _prepare_case_training_block(
@@ -782,6 +940,7 @@ def _prepare_case_training_block(
     if params.ndim != 2:
         raise ValueError(f"Case '{case_name}' samples must be 2-D after transpose, got {params.shape}")
     nsamples = params.shape[0]
+    parameter_names = _case_parameter_names(case, case_name, params.shape[1])
     print("Load ensemble parameters:")
     print(f"{nsamples} ensemble members")
     print(f"{params.shape[1]} parameters")
@@ -833,6 +992,7 @@ def _prepare_case_training_block(
         case_name=case_name,
         member_site_labels=_parse_site_labels(case, nsamples),
         params=params,
+        parameter_names=parameter_names,
         forcing_features=forcing_features,
         forcing_vars_used=list(forcing_used),
         forcing_feature_names=list(forcing_feature_names),
@@ -865,6 +1025,7 @@ def _prepare_case_training_block_targets_only(
     if params.ndim != 2:
         raise ValueError(f"Case '{case_name}' samples must be 2-D after transpose, got {params.shape}")
     nsamples = params.shape[0]
+    parameter_names = _case_parameter_names(case, case_name, params.shape[1])
     print("Load ensemble parameters:")
     print(f"{nsamples} ensemble members")
     print(f"{params.shape[1]} parameters")
@@ -898,6 +1059,7 @@ def _prepare_case_training_block_targets_only(
         case_name=case_name,
         member_site_labels=_parse_site_labels(case, nsamples),
         params=params,
+        parameter_names=parameter_names,
         forcing_features=placeholder_forcing,
         forcing_vars_used=list(forcing_vars_used),
         forcing_feature_names=list(forcing_feature_names),
@@ -923,6 +1085,11 @@ def _validate_prepared_blocks(blocks: Sequence[_PreparedCaseTrainingBlock], outv
             raise ValueError(
                 f"Case '{block.case_name}' parameter count {block.params.shape[1]} does not match "
                 f"reference case '{ref.case_name}' ({ref.params.shape[1]})."
+            )
+        if block.parameter_names != ref.parameter_names:
+            raise ValueError(
+                f"Case '{block.case_name}' ensemble_parms names/order do not match reference "
+                f"case '{ref.case_name}'."
             )
         if block.spinup.shape[1] != ref.spinup.shape[1]:
             raise ValueError(
@@ -1043,9 +1210,12 @@ def _train_surrogate_with_prepared_blocks(
     minimal_output: bool = False,
     stats_run_id: Optional[str] = None,
     reuse_x_memmap_path: Optional[Union[str, Path]] = None,
+    permutation_repeats: int = 8,
 ) -> Optional[Dict[str, Any]]:
     del chunk_size  # reserved for future chunked IO
     _validate_prepared_blocks(blocks, outvars)
+    if permutation_repeats < 1:
+        raise ValueError("permutation_repeats must be at least 1")
 
     ref = blocks[0]
     rows = sum(block.nsamples * block.ntime for block in blocks)
@@ -1065,8 +1235,7 @@ def _train_surrogate_with_prepared_blocks(
         )
 
     dtype_np = np.float32 if dtype == "float32" else np.float64
-    outdir = Path(outputdir).resolve()
-    uq_out = outdir / "UQ_output" / output_label / "surrogate_forcing"
+    uq_out = _forcing_output_path(outputdir, output_label)
     uq_out.mkdir(parents=True, exist_ok=True)
 
     reuse_mem: Optional[Path] = None
@@ -1089,6 +1258,11 @@ def _train_surrogate_with_prepared_blocks(
             raise ValueError(
                 f"Layout n_params ({layout_from_disk['n_params']}) != case params "
                 f"({ref.params.shape[1]})."
+            )
+        if layout_from_disk["parameter_names"] != ref.parameter_names:
+            raise ValueError(
+                "Layout parameter names/order do not match the case ensemble_parms: "
+                f"layout={layout_from_disk['parameter_names']}, case={ref.parameter_names}."
             )
         if layout_from_disk["n_spinup"] != ref.spinup.shape[1]:
             raise ValueError(
@@ -1185,6 +1359,7 @@ def _train_surrogate_with_prepared_blocks(
             site_names=site_names,
             forcing_feature_names=ref.forcing_feature_names,
             forcing_vars_used=ref.forcing_vars_used,
+            parameter_names=ref.parameter_names,
             spinup_vars=ref.spinup_vars,
             case_names=[b.case_name for b in blocks],
             n_forcing=int(ref.forcing_features.shape[1]),
@@ -1225,7 +1400,17 @@ def _train_surrogate_with_prepared_blocks(
     model_store: Dict[str, GridSearchCV] = {}
     x_scaler_store: Dict[str, preprocessing.StandardScaler] = {}
     y_scaler_store: Dict[str, preprocessing.StandardScaler] = {}
-    stats: Dict[str, Dict[str, float]] = {}
+    stats: Dict[str, Dict[str, Any]] = {}
+    ordered_feature_names = [
+        *ref.forcing_feature_names,
+        *ref.parameter_names,
+        *ref.spinup_vars,
+    ]
+    if len(ordered_feature_names) != nfeatures or len(set(ordered_feature_names)) != nfeatures:
+        raise ValueError(
+            "Complete forcing/parameter/spinup feature schema must be unique and match X width."
+        )
+    ordered_feature_schema_sha256 = _schema_sha256(ordered_feature_names)
 
     for var in outvars:
         print(f"\nTraining variable: {var}")
@@ -1250,7 +1435,13 @@ def _train_surrogate_with_prepared_blocks(
             n_iter_no_change=10,
             random_state=42,
         )
-        grid = GridSearchCV(clf, param_grid, n_jobs=n_jobs, cv=cv_folds)
+        grid = GridSearchCV(
+            clf,
+            param_grid,
+            n_jobs=n_jobs,
+            cv=cv_folds,
+            pre_dispatch=n_jobs,
+        )
         grid.fit(X_train, y_train)
 
         yhat_train = y_scaler.inverse_transform(grid.predict(X_train).reshape(-1, 1)).ravel()
@@ -1258,16 +1449,71 @@ def _train_surrogate_with_prepared_blocks(
         ytrain_true = y_rows[train_idx, :].ravel()
         yval_true = y_rows[val_idx, :].ravel()
 
-        train_r2 = _safe_r2(ytrain_true, yhat_train)
-        val_r2 = _safe_r2(yval_true, yhat_val)
-        print(f"R2 train={_format_metric(train_r2)}, val={_format_metric(val_r2)}")
+        pooled = _complete_regression_diagnostics(
+            ytrain_true,
+            yhat_train,
+            yval_true,
+            yhat_val,
+        )
+        train_r2 = float(pooled["train"]["r2"])
+        val_r2 = float(pooled["test"]["r2"])
+        print(
+            f"R2 train={_format_metric(train_r2)}, test={_format_metric(val_r2)}; "
+            f"RMSE train={_format_metric(float(pooled['train']['rmse']))}, "
+            f"test={_format_metric(float(pooled['test']['rmse']))}"
+        )
 
         if not minimal_output:
             model_store[var] = grid
             x_scaler_store[var] = x_scaler
             y_scaler_store[var] = y_scaler
 
-        stats[var] = {"r2_train": train_r2, "r2_val": val_r2}
+        y_pred_full_metrics = np.full(rows, np.nan, dtype=np.float64)
+        y_pred_full_metrics[train_idx] = yhat_train
+        y_pred_full_metrics[val_idx] = yhat_val
+        by_site: Dict[str, Dict[str, Any]] = {}
+        train_membership = np.zeros(rows, dtype=bool)
+        test_membership = np.zeros(rows, dtype=bool)
+        train_membership[train_idx] = True
+        test_membership[val_idx] = True
+        for case_id, block in enumerate(blocks):
+            site_name = block.case_name
+            site_mask = row_case_ids == case_id
+            site_train = site_mask & train_membership
+            site_test = site_mask & test_membership
+            by_site[str(site_name)] = _complete_regression_diagnostics(
+                y_rows[site_train, :].ravel(),
+                y_pred_full_metrics[site_train],
+                y_rows[site_test, :].ravel(),
+                y_pred_full_metrics[site_test],
+            )
+            by_site[str(site_name)]["site_labels"] = np.unique(
+                block.member_site_labels.astype(str)
+            ).tolist()
+
+        permutation_seed = 0 if split_random_state is None else int(split_random_state)
+        importance = _permutation_importance_payload(
+            grid,
+            X_val,
+            y_val,
+            float(y_scaler.scale_[0]),
+            ordered_feature_names,
+            n_repeats=permutation_repeats,
+            random_state=permutation_seed,
+        )
+        stats[var] = {
+            "r2_train": train_r2,
+            "r2_test": val_r2,
+            "rmse_train": float(pooled["train"]["rmse"]),
+            "rmse_test": float(pooled["test"]["rmse"]),
+            "r2_gap": float(pooled["r2_gap"]),
+            "rmse_ratio": float(pooled["rmse_ratio"]),
+            "overfitting_warning": bool(pooled["overfitting_warning"]),
+            "pooled": pooled,
+            "by_site": by_site,
+            "permutation_importance": importance,
+            "best_params": dict(grid.best_params_),
+        }
 
         if attach_case is not None and not minimal_output:
             attach_case.surrogate_forcing[var] = grid
@@ -1276,9 +1522,6 @@ def _train_surrogate_with_prepared_blocks(
 
         if not minimal_output:
             y_true_full = y_rows.ravel().astype(np.float64, copy=False)
-            y_pred_full = np.full(rows, np.nan, dtype=np.float64)
-            y_pred_full[train_idx] = yhat_train
-            y_pred_full[val_idx] = yhat_val
             _save_case_plots(
                 blocks,
                 row_case_ids,
@@ -1286,7 +1529,7 @@ def _train_surrogate_with_prepared_blocks(
                 train_idx,
                 val_idx,
                 y_true_full,
-                y_pred_full,
+                y_pred_full_metrics,
                 uq_out,
                 var,
             )
@@ -1294,7 +1537,10 @@ def _train_surrogate_with_prepared_blocks(
     training_layout = {
         "forcing_feature_names": ref.forcing_feature_names,
         "forcing_vars_used": ref.forcing_vars_used,
+        "parameter_names": ref.parameter_names,
         "spinup_vars": ref.spinup_vars,
+        "ordered_feature_names": ordered_feature_names,
+        "ordered_feature_schema_sha256": ordered_feature_schema_sha256,
         "n_forcing_cols": int(ref.forcing_features.shape[1]),
         "n_params": int(ref.params.shape[1]),
         "n_spinup": int(ref.spinup.shape[1]),
@@ -1316,34 +1562,47 @@ def _train_surrogate_with_prepared_blocks(
 
     resolved_stats_id = _resolve_stats_run_id(stats_run_id, split_random_state)
     safe_id = "".join(ch if ch.isalnum() or ch in "._-" else "_" for ch in resolved_stats_id)
+    provenance = {
+        "repository_commit": os.environ.get("OLMT_REPOSITORY_COMMIT"),
+        "source_manifest_sha256": os.environ.get("OLMT_SOURCE_MANIFEST_SHA256"),
+        "dependency_manifest_sha256": os.environ.get("OLMT_DEPENDENCY_MANIFEST_SHA256"),
+        "submission_config_sha256": os.environ.get("OLMT_SUBMISSION_CONFIG_SHA256"),
+    }
+    stats_path = uq_out / f"surrogate_forcing_stats_{safe_id}.json"
+    _write_surrogate_forcing_stats_json(
+        stats_path,
+        stats,
+        split_mode=split_mode,
+        train_fraction=train_fraction,
+        split_random_state=split_random_state,
+        output_label=output_label,
+        case_names=[block.case_name for block in blocks],
+        outvars=outvars,
+        stats_run_id=resolved_stats_id,
+        ordered_feature_names=ordered_feature_names,
+        ordered_feature_schema_sha256=ordered_feature_schema_sha256,
+        provenance=provenance,
+    )
+    print(f"\nSaved training statistics to: {stats_path}")
 
     if minimal_output:
-        stats_path = uq_out / f"surrogate_forcing_stats_{safe_id}.json"
-        _write_surrogate_forcing_stats_json(
-            stats_path,
-            stats,
-            split_mode=split_mode,
-            train_fraction=train_fraction,
-            split_random_state=split_random_state,
-            output_label=output_label,
-            case_names=[block.case_name for block in blocks],
-            outvars=outvars,
-            stats_run_id=resolved_stats_id,
-        )
-        print(f"\nSaved training statistics to: {stats_path}")
         return {
             "case": output_label,
             "case_names": [block.case_name for block in blocks],
             "outvars": list(outvars),
             "forcing_vars_used": ref.forcing_vars_used,
             "forcing_feature_names": ref.forcing_feature_names,
+            "parameter_names": ref.parameter_names,
             "spinup_vars": ref.spinup_vars,
+            "ordered_feature_names": ordered_feature_names,
+            "ordered_feature_schema_sha256": ordered_feature_schema_sha256,
             "split_mode": split_mode,
             "train_fraction": train_fraction,
             "split_random_state": split_random_state,
             "stats": stats,
             "training_layout": training_layout,
             "stats_path": str(stats_path),
+            "provenance": provenance,
             "minimal_output": True,
         }
 
@@ -1353,7 +1612,10 @@ def _train_surrogate_with_prepared_blocks(
         "outvars": list(outvars),
         "forcing_vars_used": ref.forcing_vars_used,
         "forcing_feature_names": ref.forcing_feature_names,
+        "parameter_names": ref.parameter_names,
         "spinup_vars": ref.spinup_vars,
+        "ordered_feature_names": ordered_feature_names,
+        "ordered_feature_schema_sha256": ordered_feature_schema_sha256,
         "split_mode": split_mode,
         "train_fraction": train_fraction,
         "split_random_state": split_random_state,
@@ -1362,6 +1624,8 @@ def _train_surrogate_with_prepared_blocks(
         "y_scaler": y_scaler_store,
         "stats": stats,
         "training_layout": training_layout,
+        "stats_path": str(stats_path),
+        "provenance": provenance,
     }
     with open(uq_out / "surrogate_forcing_artifacts.pkl", "wb") as fp:
         pickle.dump(artifact, fp)

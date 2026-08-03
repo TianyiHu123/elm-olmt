@@ -49,10 +49,15 @@ The CLI is separate from the ensemble workflow manager ([`manage_ensemble.py`](m
 - spinup restart path is resolved using `case.dependcase` and `case.finidat` naming, improving compatibility when restart files are sourced from dependent cases
 - spinup variables support aggregated sums through `SPINUP_VAR_SUM` (for example `TOTSOMC`, `TOTSOMN`)
 - anomaly features skip selected state/meteorology variables (`FLDS`, `QBOT`, `WIND`, `PSRF`, `RH`)
-- output root is configurable with `--outputdir` (default: current directory, i.e. **`./UQ_output/<case>/surrogate_forcing/`** under that base; set an absolute path on HPC when needed)
-- multi-case runs can set `--run-name` to choose a short output folder label under `UQ_output/`, which also controls where the merged `X_forcing_memmap.dat` is saved
+- `--outputdir` is the exact parent of **`<case-or-run-name>/surrogate_forcing/`** (the default is the current directory); no implicit `UQ_output` component is inserted
+- multi-case runs can set `--run-name` to choose a short output folder directly under `--outputdir`, which also controls where the merged `X_forcing_memmap.dat` is saved
 - **Train/validation robustness:** `split_mode=random_time_window` draws a random contiguous time window per case (seed with `split_random_state` / `--split-random-state`) so you can study sensitivity to the temporal split
 - **Stats-only runs:** `--stats-only` skips plots and `surrogate_forcing_artifacts.pkl` and writes a small JSON metrics file per run (`surrogate_forcing_stats_*.json`), with filenames keyed off SLURM array/job env vars or `--stats-run-id` so array jobs do not overwrite each other
+- **Complete diagnostics:** every run writes pooled and per-site train/test R2 and RMSE, R2 gap,
+  RMSE ratio, and the documented overfitting warning; full runs also write the same JSON record
+- **Held-out importance:** `--permutation-repeats` controls reproducible permutation importance
+  for every ordered forcing, parameter, and spinup feature (default: 8), reported as test-R2
+  decrease and physical-unit test-RMSE increase
 - **Observation unit conversion:** NetCDF observations loaded by [`model_ELM/load_obs_nc.py`](model_ELM/load_obs_nc.py) are converted to daily flux units (`gC/m^2/day`, `gN/m^2/day`, `gP/m^2/day`, or `mm/day`) to match postprocessed surrogate training targets; see [Observation NetCDF units](#observation-netcdf-units) below
 - **Reuse of the design matrix:** after one full training run, **`X_forcing_memmap_layout.npz`** is written next to **`X_forcing_memmap.dat`**. Later runs can pass **`--reuse-x-memmap`** to open the memmap read-only and skip met forcing and restart spinup IO; targets are still loaded from the case pickle(s). `--forcing-vars` and `--spinup-vars` must match the original build; multi-case reuse requires the same case list **order** as in the layout file
 
@@ -71,13 +76,14 @@ The CLI is separate from the ensemble workflow manager ([`manage_ensemble.py`](m
   - `--cv-folds`
   - `--quick-grid`
   - `--chunk-size`
+  - `--permutation-repeats`
   - `--dtype` (`float32` default)
 - memory-aware training:
   - dry-run size/memory estimate
   - disk-backed feature matrix via `numpy.memmap`
   - warnings for potentially aggressive parallel settings
 - outputs saved to:
-  - `<outputdir>/UQ_output/<case-or-run-name>/surrogate_forcing/`
+  - `<outputdir>/<case-or-run-name>/surrogate_forcing/`
   - **Full training (default):** `surrogate_forcing_artifacts.pkl`, memmap-backed design matrix `X_forcing_memmap.dat`, companion **`X_forcing_memmap_layout.npz`** (row layout and feature metadata for reuse), and diagnostic plots `*_surrogate_forcing.png`
   - **`--stats-only`:** `surrogate_forcing_stats_<id>.json` only (no pickle, no plots); the run id defaults from `SLURM_ARRAY_JOB_ID` / `SLURM_ARRAY_TASK_ID` when present, else `SLURM_JOB_ID` or process id, optionally suffixed with `_rs<split_random_state>`
 - multi-case diagnostics are saved case by case (one plot set per case/site) under the merged training run output folder
@@ -195,7 +201,7 @@ python train_surrogate_forcing.py \
 2. Point **`--reuse-x-memmap`** at that directory (or at the `.dat` file). Use the **same** `--forcing-vars`, `--spinup-vars`, `--vars`, `--dtype`, and case list **order** (multi-case) as the original run. The memmap stores the design matrix **X** only; hourly targets are always read from **`pklfiles/<case>.pkl`** (`case.output`), so the pickle must still match the experiment used to build **X**.
 
 ```bash
-MEMMAP_DIR="/path/to/UQ_output/<CASE_OR_RUN_NAME>/surrogate_forcing"
+MEMMAP_DIR="/path/to/output/<CASE_OR_RUN_NAME>/surrogate_forcing"
 
 python train_surrogate_forcing.py \
   --case <CASE_NAME> \
@@ -221,7 +227,7 @@ Assume `MEMMAP_DIR` points at the folder from a prior full train. Each array tas
 #SBATCH --array=0-99
 #SBATCH ...
 
-MEMMAP_DIR="/path/to/UQ_output/<CASE_NAME>/surrogate_forcing"
+MEMMAP_DIR="/path/to/output/<CASE_NAME>/surrogate_forcing"
 SEED=$((10000 + SLURM_ARRAY_TASK_ID))
 
 python train_surrogate_forcing.py \
@@ -241,7 +247,7 @@ python train_surrogate_forcing.py \
   --n-jobs 8
 ```
 
-Stats JSON files are written under **`/path/to/scratch/UQ_output/<CASE_NAME>/surrogate_forcing/`** (or under `--run-name` when you use it). Aggregate those JSON files offline to summarize R² distributions.
+Stats JSON files are written under **`/path/to/scratch/<CASE_NAME>/surrogate_forcing/`** (or under `--run-name` when you use it). Aggregate those JSON files offline to summarize R² distributions.
 
 ## Standalone Spinup Surrogate
 
@@ -554,7 +560,7 @@ python run_standard_gsa.py \
   --vars SR \
   --metrics mean,accumulated,std \
   --mode both \
-  --artifact /pscratch/sd/t/tianyihu/E3SM_out/SOIL_project/UQ_output/multisite_test1/surrogate_forcing \
+  --artifact /pscratch/sd/t/tianyihu/E3SM_out/SOIL_project/multisite_test1/surrogate_forcing \
   --spinup-vars TOTSOMC,TOTSOMN \
   --saltelli-n 1024 \
   --n-jobs 8 \
@@ -575,7 +581,7 @@ sbatch examples/slurm/case.standard_gsa.slurm
 
 ## Forcing Surrogate MCMC Optimization
 
-After training a forcing surrogate (which saves `surrogate_forcing_artifacts.pkl` under `UQ_output/<case-or-run-name>/surrogate_forcing/`), you can optimize (calibrate) parameters with MCMC against observations stored in a NetCDF file. Observations are collocated to the surrogate's hourly time axis before likelihood evaluation.
+After training a forcing surrogate (which saves `surrogate_forcing_artifacts.pkl` under `<outputdir>/<case-or-run-name>/surrogate_forcing/`), you can optimize (calibrate) parameters with MCMC against observations stored in a NetCDF file. Observations are collocated to the surrogate's hourly time axis before likelihood evaluation.
 
 ### Observation NetCDF units
 
@@ -624,7 +630,7 @@ WORKDIR="/path/to/elm-olmt"
 CASE="<CASE_NAME>"
 
 # Artifact from forcing-surrogate training
-ARTIFACT="/path/to/UQ_output/<CASE_OR_RUN_NAME>/surrogate_forcing/surrogate_forcing_artifacts.pkl"
+ARTIFACT="/path/to/output/<CASE_OR_RUN_NAME>/surrogate_forcing/surrogate_forcing_artifacts.pkl"
 
 # Observations (NetCDF): variables must match --vars (e.g., GPP, SR)
 OBS_NC="/path/to/obs_${CASE}.nc"

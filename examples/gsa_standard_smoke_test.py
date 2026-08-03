@@ -21,7 +21,7 @@ import numpy as np
 repo = Path("/pscratch/sd/t/tianyihu/elm-olmt")
 case_name = "JERC_ppe1_I20TRCNPRDCTCBC"
 surrogate_artifact = (
-    "/pscratch/sd/t/tianyihu/E3SM_out/SOIL_project/UQ_output/multisite_test1/surrogate_forcing"
+    "/pscratch/sd/t/tianyihu/E3SM_out/SOIL_project/multisite_test1/surrogate_forcing"
 )
 test_vars = ["SR"]  # Keep 1-2 vars for quick smoke test
 metrics = ["mean", "accumulated", "std"]
