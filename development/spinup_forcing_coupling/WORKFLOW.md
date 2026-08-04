@@ -34,7 +34,7 @@ performance expectations belong in a separate improvement workflow.
 | `handoff/CURRENT.md` | Authoritative live state, authority, active jobs, next action, and next plan | Update at every state transition. |
 | `iterations/iterXXX.md` | Detailed chronological evidence for one initialized iteration | Create only after consolidated kickoff approval; finalize at closeout. |
 | `registry.csv` | Fixed-schema index of closed iterations | Add one row at closeout; do not add iteration-specific columns. |
-| `ITERATION_SUMMARY.md` | Cumulative closeout evidence and decisions | Append at closeout; preserve prior entries. |
+| `ITERATION_SUMMARY.md` | Cumulative closeout evidence and decisions | Append at every closeout with objective, locked settings, quantitative evidence, and conclusion; preserve prior entries. |
 | `summaries/iterXXX/` | Compact decision evidence required by the plan | Populate after eligible results exist. |
 | `slurm/iterXXX/` | Canonical iteration-specific scripts, manifests, and validators | Treat as execution source. |
 | `tools/` | Reusable validation, analysis, and release utilities | Keep one-off utilities with their iteration. |
@@ -146,12 +146,14 @@ package and fresh approval.
 1. Read `handoff/CURRENT.md`. If an active or closed iteration exists, read its
    `iterations/iterXXX.md` report in full and up to two preceding iteration reports. For
    pre-kickoff `iter001`, no iteration report is expected.
-2. Read relevant registry rows and summaries. Read the proposed or approved HPC profile when one
-   exists; otherwise treat site selection as unresolved.
-3. Inspect Git state and reconcile recorded scheduler and artifact state before diagnosing drift.
-4. Verify declared dependency identity and availability when dependencies have been proposed or
+2. Read the relevant `registry.csv` rows and summary files needed for context.
+3. Read the selected site profile under `development/hpc/` when `CURRENT.md` or the active
+   package names one. If no profile is selected, treat site selection and scheduler commands as
+   unresolved and stop before any site-dependent planning or execution claim.
+4. Inspect Git state and reconcile recorded scheduler and artifact state before diagnosing drift.
+5. Verify declared dependency identity and availability when dependencies have been proposed or
    locked.
-5. If an iteration is already initialized, verify that its recorded kickoff package is complete,
+6. If an iteration is already initialized, verify that its recorded kickoff package is complete,
    unexhausted, and unchanged, then route work from the recorded phase without asking again.
 
 For `iter002` and later, confirm that the closed report and `CURRENT.md` contain the same complete
@@ -253,11 +255,15 @@ fix or retry.
 ### G. Close out
 
 1. Finalize the iteration report and record exactly one next state:
-   - a complete planning-only proposal using the planning schema; or
-   - a terminal declaration that the workflow is complete, blocked, or intentionally stopped.
-2. Append `ITERATION_SUMMARY.md`, add one fixed-schema registry row, and rebuild `CURRENT.md` with
-   live state, runtime authority, evidence, gate result, decision, risks, next action, and artifact
-   references. Copy any next plan from the report unchanged.
+   - a complete planning-only proposal that follows the planning schema in Section 3; or
+   - only when completed evidence truly ends the line of work, a terminal declaration that the
+     workflow is complete, blocked, or intentionally stopped, with an explicit reason.
+   Do not leave the next direction unspecified when the evidence supports a bounded proposal.
+   Status `completed`, `failed`, or `blocked` is not a substitute for that next state.
+2. Append one immutable `ITERATION_SUMMARY.md` section with objective, locked settings, quantitative
+   evidence, gate outcome, and conclusion. Add one fixed-schema registry row, and rebuild
+   `CURRENT.md` with live state, runtime authority, evidence, gate result, decision, risks, next
+   action, and artifact references. Copy any next plan from the report unchanged.
 3. Run the final validator across the iteration report, summary, registry, and handoff. Require
    iteration ID, status, work type, objective, bounded scope, overall gate result, and decision to
    agree across all four; the decision is the closeout conclusion. Cross-check dependency identity,
