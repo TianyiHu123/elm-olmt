@@ -73,3 +73,49 @@ offline baseline.
 Technical offline baseline validated; predictive quality characterized; coupling readiness not
 established. Limitations: no saved-artifact inference validation; `/xdisk` retention is temporary
 and unbacked. Next state: no next iteration is proposed.
+
+
+## iter002 — Identity-Locked Forcing-Surrogate-v1 Release
+
+- Closed at: `2026-08-05T11:31:01-0700`
+- Status: `completed`
+- Work type: `implementation`
+- Summary path: `development/spinup_forcing_coupling/summaries/iter002`
+- Output root: `/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/spinup_forcing_coupling`
+
+### Objective
+
+Identity-locked forcing-surrogate-v1 full-data release with inference validation
+
+### Locked settings
+
+- Cases: nine sites; target `SR`; complete 34-feature Iter001 schema; quick grid; `N_JOBS=4`
+- Amended release: full-data refit only; Iter001 100-seed aggregate baseline comparison is
+  characterization only (not a gate); full-data 8-repeat in-sample importance
+- Validate: manifest/fresh-process/negative gates/batch predict + ABBY operational predict
+  (draw seed `10001`, spinup member 1)
+- Site / resources: `development/hpc/puma.md`; preflight 1 CPU/5 GB/15 min; release 120 GB/10 h;
+  validate 10 CPUs/~50 GB/1 h
+- Provenance: release-time source-manifest file SHA-256 `ea7ec3f35b452c78b21ac710079004dcd083867c95d4262342c6bc4a8bf46ab2`; memmap
+  `01ef038fc41122b65fd40fe06fa2ee31ed9ffd5a16269cbb7a2880f7d4b5b7f6`; layout `a6ea4151c5be02e86d50dd8767cd579b8804c94803162f0246797487dd2dd2b0`; repository parent `ce2e252fefa1a200527d5cb4ecd20b62d6006f1c`
+- Bounded scope: Nine sites; SR; full-data forcing-surrogate-v1; 8-repeat full-data importance; inference validation; ABBY operational predict; no live coupling
+
+### Quantitative evidence
+
+- Preflight `23491474` `COMPLETED 0:0`; amended release `23501708` `COMPLETED 0:0` (05:45:37;
+  MaxRSS 95.31/120 GB); authoritative validate `23507103` `COMPLETED 0:0`
+- Artifact SHA-256 `8d139b32473eebe3f75f77042e542f49ec3c80e89bc65c76b2e98a5c70f4553e`; inference summary `44e493d65b770aedec83ef2d75978c2ff7857f49fe0c79550df848c87af3c20e`
+- Full-data in-sample r2=`0.957720` rmse=`0.170592`
+- Top importance (mean RMSE increase): `TOTSOMN`, `FSDS`, `k_s4`, `FSDS_anom_30d`, `rf_s3s4`
+
+### Gate outcome
+
+- Overall acceptance result: `pass`
+- Work-unit gates: preflight pass; historical release fail (classified); amended release pass;
+  validate pass
+- Decision: Standalone forcing-surrogate-v1 artifact identity-locked and inference-validated; full-data importance characterized; live coupling readiness not established
+
+### Conclusion
+
+Standalone forcing-surrogate-v1 artifact identity-locked and inference-validated; full-data importance characterized; live coupling readiness not established Limitations: temporary `/xdisk` retention; no live coupling in Iter002. Next state:
+Proposed iteration: `iter003` (planning only; forcing–spinup bridge with real forcing artifact).

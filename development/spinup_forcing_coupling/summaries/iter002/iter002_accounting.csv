@@ -1,0 +1,9 @@
+work_unit,job_id,state,exit_code,elapsed,max_rss_kb,notes
+preflight,23491474,COMPLETED,0:0,00:01:18,5241884,PREFLIGHT_PASS
+release,23497577,FAILED,1:0,03:01:25,96020688,historical reproduction-gate fail; amended
+release_amended,23501708,COMPLETED,0:0,05:45:37,99938700,ITER002_RELEASE_OK
+validate,23507103,COMPLETED,0:0,00:01:02,5883440,authoritative ITER002_VALIDATE_OK
+validate_duplicate,23507104,COMPLETED,0:0,00:01:02,5881504,accidental duplicate; byte-identical log
+validate_duplicate,23507109,COMPLETED,0:0,00:01:02,5881448,accidental duplicate; byte-identical log
+validate_duplicate,23507128,CANCELLED,0:0,00:00:00,,cancelled pending duplicate
+validate_duplicate,23507129,CANCELLED,0:0,00:00:00,,cancelled pending duplicate
