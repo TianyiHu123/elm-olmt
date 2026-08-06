@@ -1,0 +1,7 @@
+work_unit,job_id,state,exit_code,elapsed,max_rss_kb,notes
+preflight,23510366,FAILED,1:0,00:00:13,61196,historical; ModuleNotFoundError model_ELM in test sys.path; corrected
+preflight,23510375,COMPLETED,0:0,00:01:01,5241676,authoritative PREFLIGHT_PASS
+pilot,23510415,FAILED,1:0,00:00:08,2920,historical; CURRENT.md source-hash drift; packaging refresh + resubmit
+pilot,23510419,COMPLETED,0:0,00:02:10,4126692,authoritative PILOT_PASS; ABBY×5×both timeseries ON
+full,23510434,COMPLETED,0:0,00:36:24,5131300,array 1-9 all COMPLETED 0:0; elapsed/MaxRSS are leaf maxima; FULL_LEAF_PASS sites 1-9
+validate,23510503,COMPLETED,0:0,00:00:11,15252,authoritative VALIDATE_PASS; 9 sites; 1800 full member-rows

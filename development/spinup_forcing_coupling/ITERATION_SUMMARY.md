@@ -119,3 +119,55 @@ Identity-locked forcing-surrogate-v1 full-data release with inference validation
 
 Standalone forcing-surrogate-v1 artifact identity-locked and inference-validated; full-data importance characterized; live coupling readiness not established Limitations: temporary `/xdisk` retention; no live coupling in Iter002. Next state:
 Proposed iteration: `iter003` (planning only; dual-variant coupled spinup→forcing ELM comparison with MCMC-ready CLI).
+
+
+## iter003 — Coupled Spinup–Forcing Dual-Variant ELM Comparison
+
+- Closed at: `2026-08-05T20:30:09-0700`
+- Status: `completed`
+- Work type: `implementation`
+- Summary path: `development/spinup_forcing_coupling/summaries/iter003`
+- Output root: `/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/spinup_forcing_coupling`
+
+### Objective
+
+Coupled spinup–forcing dual-variant ELM PPE SR comparison
+
+### Locked settings
+
+- Cases: nine sites `{ABBY,JERC,OSBS,SOAP,RMNP,TALL,TEAK,WREF,YELL}`; 100 PPE members;
+  both spinup variants `drop32` and `drop21_corr080`; target `SR`
+- Ladder: preflight → ABBY×5×both pilot (timeseries ON) → 9×100×both full (timeseries OFF)
+  → validate/closeout; MCMC-ready CLI `predict_coupled_surrogate.py`; ELM compare; no skill
+  floor
+- Site / resources: `development/hpc/puma.md`; preflight 1 CPU/5 GB/30 min; pilot 60 GB/4 h;
+  full array `1-9` 80 GB/8 h; validate 1 CPU/5 GB/1 h
+- Provenance: forcing
+  `8d139b32473eebe3f75f77042e542f49ec3c80e89bc65c76b2e98a5c70f4553e`; drop32
+  `56bbd151103add74b5a0794e8d1bf4496c186d3a72e70b1b65c5ab247abd317e`; drop21_corr080
+  `1427dc565af858e9c089a5b9545a7f127e42789ef1fe5c9af3af7f8cb12a3023`; repository parent
+  `7b70aa42d8d6b351255266690adcc0d97871d268`
+- Bounded scope: Nine sites; both spinup variants; ABBY×5 pilot timeseries ON; 9×100×both full timeseries OFF; MCMC-ready CLI; ELM compare; no skill floor
+
+### Quantitative evidence
+
+- Preflight authoritative `23510375` `COMPLETED 0:0` (historical fail `23510366` classified);
+  pilot authoritative `23510419` `COMPLETED 0:0` (historical fail `23510415` classified);
+  full array `23510434` leaves 1–9 all `COMPLETED 0:0`; validate `23510503` `COMPLETED 0:0`
+- Characterization (site-median of per-site member-medians): `drop32` median R²≈0.579
+  KGE≈0.821; `drop21_corr080` median R²≈0.651 KGE≈0.816; Pearson r high (~0.93); negative
+  R² at some sites (ABBY, WREF)
+- Compact products: `iter003_site_metric_medians.csv`; `iter003_accounting.csv`;
+  `iter003_decision.json`
+
+### Gate outcome
+
+- Overall acceptance result: `pass`
+- Work-unit gates: preflight pass; pilot pass; full pass; validate pass (historical preflight
+  and pilot fails classified under one-retry contract)
+- Decision: Executable dual-variant coupled path demonstrated with ELM comparison evidence; predictive scores characterized; production MCMC readiness not established
+
+### Conclusion
+
+Executable dual-variant coupled path demonstrated with ELM comparison evidence; predictive scores characterized; production MCMC readiness not established. Limitations: temporary `/xdisk` retention; no skill floor; some sites negative R²; MCMC campaign not run. Next state:
+Proposed iteration: `iter004` (planning only; MCMC integration of `predict_coupled_sr` primitive; no campaign).
