@@ -7,7 +7,7 @@
 - Phase: `closed`
 - Active job IDs: none
 - Site profile: `development/hpc/puma.md`
-- Last updated: `2026-08-05T20:30:09-0700`
+- Last updated: `2026-08-06T16:30:44-0700`
 
 ## Active Kickoff Package and Runtime Authority
 
@@ -60,7 +60,8 @@ Coupled spinup–forcing dual-variant ELM PPE SR comparison
 
 ## Next Action
 
-1. Idle until a consolidated kickoff package for proposed `iter004` is approved.
+1. Idle until a consolidated kickoff package for proposed `iter004` (offline-versus-coupled
+   comparison) is approved.
 
 ## Proposed Next-Iteration Plan (Planning Only)
 
@@ -81,85 +82,114 @@ in an approved consolidated kickoff package. Copy this section unchanged into
 
 - Sequential ID: `iter004`
 - Work type: `implementation`
-- Proposed run slugs: `spinup_forcing_coupling_iter004_preflight` and
-  `spinup_forcing_coupling_iter004_validate` (integration/wiring only; no PPE campaign)
+- Proposed run slugs: `spinup_forcing_coupling_iter004_preflight`,
+  `spinup_forcing_coupling_iter004_full`, and
+  `spinup_forcing_coupling_iter004_validate`
 
 ### 2. Evidence-derived objective and optional hypothesis
 
-Objective: perform MCMC integration of the Iter003 `predict_coupled_sr` primitive
-(`predict_coupled_surrogate.py` / `model_ELM/coupled_surrogate.py`) so a future MCMC
-driver can call the coupled spinup→forcing path as a reusable library/CLI contract,
-without launching an MCMC campaign in Iter004.
+Objective: compare offline forcing-surrogate-v1 (ELM restart spinup) versus the coupled
+spinup→forcing path (`drop32` and `drop21_corr080`) on all nine I20TR sites × 100 PPE
+members; save metrics and timeseries for both frameworks; publish the locked per-site plot
+package against ELM `SR`.
 
 Evidence basis: Iter003 closed `pass` with executable dual-variant coupled ELM comparison,
-MCMC-ready CLI delivered, and predictive scores characterized (site-median R²/KGE and
-high Pearson r; some sites negative R²). Production MCMC readiness remains unestablished.
+MCMC-ready CLI delivered, and predictive scores characterized (site-median R²/KGE and high
+Pearson r; some sites negative R²). Iter003 full ran timeseries OFF; this iteration turns
+timeseries ON for the offline-versus-coupled comparison. Production MCMC readiness remains
+unestablished; MCMC integration is deferred to proposed `iter005`.
 
-Optional hypothesis: wiring and contract tests around the existing predict primitive are
-sufficient to make coupled SR callable from MCMC scaffolding without a new PPE evaluation
-campaign or numeric skill gates.
+Optional hypothesis: holding the forcing artifact fixed, ELM-restart versus predicted-spinup
+inputs produce separable skill and structure in metrics and the plot package; scores remain
+characterization only.
 
 ### 3. Proposed upstream dependencies and trust assumptions
 
 | Dependency | Role | Trust / lock |
 | --- | --- | --- |
-| Closed Iter003 coupled API/CLI/tests | `predict_coupled_sr` primitive | Immutable read-only scientific contract; lock repository closeout identity at kickoff |
-| Iter002 forcing-surrogate-v1 artifact | Forcing `SR` predictor | Immutable; SHA-256 `8d139b32...` |
-| Iter012 `drop32` / `drop21_corr080` | Spinup state surrogates | Immutable; path/hash locked at kickoff |
-| Existing MCMC scaffolding in repository (if any) | Integration target | Re-verify identity and call sites at preparation; no campaign launch |
+| Iter002 forcing-surrogate-v1 artifact | Offline and coupled `SR` predictor | Immutable; SHA-256 `8d139b32473eebe3f75f77042e542f49ec3c80e89bc65c76b2e98a5c70f4553e` |
+| Iter012 `drop32` / `drop21_corr080` | Coupled spinup state surrogates only | Immutable; path/hash locked at kickoff |
+| Nine I20TR case pickles + linked ELM PPE histories | Cases, parms, ELM `SR` and restart spinup | Same trust model as Iter003 |
+| Iter003 coupled API/CLI plus offline predict path | Evaluation client | Lock repository identity at kickoff; extend/reuse as needed |
 | `OLMT_puma` and `development/hpc/puma.md` | Runtime/site | Puma; `chopinsong` / `standard` |
 
 ### 4. Bounded scope, work units, and exclusions
 
-Core deliverable (MCMC integration, no campaign):
+Prediction arms (plus ELM truth):
 
-- Integrate `predict_coupled_surrogate.py` / coupled library into the MCMC call path
-  (adapter or direct import) with a documented `predict_coupled_sr` contract.
-- Add/extend unit or smoke tests proving MCMC scaffolding can invoke coupled predict for
-  a tiny fixture (not a PPE sweep).
-- Preflight + validate/closeout for the integration wiring only.
+1. Offline: forcing-surrogate-v1 with ELM restart TOTSOMC/TOTSOMN.
+2. Coupled `drop32`.
+3. Coupled `drop21_corr080`.
 
-Exclusions: no MCMC campaign; no PPE re-evaluation; no retraining; no feature selection;
-no numeric skill floors; no expansion of ELM comparison products; no Git of large binaries.
+Campaign: nine sites × 100 members; timeseries ON for all sites; no pilot — preflight →
+full array `1-9` → validate/closeout.
 
-Nominal scheduler tasks: 2 (preflight, validate). Provisional hard cap: 4 (one minimal
-preflight correction/rerun and one same-scope validate retry).
+Metrics versus ELM `SR` (characterization only; no skill floor): `r2`, `rmse`, `bias`,
+`mae`, `pearson_r`, `kge`.
+
+Plot package — four figures per site:
+
+1. Timeseries: ELM + offline + coupled `drop32` + coupled `drop21_corr080`; member-mean
+   line with ± std shaded band; absolute SR; alpha=0.5.
+2. SR versus ensemble member: all four series; dots with temporal-std error bars; no
+   connectors between dots; alpha=0.5; y = time-mean SR.
+3. SR versus TOTSOMC — three subplots: (ELM + offline, shared ELM-restart x) |
+   (ELM + coupled `drop32`) | (ELM + coupled `drop21_corr080`); Iter003-style layout with
+   the new marker/alpha/no-connector requirements; y = time-mean SR ± temporal std.
+4. SR versus TOTSOMN — same three-subplot pattern as (3).
+
+Exclusions: MCMC campaign; MCMC wiring/integration (deferred to `iter005`); retraining;
+feature selection; numeric skill floors; Git of large binaries/NetCDF.
+
+Nominal scheduler tasks: 3 (preflight, full, validate). Provisional hard cap: 5 (one
+minimal preflight correction/rerun; one same-scope scheduler/resource retry for full or
+validate).
 
 ### 5. Tentative acceptance gates and decision rule
 
 Pass only if all hold:
 
 1. Authoritative terminal accounting exists for every task; every failure is classified.
-2. MCMC scaffolding imports and invokes the Iter003 coupled predict primitive under the
-   documented `predict_coupled_sr` contract.
-3. Fixture-level smoke succeeds for at least one spinup variant + forcing artifact path.
+2. Offline and both coupled arms complete 9×100 with finite metrics and timeseries products.
+3. The locked four-figure plot package exists for all nine sites under the approved layout
+   and style rules.
 4. Negative gates for missing artifact/schema/version failures fail closed.
 5. Compact `summaries/iter004/` and the four durable records agree after handoff validation.
 
-Decision rule: pass means the coupled primitive is integrated for MCMC reuse as a callable
-contract. Pass does not claim a completed MCMC campaign or production calibration readiness.
+Decision rule: pass means the offline-versus-coupled comparison is executable and
+evidence-complete (metrics, timeseries, plots). Pass does not claim production MCMC
+readiness or impose a predictive-accuracy threshold.
 
 ### 6. Proposed site and resource envelope, preflight, review, retry, cancellation, and stop
+
+Resources are evidence-derived from Iter003 accounting (preflight MaxRSS 5.0 GB at the
+1-CPU ceiling; pilot timeseries-ON MaxRSS 3.9 GB; full timeseries-OFF leaf max MaxRSS
+4.9 GB / elapsed 36:24; validate MaxRSS ~15 MB). Iter004 adds an offline arm (~1.5×
+predict work versus two coupled variants), timeseries ON, and a richer plot package.
 
 | Field | Proposal |
 | --- | --- |
 | HPC / profile | University of Arizona Puma; `development/hpc/puma.md` |
 | Account / partition / env | `chopinsong` / `standard` / `OLMT_puma` |
 | Output root | `/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/spinup_forcing_coupling` |
-| Directory creation | only `spinup_forcing_coupling_iter004_{preflight,validate}/` |
-| Preflight / validate | finalize exact CPU/mem/time at kickoff from fixture sizing |
+| Directory creation | only `spinup_forcing_coupling_iter004_{preflight,full,validate}/` |
+| Preflight | 2 CPUs (derived ~10 GB) / 30 min — Iter003 1-CPU preflight saturated ~5 GB |
+| Full (array `1-9`) | `--mem=20G` / 4 h per leaf — observed ~5 GB and ~36 min at 100×2 timeseries-OFF; 20 GB / 4 h covers three arms + timeseries ON + plots |
+| Validate | 1 CPU (derived ~5 GB) / 1 h — unchanged; light accounting |
 | Review | independent read-only agent before substantive submission |
-| Retry | one minimal preflight correction/rerun; one same-scope scheduler/resource retry for validate; no automatic application/numerical retry |
+| Retry | one minimal preflight correction/rerun; one same-scope scheduler/resource retry for full or validate; no automatic application/numerical retry |
 | Cancellation | recorded Iter004 job IDs only under proven universal pre-execution defect |
 | Stop | after terminal accounting, immutable gates, durable records, cross-record validation, and the approved closeout branch |
 
 ### 7. Expected evidence, artifacts, and record updates
 
-- MCMC adapter/wiring calling `predict_coupled_surrogate.py` / coupled library
-- Fixture smoke evidence; integration tests
+- Offline predict path and dual-framework evaluation client (metrics, timeseries, plots)
+- Per-site/per-member metrics; NetCDF timeseries; nine-site four-figure plot set
 - Compact `summaries/iter004/`; finalized `iterations/iter004.md`; `ITERATION_SUMMARY.md`
   append; `registry.csv` row; rebuilt `handoff/CURRENT.md`; handoff validator result
 - Canonical scripts under `slurm/iter004/` (created only after kickoff approval)
+- After Iter004 closeout, the next planning-only proposal is `iter005` MCMC integration of
+  the Iter003 `predict_coupled_sr` primitive (no campaign), deferred from the prior plan
 
 ### 8. Fresh consolidated kickoff-approval boundary
 
@@ -167,7 +197,6 @@ Present one complete consolidated kickoff package that includes this plan unchan
 states runtime contract, exact output-root authority, lifecycle authorities, resources,
 retry/cancellation, outside-sandbox `sbatch`/monitoring/`scancel`, and closeout-commit
 authorization. Obtain one explicit user approval before any Iter004 initialization.
-
 
 ## Next Session Start Protocol
 

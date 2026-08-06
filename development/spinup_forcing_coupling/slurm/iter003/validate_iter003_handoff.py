@@ -44,10 +44,10 @@ DROP21_SHA = "1427dc565af858e9c089a5b9545a7f127e42789ef1fe5c9af3af7f8cb12a3023"
 REPOSITORY_PARENT = "7b70aa42d8d6b351255266690adcc0d97871d268"
 NEXT_PLAN_MARKER = "Proposed iteration: `iter004`"
 NEXT_PLAN_DETAIL_MARKERS = (
-    "predict_coupled_surrogate.py",
-    "predict_coupled_sr",
-    "MCMC integration",
-    "no MCMC campaign",
+    "offline forcing-surrogate-v1",
+    "ELM restart",
+    "timeseries ON",
+    "iter005",
 )
 REGISTRY_FIELDS = [
     "iteration_id",
