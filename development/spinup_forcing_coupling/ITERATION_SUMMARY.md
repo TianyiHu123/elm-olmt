@@ -118,4 +118,4 @@ Identity-locked forcing-surrogate-v1 full-data release with inference validation
 ### Conclusion
 
 Standalone forcing-surrogate-v1 artifact identity-locked and inference-validated; full-data importance characterized; live coupling readiness not established Limitations: temporary `/xdisk` retention; no live coupling in Iter002. Next state:
-Proposed iteration: `iter003` (planning only; forcing–spinup bridge with real forcing artifact).
+Proposed iteration: `iter003` (planning only; dual-variant coupled spinup→forcing ELM comparison with MCMC-ready CLI).

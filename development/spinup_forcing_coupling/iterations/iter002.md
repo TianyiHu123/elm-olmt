@@ -244,52 +244,94 @@ in an approved consolidated kickoff package. Copy this section unchanged into
 - Sequential ID: `iter003`
 - Work type: `implementation`
 - Proposed run slugs: `spinup_forcing_coupling_iter003_preflight`,
-  `spinup_forcing_coupling_iter003_bridge`, and
+  `spinup_forcing_coupling_iter003_pilot`,
+  `spinup_forcing_coupling_iter003_full`, and
   `spinup_forcing_coupling_iter003_validate`
 
 ### 2. Evidence-derived objective and optional hypothesis
 
-Objective: couple the closed Iter002 `forcing-surrogate-v1` artifact with an existing
-locked spinup-surrogate artifact to produce and validate real forcing-target (`SR`)
-predictions through the forcing bridge, replacing design-matrix-only bridge checks.
+Objective: build a reusable coupled spinup→forcing interface compatible with both released
+`spinup-surrogate-v1` variants (`drop32` and `drop21_corr080`) and the closed Iter002
+`forcing-surrogate-v1` artifact; run coupled `SR` predictions against pickle-linked ELM PPE
+histories; publish per-site/per-member metrics, feedback diagnostic plots, and optional
+timeseries; ship a public CLI/library primitive reusable later by MCMC.
 
 Evidence basis: Iter002 closed `pass` with identity-locked full-data artifact
 SHA-256 `8d139b32473eebe3f75f77042e542f49ec3c80e89bc65c76b2e98a5c70f4553e` and
-inference/`ABBY` operational validation; spinup handoff still records forcing-bridge
-checks as column-order/shape/dtype only, awaiting a real forcing artifact.
+inference/`ABBY` operational validation; spinup Iter012 released both variants but validated
+only forcing-bridge design-matrix compatibility, with no real SR coupling.
 
-Optional hypothesis: loading both versioned artifacts and exercising the bridge on a
-bounded site/member fixture is sufficient to establish an executable coupling path
-without MCMC, PPE sweeps, or accuracy thresholds.
+Optional hypothesis: a MCMC-ready predict primitive plus a PPE batch client (pilot then full
+9-site campaign) is sufficient to demonstrate executable coupled skill characterization
+against ELM without numeric accuracy gates or an MCMC campaign in Iter003.
 
 ### 3. Proposed upstream dependencies and trust assumptions
 
 | Dependency | Role | Trust / lock |
 | --- | --- | --- |
 | Closed Iter002 artifact/manifest/validation/importance | Forcing surrogate | Immutable read-only; lock artifact SHA-256 `8d139b32...` |
-| Closed Iter001 memmap/layout (if still needed for fixtures) | Optional fixture support | Read-only; reuse locked hashes only if required |
-| Locked spinup-surrogate release named at kickoff | Spinup state surrogate | Immutable; exact path/hash chosen in kickoff package |
-| `forcing_surrogate_artifact` / spinup loader APIs | Public load/predict | Repository commit and source manifest locked at preparation |
+| Iter012 `drop32` spinup-surrogate-v1 | Spinup state surrogate | Immutable; path/hash locked at kickoff |
+| Iter012 `drop21_corr080` spinup-surrogate-v1 | Compact spinup variant | Immutable; path/hash locked at kickoff |
+| Nine case pickles and linked PPE ELM histories | Cases, parms, ELM `SR` reference | Same trust model as prior coupling iterations; re-verify identity in preflight |
+| `forcing_surrogate_artifact` / `spinup_surrogate_artifact` APIs | Public load/predict | Repository commit and source manifest locked at preparation |
 | `OLMT_puma` and `development/hpc/puma.md` | Runtime/site | Puma; `chopinsong` / `standard` |
 
 ### 4. Bounded scope, work units, and exclusions
 
-In scope: wire real forcing-surrogate predictions into the forcing bridge; bounded
-preflight; one bridge execution work unit on a declared site/member/fixture; positive
-and negative gates for schema/version/load failures; durable records and closeout.
+Core deliverable (MCMC-ready):
 
-Exclusions: MCMC/PPE campaigns; accuracy or coupling-readiness numeric thresholds beyond
-functional/inference integrity; retraining either surrogate; feature selection; expanding
-beyond the kickoff-declared fixture set.
+- Public library API plus CLI `predict_coupled_surrogate.py`.
+- Primitive contract:
+  `(case, parameter vector(s), spinup variant, forcing artifact) → predicted TOTSOMC/TOTSOMN + SR timeseries (+ time axis)`.
+- PPE evaluation, ELM compare, metrics, and plots are a separate batch client on top of that
+  primitive (not PPE-only glue).
 
-Nominal scheduler tasks: 3. Provisional hard cap: 5.
+Evaluation ladder (same iteration):
+
+1. Preflight: imports, artifact identity, API smoke.
+2. Pilot: `ABBY` × ensemble members 1–5 × both spinup variants; timeseries save **ON**.
+3. Full: nine sites × all PPE members × both spinup variants; timeseries save **OFF**.
+4. Validate / aggregate / closeout: accounting, durable records, handoff validation.
+
+ELM reference: PPE histories already referenced by the nine case pickles.
+
+Metrics (characterization only): R², RMSE, bias, MAE, Pearson r, KGE — persisted per site and
+per member within site; summary report shows only per-site medians over members.
+
+Diagnostic plots (required for both pilot and full; per site × spinup variant):
+
+1. Mean `SR` ± temporal std vs ensemble member index (ELM vs coupled overlay).
+2. Mean `SR` ± temporal std vs `TOTSOMC` and vs `TOTSOMN` (coupled x-axis uses
+   spinup-surrogate-predicted states; ELM x-axis uses ELM spinup states).
+
+Timeseries storage: compressed NetCDF when `--save-timeseries` (or equivalent) is enabled —
+dims `(member, time)` with `SR_coupled`, `SR_elm`, time axis, and spinup scalars. Pilot ON;
+full OFF. Full run still writes metrics tables, member summary columns needed for plots, and
+figures.
+
+Exclusions: MCMC optimization campaign; retraining either surrogate; feature selection;
+numeric accuracy or coupling-readiness thresholds beyond functional/integrity gates; Git of
+large binaries; expanding beyond the declared pilot/full populations.
+
+Nominal scheduler tasks: 4. Provisional hard cap: 7 (one minimal preflight correction/rerun
+and one same-scope scheduler/resource retry across pilot/full/validate).
 
 ### 5. Tentative acceptance gates and decision rule
 
-Pass only if terminal accounting exists; both artifacts load under their versioned APIs;
-bridge returns finite `SR` for the declared fixture; negative gates fail closed; durable
-records agree after handoff validation. Pass means an executable forcing–spinup coupling
-path is demonstrated on the fixture; it does not claim production MCMC readiness.
+Pass only if all hold:
+
+1. Authoritative terminal accounting exists for every task; every failure is classified.
+2. Both spinup variants and the forcing artifact load under their versioned APIs.
+3. Pilot completes for `ABBY` members 1–5 × both variants with finite coupled `SR`, ELM
+   alignment, metrics, plots, and NetCDF timeseries.
+4. Full campaign completes for nine sites × all PPE members × both variants with finite
+   metrics, member summaries, and plots (no full timeseries writes).
+5. Negative gates for schema/version/load failures fail closed.
+6. Compact `summaries/iter003/` and the four durable records agree after handoff validation.
+
+Decision rule: pass means the coupled interface is executable, dual-variant compatible,
+ELM-compared, and evidence-complete for later MCMC reuse. Predictive scores and feedback
+plots are characterization only. Pass does not claim production MCMC readiness.
 
 ### 6. Proposed site and resource envelope, preflight, review, retry, cancellation, and stop
 
@@ -298,18 +340,22 @@ path is demonstrated on the fixture; it does not claim production MCMC readiness
 | HPC / profile | University of Arizona Puma; `development/hpc/puma.md` |
 | Account / partition / env | `chopinsong` / `standard` / `OLMT_puma` |
 | Output root | `/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/spinup_forcing_coupling` |
-| Directory creation | only `spinup_forcing_coupling_iter003_{preflight,bridge,validate}/` |
-| Preflight / bridge / validate | finalize exact CPU/mem/time at kickoff from fixture size |
+| Directory creation | only `spinup_forcing_coupling_iter003_{preflight,pilot,full,validate}/` |
+| Preflight / pilot / full / validate | finalize exact CPU/mem/time at kickoff from fixture and full-campaign sizing |
 | Review | independent read-only agent before substantive submission |
-| Retry | one minimal preflight correction/rerun; one same-scope scheduler/resource retry per failed bridge/validate; no automatic application/numerical retry |
+| Retry | one minimal preflight correction/rerun; one same-scope scheduler/resource retry per failed pilot/full/validate; no automatic application/numerical retry |
 | Cancellation | recorded Iter003 job IDs only under proven universal pre-execution defect |
 | Stop | after terminal accounting, immutable gates, durable records, cross-record validation, and the approved closeout branch |
 
 ### 7. Expected evidence, artifacts, and record updates
 
-Bridge prediction/report JSON under the approved Iter003 run dirs; compact
-`summaries/iter003/`; finalized `iterations/iter003.md`; `ITERATION_SUMMARY.md` append;
-`registry.csv` row; rebuilt `handoff/CURRENT.md`; handoff validator result.
+- `predict_coupled_surrogate.py` and library API under repository paths locked at preparation
+- Pilot NetCDF timeseries (ABBY × 5 members × both variants)
+- Per-site/per-member metrics tables; summary tables with per-site medians over members
+- Feedback diagnostic plots for pilot and full
+- Compact `summaries/iter003/`; finalized `iterations/iter003.md`; `ITERATION_SUMMARY.md`
+  append; `registry.csv` row; rebuilt `handoff/CURRENT.md`; handoff validator result
+- Canonical scripts under `slurm/iter003/` (created only after kickoff approval)
 
 ### 8. Fresh consolidated kickoff-approval boundary
 

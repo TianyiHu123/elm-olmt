@@ -53,6 +53,13 @@ LAYOUT_SHA = "a6ea4151c5be02e86d50dd8767cd579b8804c94803162f0246797487dd2dd2b0"
 INFERENCE_SHA = "44e493d65b770aedec83ef2d75978c2ff7857f49fe0c79550df848c87af3c20e"
 REPOSITORY_PARENT = "ce2e252fefa1a200527d5cb4ecd20b62d6006f1c"
 NEXT_PLAN_MARKER = "Proposed iteration: `iter003`"
+# Post-closeout planning revision markers; required in report + handoff (not cumulative).
+NEXT_PLAN_DETAIL_MARKERS = (
+    "predict_coupled_surrogate.py",
+    "`drop32` and `drop21_corr080`",
+    "per-site medians over members",
+    "spinup_forcing_coupling_iter003_pilot",
+)
 REGISTRY_FIELDS = [
     "iteration_id",
     "closed_at",
@@ -141,6 +148,9 @@ def validate_records(decision: dict[str, Any]) -> dict[str, str]:
         for value in common_values:
             require(value in text, f"{label} lacks consistent value: {value}")
         require(NEXT_PLAN_MARKER in text, f"{label} next-plan marker drift")
+    for marker in NEXT_PLAN_DETAIL_MARKERS:
+        require(marker in report, f"report next-plan detail drift: {marker}")
+        require(marker in current, f"handoff next-plan detail drift: {marker}")
 
     with REGISTRY.open(encoding="utf-8", newline="") as stream:
         reader = csv.DictReader(stream)
