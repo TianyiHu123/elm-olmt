@@ -148,7 +148,7 @@ def validate_records(decision: dict[str, Any]) -> dict[str, str]:
         "decision": DECISION,
         "output_root": OUTPUT_ROOT,
         "summary_path": SUMMARY_PATH,
-        "closeout_mode": "validated_uncommitted",
+        "closeout_mode": "committed",
     }
     for key, value in expected.items():
         require(row[key] == value, f"registry {key} drift")

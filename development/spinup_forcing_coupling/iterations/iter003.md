@@ -157,8 +157,9 @@ Compact ledger: `summaries/iter003/iter003_accounting.csv`.
   `summaries/iter003/iter003_site_metric_medians.csv`.
 - Limitations: `/xdisk` retention temporary/unbacked; predictive skill is characterization
   only (no skill floor); some sites show negative R² despite high Pearson correlation;
-  production MCMC readiness is not established; closeout commit deferred
-  (`validated_uncommitted`).
+  production MCMC readiness is not established; closeout is `committed` at
+  `930bd335ad071faa890541199f4b46be8f5bda83` (records reconciled after an initial
+  deferred-commit label).
 - Next action: none; Iter003 closeout records are complete. Treat the workflow as idle
   until a consolidated kickoff package for `iter004` is approved.
 - Four-record/precommit validator: `development/spinup_forcing_coupling/slurm/iter003/validate_iter003_handoff.py`
@@ -166,9 +167,12 @@ Compact ledger: `summaries/iter003/iter003_accounting.csv`.
   --expected-parent 7b70aa42d8d6b351255266690adcc0d97871d268 --expected-subject "Close Iter003
   coupled spinup-forcing ELM comparison"`. Result:
   `PASS: Iter003 records, artifacts, accounting, and precommit closeout identity validated`.
+  Post-commit verification against closeout commit
+  `930bd335ad071faa890541199f4b46be8f5bda83` satisfies the authorized committed branch.
 - Closeout identity: controlled-path manifest SHA-256
   `2e1326657f72378c873a605bafd0daa8ca55c55706edacb6e5c0ad21fca2123c` over the sorted controlled
-  paths recorded in `summaries/iter003/iter003_decision.json`.
+  paths recorded in `summaries/iter003/iter003_decision.json`; observed closeout commit
+  `930bd335ad071faa890541199f4b46be8f5bda83`.
 
 ## Proposed Next-Iteration Plan (Planning Only)
 
@@ -286,4 +290,4 @@ authorization. Obtain one explicit user approval before any Iter004 initializati
 - [x] `handoff/CURRENT.md` rebuilt
 - [x] Four-record validator identity, command, output, and passing result recorded
 - [x] No job is active or unaccounted and every failure is classified
-- [x] Authorized closeout branch satisfied: `validated_uncommitted` (precommit validated; commit deferred by instruction)
+- [x] Authorized closeout branch satisfied: `committed` at `930bd335ad071faa890541199f4b46be8f5bda83` (precommit validated; observed closeout commit recorded)

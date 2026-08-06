@@ -29,7 +29,7 @@
   `1427dc565af858e9c089a5b9545a7f127e42789ef1fe5c9af3af7f8cb12a3023`; nine I20TR cases;
   100 members; functional/integrity gates; scores characterization only.
 - Outside-sandbox and closeout authorities: exhausted with Iter003 closeout
-  (`validated_uncommitted`; commit deferred).
+  (`committed`; observed `930bd335ad071faa890541199f4b46be8f5bda83`).
 
 ## Current Objective
 
