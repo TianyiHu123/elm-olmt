@@ -285,5 +285,6 @@ def predict_offline_sr(
         "forcing_artifact_path": None if forcing_path is None else str(forcing_path),
         "spinup_variant": None,
         "feature_subset": None,
-        "spinup_source": "elm_restart",
+        # member= → per-member ELM restart; parameters= → site-mean ELM restart
+        "spinup_source": "elm_restart" if member is not None else "elm_restart_mean",
     }

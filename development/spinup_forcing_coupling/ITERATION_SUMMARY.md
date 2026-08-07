@@ -218,3 +218,51 @@ Offline forcing versus coupled dual-variant ELM PPE SR comparison
 Offline-versus-coupled comparison completed with metrics, timeseries, and plot package; predictive scores characterized; production MCMC readiness not established. Limitations: temporary `/xdisk` retention; no skill floor; coupled lags offline;
 MCMC campaign not run. Next state:
 Proposed iteration: `iter005` (planning only; MCMC integration of `predict_coupled_sr`; no campaign).
+
+
+## iter005 — Mean-Spinup Offline Baseline versus Iter004 Arms
+
+- Closed at: `2026-08-06T19:42:02-0700`
+- Status: `completed`
+- Work type: `implementation`
+- Summary path: `development/spinup_forcing_coupling/summaries/iter005`
+- Output root: `/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/spinup_forcing_coupling`
+
+### Objective
+
+Mean-spinup offline forcing baseline versus Iter004 arms
+
+### Locked settings
+
+- Cases: nine sites; 100 PPE members; new arm offline mean-spinup (forcing-v1 + site-mean
+  ELM restart); Iter004 arms overlaid read-only; target `SR`
+- Ladder: preflight → full array `1-9` timeseries ON → validate/closeout; two annotated
+  plot types; joined medians CSV; no skill floor; MCMC deferred to `iter006`
+- Site / resources: `development/hpc/puma.md`; preflight 2 CPUs / 30 min; full `--mem=20G` /
+  4 h; validate 1 CPU / 1 h
+- Provenance: forcing `8d139b32473eebe3f75f77042e542f49ec3c80e89bc65c76b2e98a5c70f4553e`;
+  Iter004 reuse via `iter005_iter004_reuse.sha256`; repository parent
+  `9a125ef3a703e1169e831f77a04636c344359024`
+- Bounded scope: Nine sites; mean-spinup offline 9×100 timeseries ON; overlay Iter004 three arms; two annotated plot types; joined medians CSV; no skill floor
+
+### Quantitative evidence
+
+- Preflight `23516340` `COMPLETED 0:0`; full array `23516376` leaves 1–9 all `COMPLETED 0:0`;
+  validate `23516504` `COMPLETED 0:0`
+- Characterization (site-median of per-site member-medians): offline_mean_spinup median
+  R²≈-1.894 KGE≈0.438; Iter004 offline median R²≈0.850 KGE≈0.862; drop32 median R²≈0.579
+  KGE≈0.821; drop21_corr080 median R²≈0.651 KGE≈0.816; Pearson r high (~0.925) for
+  mean-spinup
+- Compact products: `iter005_site_metric_medians.csv`; `iter005_accounting.csv`;
+  `iter005_decision.json`
+
+### Gate outcome
+
+- Overall acceptance result: `pass`
+- Work-unit gates: preflight pass; full pass; validate pass
+- Decision: Mean-spinup offline baseline compared with Iter004 arms under locked plot/summary contract; predictive scores characterized; production MCMC readiness not established
+
+### Conclusion
+
+Mean-spinup offline baseline compared with Iter004 arms under locked plot/summary contract; predictive scores characterized; production MCMC readiness not established. Limitations: temporary `/xdisk` retention; no skill floor; mean-spinup offline lags member-restart offline and coupled arms on R²/KGE; MCMC campaign not run. Next state:
+Proposed iteration: `iter006` (planning only; MCMC integration of `predict_coupled_sr`; no campaign).

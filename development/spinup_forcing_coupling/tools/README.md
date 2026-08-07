@@ -21,3 +21,10 @@ iteration under `slurm/iterXXX/`.
 - `evaluate_offline_coupled_comparison.py` — nine-site PPE client comparing offline
   forcing-v1 (ELM restart spinup) vs coupled `drop32`/`drop21_corr080`; writes metrics,
   timeseries NetCDF, and the locked four-figure plot package per site.
+
+## Iter005 mean-spinup offline baseline
+
+- `evaluate_mean_spinup_offline_comparison.py` — nine-site PPE client for offline
+  forcing-v1 with site-mean ELM restart spinup; overlays Iter004 member-restart offline
+  and coupled arms; writes metrics, timeseries NetCDF, and two annotated plot types per
+  site (timeseries; SR vs member).
