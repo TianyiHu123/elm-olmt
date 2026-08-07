@@ -7,7 +7,7 @@
 - Phase: `closed`
 - Active job IDs: none
 - Site profile: `development/hpc/puma.md`
-- Last updated: `2026-08-06T17:59:11-0700`
+- Last updated: `2026-08-06T18:46:47-0700`
 
 ## Active Kickoff Package and Runtime Authority
 
@@ -51,7 +51,9 @@ Offline forcing versus coupled dual-variant ELM PPE SR comparison
 
 ## Next Action
 
-1. Idle until a consolidated kickoff package for proposed `iter005` is approved.
+1. Idle until a consolidated kickoff package for proposed `iter005` (mean-spinup offline
+   baseline vs Iter004 arms) is approved.
+
 
 ## Proposed Next-Iteration Plan (Planning Only)
 
@@ -72,85 +74,115 @@ in an approved consolidated kickoff package. Copy this section unchanged into
 
 - Sequential ID: `iter005`
 - Work type: `implementation`
-- Proposed run slugs: `spinup_forcing_coupling_iter005_preflight` and
-  `spinup_forcing_coupling_iter005_validate` (integration/wiring only; no PPE campaign)
+- Proposed run slugs: `spinup_forcing_coupling_iter005_preflight`,
+  `spinup_forcing_coupling_iter005_full`, and
+  `spinup_forcing_coupling_iter005_validate`
 
 ### 2. Evidence-derived objective and optional hypothesis
 
-Objective: perform MCMC integration of the Iter003 `predict_coupled_sr` primitive
-(`predict_coupled_surrogate.py` / `model_ELM/coupled_surrogate.py`) so a future MCMC
-driver can call the coupled spinup→forcing path as a reusable library/CLI contract,
-without launching an MCMC campaign in Iter005.
+Objective: run a nine-site × 100-member offline forcing-surrogate-v1 campaign using the
+historical MCMC-default **site-mean ELM restart spinup** (`mean_spinup_state` over members
+`1..nsamples`; spinup fixed while parameters remain member-specific); publish timeseries and
+SR-versus-member plots that overlay ELM, this mean-spinup offline arm, and Iter004's three
+arms (member-restart offline, coupled `drop32`, coupled `drop21_corr080`) with site
+member-median Pearson r and KGE annotations; write `iter005_site_metric_medians.csv` that
+also includes Iter004 metric medians. Minimize new repository code by reusing existing
+inference/eval paths and Iter004 on-disk products.
 
-Evidence basis: Iter003 delivered the MCMC-ready coupled primitive; Iter004 completed
-offline-versus-coupled comparison with metrics/timeseries/plots (characterization only).
-Production MCMC readiness remains unestablished.
+Evidence basis: Iter004 compared member-restart offline versus coupled arms; historical
+`optimize_surrogate_forcing.py` MCMC defaults omit `--spinup-member` and therefore use
+`mean_spinup_state`. Production MCMC readiness remains unestablished; MCMC wiring is deferred
+to proposed `iter006`.
 
-Optional hypothesis: wiring and contract tests around the existing predict primitive are
-sufficient to make coupled SR callable from MCMC scaffolding without a new PPE evaluation
-campaign or numeric skill gates.
+Optional hypothesis: the coupled-versus-mean-spinup-offline gap is the MCMC-relevant skill
+comparison; member-restart offline remains the oracle baseline already characterized in
+Iter004.
 
 ### 3. Proposed upstream dependencies and trust assumptions
 
 | Dependency | Role | Trust / lock |
 | --- | --- | --- |
-| Closed Iter003/Iter004 coupled API/CLI/tests | `predict_coupled_sr` primitive | Immutable read-only scientific contract; lock repository closeout identity at kickoff |
-| Iter002 forcing-surrogate-v1 artifact | Forcing `SR` predictor | Immutable; SHA-256 `8d139b32...` |
-| Iter012 `drop32` / `drop21_corr080` | Spinup state surrogates | Immutable; path/hash locked at kickoff |
-| Existing MCMC scaffolding in repository (if any) | Integration target | Re-verify identity and call sites at preparation; no campaign launch |
+| Iter002 forcing-surrogate-v1 artifact | Offline `SR` predictor | Immutable; SHA-256 `8d139b32473eebe3f75f77042e542f49ec3c80e89bc65c76b2e98a5c70f4553e` |
+| Nine I20TR case pickles + linked ELM restarts/histories | Mean spinup, member params, ELM `SR` | Same trust model as Iter004 |
+| Closed Iter004 full/summary products | Reuse three-arm metrics/series for overlays and CSV join | Read-only; identity locked at kickoff |
+| Existing `build_forcing_inference_inputs` / `mean_spinup_state` / Iter004 eval tooling | Prefer extend-in-place | Lock repository identity at kickoff; minimize new code |
 | `OLMT_puma` and `development/hpc/puma.md` | Runtime/site | Puma; `chopinsong` / `standard` |
 
 ### 4. Bounded scope, work units, and exclusions
 
-Core deliverable (MCMC integration, no campaign):
+Core compute (new): mean-spinup offline arm only — nine sites × 100 members; timeseries ON;
+preflight → full array `1-9` → validate/closeout.
 
-- Integrate `predict_coupled_surrogate.py` / coupled library into the MCMC call path
-  (adapter or direct import) with a documented `predict_coupled_sr` contract.
-- Add/extend unit or smoke tests proving MCMC scaffolding can invoke coupled predict for
-  a tiny fixture (not a PPE sweep).
-- Preflight + validate/closeout for the integration wiring only.
+Reuse without re-run: Iter004 member-restart offline, `drop32`, and `drop21_corr080` metrics
+and series for plot overlays and summary join.
 
-Exclusions: no MCMC campaign; no PPE re-evaluation; no retraining; no feature selection;
-no numeric skill floors; no expansion of ELM comparison products; no Git of large binaries.
+Plots — two figures per site:
 
-Nominal scheduler tasks: 2 (preflight, validate). Provisional hard cap: 4 (one minimal
-preflight correction/rerun and one same-scope validate retry).
+1. Timeseries: ELM + mean-spinup offline + Iter004 three arms; member-mean ± std shade;
+   absolute SR; annotate site member-median Pearson r and KGE per predictor arm.
+2. SR versus ensemble member: same five series; dots + temporal-std error bars; no
+   connectors; annotate site member-median Pearson r and KGE per predictor arm.
+
+Summary: `summaries/iter005/iter005_site_metric_medians.csv` includes the new mean-spinup
+offline medians and Iter004's three-arm medians, clearly labeled by arm.
+
+Code posture: minimize added repository code; reuse existing functions and Iter004 products;
+add or extend code only when necessary or when it clearly eases future MCMC work.
+
+Exclusions: MCMC campaign; MCMC wiring/integration (deferred to `iter006`); re-running
+Iter004 coupled/member-offline campaigns; retraining; feature selection; numeric skill
+floors; SR-versus-TOTSOM plots; Git of large binaries/NetCDF.
+
+Nominal scheduler tasks: 3 (preflight, full, validate). Provisional hard cap: 5 (one
+minimal preflight correction/rerun; one same-scope scheduler/resource retry for full or
+validate).
 
 ### 5. Tentative acceptance gates and decision rule
 
 Pass only if all hold:
 
 1. Authoritative terminal accounting exists for every task; every failure is classified.
-2. MCMC scaffolding imports and invokes the Iter003 coupled predict primitive under the
-   documented `predict_coupled_sr` contract.
-3. Fixture-level smoke succeeds for at least one spinup variant + forcing artifact path.
-4. Negative gates for missing artifact/schema/version failures fail closed.
-5. Compact `summaries/iter005/` and the four durable records agree after handoff validation.
+2. Mean-spinup offline completes 9×100 with finite metrics and timeseries products.
+3. Both locked plot types exist for all nine sites with required overlays and r/KGE
+   annotations.
+4. `iter005_site_metric_medians.csv` includes mean-spinup offline medians and Iter004's
+   three-arm medians.
+5. Negative gates for missing artifact/schema/version failures fail closed.
+6. Compact `summaries/iter005/` and the four durable records agree after handoff validation.
 
-Decision rule: pass means the coupled primitive is integrated for MCMC reuse as a callable
-contract. Pass does not claim a completed MCMC campaign or production calibration readiness.
+Decision rule: pass means the MCMC-relevant mean-spinup offline baseline is compared with
+Iter004 arms under the locked plot/summary contract. Pass does not claim production MCMC
+readiness or impose a predictive-accuracy threshold.
 
 ### 6. Proposed site and resource envelope, preflight, review, retry, cancellation, and stop
+
+Resources follow Iter004 evidence with lighter full-leaf work (one new predict arm plus
+overlays rather than three live predicts).
 
 | Field | Proposal |
 | --- | --- |
 | HPC / profile | University of Arizona Puma; `development/hpc/puma.md` |
 | Account / partition / env | `chopinsong` / `standard` / `OLMT_puma` |
 | Output root | `/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/spinup_forcing_coupling` |
-| Directory creation | only `spinup_forcing_coupling_iter005_{preflight,validate}/` |
-| Preflight / validate | finalize exact CPU/mem/time at kickoff from fixture sizing |
+| Directory creation | only `spinup_forcing_coupling_iter005_{preflight,full,validate}/` |
+| Preflight | 2 CPUs (derived ~10 GB) / 30 min |
+| Full (array `1-9`) | `--mem=20G` / 4 h per leaf |
+| Validate | 1 CPU (derived ~5 GB) / 1 h |
 | Review | independent read-only agent before substantive submission |
-| Retry | one minimal preflight correction/rerun; one same-scope scheduler/resource retry for validate; no automatic application/numerical retry |
+| Retry | one minimal preflight correction/rerun; one same-scope scheduler/resource retry for full or validate; no automatic application/numerical retry |
 | Cancellation | recorded Iter005 job IDs only under proven universal pre-execution defect |
 | Stop | after terminal accounting, immutable gates, durable records, cross-record validation, and the approved closeout branch |
 
 ### 7. Expected evidence, artifacts, and record updates
 
-- MCMC adapter/wiring calling `predict_coupled_surrogate.py` / coupled library
-- Fixture smoke evidence; integration tests
-- Compact `summaries/iter005/`; finalized `iterations/iter005.md`; `ITERATION_SUMMARY.md`
-  append; `registry.csv` row; rebuilt `handoff/CURRENT.md`; handoff validator result
+- Mean-spinup offline products (metrics, timeseries) via minimal reuse-oriented code changes
+- Per-site annotated timeseries and SR-versus-member plots overlaying Iter004 arms
+- Compact `summaries/iter005/` including joined `iter005_site_metric_medians.csv`; finalized
+  `iterations/iter005.md`; `ITERATION_SUMMARY.md` append; `registry.csv` row; rebuilt
+  `handoff/CURRENT.md`; handoff validator result
 - Canonical scripts under `slurm/iter005/` (created only after kickoff approval)
+- After Iter005 closeout, the next planning-only proposal is `iter006` MCMC integration of
+  the `predict_coupled_sr` primitive (no campaign)
 
 ### 8. Fresh consolidated kickoff-approval boundary
 
@@ -158,7 +190,6 @@ Present one complete consolidated kickoff package that includes this plan unchan
 states runtime contract, exact output-root authority, lifecycle authorities, resources,
 retry/cancellation, outside-sandbox `sbatch`/monitoring/`scancel`, and closeout-commit
 authorization. Obtain one explicit user approval before any Iter005 initialization.
-
 
 ## Next Session Start Protocol
 

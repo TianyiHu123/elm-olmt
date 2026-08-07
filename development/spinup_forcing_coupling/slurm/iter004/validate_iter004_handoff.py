@@ -44,10 +44,10 @@ DROP21_SHA = "1427dc565af858e9c089a5b9545a7f127e42789ef1fe5c9af3af7f8cb12a3023"
 REPOSITORY_PARENT = "6d8391443bbd0a2612e66e17c47414a896e2ab01"
 NEXT_PLAN_MARKER = "Proposed iteration: `iter005`"
 NEXT_PLAN_DETAIL_MARKERS = (
-    "predict_coupled_sr",
-    "MCMC integration",
-    "no MCMC campaign",
-    "predict_coupled_surrogate.py",
+    "mean_spinup_state",
+    "iter005_site_metric_medians.csv",
+    "iter006",
+    "minimize new repository code",
 )
 REGISTRY_FIELDS = [
     "iteration_id",
