@@ -191,35 +191,43 @@ in an approved consolidated kickoff package. Copy this section unchanged into
 
 Objective: integrate the locked `predict_coupled_sr` primitive into the production MCMC
 path in `optimize_surrogate_forcing.py` (or the minimal shared helper it already uses) so
-a single MCMC configuration can select offline mean-spinup, offline member-restart, or
-coupled spinup→forcing without a PPE campaign. Prove the wiring with a bounded compute-node
-preflight plus a short dry-run / single-chain smoke that exits after a few likelihood
-evaluations; do not run a production MCMC campaign.
+a single CLI/config switch selects among three parallel spinup modes — offline mean-spinup,
+offline member-restart, and coupled spinup→forcing — without a PPE campaign. Adding coupled
+must not break existing mean-spinup or member-restart behavior. Prove the wiring with a
+bounded compute-node preflight plus a short ABBY smoke that exercises all three modes
+(collocation dry-run + ≤10 likelihood evaluations per mode, then exit); do not run a
+production MCMC campaign.
 
 Evidence basis: Iter003–Iter004 delivered coupled and offline comparison APIs; Iter005
 showed mean-spinup offline (historical MCMC default) is the skill-relevant baseline and
 lags both member-restart offline and coupled arms on R²/KGE. Production MCMC readiness
-remains unestablished until the sampler can call the same primitives.
+remains unestablished until the sampler can call the same primitives under an explicit
+mode switch.
 
-Optional hypothesis: exposing `predict_coupled_sr` and mean-spinup offline through the
-existing MCMC likelihood interface is sufficient for a later campaign iteration; no
-retraining is required for wiring correctness.
+Optional hypothesis: exposing all three modes through the existing MCMC likelihood
+interface is sufficient for a later campaign iteration; no retraining is required for
+wiring correctness.
 
 ### 3. Proposed upstream dependencies and trust assumptions
 
 | Dependency | Role | Trust / lock |
 | --- | --- | --- |
 | Iter002 forcing-surrogate-v1 artifact | Offline/coupled `SR` | Immutable; SHA-256 `8d139b32473eebe3f75f77042e542f49ec3c80e89bc65c76b2e98a5c70f4553e` |
-| Iter012 spinup `drop32` and/or `drop21_corr080` | Coupled state | Immutable Iter012 hashes locked at kickoff |
+| Iter012 spinup `drop32` and `drop21_corr080` | Coupled state; both selectable | Immutable Iter012 hashes locked at kickoff; smoke default `drop21_corr080` |
 | `predict_offline_sr` / `predict_coupled_sr` / `mean_spinup_state` | Likelihood primitives | Lock repository identity at kickoff |
-| Closed Iter005 characterization | Motivates mean-spinup as MCMC default spinup mode | Read-only |
+| Existing MCMC mean / `--spinup-member` paths | Regression baselines | Must remain selectable and smoke-verified |
+| Closed Iter005 characterization | Motivates mean-spinup as default mode | Read-only |
 | `OLMT_puma` and `development/hpc/puma.md` | Runtime/site | Puma; `chopinsong` / `standard` |
 
 ### 4. Bounded scope, work units, and exclusions
 
-Core work: MCMC wiring/integration only — CLI or config switch for spinup mode
-(mean-spinup offline / member-restart offline / coupled variant); unit tests; one
-preflight; one short smoke validate on a single site with a tiny evaluation budget.
+Core work: MCMC wiring/integration only — one CLI/config switch for spinup mode with
+three parallel options (`mean_spinup` offline, `member_restart` offline, `coupled`);
+coupled variant selectable as `drop32` or `drop21_corr080` with default `drop21_corr080`;
+keep historical default mode = mean-spinup when no mode flag is set; unit tests covering
+mode selection and non-regression of mean/member-restart; one preflight; one ABBY smoke
+validate that runs all three modes with a tiny evaluation budget (≤10 likelihood
+evaluations per mode after collocation dry-run).
 
 Exclusions: production MCMC campaign; multi-site PPE sweeps; retraining; feature
 selection; numeric skill floors; re-running Iter004/Iter005 comparison campaigns; Git of
@@ -233,15 +241,17 @@ minimal preflight correction/rerun; one same-scope scheduler/resource retry).
 Pass only if all hold:
 
 1. Authoritative terminal accounting exists for every task; every failure is classified.
-2. MCMC path can invoke `predict_coupled_sr` and mean-spinup offline through the locked
-   interface without schema/import failures.
-3. Smoke run completes the declared tiny evaluation budget and writes a compact identity
-   summary under `summaries/iter006/`.
+2. MCMC path can invoke all three modes (`mean_spinup`, `member_restart`, `coupled`)
+   through the locked interface without schema/import failures; coupled accepts both
+   `drop32` and `drop21_corr080` with default `drop21_corr080`.
+3. ABBY smoke completes the declared tiny evaluation budget for all three modes and
+   writes a compact identity summary under `summaries/iter006/`.
 4. Negative gates for missing artifact/schema/version failures fail closed.
 5. Compact `summaries/iter006/` and the four durable records agree after handoff validation.
 
-Decision rule: pass means MCMC can call the locked coupling primitives under a declared
-spinup mode. Pass does not claim a calibrated posterior or production campaign readiness.
+Decision rule: pass means MCMC can select and call the locked coupling/offline
+primitives under each declared spinup mode, and existing mean/member-restart paths still
+work. Pass does not claim a calibrated posterior or production campaign readiness.
 
 ### 6. Proposed site and resource envelope, preflight, review, retry, cancellation, and stop
 
@@ -252,7 +262,7 @@ spinup mode. Pass does not claim a calibrated posterior or production campaign r
 | Output root | `/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/spinup_forcing_coupling` |
 | Directory creation | only `spinup_forcing_coupling_iter006_{preflight,validate}/` |
 | Preflight | 2 CPUs (derived ~10 GB) / 30 min |
-| Validate/smoke | 1 CPU (derived ~5 GB) / 1 h |
+| Validate/smoke | 1 CPU (derived ~5 GB) / 1 h; site `ABBY`; ≤10 likelihood evals per mode |
 | Review | independent read-only agent before substantive submission |
 | Retry | one minimal preflight correction/rerun; one same-scope scheduler/resource retry; no automatic application/numerical retry |
 | Cancellation | recorded Iter006 job IDs only under proven universal pre-execution defect |
@@ -260,10 +270,12 @@ spinup mode. Pass does not claim a calibrated posterior or production campaign r
 
 ### 7. Expected evidence, artifacts, and record updates
 
-- MCMC wiring diff with tests covering spinup-mode selection
-- Compact `summaries/iter006/` smoke identity; finalized `iterations/iter006.md`;
-  `ITERATION_SUMMARY.md` append; `registry.csv` row; rebuilt `handoff/CURRENT.md`; handoff
-  validator result
+- MCMC wiring diff with tests covering three-mode selection and mean/member-restart
+  non-regression; coupled variant switch (`drop32` / `drop21_corr080`, default
+  `drop21_corr080`)
+- Compact `summaries/iter006/` smoke identity for all three modes; finalized
+  `iterations/iter006.md`; `ITERATION_SUMMARY.md` append; `registry.csv` row; rebuilt
+  `handoff/CURRENT.md`; handoff validator result
 - Canonical scripts under `slurm/iter006/` (created only after kickoff approval)
 - After Iter006 closeout, next planning-only proposal is a production MCMC campaign only if
   wiring gates pass; otherwise a repair iteration
@@ -274,6 +286,7 @@ Present one complete consolidated kickoff package that includes this plan unchan
 states runtime contract, exact output-root authority, lifecycle authorities, resources,
 retry/cancellation, outside-sandbox `sbatch`/monitoring/`scancel`, and closeout-commit
 authorization. Obtain one explicit user approval before any Iter006 initialization.
+
 
 ## Closeout Checklist
 
