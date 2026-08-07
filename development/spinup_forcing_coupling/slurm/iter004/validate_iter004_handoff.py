@@ -47,7 +47,7 @@ NEXT_PLAN_DETAIL_MARKERS = (
     "mean_spinup_state",
     "iter005_site_metric_medians.csv",
     "iter006",
-    "minimize new repository code",
+    "Minimize new repository code",
 )
 REGISTRY_FIELDS = [
     "iteration_id",
