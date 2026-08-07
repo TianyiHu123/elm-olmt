@@ -18,7 +18,36 @@ def run_forcing_surrogate_site(
 
     This is a top-level function so it can be called in multiprocessing worker
     processes (emcee pool).
+
+    When ``site_data["spinup_mode"] == "coupled"``, spinup is predicted from the
+    current parameter vector via ``predict_coupled_sr`` (overlap-subset SR).
+    Offline modes keep the historical fixed-spinup design-matrix path.
     """
+    mode = str(site_data.get("spinup_mode", "mean_spinup"))
+    pr = np.asarray(parms_model, dtype=np.float64).ravel()
+
+    if mode == "coupled":
+        from .coupled_surrogate import predict_coupled_sr
+
+        if list(myvars) != ["SR"]:
+            raise ValueError(
+                "coupled spinup mode currently supports myvars=['SR'] only; "
+                f"got {list(myvars)}"
+            )
+        pred = predict_coupled_sr(
+            site_data["case"],
+            spinup_artifact=site_data["spinup_artifact"],
+            forcing_artifact=site_data["forcing_artifact"],
+            parameters=pr,
+        )
+        sr_full = np.asarray(pred["SR"], dtype=np.float64).ravel()
+        overlap_idx = site_data.get("overlap_indices")
+        if overlap_idx is None:
+            sr = sr_full
+        else:
+            sr = sr_full[np.asarray(overlap_idx, dtype=int)]
+        return {"SR": sr}
+
     fe = np.asarray(site_data["forcing_engineered"], dtype=np.float64)
     sp = np.asarray(site_data["spinup"], dtype=np.float64).ravel()
     nf = int(site_data["n_forcing_cols"])
@@ -26,7 +55,6 @@ def run_forcing_surrogate_site(
     nsp = int(site_data["n_spinup"])
     ntime = int(fe.shape[0])
 
-    pr = np.asarray(parms_model, dtype=np.float64).ravel()
     if pr.size != nparam:
         raise ValueError(f"parms_model length mismatch: expected {nparam}, got {pr.size}")
     if sp.size != nsp:
@@ -107,7 +135,7 @@ def MCMC_forcing(
     nsteps=100,
     fit_error=True,
     n_processes: Optional[int] = None,
-    
+    smoke_likelihood_evals: int = 0,
 ):
     sites = self.all_sites
     pmin = np.array(self.ensemble_pmin, dtype=float)
@@ -122,7 +150,8 @@ def MCMC_forcing(
         if s not in forcing_context:
             raise KeyError(f"Missing forcing_context for site '{s}'")
         fctx = forcing_context[s]
-        if "forcing_engineered" not in fctx or "spinup" not in fctx:
+        mode = str(fctx.get("spinup_mode", "mean_spinup"))
+        if mode != "coupled" and ("forcing_engineered" not in fctx or "spinup" not in fctx):
             raise KeyError(f"forcing_context[{s}] must include forcing_engineered and spinup")
 
         # Prefer explicit surrogate payload from forcing_context.
@@ -130,12 +159,15 @@ def MCMC_forcing(
         x_scaler_forcing = fctx.get("x_scaler_forcing")
         y_scaler_forcing = fctx.get("y_scaler_forcing")
         meta = fctx.get("training_layout")
-        case_obj = None
+        case_obj = fctx.get("case")
         if (
-            surrogate_forcing is None
-            or x_scaler_forcing is None
-            or y_scaler_forcing is None
-            or meta is None
+            mode != "coupled"
+            and (
+                surrogate_forcing is None
+                or x_scaler_forcing is None
+                or y_scaler_forcing is None
+                or meta is None
+            )
         ):
             # Backward-compatible fallback: derive case object from the legacy primary-site workflow.
             if s == sites[0]:
@@ -169,50 +201,85 @@ def MCMC_forcing(
             obs[s] = case_obj.obs.copy()
             obs_err[s] = case_obj.obs_err.copy()
 
-        fe = np.asarray(fctx["forcing_engineered"], dtype=np.float64)
-        sp = np.asarray(fctx["spinup"], dtype=np.float64).ravel()
-        n_forcing_cols = int(meta.get("n_forcing_cols", -1))
-        n_params_expected = int(meta.get("n_params", -1))
-        n_spinup_expected = int(meta.get("n_spinup", -1))
-        if n_forcing_cols <= 0 or n_params_expected <= 0 or n_spinup_expected <= 0:
-            raise ValueError(
-                f"forcing metadata is incomplete for site '{s}': "
-                f"n_forcing_cols={n_forcing_cols}, n_params={n_params_expected}, n_spinup={n_spinup_expected}"
-            )
-        if n_params_expected != int(self.nparms_ensemble):
-            raise ValueError(
-                f"Parameter count mismatch for site '{s}': "
-                f"case has {self.nparms_ensemble} parameters, surrogate expects {n_params_expected}."
-            )
-        if fe.ndim != 2 or fe.shape[1] != n_forcing_cols:
-            raise ValueError(
-                f"forcing_engineered shape mismatch for site '{s}': "
-                f"expected (*, {n_forcing_cols}), got {fe.shape}"
-            )
-        if sp.size != n_spinup_expected:
-            raise ValueError(
-                f"spinup length mismatch for site '{s}': "
-                f"expected {n_spinup_expected}, got {sp.size}"
-            )
+        if mode == "coupled":
+            if case_obj is None:
+                raise KeyError(f"forcing_context[{s}] must include case for coupled mode")
+            if "spinup_artifact" not in fctx or "forcing_artifact" not in fctx:
+                raise KeyError(
+                    f"forcing_context[{s}] must include spinup_artifact and forcing_artifact "
+                    "for coupled mode"
+                )
+            if meta is None:
+                meta = fctx.get("training_layout") or {}
+            n_params_expected = int(meta.get("n_params", self.nparms_ensemble))
+            if n_params_expected != int(self.nparms_ensemble):
+                raise ValueError(
+                    f"Parameter count mismatch for site '{s}': "
+                    f"case has {self.nparms_ensemble} parameters, surrogate expects {n_params_expected}."
+                )
+            site_data_by_site[s] = {
+                "spinup_mode": "coupled",
+                "case": case_obj,
+                "spinup_artifact": fctx["spinup_artifact"],
+                "forcing_artifact": fctx["forcing_artifact"],
+                "overlap_indices": fctx.get("overlap_diagnostics", {}).get(
+                    "forcing_overlap_indices"
+                ),
+                "n_params": n_params_expected,
+                "n_forcing_cols": int(meta.get("n_forcing_cols", -1)),
+                "n_spinup": int(meta.get("n_spinup", 2)),
+                "forcing_engineered": fctx.get("forcing_engineered"),
+                "spinup": fctx.get("spinup"),
+                "surrogate_forcing": surrogate_forcing,
+                "x_scaler_forcing": x_scaler_forcing,
+                "y_scaler_forcing": y_scaler_forcing,
+            }
+        else:
+            fe = np.asarray(fctx["forcing_engineered"], dtype=np.float64)
+            sp = np.asarray(fctx["spinup"], dtype=np.float64).ravel()
+            n_forcing_cols = int(meta.get("n_forcing_cols", -1))
+            n_params_expected = int(meta.get("n_params", -1))
+            n_spinup_expected = int(meta.get("n_spinup", -1))
+            if n_forcing_cols <= 0 or n_params_expected <= 0 or n_spinup_expected <= 0:
+                raise ValueError(
+                    f"forcing metadata is incomplete for site '{s}': "
+                    f"n_forcing_cols={n_forcing_cols}, n_params={n_params_expected}, n_spinup={n_spinup_expected}"
+                )
+            if n_params_expected != int(self.nparms_ensemble):
+                raise ValueError(
+                    f"Parameter count mismatch for site '{s}': "
+                    f"case has {self.nparms_ensemble} parameters, surrogate expects {n_params_expected}."
+                )
+            if fe.ndim != 2 or fe.shape[1] != n_forcing_cols:
+                raise ValueError(
+                    f"forcing_engineered shape mismatch for site '{s}': "
+                    f"expected (*, {n_forcing_cols}), got {fe.shape}"
+                )
+            if sp.size != n_spinup_expected:
+                raise ValueError(
+                    f"spinup length mismatch for site '{s}': "
+                    f"expected {n_spinup_expected}, got {sp.size}"
+                )
 
-        expected_features = list(meta.get("forcing_feature_names", []))
-        input_features = [str(x) for x in fctx.get("forcing_feature_names", [])]
-        if expected_features and input_features and expected_features != input_features:
-            raise ValueError(
-                f"Forcing feature names mismatch for site '{s}': "
-                f"expected {expected_features}, got {input_features}"
-            )
+            expected_features = list(meta.get("forcing_feature_names", []))
+            input_features = [str(x) for x in fctx.get("forcing_feature_names", [])]
+            if expected_features and input_features and expected_features != input_features:
+                raise ValueError(
+                    f"Forcing feature names mismatch for site '{s}': "
+                    f"expected {expected_features}, got {input_features}"
+                )
 
-        site_data_by_site[s] = {
-            "forcing_engineered": fe,
-            "spinup": sp,
-            "n_forcing_cols": n_forcing_cols,
-            "n_params": n_params_expected,
-            "n_spinup": n_spinup_expected,
-            "surrogate_forcing": surrogate_forcing,
-            "x_scaler_forcing": x_scaler_forcing,
-            "y_scaler_forcing": y_scaler_forcing,
-        }
+            site_data_by_site[s] = {
+                "spinup_mode": mode,
+                "forcing_engineered": fe,
+                "spinup": sp,
+                "n_forcing_cols": n_forcing_cols,
+                "n_params": n_params_expected,
+                "n_spinup": n_spinup_expected,
+                "surrogate_forcing": surrogate_forcing,
+                "x_scaler_forcing": x_scaler_forcing,
+                "y_scaler_forcing": y_scaler_forcing,
+            }
         if "baseline_output" in fctx:
             for var in fctx["baseline_output"]:
                 print(fctx["baseline_output"][var].shape)
@@ -234,6 +301,42 @@ def MCMC_forcing(
             ensemble_parms = ensemble_parms + ["sigma_" + v]
             nparms_ensemble = len(ensemble_parms)
             nerr_parms = nerr_parms + 1
+
+    smoke_n = int(smoke_likelihood_evals or 0)
+    if smoke_n > 0:
+        mid = 0.5 * (pmin + pmax)
+        logps = []
+        for i in range(smoke_n):
+            # Deterministic tiny budget around the prior midpoint.
+            frac = float(i) / float(max(smoke_n - 1, 1))
+            parms = pmin + frac * (pmax - pmin)
+            if i == 0:
+                parms = mid
+            lp = log_posterior_forcing(
+                parms,
+                sites,
+                myvars,
+                pmin,
+                pmax,
+                obs,
+                obs_err,
+                nparms_ensemble,
+                nerr_parms,
+                site_data_by_site,
+            )
+            logps.append(float(lp))
+            print(f"SMOKE_LIKELIHOOD_EVAL i={i} log_posterior={lp}")
+        print(
+            f"SMOKE_LIKELIHOOD_DONE n={smoke_n} "
+            f"log_posterior_min={min(logps)} log_posterior_max={max(logps)}"
+        )
+        return {
+            "smoke_likelihood_evals": smoke_n,
+            "log_posteriors": logps,
+            "spinup_modes": {
+                s: site_data_by_site[s].get("spinup_mode") for s in sites
+            },
+        }
 
     p0 = sample_from_prior(pmin, pmax, nwalkers)
 

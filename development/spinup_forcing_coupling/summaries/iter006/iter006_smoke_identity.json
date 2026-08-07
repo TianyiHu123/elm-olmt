@@ -1,0 +1,15 @@
+{
+  "iteration_id": "iter006",
+  "site": "ABBY",
+  "modes_exercised": [
+    "mean_spinup",
+    "member_restart",
+    "coupled",
+    "coupled_drop32_accept"
+  ],
+  "smoke_likelihood_evals_per_mode": 10,
+  "default_coupled_variant": "drop21_corr080",
+  "forcing_artifact_sha256": "8d139b32473eebe3f75f77042e542f49ec3c80e89bc65c76b2e98a5c70f4553e",
+  "obs_fixture": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/spinup_forcing_coupling/spinup_forcing_coupling_iter006_validate/abby_smoke_obs.nc",
+  "passed": true
+}

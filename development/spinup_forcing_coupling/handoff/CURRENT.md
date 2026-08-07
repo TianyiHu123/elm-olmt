@@ -2,56 +2,58 @@
 
 ## Live State
 
-- Active iteration: `none` (proposed `iter006`, not initialized)
-- Status: `not_initialized`
-- Phase: `ready_for_kickoff_approval`
+- Active iteration: `iter006`
+- Status: `completed`
+- Phase: `closed`
 - Active job IDs: none
-- Site profile: `development/hpc/puma.md` (proposed; not yet locked by kickoff approval)
-- Last updated: `2026-08-06T20:20:23-0700`
+- Site profile: `development/hpc/puma.md`
+- Last updated: `2026-08-06T21:11:23-0700`
 
 ## Active Kickoff Package and Runtime Authority
 
-- Package state: `not approved` (Iter005 package exhausted; Iter006 consolidated package
-  presented for one-shot approval after plan finalization)
-- Kickoff goal and stop boundary: pending user approval of the consolidated Iter006 package
-  below (MCMC three-mode wiring; no campaign).
-- User response and approval timestamp: none yet for Iter006.
-- Confirmed HPC system and profile: proposed Puma; `development/hpc/puma.md`.
-- Approved output root: none until Iter006 package approval; proposed root
-  `/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/spinup_forcing_coupling` with only
-  `spinup_forcing_coupling_iter006_{preflight,validate}/`.
-- Locked dependencies/gates/decision: none until approval; see proposed plan.
-- Outside-sandbox and closeout authorities: none until Iter006 package approval.
+- Package state: `exhausted` (Iter006 closed; Iter007 package not yet presented)
+- Kickoff goal and stop boundary: Iter006 complete; awaiting Iter007 consolidated kickoff
+  approval for a production MCMC campaign.
+- User response and approval timestamp: Iter006 approved `2026-08-06T20:31:00-0700`;
+  Iter007 none yet.
+- Confirmed HPC system and profile: Puma; `development/hpc/puma.md` (for prior Iter006).
+- Approved output root: none until Iter007 package approval; proposed root remains
+  `/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/spinup_forcing_coupling`.
+- Locked dependencies/gates/decision: none until Iter007 approval; see proposed plan.
+- Outside-sandbox and closeout authorities: none until Iter007 package approval.
 
 ## Current Objective
 
-MCMC three-mode spinup wiring (mean / member-restart / coupled) — planning only
+MCMC three-mode spinup wiring (mean / member-restart / coupled)
 
 ## Best Evidence So Far
 
-- Work type: `implementation` (proposed)
-- Prior evidence: Iter005 mean-spinup offline median R²≈-1.894 KGE≈0.438 vs Iter004
-  member-restart offline R²≈0.850 KGE≈0.862; coupled intermediate
+- Work type: `implementation`
+- Bounded scope: ABBY smoke; three MCMC spinup modes; coupled drop32/drop21_corr080; <=10 likelihood evals/mode; no production campaign
+- Output root: `/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/spinup_forcing_coupling`
+- Summary path: `development/spinup_forcing_coupling/summaries/iter006`
+- Prior evidence: Iter006 ABBY smoke exercised mean_spinup, member_restart, and coupled
+  (default `drop21_corr080`) with 10 likelihood evals each; coupled `drop32` accepted
 - Forcing identity: `8d139b32473eebe3f75f77042e542f49ec3c80e89bc65c76b2e98a5c70f4553e`
-- Acceptance result: pending Iter006
-- Decision: pending Iter006
+- Acceptance result: `pass`
+- Decision: MCMC can select and call locked coupling/offline primitives under each declared spinup mode; mean/member-restart paths still work; production campaign readiness not established
 
 ## Current Risks or Blockers
 
 - `/xdisk` retention is temporary and unbacked.
-- Awaiting one approval of the complete Iter006 consolidated kickoff package.
+- Validate smoke approached the 5 GB memory allocation.
+- Awaiting one approval of a complete Iter007 consolidated kickoff package.
 
 ## Next Action
 
-1. Await one explicit user approval of the complete consolidated Iter006 kickoff package
-   (plan + contract + outside-sandbox items 1–3 + closeout branch). Do not initialize
-   until that approval is recorded.
+1. Present one complete consolidated Iter007 kickoff package (production MCMC campaign)
+   and obtain explicit user approval before initialization.
 
 ## Proposed Next-Iteration Plan (Planning Only)
 
 ### Planning Status and Authority Boundary
 
-- Proposed iteration: `iter006`
+- Proposed iteration: `iter007`
 - Proposed work type: `implementation`
 - Status: planning only; not initialized
 - Consolidated kickoff package: not approved
@@ -64,76 +66,64 @@ in an approved consolidated kickoff package. Copy this section unchanged into
 
 ### 1. Sequential ID and work type
 
-- Sequential ID: `iter006`
+- Sequential ID: `iter007`
 - Work type: `implementation`
-- Proposed run slugs: `spinup_forcing_coupling_iter006_preflight`,
-  `spinup_forcing_coupling_iter006_validate`
+- Proposed run slugs: `spinup_forcing_coupling_iter007_preflight`,
+  `spinup_forcing_coupling_iter007_campaign`,
+  `spinup_forcing_coupling_iter007_validate`
 
 ### 2. Evidence-derived objective and optional hypothesis
 
-Objective: integrate the locked `predict_coupled_sr` primitive into the production MCMC
-path in `optimize_surrogate_forcing.py` (or the minimal shared helper it already uses) so
-a single CLI/config switch selects among three parallel spinup modes — offline mean-spinup,
-offline member-restart, and coupled spinup→forcing — without a PPE campaign. Adding coupled
-must not break existing mean-spinup or member-restart behavior. Prove the wiring with a
-bounded compute-node preflight plus a short ABBY smoke that exercises all three modes
-(collocation dry-run + ≤10 likelihood evaluations per mode, then exit); do not run a
-production MCMC campaign.
+Objective: run a bounded production MCMC campaign through the Iter006 three-mode
+`--spinup-mode` interface on a predeclared site set and mode choice, writing posterior
+and predictive products under the locked output root, without retraining or changing the
+coupling primitives.
 
-Evidence basis: Iter003–Iter004 delivered coupled and offline comparison APIs; Iter005
-showed mean-spinup offline (historical MCMC default) is the skill-relevant baseline and
-lags both member-restart offline and coupled arms on R²/KGE. Production MCMC readiness
-remains unestablished until the sampler can call the same primitives under an explicit
-mode switch.
+Evidence basis: Iter006 passed wiring gates for mean_spinup, member_restart, and coupled
+(`drop21_corr080` default; `drop32` accepted). Production campaign readiness remains
+unestablished until a real obs-constrained sampler run completes under immutable gates.
 
-Optional hypothesis: exposing all three modes through the existing MCMC likelihood
-interface is sufficient for a later campaign iteration; no retraining is required for
-wiring correctness.
+Optional hypothesis: coupled mode with `drop21_corr080` is the preferred first campaign
+arm given Iter004/005 skill characterization; confirm or revise at kickoff.
 
 ### 3. Proposed upstream dependencies and trust assumptions
 
 | Dependency | Role | Trust / lock |
 | --- | --- | --- |
 | Iter002 forcing-surrogate-v1 artifact | Offline/coupled `SR` | Immutable; SHA-256 `8d139b32473eebe3f75f77042e542f49ec3c80e89bc65c76b2e98a5c70f4553e` |
-| Iter012 spinup `drop32` and `drop21_corr080` | Coupled state; both selectable | Immutable Iter012 hashes locked at kickoff; smoke default `drop21_corr080` |
-| `predict_offline_sr` / `predict_coupled_sr` / `mean_spinup_state` | Likelihood primitives | Lock repository identity at kickoff |
-| Existing MCMC mean / `--spinup-member` paths | Regression baselines | Must remain selectable and smoke-verified |
-| Closed Iter005 characterization | Motivates mean-spinup as default mode | Read-only |
+| Iter012 spinup `drop32` / `drop21_corr080` | Coupled state if selected | Immutable Iter012 hashes |
+| Iter006 MCMC mode wiring | CLI/likelihood path | Lock repository identity at kickoff |
+| Site obs NetCDF(s) | Likelihood truth | Paths/hashes locked at kickoff (not smoke fixtures) |
 | `OLMT_puma` and `development/hpc/puma.md` | Runtime/site | Puma; `chopinsong` / `standard` |
 
 ### 4. Bounded scope, work units, and exclusions
 
-Core work: MCMC wiring/integration only — one CLI/config switch for spinup mode with
-three parallel options (`mean_spinup` offline, `member_restart` offline, `coupled`);
-coupled variant selectable as `drop32` or `drop21_corr080` with default `drop21_corr080`;
-keep historical default mode = mean-spinup when no mode flag is set; unit tests covering
-mode selection and non-regression of mean/member-restart; one preflight; one ABBY smoke
-validate that runs all three modes with a tiny evaluation budget (≤10 likelihood
-evaluations per mode after collocation dry-run).
+Core work: one production MCMC campaign using a single locked `--spinup-mode` (and coupled
+variant if applicable), locked site list, walker/step budget, and obs paths; preflight;
+campaign; validate/accounting. Exact site list, mode, and sampler budget locked at kickoff.
 
-Exclusions: production MCMC campaign; multi-site PPE sweeps; retraining; feature
-selection; numeric skill floors; re-running Iter004/Iter005 comparison campaigns; Git of
-large binaries/NetCDF/chains.
+Exclusions: retraining; feature selection; multi-mode simultaneous campaigns unless
+explicitly authorized; Git of large binaries/NetCDF/chains; reinterpretation of Iter006
+wiring gates.
 
-Nominal scheduler tasks: 2 (preflight, validate/smoke). Provisional hard cap: 4 (one
-minimal preflight correction/rerun; one same-scope scheduler/resource retry).
+Nominal scheduler tasks: 3 (preflight, campaign, validate). Provisional hard cap: 5
+(one minimal preflight correction/rerun; one same-scope scheduler/resource retry).
 
 ### 5. Tentative acceptance gates and decision rule
 
 Pass only if all hold:
 
 1. Authoritative terminal accounting exists for every task; every failure is classified.
-2. MCMC path can invoke all three modes (`mean_spinup`, `member_restart`, `coupled`)
-   through the locked interface without schema/import failures; coupled accepts both
-   `drop32` and `drop21_corr080` with default `drop21_corr080`.
-3. ABBY smoke completes the declared tiny evaluation budget for all three modes and
-   writes a compact identity summary under `summaries/iter006/`.
-4. Negative gates for missing artifact/schema/version failures fail closed.
-5. Compact `summaries/iter006/` and the four durable records agree after handoff validation.
+2. Campaign completes the locked walker/step budget under the locked spinup-mode without
+   schema/import failures.
+3. Required posterior/predictive products exist under the approved output layout.
+4. Negative gates for missing artifact/obs/schema failures fail closed.
+5. Compact `summaries/iter007/` and the four durable records agree after handoff validation.
 
-Decision rule: pass means MCMC can select and call the locked coupling/offline
-primitives under each declared spinup mode, and existing mean/member-restart paths still
-work. Pass does not claim a calibrated posterior or production campaign readiness.
+Decision rule: pass means a production MCMC campaign executed successfully through the
+locked three-mode interface for the predeclared mode/site budget. Pass does not by itself
+claim calibrated scientific adequacy unless numeric skill floors are explicitly added at
+kickoff.
 
 ### 6. Proposed site and resource envelope, preflight, review, retry, cancellation, and stop
 
@@ -142,32 +132,29 @@ work. Pass does not claim a calibrated posterior or production campaign readines
 | HPC / profile | University of Arizona Puma; `development/hpc/puma.md` |
 | Account / partition / env | `chopinsong` / `standard` / `OLMT_puma` |
 | Output root | `/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/spinup_forcing_coupling` |
-| Directory creation | only `spinup_forcing_coupling_iter006_{preflight,validate}/` |
+| Directory creation | only `spinup_forcing_coupling_iter007_{preflight,campaign,validate}/` |
 | Preflight | 2 CPUs (derived ~10 GB) / 30 min |
-| Validate/smoke | 1 CPU (derived ~5 GB) / 1 h; site `ABBY`; ≤10 likelihood evals per mode |
+| Campaign | resources locked at kickoff from walker/step/site evidence (Iter006 validate used ~5 GB) |
+| Validate | 1 CPU (derived ~5 GB) / 1 h |
 | Review | independent read-only agent before substantive submission |
 | Retry | one minimal preflight correction/rerun; one same-scope scheduler/resource retry; no automatic application/numerical retry |
-| Cancellation | recorded Iter006 job IDs only under proven universal pre-execution defect |
+| Cancellation | recorded Iter007 job IDs only under proven universal pre-execution defect |
 | Stop | after terminal accounting, immutable gates, durable records, cross-record validation, and the approved closeout branch |
 
 ### 7. Expected evidence, artifacts, and record updates
 
-- MCMC wiring diff with tests covering three-mode selection and mean/member-restart
-  non-regression; coupled variant switch (`drop32` / `drop21_corr080`, default
-  `drop21_corr080`)
-- Compact `summaries/iter006/` smoke identity for all three modes; finalized
-  `iterations/iter006.md`; `ITERATION_SUMMARY.md` append; `registry.csv` row; rebuilt
-  `handoff/CURRENT.md`; handoff validator result
-- Canonical scripts under `slurm/iter006/` (created only after kickoff approval)
-- After Iter006 closeout, next planning-only proposal is a production MCMC campaign only if
-  wiring gates pass; otherwise a repair iteration
+- Campaign posterior/predictive products under approved run dirs; compact
+  `summaries/iter007/`; finalized `iterations/iter007.md`; `ITERATION_SUMMARY.md` append;
+  `registry.csv` row; rebuilt `handoff/CURRENT.md`; handoff validator result
+- Canonical scripts under `slurm/iter007/` (created only after kickoff approval)
 
 ### 8. Fresh consolidated kickoff-approval boundary
 
 Present one complete consolidated kickoff package that includes this plan unchanged and
 states runtime contract, exact output-root authority, lifecycle authorities, resources,
-retry/cancellation, outside-sandbox `sbatch`/monitoring/`scancel`, and closeout-commit
-authorization. Obtain one explicit user approval before any Iter006 initialization.
+retry/cancellation, outside-sandbox `sbatch`/monitoring/`scancel`, locked mode/site/obs
+budget, and closeout-commit authorization. Obtain one explicit user approval before any
+Iter007 initialization.
 
 ## Next Session Start Protocol
 
@@ -185,10 +172,10 @@ authorization. Obtain one explicit user approval before any Iter006 initializati
 
 ## Artifact References
 
-- Current/latest report: `development/spinup_forcing_coupling/iterations/iter005.md`
+- Current/latest report: `development/spinup_forcing_coupling/iterations/iter006.md`
 - Registry: `development/spinup_forcing_coupling/registry.csv`
 - Cumulative summary: `development/spinup_forcing_coupling/ITERATION_SUMMARY.md`
-- Summaries: `development/spinup_forcing_coupling/summaries/iter005`
-- Canonical scripts: `development/spinup_forcing_coupling/slurm/iter005/`
-- Submitted scripts/configurations: under each `spinup_forcing_coupling_iter005_*` run dir
+- Summaries: `development/spinup_forcing_coupling/summaries/iter006`
+- Canonical scripts: `development/spinup_forcing_coupling/slurm/iter006/`
+- Submitted scripts/configurations: under each `spinup_forcing_coupling_iter006_*` run dir
 - Scratch output: `/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/spinup_forcing_coupling`

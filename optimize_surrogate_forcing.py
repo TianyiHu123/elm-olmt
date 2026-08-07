@@ -14,6 +14,12 @@ from model_ELM.load_obs_nc import (
     collocate_obs_to_forcing_time,
     load_observations_with_time_from_nc,
 )
+from model_ELM.mcmc_spinup_modes import (
+    DEFAULT_COUPLED_VARIANT,
+    resolve_coupled_spinup_artifact,
+    resolve_coupled_variant,
+    resolve_spinup_mode,
+)
 from model_ELM.surrogate_NN_Forcing import (
     build_forcing_inference_inputs,
     load_surrogate_forcing_artifacts,
@@ -44,9 +50,43 @@ def _build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--obs-err-vars",
         default="",
-        help="Comma-separated var:err_var mapping, e.g. GPP:GPP_SE,NEE:NEE_SE",
+        help="Comma-separated var:err_var mapping, e.g. GPP:GPP_SE,SR:SR_SE",
     )
-    parser.add_argument("--spinup-member", type=int, default=None, help="Optional restart ensemble member")
+    parser.add_argument(
+        "--spinup-mode",
+        default=None,
+        choices=["mean_spinup", "member_restart", "coupled"],
+        help=(
+            "Spinup mode for the MCMC forward model. Default when omitted: mean_spinup, "
+            "or member_restart when --spinup-member is set (historical behavior)."
+        ),
+    )
+    parser.add_argument(
+        "--spinup-member",
+        type=int,
+        default=None,
+        help="Optional restart ensemble member (member_restart mode / legacy flag)",
+    )
+    parser.add_argument(
+        "--coupled-spinup-variant",
+        default=DEFAULT_COUPLED_VARIANT,
+        choices=["drop32", "drop21_corr080"],
+        help="Coupled spinup artifact variant (default drop21_corr080)",
+    )
+    parser.add_argument(
+        "--spinup-artifact",
+        default=None,
+        help="Optional explicit coupled spinup artifact path (overrides variant default)",
+    )
+    parser.add_argument(
+        "--smoke-likelihood-evals",
+        type=int,
+        default=0,
+        help=(
+            "If >0, after collocation run this many likelihood evaluations and exit "
+            "without a production MCMC campaign (wiring smoke)."
+        ),
+    )
     parser.add_argument("--nwalkers", type=int, default=32)
     parser.add_argument("--nsteps", type=int, default=100)
     parser.add_argument("--fit-error", dest="fit_error", action="store_true", default=True)
@@ -129,6 +169,24 @@ def main() -> int:
     outputdir.mkdir(parents=True, exist_ok=True)
     os.chdir(outputdir)
 
+    spinup_mode = resolve_spinup_mode(
+        spinup_mode=args.spinup_mode, spinup_member=args.spinup_member
+    )
+    coupled_variant = resolve_coupled_variant(args.coupled_spinup_variant)
+    spinup_artifact_path = None
+    if spinup_mode == "coupled":
+        spinup_artifact_path = resolve_coupled_spinup_artifact(
+            variant=coupled_variant, spinup_artifact=args.spinup_artifact
+        )
+        print(
+            f"SPINUP_MODE=coupled variant={coupled_variant} "
+            f"spinup_artifact={spinup_artifact_path}"
+        )
+    else:
+        print(
+            f"SPINUP_MODE={spinup_mode} spinup_member={args.spinup_member}"
+        )
+
     case_names = [name.strip() for name in args.case.split(",") if name.strip()]
     if not case_names:
         print("Error: at least one case name is required", file=sys.stderr)
@@ -137,6 +195,12 @@ def main() -> int:
     myvars = [s.strip() for s in args.vars.split(",") if s.strip()]
     if not myvars:
         print("Error: --vars cannot be empty", file=sys.stderr)
+        return 1
+    if spinup_mode == "coupled" and myvars != ["SR"]:
+        print(
+            "Error: coupled spinup mode requires --vars SR (forcing-surrogate-v1 is SR-only)",
+            file=sys.stderr,
+        )
         return 1
     obs_map = _parse_obs_spec(args.obs)
     obs_err_vars = _parse_obs_err_vars(args.obs_err_vars)
@@ -163,6 +227,11 @@ def main() -> int:
     sites: List[str] = list(cases_by_site.keys())
     primary.all_sites = sites
 
+    # Offline modes: mean uses no member; member_restart uses --spinup-member.
+    offline_spinup_member = (
+        args.spinup_member if spinup_mode == "member_restart" else None
+    )
+
     forcing_context = {}
     overlap_report = {}
     for s in sites:
@@ -170,11 +239,11 @@ def main() -> int:
         print("**************************************************")
         print("Site: ", s)
         print("Case: ", site_case_name)
-        
+
         finputs = build_forcing_inference_inputs(
             case_obj,
             training_layout=training_layout,
-            spinup_member=args.spinup_member,
+            spinup_member=offline_spinup_member,
         )
         obs_path = _resolve_obs_path(obs_map, s, site_case_name)
         obs_payload = load_observations_with_time_from_nc(
@@ -189,7 +258,7 @@ def main() -> int:
             obs_err=obs_payload["obs_err"],
             myvars=myvars,
         )
-        
+
         overlap_idx = overlap["forcing_overlap_indices"]
         forcing_overlap = np.asarray(finputs["forcing_engineered"], dtype=float)[overlap_idx, :]
         forcing_time_overlap = np.asarray(finputs["forcing_time"]).reshape(-1)[overlap_idx]
@@ -206,9 +275,12 @@ def main() -> int:
             "first_overlap_time": overlap["first_overlap_time"],
             "last_overlap_time": overlap["last_overlap_time"],
             "forcing_time_source": finputs.get("forcing_time_source", "unknown"),
+            "spinup_mode": spinup_mode,
         }
         forcing_context[s] = {
             "case_name": site_case_name,
+            "case": case_obj,
+            "spinup_mode": spinup_mode,
             "forcing_engineered": forcing_overlap,
             "spinup": finputs["spinup"],
             "forcing_feature_names": list(finputs.get("forcing_feature_names", [])),
@@ -221,28 +293,38 @@ def main() -> int:
             "y_scaler_forcing": case_obj.y_scaler_forcing,
             "training_layout": dict(case_obj.forcing_surrogate_training),
             "overlap_diagnostics": {
-                k: v for k, v in overlap.items() # if k != "forcing_overlap_indices"
+                k: v for k, v in overlap.items()  # if k != "forcing_overlap_indices"
             },
             "baseline_output": case_obj.output,
         }
+        if spinup_mode == "coupled":
+            forcing_context[s]["spinup_artifact"] = str(spinup_artifact_path)
+            forcing_context[s]["forcing_artifact"] = str(
+                Path(args.artifact).expanduser().resolve()
+            )
+            forcing_context[s]["coupled_spinup_variant"] = coupled_variant
         print("baseline output variables are:", forcing_context[s]["baseline_output"].keys())
         print("**************************************************")
-    if args.dry_run_collocation:
+    if args.dry_run_collocation and int(args.smoke_likelihood_evals or 0) <= 0:
         print("\nDry-run collocation summary:")
         for s in sites:
             info = overlap_report[s]
             print(
                 f"  - {s}: forcing={info['forcing_rows']}, obs={info['obs_rows']}, "
                 f"overlap={info['overlap_rows']}, source={info['forcing_time_source']}, "
+                f"mode={info['spinup_mode']}, "
                 f"window={info['first_overlap_time']} -> {info['last_overlap_time']}"
             )
-            print(f"Overlap idx are \
-                   {forcing_context[s]['overlap_diagnostics']['forcing_overlap_indices'][[0,-1]]}")
+            print(
+                f"Overlap idx are "
+                f"{forcing_context[s]['overlap_diagnostics']['forcing_overlap_indices'][[0, -1]]}"
+            )
             print("baseline output variables are:", forcing_context[s]["baseline_output"].keys())
         print("\nDry-run requested; skipping MCMC sampling.")
         return 0
 
-    primary.MCMC_forcing(
+    smoke_n = int(args.smoke_likelihood_evals or 0)
+    result = primary.MCMC_forcing(
         myvars=myvars,
         forcing_context=forcing_context,
         workdir=workdir,
@@ -250,8 +332,18 @@ def main() -> int:
         nsteps=args.nsteps,
         fit_error=args.fit_error,
         n_processes=args.n_processes,
+        smoke_likelihood_evals=smoke_n,
     )
-    print(f"Saved optimization outputs under: {outputdir / 'UQ_output' / primary.casename / 'MCMC_forcing_output'}")
+    if smoke_n > 0:
+        print(
+            f"Smoke likelihood complete for mode={spinup_mode}: "
+            f"evals={result['smoke_likelihood_evals']}"
+        )
+        return 0
+    print(
+        f"Saved optimization outputs under: "
+        f"{outputdir / 'UQ_output' / primary.casename / 'MCMC_forcing_output'}"
+    )
     return 0
 
 

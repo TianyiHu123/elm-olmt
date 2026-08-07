@@ -1,0 +1,78 @@
+{
+  "schema": "spinup-forcing-coupling-iter006-decision-v1",
+  "iteration_id": "iter006",
+  "status": "completed",
+  "work_type": "implementation",
+  "objective": "MCMC three-mode spinup wiring (mean / member-restart / coupled)",
+  "bounded_scope": "ABBY smoke; three MCMC spinup modes; coupled drop32/drop21_corr080; <=10 likelihood evals/mode; no production campaign",
+  "acceptance_result": "pass",
+  "decision": "MCMC can select and call locked coupling/offline primitives under each declared spinup mode; mean/member-restart paths still work; production campaign readiness not established",
+  "site": "ABBY",
+  "case": "ABBY_ppe6_I20TRCNPRDCTCBC",
+  "forcing_artifact": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/spinup_forcing_coupling/spinup_forcing_coupling_iter002_release/surrogate_forcing/forcing_surrogate_iter002_sr.pkl",
+  "forcing_artifact_sha256": "8d139b32473eebe3f75f77042e542f49ec3c80e89bc65c76b2e98a5c70f4553e",
+  "default_coupled_variant": "drop21_corr080",
+  "modes": [
+    "mean_spinup",
+    "member_restart",
+    "coupled"
+  ],
+  "smoke_likelihood_evals_per_mode": 10,
+  "mode_results": {
+    "mean_spinup": {
+      "dry_run": true,
+      "smoke_likelihood_evals": 10,
+      "outdir": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/spinup_forcing_coupling/spinup_forcing_coupling_iter006_validate/smoke_mean_spinup"
+    },
+    "member_restart": {
+      "dry_run": true,
+      "smoke_likelihood_evals": 10,
+      "outdir": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/spinup_forcing_coupling/spinup_forcing_coupling_iter006_validate/smoke_member_restart"
+    },
+    "coupled": {
+      "dry_run": true,
+      "smoke_likelihood_evals": 10,
+      "outdir": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/spinup_forcing_coupling/spinup_forcing_coupling_iter006_validate/smoke_coupled"
+    },
+    "coupled_drop32_accept": {
+      "dry_run": true,
+      "smoke_likelihood_evals": 1,
+      "outdir": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/spinup_forcing_coupling/spinup_forcing_coupling_iter006_validate/smoke_coupled_drop32"
+    }
+  },
+  "negative_gates": [
+    "missing_forcing_artifact",
+    "missing_spinup_artifact"
+  ],
+  "authoritative_preflight_job": "23516816",
+  "authoritative_validate_job": "23516840",
+  "output_root": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/spinup_forcing_coupling",
+  "summary_path": "development/spinup_forcing_coupling/summaries/iter006",
+  "passed": true,
+  "closed_at": "2026-08-06T21:11:23-0700",
+  "controlled_paths": [
+    "development/spinup_forcing_coupling/ITERATION_SUMMARY.md",
+    "development/spinup_forcing_coupling/handoff/CURRENT.md",
+    "development/spinup_forcing_coupling/iterations/iter006.md",
+    "development/spinup_forcing_coupling/registry.csv",
+    "development/spinup_forcing_coupling/slurm/iter006/iter006_artifacts.sha256",
+    "development/spinup_forcing_coupling/slurm/iter006/iter006_case_pickles.sha256",
+    "development/spinup_forcing_coupling/slurm/iter006/iter006_source_manifest.sha256",
+    "development/spinup_forcing_coupling/slurm/iter006/preflight_config.env",
+    "development/spinup_forcing_coupling/slurm/iter006/preflight_iter006.py",
+    "development/spinup_forcing_coupling/slurm/iter006/preflight_iter006.slurm",
+    "development/spinup_forcing_coupling/slurm/iter006/validate_config.env",
+    "development/spinup_forcing_coupling/slurm/iter006/validate_iter006.py",
+    "development/spinup_forcing_coupling/slurm/iter006/validate_iter006.slurm",
+    "development/spinup_forcing_coupling/slurm/iter006/validate_iter006_handoff.py",
+    "development/spinup_forcing_coupling/summaries/iter006/iter006_accounting.csv",
+    "development/spinup_forcing_coupling/summaries/iter006/iter006_decision.json",
+    "development/spinup_forcing_coupling/summaries/iter006/iter006_smoke_identity.json",
+    "model_ELM/MCMC_forcing.py",
+    "model_ELM/mcmc_spinup_modes.py",
+    "optimize_surrogate_forcing.py",
+    "tests/test_mcmc_spinup_modes_iter006.py"
+  ],
+  "controlled_paths_manifest_sha256": "eb03d2c4954f63c4dbdf9574245146119f0b48763a38bad1ab2a0a9d2aeb563a",
+  "notes": "Wiring/integrity validation only; smoke obs fixture collocatable synthetic SR; no production campaign."
+}

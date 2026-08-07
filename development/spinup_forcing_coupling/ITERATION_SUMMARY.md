@@ -266,3 +266,48 @@ Mean-spinup offline forcing baseline versus Iter004 arms
 
 Mean-spinup offline baseline compared with Iter004 arms under locked plot/summary contract; predictive scores characterized; production MCMC readiness not established. Limitations: temporary `/xdisk` retention; no skill floor; mean-spinup offline lags member-restart offline and coupled arms on R²/KGE; MCMC campaign not run. Next state:
 Proposed iteration: `iter006` (planning only; MCMC integration of `predict_coupled_sr`; no campaign).
+
+## iter006
+
+- Closed at: `2026-08-06T21:11:23-0700`
+- Status: `completed`
+- Work type: `implementation`
+
+### Objective
+
+MCMC three-mode spinup wiring (mean / member-restart / coupled)
+
+### Locked settings
+
+- Modes: `mean_spinup`, `member_restart`, `coupled` via `--spinup-mode`; coupled variants
+  `drop32` / `drop21_corr080` (default `drop21_corr080`); historical default mean-spinup
+- Ladder: preflight → ABBY validate smoke (dry-run + <=10 likelihood evals/mode) → closeout;
+  no production campaign
+- Site / resources: `development/hpc/puma.md`; preflight 2 CPUs / 30 min; validate 1 CPU / 1 h
+- Provenance: forcing `8d139b32473eebe3f75f77042e542f49ec3c80e89bc65c76b2e98a5c70f4553e`;
+  drop32 `56bbd151103add74b5a0794e8d1bf4496c186d3a72e70b1b65c5ab247abd317e`;
+  drop21_corr080 `1427dc565af858e9c089a5b9545a7f127e42789ef1fe5c9af3af7f8cb12a3023`;
+  repository parent `542b7d3ce74bd3baa23c48b5b4638270be12cf86`
+- Bounded scope: ABBY smoke; three MCMC spinup modes; coupled drop32/drop21_corr080; <=10 likelihood evals/mode; no production campaign
+
+### Quantitative evidence
+
+- Preflight `23516816` `COMPLETED 0:0` elapsed 00:00:34; MaxRSS ~2.47/10 GB
+- Validate `23516840` `COMPLETED 0:0` elapsed 00:05:06; MaxRSS ~5.00/5 GB
+- Smoke: 10 likelihood evals each for mean_spinup, member_restart, coupled; coupled drop32
+  accept with 1 eval; missing-artifact negatives fail closed
+- Compact products: `iter006_smoke_identity.json`; `iter006_accounting.csv`;
+  `iter006_decision.json`
+- Summary path: `development/spinup_forcing_coupling/summaries/iter006`
+- Output root: `/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/spinup_forcing_coupling`
+
+### Gate outcome
+
+- Overall acceptance result: `pass`
+- Work-unit gates: preflight pass; validate pass
+- Decision: MCMC can select and call locked coupling/offline primitives under each declared spinup mode; mean/member-restart paths still work; production campaign readiness not established
+
+### Conclusion
+
+MCMC can select and call locked coupling/offline primitives under each declared spinup mode; mean/member-restart paths still work; production campaign readiness not established. Limitations: temporary `/xdisk` retention; smoke obs fixture not NEON truth; validate near 5 GB ceiling; production campaign not run. Next state:
+Proposed iteration: `iter007` (planning only; production MCMC campaign through locked `--spinup-mode` interface).
