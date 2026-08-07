@@ -1,0 +1,4 @@
+work_unit,job_id,state,exit_code,elapsed,max_rss_kb,notes
+preflight,23515370,COMPLETED,0:0,00:01:40,10484016,authoritative PREFLIGHT_PASS; 2CPU~10GB
+full,23515500,COMPLETED,0:0,00:48:51,5591444,array 1-9 all COMPLETED 0:0; elapsed/MaxRSS are leaf maxima; FULL_LEAF_PASS; timeseries ON
+validate,23515820,COMPLETED,0:0,00:00:10,17132,authoritative VALIDATE_PASS; 9 sites; 2700 member-rows

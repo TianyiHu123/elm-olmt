@@ -15,3 +15,9 @@ iteration under `slurm/iterXXX/`.
 - `evaluate_coupled_surrogate.py` — PPE batch client over both spinup variants and the locked
   forcing artifact; writes per-member metrics, per-site median summaries, feedback plots, and
   optional NetCDF timeseries (`--save-timeseries`).
+
+## Iter004 offline-versus-coupled comparison
+
+- `evaluate_offline_coupled_comparison.py` — nine-site PPE client comparing offline
+  forcing-v1 (ELM restart spinup) vs coupled `drop32`/`drop21_corr080`; writes metrics,
+  timeseries NetCDF, and the locked four-figure plot package per site.

@@ -171,3 +171,50 @@ Coupled spinup–forcing dual-variant ELM PPE SR comparison
 
 Executable dual-variant coupled path demonstrated with ELM comparison evidence; predictive scores characterized; production MCMC readiness not established. Limitations: temporary `/xdisk` retention; no skill floor; some sites negative R²; MCMC campaign not run. Next state:
 Proposed iteration: `iter004` (planning only; MCMC integration of `predict_coupled_sr` primitive; no campaign).
+
+
+## iter004 — Offline Forcing versus Coupled Dual-Variant Comparison
+
+- Closed at: `2026-08-06T17:59:11-0700`
+- Status: `completed`
+- Work type: `implementation`
+- Summary path: `development/spinup_forcing_coupling/summaries/iter004`
+- Output root: `/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/spinup_forcing_coupling`
+
+### Objective
+
+Offline forcing versus coupled dual-variant ELM PPE SR comparison
+
+### Locked settings
+
+- Cases: nine sites; 100 PPE members; arms offline (forcing-v1 + ELM restart), coupled
+  `drop32`, coupled `drop21_corr080`; target `SR`
+- Ladder: preflight → full array `1-9` timeseries ON → validate/closeout; four-figure plot
+  package; no skill floor; MCMC deferred to `iter005`
+- Site / resources: `development/hpc/puma.md`; preflight 2 CPUs / 30 min; full `--mem=20G` /
+  4 h; validate 1 CPU / 1 h
+- Provenance: forcing `8d139b32473eebe3f75f77042e542f49ec3c80e89bc65c76b2e98a5c70f4553e`; drop32 `56bbd151103add74b5a0794e8d1bf4496c186d3a72e70b1b65c5ab247abd317e`; drop21_corr080 `1427dc565af858e9c089a5b9545a7f127e42789ef1fe5c9af3af7f8cb12a3023`;
+  repository parent `6d8391443bbd0a2612e66e17c47414a896e2ab01`
+- Bounded scope label: Nine sites; offline + drop32 + drop21_corr080; 9×100 timeseries ON; four-figure plot package; no skill floor
+
+### Quantitative evidence
+
+- Preflight `23515370` `COMPLETED 0:0`; full array `23515500` leaves 1–9 all `COMPLETED 0:0`;
+  validate `23515820` `COMPLETED 0:0`
+- Characterization (site-median of per-site member-medians): offline median R²≈0.850
+  KGE≈0.862; drop32 median R²≈0.579 KGE≈0.821; drop21_corr080 median R²≈0.651 KGE≈0.816;
+  Pearson r high (~0.93); coupled negative R² at ABBY and WREF
+- Compact products: `iter004_site_metric_medians.csv`; `iter004_accounting.csv`;
+  `iter004_decision.json`
+
+### Gate outcome
+
+- Overall acceptance result: `pass`
+- Work-unit gates: preflight pass; full pass; validate pass
+- Decision: Offline-versus-coupled comparison completed with metrics, timeseries, and plot package; predictive scores characterized; production MCMC readiness not established
+
+### Conclusion
+
+Offline-versus-coupled comparison completed with metrics, timeseries, and plot package; predictive scores characterized; production MCMC readiness not established. Limitations: temporary `/xdisk` retention; no skill floor; coupled lags offline;
+MCMC campaign not run. Next state:
+Proposed iteration: `iter005` (planning only; MCMC integration of `predict_coupled_sr`; no campaign).

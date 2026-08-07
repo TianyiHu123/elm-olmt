@@ -211,4 +211,79 @@ def predict_coupled_sr(
         "forcing_artifact_path": None if forcing_path is None else str(forcing_path),
         "spinup_variant": spinup_art.get("variant"),
         "feature_subset": feature_subset,
+        "spinup_source": "predicted",
+    }
+
+
+def predict_offline_sr(
+    case: Any,
+    *,
+    forcing_artifact: Union[str, Path, Mapping[str, Any]],
+    parameters: Optional[Union[Sequence[float], Mapping[str, float], np.ndarray]] = None,
+    member: Optional[int] = None,
+) -> Dict[str, Any]:
+    """Predict SR with forcing-surrogate-v1 using ELM restart spinup (offline arm).
+
+    Exactly one of ``member`` (1-based PPE index) or ``parameters`` must be supplied.
+    When ``member`` is set, ELM restart TOTSOMC/TOTSOMN for that member enter the design
+    matrix. When ``parameters`` is set without a member, mean ELM restart spinup is used.
+    """
+    if (member is None) == (parameters is None):
+        raise ValueError("Provide exactly one of member= or parameters=")
+
+    forcing_art, forcing_path = _resolve_forcing_artifact(forcing_artifact)
+    forcing_layout = dict(forcing_art["training_layout"])
+
+    if member is not None:
+        member_i = int(member)
+        samples = np.asarray(case.samples, dtype=np.float64).transpose()
+        if member_i < 1 or member_i > samples.shape[0]:
+            raise ValueError(f"member {member_i} outside 1..{samples.shape[0]}")
+        params = samples[member_i - 1, :]
+        forcing_inputs = build_forcing_inference_inputs(
+            case, forcing_layout, spinup_member=member_i
+        )
+    else:
+        member_i = None
+        # Offline parameter mode still needs a parameter vector length match; reuse
+        # coupled normalizer only when a spinup artifact is unavailable by reading
+        # n_params from the forcing layout.
+        n_params = int(forcing_layout.get("n_params", -1))
+        params = np.asarray(parameters, dtype=np.float64).reshape(-1)
+        if n_params > 0 and params.size != n_params:
+            raise ValueError(f"Expected {n_params} parameters, got {params.size}")
+        forcing_inputs = build_forcing_inference_inputs(case, forcing_layout)
+
+    spinup_elm = np.asarray(forcing_inputs["spinup"], dtype=np.float64).ravel()
+    if spinup_elm.size != 2:
+        raise ValueError(f"Expected 2 ELM spinup values, got shape {spinup_elm.shape}")
+
+    X_forcing = compose_forcing_surrogate_design_matrix(
+        forcing_inputs["forcing_engineered"],
+        params,
+        spinup_elm,
+        forcing_layout,
+    )
+    sr_pred = predict_versioned_forcing(forcing_art, X_forcing)[:, 0]
+    ntime = int(forcing_inputs["ntime"])
+    if sr_pred.shape[0] != ntime:
+        raise ValueError(
+            f"SR length {sr_pred.shape[0]} does not match forcing ntime {ntime}"
+        )
+
+    return {
+        "TOTSOMC": float(spinup_elm[0]),
+        "TOTSOMN": float(spinup_elm[1]),
+        "SR": np.asarray(sr_pred, dtype=np.float64),
+        "time": forcing_inputs["forcing_time"],
+        "ntime": ntime,
+        "forcing_time_source": forcing_inputs.get("forcing_time_source"),
+        "spinup_warnings": [],
+        "member": member_i,
+        "parameters": np.asarray(params, dtype=np.float64),
+        "spinup_artifact_path": None,
+        "forcing_artifact_path": None if forcing_path is None else str(forcing_path),
+        "spinup_variant": None,
+        "feature_subset": None,
+        "spinup_source": "elm_restart",
     }
