@@ -7,6 +7,28 @@ import numpy as np
 
 from .MCMC import _mcmc_write_outputs, sample_from_prior
 
+# Populated in worker processes via Pool initializer (avoids re-pickling large static data).
+_WORKER_STATE: Optional[Dict[str, Any]] = None
+
+
+def _init_mcmc_worker(state: Dict[str, Any]) -> None:
+    """Load static MCMC payloads once per worker process."""
+    global _WORKER_STATE
+    _WORKER_STATE = state
+    # Warm artifact caches in each worker so first likelihood eval is not serialized.
+    from .forcing_surrogate_artifact import load_forcing_surrogate_artifact
+    from .spinup_surrogate_artifact import load_spinup_surrogate_artifact
+
+    for _site, sd in state.get("site_data_by_site", {}).items():
+        if str(sd.get("spinup_mode", "")) != "coupled":
+            continue
+        spinup_path = sd.get("spinup_artifact")
+        forcing_path = sd.get("forcing_artifact")
+        if spinup_path:
+            load_spinup_surrogate_artifact(spinup_path, allow_legacy=False)
+        if forcing_path:
+            load_forcing_surrogate_artifact(forcing_path, allow_legacy=False)
+
 
 def run_forcing_surrogate_site(
     site_data: Dict[str, Any],
@@ -20,33 +42,46 @@ def run_forcing_surrogate_site(
     processes (emcee pool).
 
     When ``site_data["spinup_mode"] == "coupled"``, spinup is predicted from the
-    current parameter vector via ``predict_coupled_sr`` (overlap-subset SR).
+    current parameter vector via prepared coupled arrays (no ELM case object).
     Offline modes keep the historical fixed-spinup design-matrix path.
     """
     mode = str(site_data.get("spinup_mode", "mean_spinup"))
     pr = np.asarray(parms_model, dtype=np.float64).ravel()
 
     if mode == "coupled":
-        from .coupled_surrogate import predict_coupled_sr
+        from .coupled_surrogate import predict_coupled_sr_prepared
 
         if list(myvars) != ["SR"]:
             raise ValueError(
                 "coupled spinup mode currently supports myvars=['SR'] only; "
                 f"got {list(myvars)}"
             )
-        pred = predict_coupled_sr(
-            site_data["case"],
+        # Legacy fallback: full case object (not multiprocessing-safe at scale).
+        if "case" in site_data and "forcing_engineered_full" not in site_data:
+            from .coupled_surrogate import predict_coupled_sr
+
+            pred = predict_coupled_sr(
+                site_data["case"],
+                spinup_artifact=site_data["spinup_artifact"],
+                forcing_artifact=site_data["forcing_artifact"],
+                parameters=pr,
+            )
+            sr_full = np.asarray(pred["SR"], dtype=np.float64).ravel()
+            overlap_idx = site_data.get("overlap_indices")
+            if overlap_idx is None:
+                return {"SR": sr_full}
+            return {"SR": sr_full[np.asarray(overlap_idx, dtype=int)]}
+
+        pred = predict_coupled_sr_prepared(
             spinup_artifact=site_data["spinup_artifact"],
             forcing_artifact=site_data["forcing_artifact"],
             parameters=pr,
+            surface=site_data["surface"],
+            climatology=site_data["climatology"],
+            forcing_engineered=site_data["forcing_engineered_full"],
+            overlap_indices=site_data.get("overlap_indices"),
         )
-        sr_full = np.asarray(pred["SR"], dtype=np.float64).ravel()
-        overlap_idx = site_data.get("overlap_indices")
-        if overlap_idx is None:
-            sr = sr_full
-        else:
-            sr = sr_full[np.asarray(overlap_idx, dtype=int)]
-        return {"SR": sr}
+        return {"SR": np.asarray(pred["SR"], dtype=np.float64).ravel()}
 
     fe = np.asarray(site_data["forcing_engineered"], dtype=np.float64)
     sp = np.asarray(site_data["spinup"], dtype=np.float64).ravel()
@@ -82,16 +117,29 @@ def run_forcing_surrogate_site(
 
 def log_posterior_forcing(
     parms,
-    sites,
-    myvars,
-    pmin,
-    pmax,
-    obs,
-    obs_err,
-    nparms_ensemble,
-    nerr_parms,
-    site_data_by_site,
+    sites=None,
+    myvars=None,
+    pmin=None,
+    pmax=None,
+    obs=None,
+    obs_err=None,
+    nparms_ensemble=None,
+    nerr_parms=None,
+    site_data_by_site=None,
 ):
+    # Prefer worker-local static state (Pool initializer) to avoid re-pickling large payloads.
+    state = _WORKER_STATE
+    if state is not None:
+        sites = state["sites"]
+        myvars = state["myvars"]
+        pmin = state["pmin"]
+        pmax = state["pmax"]
+        obs = state["obs"]
+        obs_err = state["obs_err"]
+        nparms_ensemble = state["nparms_ensemble"]
+        nerr_parms = state["nerr_parms"]
+        site_data_by_site = state["site_data_by_site"]
+
     prior = 1.0
     for j in range(nparms_ensemble):
         if parms[j] < pmin[j] or parms[j] > pmax[j]:
@@ -113,7 +161,8 @@ def log_posterior_forcing(
                 li = -0.5 * np.log(2.0 * np.pi) - np.log(myerr[mask]) - 0.5 * ri
                 post += np.sum(li)
     else:
-        post = -9999999
+        # Properly reject out-of-bounds proposals (finite sentinels can corrupt emcee chains).
+        post = -np.inf
     return post
 
 
@@ -136,6 +185,8 @@ def MCMC_forcing(
     fit_error=True,
     n_processes: Optional[int] = None,
     smoke_likelihood_evals: int = 0,
+    output_root: Optional[str] = None,
+    write_diagnostics: bool = False,
 ):
     sites = self.all_sites
     pmin = np.array(self.ensemble_pmin, dtype=float)
@@ -217,23 +268,40 @@ def MCMC_forcing(
                     f"Parameter count mismatch for site '{s}': "
                     f"case has {self.nparms_ensemble} parameters, surrogate expects {n_params_expected}."
                 )
+            from .coupled_surrogate import prepare_coupled_site_arrays
+
+            prepared = prepare_coupled_site_arrays(
+                case_obj,
+                spinup_artifact=fctx["spinup_artifact"],
+                forcing_artifact=fctx["forcing_artifact"],
+            )
+            if int(prepared["n_params"]) != n_params_expected:
+                raise ValueError(
+                    f"Prepared coupled n_params mismatch for site '{s}': "
+                    f"{prepared['n_params']} vs {n_params_expected}"
+                )
+            # Multiprocessing-safe payload: arrays + artifact paths only (no ELM case).
             site_data_by_site[s] = {
                 "spinup_mode": "coupled",
-                "case": case_obj,
-                "spinup_artifact": fctx["spinup_artifact"],
-                "forcing_artifact": fctx["forcing_artifact"],
+                "spinup_artifact": str(prepared["spinup_artifact_path"] or fctx["spinup_artifact"]),
+                "forcing_artifact": str(
+                    prepared["forcing_artifact_path"] or fctx["forcing_artifact"]
+                ),
+                "surface": prepared["surface"],
+                "climatology": prepared["climatology"],
+                "forcing_engineered_full": prepared["forcing_engineered_full"],
                 "overlap_indices": fctx.get("overlap_diagnostics", {}).get(
                     "forcing_overlap_indices"
                 ),
                 "n_params": n_params_expected,
-                "n_forcing_cols": int(meta.get("n_forcing_cols", -1)),
-                "n_spinup": int(meta.get("n_spinup", 2)),
-                "forcing_engineered": fctx.get("forcing_engineered"),
-                "spinup": fctx.get("spinup"),
-                "surrogate_forcing": surrogate_forcing,
-                "x_scaler_forcing": x_scaler_forcing,
-                "y_scaler_forcing": y_scaler_forcing,
+                "n_forcing_cols": int(prepared["n_forcing_cols"]),
+                "n_spinup": int(prepared["n_spinup"]),
             }
+            print(
+                f"COUPLED_SITE_PREPARED site={s} "
+                f"forcing_full={prepared['forcing_engineered_full'].shape} "
+                f"surface={prepared['surface'].shape} clim={prepared['climatology'].shape}"
+            )
         else:
             fe = np.asarray(fctx["forcing_engineered"], dtype=np.float64)
             sp = np.asarray(fctx["spinup"], dtype=np.float64).ravel()
@@ -281,11 +349,16 @@ def MCMC_forcing(
                 "y_scaler_forcing": y_scaler_forcing,
             }
         if "baseline_output" in fctx:
-            for var in fctx["baseline_output"]:
-                print(fctx["baseline_output"][var].shape)
+            baseline_keys = [
+                str(var) for var in fctx["baseline_output"].keys() if var != "taxis"
+            ]
+            print(f"baseline_output site={s} vars={baseline_keys}")
             baseline_output[s] = {
-                str(var): np.asarray(fctx["baseline_output"][var].mean(axis=1)).flatten()[fctx['overlap_diagnostics']['forcing_overlap_indices']]
-                for var in fctx["baseline_output"] if var != "taxis"
+                str(var): np.asarray(fctx["baseline_output"][var].mean(axis=1)).flatten()[
+                    fctx["overlap_diagnostics"]["forcing_overlap_indices"]
+                ]
+                for var in fctx["baseline_output"]
+                if var != "taxis"
             }
 
     # Add parameters to estimate observation error stddev
@@ -362,23 +435,35 @@ def MCMC_forcing(
         for s in sites
     }
 
+    worker_state = {
+        "sites": sites,
+        "myvars": list(myvars),
+        "pmin": np.asarray(pmin, dtype=float),
+        "pmax": np.asarray(pmax, dtype=float),
+        "obs": obs,
+        "obs_err": obs_err,
+        "nparms_ensemble": int(nparms_ensemble),
+        "nerr_parms": int(nerr_parms),
+        "site_data_by_site": site_data_by_site,
+    }
+    # Parent process also uses worker state so log_posterior_forcing has one code path.
+    _init_mcmc_worker(worker_state)
+    print(
+        f"MCMC_WORKER_STATE_READY n_processes={n_processes} "
+        f"sites={list(sites)} nwalkers={nwalkers} nsteps={nsteps}"
+    )
+
     if n_processes > 1:
-        with multiprocessing.Pool(processes=n_processes) as pool:
+        with multiprocessing.Pool(
+            processes=n_processes,
+            initializer=_init_mcmc_worker,
+            initargs=(worker_state,),
+        ) as pool:
             sampler = emcee.EnsembleSampler(
                 nwalkers,
                 nparms_ensemble,
                 log_posterior_forcing,
-                args=(
-                    sites,
-                    myvars,
-                    pmin,
-                    pmax,
-                    obs,
-                    obs_err,
-                    nparms_ensemble,
-                    nerr_parms,
-                    site_data_by_site,
-                ),
+                args=(),
                 pool=pool,
             )
             sampler.run_mcmc(p0, nsteps, progress=True)
@@ -387,17 +472,7 @@ def MCMC_forcing(
             nwalkers,
             nparms_ensemble,
             log_posterior_forcing,
-            args=(
-                sites,
-                myvars,
-                pmin,
-                pmax,
-                obs,
-                obs_err,
-                nparms_ensemble,
-                nerr_parms,
-                site_data_by_site,
-            ),
+            args=(),
         )
         sampler.run_mcmc(p0, nsteps, progress=True)
     
@@ -406,8 +481,37 @@ def MCMC_forcing(
     print("Flat samples size ", samples.shape)
     log_probs = sampler.get_log_prob(discard=nsteps // 5, thin=5, flat=True)
     print("Log probability size ", log_probs.shape)
-    
+    try:
+        print(
+            "Mean acceptance fraction ",
+            float(np.mean(np.asarray(sampler.acceptance_fraction, dtype=float))),
+        )
+    except Exception as exc:  # noqa: BLE001
+        print(f"Acceptance fraction unavailable: {exc}")
+
     n_model_parms = len(ensemble_parms) - nerr_parms
+    # Keep only prior-support samples for postprocess (coupled predict enforces bounds).
+    pmin_m = np.asarray(pmin[:n_model_parms], dtype=float)
+    pmax_m = np.asarray(pmax[:n_model_parms], dtype=float)
+    in_bounds = np.all(
+        (samples[:, :n_model_parms] >= pmin_m) & (samples[:, :n_model_parms] <= pmax_m),
+        axis=1,
+    )
+    finite_lp = np.isfinite(log_probs)
+    keep = in_bounds & finite_lp
+    print(
+        f"POSTPROCESS_FILTER kept={int(np.sum(keep))}/{samples.shape[0]} "
+        f"in_bounds={int(np.sum(in_bounds))} finite_logp={int(np.sum(finite_lp))}"
+    )
+    if not np.any(keep):
+        raise RuntimeError(
+            "No prior-support posterior samples available for postprocess; "
+            "MCMC chain did not retain in-bounds walkers."
+        )
+    samples = samples[keep]
+    log_probs = log_probs[keep]
+
+    predictive_cache: Dict[str, Dict[str, Any]] = {}
     _mcmc_write_outputs(
         self,
         samples=samples,
@@ -423,5 +527,32 @@ def MCMC_forcing(
         fit_error=fit_error,
         outdir_name="MCMC_forcing_output",
         baseline_output=baseline_output if baseline_output else None,
-        olmtdir=workdir
+        olmtdir=workdir,
+        output_root=output_root,
+        predictive_cache=predictive_cache,
     )
+    if write_diagnostics:
+        if not output_root:
+            raise ValueError("write_diagnostics=True requires output_root")
+        from .mcmc_diagnostics import write_mcmc_diagnostics
+
+        write_mcmc_diagnostics(
+            output_root=output_root,
+            sampler=sampler,
+            samples=samples,
+            log_probs=log_probs,
+            ensemble_parms=ensemble_parms,
+            n_model_parms=n_model_parms,
+            nerr_parms=nerr_parms,
+            pmin=pmin,
+            pmax=pmax,
+            sites=sites,
+            myvars=myvars,
+            obs=obs,
+            obs_err=obs_err,
+            baseline_output=baseline_output if baseline_output else None,
+            forcing_context=forcing_context,
+            predictive_cache=predictive_cache,
+            nwalkers=nwalkers,
+            nsteps=nsteps,
+        )

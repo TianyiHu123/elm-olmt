@@ -130,6 +130,94 @@ def _resolve_forcing_artifact(
     return artifact, path
 
 
+def prepare_coupled_site_arrays(
+    case: Any,
+    *,
+    spinup_artifact: Union[str, Path, Mapping[str, Any]],
+    forcing_artifact: Union[str, Path, Mapping[str, Any]],
+    spinup_case: Optional[Any] = None,
+) -> Dict[str, Any]:
+    """Precompute pickle-safe arrays for coupled MCMC workers (no ELM case object)."""
+    spinup_art, spinup_path = _resolve_spinup_artifact(spinup_artifact)
+    forcing_art, forcing_path = _resolve_forcing_artifact(forcing_artifact)
+    components = case_inference_components(
+        case,
+        spinup_art,
+        spinup_case=spinup_case if spinup_case is not None else case,
+        surface_member=None,
+    )
+    forcing_layout = dict(forcing_art["training_layout"])
+    forcing_inputs = build_forcing_inference_inputs(case, forcing_layout)
+    return {
+        "surface": np.asarray(components["surface"], dtype=np.float64).ravel(),
+        "climatology": np.asarray(components["climatology"], dtype=np.float64).ravel(),
+        "forcing_engineered_full": np.asarray(
+            forcing_inputs["forcing_engineered"], dtype=np.float64
+        ),
+        "ntime": int(forcing_inputs["ntime"]),
+        "spinup_artifact_path": None if spinup_path is None else str(spinup_path),
+        "forcing_artifact_path": None if forcing_path is None else str(forcing_path),
+        "n_params": int(forcing_layout.get("n_params", -1)),
+        "n_forcing_cols": int(forcing_layout.get("n_forcing_cols", -1)),
+        "n_spinup": int(forcing_layout.get("n_spinup", 2)),
+    }
+
+
+def predict_coupled_sr_prepared(
+    *,
+    spinup_artifact: Union[str, Path, Mapping[str, Any]],
+    forcing_artifact: Union[str, Path, Mapping[str, Any]],
+    parameters: Union[Sequence[float], Mapping[str, float], np.ndarray],
+    surface: Union[Sequence[float], np.ndarray],
+    climatology: Union[Sequence[float], np.ndarray],
+    forcing_engineered: np.ndarray,
+    overlap_indices: Optional[Sequence[int]] = None,
+) -> Dict[str, Any]:
+    """Coupled SR predict from precomputed arrays (multiprocessing-safe)."""
+    spinup_art, spinup_path = _resolve_spinup_artifact(spinup_artifact)
+    forcing_art, forcing_path = _resolve_forcing_artifact(forcing_artifact)
+    feature_subset = list(spinup_art["training_layout"]["input_feature_names"])
+    params = normalize_physical_parameters(spinup_art, parameters).reshape(-1)
+    X_spinup, warnings = build_selected_inference_matrix(
+        spinup_art,
+        params,
+        surface,
+        climatology,
+        feature_subset,
+    )
+    spinup_pred = predict_versioned_spinup(spinup_art, X_spinup).reshape(-1)
+    if spinup_pred.size != 2:
+        raise ValueError(f"Expected 2 spinup targets, got shape {spinup_pred.shape}")
+    forcing_layout = dict(forcing_art["training_layout"])
+    X_forcing = compose_forcing_surrogate_design_matrix(
+        forcing_engineered,
+        params,
+        spinup_pred,
+        forcing_layout,
+    )
+    sr_pred = np.asarray(
+        predict_versioned_forcing(forcing_art, X_forcing)[:, 0], dtype=np.float64
+    )
+    ntime = int(np.asarray(forcing_engineered).shape[0])
+    if sr_pred.shape[0] != ntime:
+        raise ValueError(
+            f"SR length {sr_pred.shape[0]} does not match forcing ntime {ntime}"
+        )
+    if overlap_indices is not None:
+        sr_pred = sr_pred[np.asarray(overlap_indices, dtype=int)]
+    return {
+        "TOTSOMC": float(spinup_pred[0]),
+        "TOTSOMN": float(spinup_pred[1]),
+        "SR": sr_pred,
+        "ntime": ntime,
+        "spinup_warnings": list(warnings),
+        "parameters": np.asarray(params, dtype=np.float64),
+        "spinup_artifact_path": None if spinup_path is None else str(spinup_path),
+        "forcing_artifact_path": None if forcing_path is None else str(forcing_path),
+        "spinup_source": "predicted",
+    }
+
+
 def predict_coupled_sr(
     case: Any,
     *,

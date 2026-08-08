@@ -311,3 +311,55 @@ MCMC three-mode spinup wiring (mean / member-restart / coupled)
 
 MCMC can select and call locked coupling/offline primitives under each declared spinup mode; mean/member-restart paths still work; production campaign readiness not established. Limitations: temporary `/xdisk` retention; smoke obs fixture not NEON truth; validate near 5 GB ceiling; production campaign not run. Next state:
 Proposed iteration: `iter007` (planning only; joint ABBY+JERC coupled/`drop21_corr080` SR MCMC; integrity-only gates).
+
+## iter007
+
+- Closed at: `2026-08-08T15:13:30-0700`
+- Status: `completed`
+- Work type: `implementation`
+
+### Objective
+
+Joint ABBY+JERC coupled/drop21_corr080 SR MCMC campaign
+
+### Locked settings
+
+- Cases: `ABBY_ppe6_I20TRCNPRDCTCBC`, `JERC_ppe6_I20TRCNPRDCTCBC`; mode coupled /
+  `drop21_corr080`; vars `SR`; `--fit-error`; walkers×steps `64×500`
+- Layout: flat campaign root (`best_params.txt`, `clm_params_best.nc`, `plots/`,
+  `diagnostics/`); no `UQ_output/`
+- Ladder: preflight → campaign → validate/closeout; integrity-only gates; one authorized
+  resource retune; diagnostic-driven retune deferred
+- Site / resources: `development/hpc/puma.md`; preflight 2 CPUs / ~10 GB / 30 min; campaign
+  retuned 24 CPUs / ~120 GB / 12 h / `n_processes=16`; validate 2 CPUs / ~10 GB / 1 h
+- Provenance: forcing `8d139b32473eebe3f75f77042e542f49ec3c80e89bc65c76b2e98a5c70f4553e`; drop21_corr080 `1427dc565af858e9c089a5b9545a7f127e42789ef1fe5c9af3af7f8cb12a3023`; obs ABBY `e5f7b6795616e3dbb2f24ef351d84f79da29847e82729db09d8756b3d9a1fdb2`;
+  obs JERC `a5507878801b83c14a1583a4b9f69a039bee748d8a2da2c50073e5fb94ab2c1f`; repository parent `4051e875bff93742bdf5ccfb69a94a9ce10468c1`
+- Bounded scope: ABBY+JERC joint; coupled drop21_corr080; SR; 64x500; flat campaign layout; suggested diagnostics; integrity-only
+
+### Quantitative evidence
+
+- Preflight `23520801` `COMPLETED 0:0` elapsed 00:01:11; MaxRSS ~9.05/10 GB
+- Campaign attempts: `23520817` TIMEOUT+OOM; `23523589` FAILED postprocess OOB;
+  successful `23523645` `COMPLETED 0:0` elapsed 00:18:18; MaxRSS ~13.59/120 GB;
+  `POSTPROCESS_FILTER kept=5120/5120`; mean acceptance 0.1197; approx ESS 93.8
+- Validate `23523701` `COMPLETED 0:0` elapsed 00:00:11; `VALIDATE_PASS`
+- Characterization: ABBY optimized_best RMSE 5.33 R² -3.12; JERC optimized_best RMSE 2.46
+  R² -7.36; ABBY ΔlogL vs ELM-precal +1.42e5; JERC ΔlogL -4.47e7
+- Compact products: `iter007_accounting.csv`; `iter007_decision.json`; skill/collocation/
+  chain/posterior/delta_logL copies under `development/spinup_forcing_coupling/summaries/iter007`
+- Summary path: `development/spinup_forcing_coupling/summaries/iter007`
+- Output root: `/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/spinup_forcing_coupling`
+
+### Gate outcome
+
+- Overall acceptance result: `pass`
+- Work-unit gates: preflight pass; campaign pass; validate pass
+- Decision: Joint ABBY+JERC production MCMC campaign executed successfully through the locked coupled interface and wrote required products; diagnostic contents are characterization only; calibrated scientific adequacy not claimed
+
+### Conclusion
+
+Joint ABBY+JERC production MCMC campaign executed successfully through the locked coupled interface and wrote required products; diagnostic contents are characterization only; calibrated scientific adequacy not claimed. Limitations: temporary `/xdisk` retention; limited mixing (acceptance≈0.12,
+ESS≈94); predictive skill poor vs obs; JERC optimized likelihood worse than ELM-precal;
+no skill floors applied. Next state:
+Proposed iteration: `iter008` (planning only; diagnostic-driven joint MCMC improvement under
+locked coupled/`drop21_corr080` primitives).

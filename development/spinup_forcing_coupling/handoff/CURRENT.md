@@ -2,60 +2,59 @@
 
 ## Live State
 
-- Active iteration: `iter006`
+- Active iteration: `iter007`
 - Status: `completed`
 - Phase: `closed`
 - Active job IDs: none
 - Site profile: `development/hpc/puma.md`
-- Last updated: `2026-08-07T18:10:00-0700`
+- Last updated: `2026-08-08T15:13:30-0700`
 
 ## Active Kickoff Package and Runtime Authority
 
-- Package state: `exhausted` (Iter006 closed; Iter007 plan fields resolved; package not yet
-  presented)
-- Kickoff goal and stop boundary: Iter006 complete; awaiting Iter007 consolidated kickoff
-  approval for the joint ABBY+JERC coupled production MCMC campaign described below.
-- User response and approval timestamp: Iter006 approved `2026-08-06T20:31:00-0700`;
-  Iter007 none yet.
-- Confirmed HPC system and profile: Puma; `development/hpc/puma.md` (proposed for Iter007).
-- Approved output root: none until Iter007 package approval; proposed root remains
+- Package state: `exhausted` (Iter007 closed; Iter008 package not yet presented)
+- Kickoff goal and stop boundary: Iter007 complete; awaiting Iter008 consolidated kickoff
+  approval for diagnostic-driven MCMC improvement.
+- User response and approval timestamp: Iter007 approved `2026-08-07T18:16:45-0700`;
+  Iter008 none yet.
+- Confirmed HPC system and profile: Puma; `development/hpc/puma.md` (for prior Iter007).
+- Approved output root: none until Iter008 package approval; proposed root remains
   `/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/spinup_forcing_coupling`.
-- Locked dependencies/gates/decision: none until Iter007 approval; see proposed plan.
-- Outside-sandbox and closeout authorities: none until Iter007 package approval.
+- Locked dependencies/gates/decision: none until Iter008 approval; see proposed plan.
+- Outside-sandbox and closeout authorities: none until Iter008 package approval.
 
 ## Current Objective
 
-MCMC three-mode spinup wiring (mean / member-restart / coupled)
+Joint ABBY+JERC coupled/drop21_corr080 SR MCMC campaign
 
 ## Best Evidence So Far
 
 - Work type: `implementation`
-- Bounded scope: ABBY smoke; three MCMC spinup modes; coupled drop32/drop21_corr080; <=10 likelihood evals/mode; no production campaign
+- Bounded scope: ABBY+JERC joint; coupled drop21_corr080; SR; 64x500; flat campaign layout; suggested diagnostics; integrity-only
 - Output root: `/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/spinup_forcing_coupling`
-- Summary path: `development/spinup_forcing_coupling/summaries/iter006`
-- Prior evidence: Iter006 ABBY smoke exercised mean_spinup, member_restart, and coupled
-  (default `drop21_corr080`) with 10 likelihood evals each; coupled `drop32` accepted
+- Summary path: `development/spinup_forcing_coupling/summaries/iter007`
+- Prior evidence: Preflight `23520801` pass; campaign `23523645` `CAMPAIGN_PASS`
+  (after TIMEOUT/OOM `23520817` and postprocess fail `23523589`); validate `23523701`
+  `VALIDATE_PASS`; mean acceptance ≈0.120; approx ESS ≈94
 - Forcing identity: `8d139b32473eebe3f75f77042e542f49ec3c80e89bc65c76b2e98a5c70f4553e`
 - Acceptance result: `pass`
-- Decision: MCMC can select and call locked coupling/offline primitives under each declared spinup mode; mean/member-restart paths still work; production campaign readiness not established
+- Decision: Joint ABBY+JERC production MCMC campaign executed successfully through the locked coupled interface and wrote required products; diagnostic contents are characterization only; calibrated scientific adequacy not claimed
 
 ## Current Risks or Blockers
 
 - `/xdisk` retention is temporary and unbacked.
-- Iter006 validate smoke approached the 5 GB memory allocation; campaign uses a larger envelope.
-- Iter007 planning fields are resolved; awaiting one approval of the complete consolidated
-  kickoff package (plan below is planning-only until then).
+- Iter007 chain health and predictive skill remain weak (characterization only).
+- Awaiting one approval of a complete Iter008 consolidated kickoff package.
 
 ## Next Action
 
-1. Present one complete consolidated Iter007 kickoff package (joint ABBY+JERC coupled
-   MCMC campaign) and obtain explicit user approval before initialization.
+1. Present one complete consolidated Iter008 kickoff package (diagnostic-driven MCMC
+   improvement) and obtain explicit user approval before initialization.
 
 ## Proposed Next-Iteration Plan (Planning Only)
 
 ### Planning Status and Authority Boundary
 
-- Proposed iteration: `iter007`
+- Proposed iteration: `iter008`
 - Proposed work type: `implementation`
 - Status: planning only; not initialized
 - Consolidated kickoff package: not approved
@@ -68,97 +67,69 @@ in an approved consolidated kickoff package. Copy this section unchanged into
 
 ### 1. Sequential ID and work type
 
-- Sequential ID: `iter007`
+- Sequential ID: `iter008`
 - Work type: `implementation`
-- Proposed run slugs: `spinup_forcing_coupling_iter007_preflight`,
-  `spinup_forcing_coupling_iter007_campaign`,
-  `spinup_forcing_coupling_iter007_validate`
+- Proposed run slugs: `spinup_forcing_coupling_iter008_preflight`,
+  `spinup_forcing_coupling_iter008_campaign`,
+  `spinup_forcing_coupling_iter008_validate`
 
 ### 2. Evidence-derived objective and optional hypothesis
 
-Objective: run one joint two-site production MCMC campaign through the Iter006
-`--spinup-mode=coupled` interface (`drop21_corr080`) for `SR` against NEON obs at ABBY and
-JERC, writing posterior, predictive, parameter, and suggested diagnostic products under the
-approved Iter007 campaign run directory (no `UQ_output/` nesting), without retraining or
-changing coupling primitives.
+Objective: improve Iter007 joint ABBY+JERC coupled/`drop21_corr080` SR MCMC chain health
+and predictive characterization under the same locked coupling primitives, using
+diagnostic-driven sampler budget changes (walkers/steps/thin/discard and optional
+site weighting or error model), without retraining surrogates or changing the coupled
+interface schema.
 
-Evidence basis: Iter006 passed wiring gates for mean_spinup, member_restart, and coupled
-(`drop21_corr080` default; `drop32` accepted). Production campaign readiness remains
-unestablished until a real obs-constrained sampler run completes under immutable gates.
+Evidence basis: Iter007 passed integrity gates (`CAMPAIGN_PASS`/`VALIDATE_PASS`) with
+mean acceptance ≈0.120, approx ESS ≈94, and negative R²/KGE for optimized SR at both
+sites; ABBY ΔlogL vs ELM-precal positive while JERC ΔlogL strongly negative.
 
-Optional hypothesis: coupled `drop21_corr080` is the preferred first campaign arm given
-Iter004/005 skill characterization.
+Optional hypothesis: longer, better-mixed chains and/or site-aware likelihood weighting
+will yield more usable posterior predictive characterization without changing coupling
+artifacts.
 
 ### 3. Proposed upstream dependencies and trust assumptions
 
 | Dependency | Role | Trust / lock |
 | --- | --- | --- |
-| Iter002 forcing-surrogate-v1 artifact | Coupled `SR` | Immutable; SHA-256 `8d139b32473eebe3f75f77042e542f49ec3c80e89bc65c76b2e98a5c70f4553e` |
+| Iter002 forcing-surrogate-v1 | Coupled `SR` | Immutable; SHA-256 `8d139b32473eebe3f75f77042e542f49ec3c80e89bc65c76b2e98a5c70f4553e` |
 | Iter012 spinup `drop21_corr080` | Coupled spinup state | Immutable; SHA-256 `1427dc565af858e9c089a5b9545a7f127e42789ef1fe5c9af3af7f8cb12a3023` |
-| Iter006 MCMC mode wiring | CLI/likelihood path | Lock repository identity at kickoff |
-| Cases | Joint targets | `ABBY_ppe6_I20TRCNPRDCTCBC`, `JERC_ppe6_I20TRCNPRDCTCBC` |
-| Site obs NetCDF(s) | Likelihood truth | `/xdisk/chopinsong/chopinsong/CTSM_inputdata/lnd/clm2/neon_ncar/NEON/eval_files/v4/{ABBY,JERC}/{SITE}_cdo_merge.nc`; `--obs-err-vars SR:SR_err` with existing code default of 10% of \|obs\| if `SR_err` missing; lock path hashes at kickoff |
-| `OLMT_puma` and `development/hpc/puma.md` | Runtime/site | Puma; `chopinsong` / `standard` |
+| Iter007 campaign products | Baseline diagnostics | Reuse characterization only; do not reinterpret Iter007 gates |
+| Cases / obs | Joint targets | Same ABBY+JERC cases and NEON v4 obs paths; re-lock hashes at kickoff |
+| `OLMT_puma` / `development/hpc/puma.md` | Runtime/site | Puma; `chopinsong` / `standard` |
 
 ### 4. Bounded scope, work units, and exclusions
 
 Core work:
 
-- One joint multi-site MCMC (shared parameter vector) over ABBY + JERC.
-- Mode: `--spinup-mode=coupled --coupled-spinup-variant=drop21_corr080`; `--vars SR`;
-  `--fit-error` on; nominal `--nwalkers 64 --nsteps 500` (discard `nsteps//5`, thin 5).
-- Diagnostic-driven sampler retune is deferred to a later iteration; Iter007 does not
-  retune for ESS/acceptance/skill.
-- Implementation: write campaign products at the campaign run-dir root (no `UQ_output/`);
-  predictive plots include obs, best-fit, median, 95% CI with `alpha=0.3`, and ELM
-  pre-calibration (ensemble-mean `case.output['SR']` on the collocated window); parameter
-  PDFs/corner retained; emit suggested diagnostics under `diagnostics/`.
+- One diagnostic-driven joint MCMC campaign on ABBY+JERC under coupled/`drop21_corr080`.
+- Allowed changes: `nwalkers`/`nsteps`/discard/thin, optional obs-error / site-weight
+  configuration already supported by the MCMC forcing path, and resource retune from
+  Iter007 seff evidence (~14 GB / 24 CPUs wall ~18 min for 64×500).
+- Retain flat campaign layout and suggested diagnostics; integrity-only gates unless the
+  kickoff package explicitly adds numeric floors.
 - Ladder: preflight → campaign → validate/accounting.
 
-Required campaign layout under `spinup_forcing_coupling_iter007_campaign/`:
-
-```text
-best_params.txt
-clm_params_best.nc
-plots/pdfs/
-plots/corner/
-plots/predictions/{ABBY,JERC}/
-diagnostics/
-```
-
-Suggested diagnostics (required products; integrity-only, no skill floors): collocation
-audit; chain health (acceptance, ESS/autocorr, log-prob trace); skill table (optimized vs
-ELM-precal vs obs); ΔlogL vs ELM-precal when comparable; residual summary; posterior
-summary CSV; prior-edge occupancy. Optional diagnostics (leave-one-site, full residual QQ)
-are out of scope.
-
-Exclusions: retraining; feature selection; multi-mode or multi-variant campaigns;
-surrogate-precalibrated overlay; scientific/diagnostic-driven nsteps/nwalkers retune;
-Git of large binaries/NetCDF/chains; reinterpretation of Iter006 wiring gates; numeric
-skill floors.
+Exclusions: surrogate retraining; coupling schema changes; multi-variant campaigns;
+reinterpretation of Iter007 integrity gates; Git of large binaries/NetCDF/chains.
 
 Nominal scheduler tasks: 3 (preflight, campaign, validate). Provisional hard cap: 5
-(one minimal preflight correction/rerun; one resource-limitation campaign retune/resubmit
-that may adjust only `nsteps`/`nwalkers`/`mem`/`cpus` when the failure is classified as
-OOM, walltime, or equivalent scheduler/resource limit—not for mixing/skill).
+(one minimal preflight correction; one resource-limitation campaign retune).
 
 ### 5. Tentative acceptance gates and decision rule
 
-Pass only if all hold (integrity only):
+Pass only if all hold (integrity only unless kickoff adds floors):
 
 1. Authoritative terminal accounting exists for every task; every failure is classified.
-2. Campaign completes the locked walker/step budget under coupled/`drop21_corr080` without
-   schema/import failures (or completes after one authorized resource-limitation retune
-   within the hard cap).
-3. Required products exist under the approved campaign layout: `best_params.txt`,
-   `clm_params_best.nc`, predictive/parameter plots, and suggested `diagnostics/` files.
+2. Campaign completes the locked sampler budget under coupled/`drop21_corr080`.
+3. Required products exist under the approved campaign layout including diagnostics.
 4. Negative gates for missing artifact/obs/schema failures fail closed.
-5. Compact `summaries/iter007/` and the four durable records agree after handoff validation.
+5. Compact `summaries/iter008/` and the four durable records agree after handoff validation.
 
-Decision rule: pass means the joint ABBY+JERC production MCMC campaign executed
-successfully through the locked coupled interface and wrote the required products.
-Pass does not claim calibrated scientific adequacy; diagnostic contents are
-characterization, not numeric pass/fail floors.
+Decision rule: pass means the diagnostic-driven joint campaign executed successfully and
+wrote required products; skill/ESS/acceptance remain characterization unless explicitly
+gated at kickoff.
 
 ### 6. Proposed site and resource envelope, preflight, review, retry, cancellation, and stop
 
@@ -167,30 +138,30 @@ characterization, not numeric pass/fail floors.
 | HPC / profile | University of Arizona Puma; `development/hpc/puma.md` |
 | Account / partition / env | `chopinsong` / `standard` / `OLMT_puma` |
 | Output root | `/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/spinup_forcing_coupling` |
-| Directory creation | only `spinup_forcing_coupling_iter007_{preflight,campaign,validate}/` |
+| Directory creation | only `spinup_forcing_coupling_iter008_{preflight,campaign,validate}/` |
 | Preflight | 2 CPUs (derived ~10 GB) / 30 min |
-| Campaign | 16 CPUs / 40 GB / 12 h; `--n-processes=16` (provisional; may be optimized later from seff evidence) |
-| Validate | 1 CPU / ≥8 GB / 1 h (raise above Iter006 ~5 GB ceiling) |
+| Campaign | start from Iter007 seff (~24 CPUs / ≥40 GB / wall sized to locked budget) |
+| Validate | 2 CPUs (derived ~10 GB) / 1 h |
 | Review | independent read-only agent before substantive submission |
-| Retry | one minimal preflight correction/rerun; one resource-limitation campaign retune of only `nsteps`/`nwalkers`/`mem`/`cpus`; no automatic application/numerical/diagnostic-driven retry |
-| Cancellation | recorded Iter007 job IDs only under proven universal pre-execution defect |
+| Retry | one minimal preflight correction/rerun; one resource-limitation campaign retune |
+| Cancellation | recorded Iter008 job IDs only under proven universal pre-execution defect |
 | Stop | after terminal accounting, immutable gates, durable records, cross-record validation, and the approved closeout branch |
 
 ### 7. Expected evidence, artifacts, and record updates
 
-- Campaign products under `spinup_forcing_coupling_iter007_campaign/` as above; compact
-  `summaries/iter007/`; finalized `iterations/iter007.md`; `ITERATION_SUMMARY.md` append;
+- Campaign products under `spinup_forcing_coupling_iter008_campaign/`; compact
+  `summaries/iter008/`; finalized `iterations/iter008.md`; `ITERATION_SUMMARY.md` append;
   `registry.csv` row; rebuilt `handoff/CURRENT.md`; handoff validator result
-- Canonical scripts under `slurm/iter007/` (created only after kickoff approval)
-- Code path change: MCMC forcing outputs write to the approved run dir without `UQ_output/`
+- Canonical scripts under `slurm/iter008/`
 
 ### 8. Fresh consolidated kickoff-approval boundary
 
 Present one complete consolidated kickoff package that includes this plan unchanged and
 states runtime contract, exact output-root authority, lifecycle authorities, resources,
-retry/cancellation, outside-sandbox `sbatch`/monitoring/`scancel`, locked mode/site/obs
-budget, and closeout-commit authorization. Obtain one explicit user approval before any
-Iter007 initialization.
+retry/cancellation, outside-sandbox `sbatch`/monitoring/`scancel`, locked sampler budget,
+and closeout-commit authorization. Obtain one explicit user approval before any Iter008
+initialization.
+
 
 ## Next Session Start Protocol
 
@@ -208,10 +179,10 @@ Iter007 initialization.
 
 ## Artifact References
 
-- Current/latest report: `development/spinup_forcing_coupling/iterations/iter006.md`
+- Current/latest report: `development/spinup_forcing_coupling/iterations/iter007.md`
 - Registry: `development/spinup_forcing_coupling/registry.csv`
 - Cumulative summary: `development/spinup_forcing_coupling/ITERATION_SUMMARY.md`
-- Summaries: `development/spinup_forcing_coupling/summaries/iter006`
-- Canonical scripts: `development/spinup_forcing_coupling/slurm/iter006/`
-- Submitted scripts/configurations: under each `spinup_forcing_coupling_iter006_*` run dir
+- Summaries: `development/spinup_forcing_coupling/summaries/iter007`
+- Canonical scripts: `development/spinup_forcing_coupling/slurm/iter007/`
+- Submitted scripts/configurations: under each `spinup_forcing_coupling_iter007_*` run dir
 - Scratch output: `/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/spinup_forcing_coupling`

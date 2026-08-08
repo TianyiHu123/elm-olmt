@@ -121,6 +121,24 @@ class CoupledForwardPathTests(unittest.TestCase):
         coupled.assert_called_once()
         np.testing.assert_allclose(out["SR"], [10.0, 30.0])
 
+    def test_run_forcing_surrogate_site_coupled_uses_prepared_arrays(self) -> None:
+        site_data = {
+            "spinup_mode": "coupled",
+            "spinup_artifact": "/tmp/spinup.pkl",
+            "forcing_artifact": "/tmp/forcing.pkl",
+            "surface": np.ones(3),
+            "climatology": np.ones(4),
+            "forcing_engineered_full": np.ones((5, 2)),
+            "overlap_indices": np.asarray([1, 3]),
+        }
+        with mock.patch(
+            "model_ELM.coupled_surrogate.predict_coupled_sr_prepared",
+            return_value={"SR": np.asarray([11.0, 33.0])},
+        ) as prepared:
+            out = run_forcing_surrogate_site(site_data, np.arange(14, dtype=float), ["SR"])
+        prepared.assert_called_once()
+        np.testing.assert_allclose(out["SR"], [11.0, 33.0])
+
     def test_coupled_rejects_non_sr_vars(self) -> None:
         site_data = {
             "spinup_mode": "coupled",

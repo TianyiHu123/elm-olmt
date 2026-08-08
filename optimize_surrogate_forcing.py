@@ -101,7 +101,25 @@ def _build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--outputdir",
         default=".",
-        help="Base directory where UQ_output will be written (script changes cwd to this path).",
+        help=(
+            "Working/output directory (script changes cwd to this path). "
+            "With --flat-output, MCMC products are written here directly "
+            "(no UQ_output nesting)."
+        ),
+    )
+    parser.add_argument(
+        "--flat-output",
+        action="store_true",
+        help=(
+            "Write MCMC products at --outputdir root "
+            "(best_params.txt, clm_params_best.nc, plots/, diagnostics/) "
+            "instead of ./UQ_output/<casename>/MCMC_forcing_output/."
+        ),
+    )
+    parser.add_argument(
+        "--write-diagnostics",
+        action="store_true",
+        help="Write suggested MCMC diagnostics under <output>/diagnostics/ (requires --flat-output).",
     )
     parser.add_argument(
         "--dry-run-collocation",
@@ -323,7 +341,12 @@ def main() -> int:
         print("\nDry-run requested; skipping MCMC sampling.")
         return 0
 
+    if args.write_diagnostics and not args.flat_output:
+        print("Error: --write-diagnostics requires --flat-output", file=sys.stderr)
+        return 1
+
     smoke_n = int(args.smoke_likelihood_evals or 0)
+    mcmc_output_root = str(outputdir) if args.flat_output else None
     result = primary.MCMC_forcing(
         myvars=myvars,
         forcing_context=forcing_context,
@@ -333,6 +356,8 @@ def main() -> int:
         fit_error=args.fit_error,
         n_processes=args.n_processes,
         smoke_likelihood_evals=smoke_n,
+        output_root=mcmc_output_root,
+        write_diagnostics=bool(args.write_diagnostics),
     )
     if smoke_n > 0:
         print(
@@ -340,10 +365,13 @@ def main() -> int:
             f"evals={result['smoke_likelihood_evals']}"
         )
         return 0
-    print(
-        f"Saved optimization outputs under: "
-        f"{outputdir / 'UQ_output' / primary.casename / 'MCMC_forcing_output'}"
-    )
+    if args.flat_output:
+        print(f"Saved optimization outputs under: {outputdir}")
+    else:
+        print(
+            f"Saved optimization outputs under: "
+            f"{outputdir / 'UQ_output' / primary.casename / 'MCMC_forcing_output'}"
+        )
     return 0
 
 
