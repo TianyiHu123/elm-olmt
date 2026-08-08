@@ -310,4 +310,4 @@ MCMC three-mode spinup wiring (mean / member-restart / coupled)
 ### Conclusion
 
 MCMC can select and call locked coupling/offline primitives under each declared spinup mode; mean/member-restart paths still work; production campaign readiness not established. Limitations: temporary `/xdisk` retention; smoke obs fixture not NEON truth; validate near 5 GB ceiling; production campaign not run. Next state:
-Proposed iteration: `iter007` (planning only; production MCMC campaign through locked `--spinup-mode` interface).
+Proposed iteration: `iter007` (planning only; joint ABBY+JERC coupled/`drop21_corr080` SR MCMC; integrity-only gates).

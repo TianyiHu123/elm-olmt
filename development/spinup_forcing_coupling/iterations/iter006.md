@@ -176,56 +176,89 @@ in an approved consolidated kickoff package. Copy this section unchanged into
 
 ### 2. Evidence-derived objective and optional hypothesis
 
-Objective: run a bounded production MCMC campaign through the Iter006 three-mode
-`--spinup-mode` interface on a predeclared site set and mode choice, writing posterior
-and predictive products under the locked output root, without retraining or changing the
-coupling primitives.
+Objective: run one joint two-site production MCMC campaign through the Iter006
+`--spinup-mode=coupled` interface (`drop21_corr080`) for `SR` against NEON obs at ABBY and
+JERC, writing posterior, predictive, parameter, and suggested diagnostic products under the
+approved Iter007 campaign run directory (no `UQ_output/` nesting), without retraining or
+changing coupling primitives.
 
 Evidence basis: Iter006 passed wiring gates for mean_spinup, member_restart, and coupled
 (`drop21_corr080` default; `drop32` accepted). Production campaign readiness remains
 unestablished until a real obs-constrained sampler run completes under immutable gates.
 
-Optional hypothesis: coupled mode with `drop21_corr080` is the preferred first campaign
-arm given Iter004/005 skill characterization; confirm or revise at kickoff.
+Optional hypothesis: coupled `drop21_corr080` is the preferred first campaign arm given
+Iter004/005 skill characterization.
 
 ### 3. Proposed upstream dependencies and trust assumptions
 
 | Dependency | Role | Trust / lock |
 | --- | --- | --- |
-| Iter002 forcing-surrogate-v1 artifact | Offline/coupled `SR` | Immutable; SHA-256 `8d139b32473eebe3f75f77042e542f49ec3c80e89bc65c76b2e98a5c70f4553e` |
-| Iter012 spinup `drop32` / `drop21_corr080` | Coupled state if selected | Immutable Iter012 hashes |
+| Iter002 forcing-surrogate-v1 artifact | Coupled `SR` | Immutable; SHA-256 `8d139b32473eebe3f75f77042e542f49ec3c80e89bc65c76b2e98a5c70f4553e` |
+| Iter012 spinup `drop21_corr080` | Coupled spinup state | Immutable; SHA-256 `1427dc565af858e9c089a5b9545a7f127e42789ef1fe5c9af3af7f8cb12a3023` |
 | Iter006 MCMC mode wiring | CLI/likelihood path | Lock repository identity at kickoff |
-| Site obs NetCDF(s) | Likelihood truth | Paths/hashes locked at kickoff (not smoke fixtures) |
+| Cases | Joint targets | `ABBY_ppe6_I20TRCNPRDCTCBC`, `JERC_ppe6_I20TRCNPRDCTCBC` |
+| Site obs NetCDF(s) | Likelihood truth | `/xdisk/chopinsong/chopinsong/CTSM_inputdata/lnd/clm2/neon_ncar/NEON/eval_files/v4/{ABBY,JERC}/{SITE}_cdo_merge.nc`; `--obs-err-vars SR:SR_err` with existing code default of 10% of \|obs\| if `SR_err` missing; lock path hashes at kickoff |
 | `OLMT_puma` and `development/hpc/puma.md` | Runtime/site | Puma; `chopinsong` / `standard` |
 
 ### 4. Bounded scope, work units, and exclusions
 
-Core work: one production MCMC campaign using a single locked `--spinup-mode` (and coupled
-variant if applicable), locked site list, walker/step budget, and obs paths; preflight;
-campaign; validate/accounting. Exact site list, mode, and sampler budget locked at kickoff.
+Core work:
 
-Exclusions: retraining; feature selection; multi-mode simultaneous campaigns unless
-explicitly authorized; Git of large binaries/NetCDF/chains; reinterpretation of Iter006
-wiring gates.
+- One joint multi-site MCMC (shared parameter vector) over ABBY + JERC.
+- Mode: `--spinup-mode=coupled --coupled-spinup-variant=drop21_corr080`; `--vars SR`;
+  `--fit-error` on; nominal `--nwalkers 64 --nsteps 500` (discard `nsteps//5`, thin 5).
+- Diagnostic-driven sampler retune is deferred to a later iteration; Iter007 does not
+  retune for ESS/acceptance/skill.
+- Implementation: write campaign products at the campaign run-dir root (no `UQ_output/`);
+  predictive plots include obs, best-fit, median, 95% CI with `alpha=0.3`, and ELM
+  pre-calibration (ensemble-mean `case.output['SR']` on the collocated window); parameter
+  PDFs/corner retained; emit suggested diagnostics under `diagnostics/`.
+- Ladder: preflight → campaign → validate/accounting.
+
+Required campaign layout under `spinup_forcing_coupling_iter007_campaign/`:
+
+```text
+best_params.txt
+clm_params_best.nc
+plots/pdfs/
+plots/corner/
+plots/predictions/{ABBY,JERC}/
+diagnostics/
+```
+
+Suggested diagnostics (required products; integrity-only, no skill floors): collocation
+audit; chain health (acceptance, ESS/autocorr, log-prob trace); skill table (optimized vs
+ELM-precal vs obs); ΔlogL vs ELM-precal when comparable; residual summary; posterior
+summary CSV; prior-edge occupancy. Optional diagnostics (leave-one-site, full residual QQ)
+are out of scope.
+
+Exclusions: retraining; feature selection; multi-mode or multi-variant campaigns;
+surrogate-precalibrated overlay; scientific/diagnostic-driven nsteps/nwalkers retune;
+Git of large binaries/NetCDF/chains; reinterpretation of Iter006 wiring gates; numeric
+skill floors.
 
 Nominal scheduler tasks: 3 (preflight, campaign, validate). Provisional hard cap: 5
-(one minimal preflight correction/rerun; one same-scope scheduler/resource retry).
+(one minimal preflight correction/rerun; one resource-limitation campaign retune/resubmit
+that may adjust only `nsteps`/`nwalkers`/`mem`/`cpus` when the failure is classified as
+OOM, walltime, or equivalent scheduler/resource limit—not for mixing/skill).
 
 ### 5. Tentative acceptance gates and decision rule
 
-Pass only if all hold:
+Pass only if all hold (integrity only):
 
 1. Authoritative terminal accounting exists for every task; every failure is classified.
-2. Campaign completes the locked walker/step budget under the locked spinup-mode without
-   schema/import failures.
-3. Required posterior/predictive products exist under the approved output layout.
+2. Campaign completes the locked walker/step budget under coupled/`drop21_corr080` without
+   schema/import failures (or completes after one authorized resource-limitation retune
+   within the hard cap).
+3. Required products exist under the approved campaign layout: `best_params.txt`,
+   `clm_params_best.nc`, predictive/parameter plots, and suggested `diagnostics/` files.
 4. Negative gates for missing artifact/obs/schema failures fail closed.
 5. Compact `summaries/iter007/` and the four durable records agree after handoff validation.
 
-Decision rule: pass means a production MCMC campaign executed successfully through the
-locked three-mode interface for the predeclared mode/site budget. Pass does not by itself
-claim calibrated scientific adequacy unless numeric skill floors are explicitly added at
-kickoff.
+Decision rule: pass means the joint ABBY+JERC production MCMC campaign executed
+successfully through the locked coupled interface and wrote the required products.
+Pass does not claim calibrated scientific adequacy; diagnostic contents are
+characterization, not numeric pass/fail floors.
 
 ### 6. Proposed site and resource envelope, preflight, review, retry, cancellation, and stop
 
@@ -236,19 +269,20 @@ kickoff.
 | Output root | `/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/spinup_forcing_coupling` |
 | Directory creation | only `spinup_forcing_coupling_iter007_{preflight,campaign,validate}/` |
 | Preflight | 2 CPUs (derived ~10 GB) / 30 min |
-| Campaign | resources locked at kickoff from walker/step/site evidence (Iter006 validate used ~5 GB) |
-| Validate | 1 CPU (derived ~5 GB) / 1 h |
+| Campaign | 16 CPUs / 40 GB / 12 h; `--n-processes=16` (provisional; may be optimized later from seff evidence) |
+| Validate | 1 CPU / ≥8 GB / 1 h (raise above Iter006 ~5 GB ceiling) |
 | Review | independent read-only agent before substantive submission |
-| Retry | one minimal preflight correction/rerun; one same-scope scheduler/resource retry; no automatic application/numerical retry |
+| Retry | one minimal preflight correction/rerun; one resource-limitation campaign retune of only `nsteps`/`nwalkers`/`mem`/`cpus`; no automatic application/numerical/diagnostic-driven retry |
 | Cancellation | recorded Iter007 job IDs only under proven universal pre-execution defect |
 | Stop | after terminal accounting, immutable gates, durable records, cross-record validation, and the approved closeout branch |
 
 ### 7. Expected evidence, artifacts, and record updates
 
-- Campaign posterior/predictive products under approved run dirs; compact
+- Campaign products under `spinup_forcing_coupling_iter007_campaign/` as above; compact
   `summaries/iter007/`; finalized `iterations/iter007.md`; `ITERATION_SUMMARY.md` append;
   `registry.csv` row; rebuilt `handoff/CURRENT.md`; handoff validator result
 - Canonical scripts under `slurm/iter007/` (created only after kickoff approval)
+- Code path change: MCMC forcing outputs write to the approved run dir without `UQ_output/`
 
 ### 8. Fresh consolidated kickoff-approval boundary
 
