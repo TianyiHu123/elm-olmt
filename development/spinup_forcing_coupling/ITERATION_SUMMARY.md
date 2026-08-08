@@ -350,6 +350,106 @@ Joint ABBY+JERC coupled/drop21_corr080 SR MCMC campaign
 - Summary path: `development/spinup_forcing_coupling/summaries/iter007`
 - Output root: `/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/spinup_forcing_coupling`
 
+### Code bug / fix log (campaign)
+
+- `23520817` TIMEOUT + OOM (16 CPUs / 80 GB / 12 h; mem 100%; CPU eff 0.07%; never
+  `run_mcmc done`): emcee `Pool` pickled full ~GB ELM case objects into 16 workers. Fix:
+  slim coupled arrays + `Pool(initializer=...)` in `coupled_surrogate.py` /
+  `MCMC_forcing.py`; keep `n_processes=16`.
+- `23523589` FAILED after `run_mcmc done` (24 CPUs / 120 GB; wall ~6 min; mem ~11 GB):
+  OOB walkers retained because prior used a finite sentinel; postprocess hit
+  `Parameters outside ensemble_pmin/pmax`. Fix: OOB → `-np.inf` and
+  `POSTPROCESS_FILTER` (in-bounds + finite logp) before write/diagnostics in
+  `MCMC_forcing.py`.
+- `23523645` `CAMPAIGN_PASS` under the same sampler budget after both fixes
+  (`POSTPROCESS_FILTER kept=5120/5120`).
+
+### Campaign resource usage and recommended allocation (2-site)
+
+| Job | Allocated | Wall | Memory used | CPU efficiency | Outcome |
+| --- | --- | --- | --- | --- | --- |
+| `23520817` | 16 CPUs / 80 GB / 12 h | 12:00:08 | 80.00 GB (100%) | 0.07% | TIMEOUT + OOM (pre-fix) |
+| `23523589` | 24 CPUs / 120 GB / 12 h | 00:05:54 | 11.10 GB (9.3%) | 38.4% | MCMC OK; FAILED postprocess |
+| `23523645` | 24 CPUs / 120 GB / 12 h | 00:18:18 | 13.59 GB (11.3%) | 20.4% | `CAMPAIGN_PASS` |
+
+Recommended for the same 2-site shape (64×500, `n_processes=16`, after payload fix):
+**16 CPUs / 32–40 GB / 1–2 h / 1 node**. The 24 CPU / 120 GB retune was oversized once the
+pickle bug was fixed; do not re-request 80–120 GB unless slim payloads regress. Scale
+walltime first when increasing `nsteps` or site count. Full detail:
+`iterations/iter007.md` (Execution and Diagnostics).
+
+### MCMC optimization summary report (campaign `23523645`)
+
+Verdict: integrity pass for a joint ABBY+JERC coupled MCMC, but the fit is **not**
+scientifically adequate. Optimization helps ABBY vs ELM-precal and hurts JERC; chain
+mixing is weak. Posterior products are exploratory, not well-converged calibration.
+
+#### Setup
+
+- Mode: `--spinup-mode=coupled` / `drop21_corr080`; vars `SR`; shared parameter vector
+  across ABBY+JERC; `--fit-error` on (`sigma_SR`)
+- Sampler: 64 walkers × 500 steps; discard `nsteps//5` (=100), thin 5 → 5120 flat
+  samples; 14 model parameters + 1 error parameter
+- Collocation: ABBY 26 280 hrs (2019-01-01–2021-12-31); JERC 52 560 hrs
+  (2018-01-01–2023-12-31); skill rows use valid obs masks (ABBY 26 264; JERC 51 882)
+- Products: `best_params.txt`, `clm_params_best.nc`, `plots/{pdfs,corner,predictions}/`,
+  `diagnostics/`; compact copies under `summaries/iter007/`
+
+#### Model skill after optimization (vs NEON obs; characterization only)
+
+| Site | Series | n | RMSE | Bias | R² | KGE |
+| --- | --- | ---: | ---: | ---: | ---: | ---: |
+| ABBY | optimized_best | 26264 | **5.33** | **−4.74** | **−3.12** | **−0.15** |
+| ABBY | elm_precal | 26264 | 6.69 | −6.21 | −5.48 | −0.27 |
+| JERC | optimized_best | 51882 | 2.46 | +2.36 | −7.36 | −0.87 |
+| JERC | elm_precal | 51882 | **1.58** | **+1.43** | **−2.42** | **−0.16** |
+
+ΔlogL (optimized − ELM-precal): ABBY **+1.42×10⁵** (improved); JERC **−4.47×10⁷** (much worse).
+
+Interpretation:
+
+- Shared-parameter joint fit pulls toward ABBY and degrades JERC relative to ELM
+  ensemble-mean precal on the collocated window.
+- Absolute skill remains poor at both sites (negative R²/KGE): MCMC does not produce an
+  obs-matching SR series.
+- Residuals are large and highly autocorrelated (lag-1 ≈ 0.999 ABBY, ≈ 0.993 JERC) with
+  opposite mean signs (ABBY ≈ −4.7; JERC ≈ +2.4) → systematic structure, not white noise.
+- Fitted `sigma_SR` MAP ≈ 3.66 (prior upper ≈ 3.68): observation-error inflation absorbs
+  mismatch rather than explaining SR with parameters alone.
+- Prior-edge occupancy diagnostic reported 0 for all parameters under its threshold;
+  several `rf_*` posteriors remain broad (weakly identified from SR alone). MAP≠mean for
+  some rates (e.g. `k_l1` MAP 0.52 vs mean 1.23).
+
+#### MCMC diagnostics (detailed)
+
+Targets below are practical guidance for a **scientifically usable** stretch-move emcee
+posterior under this workflow. They were **not** Iter007 acceptance gates (integrity only).
+
+| Metric | Current reading | Implication | Target for a valid / usable MCMC optimization |
+| --- | --- | --- | --- |
+| Walkers × steps | 64 × 500 | Short production budget relative to measured τ | Enough that after burn-in, run length ≫ 50τ per chain and ESS is adequate (below); often 10³–10⁴+ steps once τ is known |
+| Discard / thin | discard 100 (`nsteps//5`), thin 5 → 5120 flat | Fixed rule of thumb; not τ-adaptive | Discard ≳ 2–5τ (or until logp stable); thin ~τ/2 to τ; recompute after a pilot run |
+| Mean acceptance fraction | **0.120** (min 0.044, max 0.186) | Proposals rarely accepted; chains mix slowly; some walkers nearly stuck | For emcee stretch move, commonly aim ~**0.2–0.5** (often ~0.25–0.4). Persistently ≪0.2 ⇒ step scale / prior / likelihood geometry issues or need longer adaptation |
+| Mean / max autocorr time τ | **54.6 / 61.3** | Strong serial dependence; each walker yields few independent draws | Prefer stable τ estimate with run length ≳ **50τ** (ideally 100τ) before trusting τ or ESS |
+| Steps / τ | ~500 / 55 ≈ **9** | Under-mixed: total length is only ~9 autocorrelation times | Target **≫ 50** (preferably ≥100) integrated steps per walker after reliable τ |
+| Approx ESS | **~94** | ~94 effective samples for a **15-D** posterior → means/percentiles/predictive bands are noisy | Rule of thumb: **≳ few×10² to 10³+** ESS per parameter of interest (often **≳ 10× n_dim** as a floor; more for tight predictive intervals) |
+| Flat samples kept | **5120 / 5120** in-bounds + finite logp | Prior/`POSTPROCESS_FILTER` fix worked; no OOB pollution in the successful run | Keep ≈ all post-burn thin samples in prior support; large discard of OOB samples ⇒ prior/likelihood bug |
+| Log-prob / walker health | Acceptance spread 0.044–0.186; ESS low | Heterogeneous walker performance; posterior summaries not exchangeable with a well-mixed run | Walkers should have similar acceptance and overlapping traces; no large dead walkers; stable logp after burn-in |
+| Residual lag-1 (skill side) | ≈ **0.999 / 0.993** | IID Gaussian likelihood badly misspecified; σ absorbs structure | For a well-specified likelihood, standardized residuals should be near-uncorrelated; else use correlated-error / robust / weighted likelihood |
+| Site ΔlogL conflict | ABBY ≫ 0 vs ELM; JERC ≪ 0 | Joint shared params are not a single compromise that helps both sites | Valid multi-site calibration should not silently sacrifice one site; use weights, hierarchical offsets, or staged single-site then joint checks |
+| `sigma_SR` vs prior | MAP near upper bound (~3.66 / ~3.68) | Error model saturated; parameter posterior may be compensating for structural bias | Prefer σ interior to prior with good residual diagnostics; bound-hitting σ ⇒ revisit model/obs/likelihood before trusting params |
+
+Bottom line: the chain **ran and wrote integrity-valid products**, but acceptance, τ, steps/τ, and ESS indicate an **exploratory** posterior. Do not treat Iter007 MAP/mean/95% bands as converged scientific calibration.
+
+#### Directions for MCMC improvement
+
+1. **Mixing / budget** — Increase `nsteps` (and possibly walkers) from measured τ so length ≫ 50τ and ESS reaches O(10³)+ per parameter; retune discard/thin from a pilot. Walltime scales roughly with steps (~18 min baseline for 64×500 at 16 workers).
+2. **Resolve site conflict** — Shared params fight (ABBY↑ / JERC↓). Consider site-weighted likelihood, hierarchical site offsets, leave-one-site checks, or separate-site posteriors before joint.
+3. **Likelihood realism** — Homoscedastic independent-time `sigma_SR` mismatches lag-1≈1 residuals. Consider temporally correlated errors, robust likelihood, or downweighting dense hourly points.
+4. **Identifiability** — Broad `rf_*` posteriors suggest weak constraint from SR alone; tighten priors, reduce free params, or add constraining variables if justified.
+5. **Structural vs parametric** — Persistent negative R² and opposite site biases may be surrogate/coupling/obs issues not fixed by longer MCMC alone; use these diagnostics as the Iter008 baseline.
+6. **Ops** — Same 2-site shape after pickle fix: **16 CPUs / 32–40 GB / 1–2 h**; scale walltime with `nsteps`, not memory.
+
 ### Gate outcome
 
 - Overall acceptance result: `pass`
@@ -360,6 +460,7 @@ Joint ABBY+JERC coupled/drop21_corr080 SR MCMC campaign
 
 Joint ABBY+JERC production MCMC campaign executed successfully through the locked coupled interface and wrote required products; diagnostic contents are characterization only; calibrated scientific adequacy not claimed. Limitations: temporary `/xdisk` retention; limited mixing (acceptance≈0.12,
 ESS≈94); predictive skill poor vs obs; JERC optimized likelihood worse than ELM-precal;
-no skill floors applied. Next state:
+no skill floors applied. See **MCMC optimization summary report** above for skill tables,
+diagnostic targets, and improvement directions. Next state:
 Proposed iteration: `iter008` (planning only; diagnostic-driven joint MCMC improvement under
 locked coupled/`drop21_corr080` primitives).

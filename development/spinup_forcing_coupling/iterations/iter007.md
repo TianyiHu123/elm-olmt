@@ -107,6 +107,37 @@ plan refinement in `handoff/CURRENT.md` and `iterations/iter006.md`, planning-bo
 - Characterization (not gates): ABBY optimized_best RMSE 5.33 / R² -3.12; JERC optimized_best
   RMSE 2.46 / R² -7.36; ABBY ΔlogL vs ELM-precal +1.42e5; JERC ΔlogL -4.47e7.
 
+### Code bug / fix log (campaign)
+
+| Job | Failure class | Symptom | Root cause | Fix | Files |
+| --- | --- | --- | --- | --- | --- |
+| `23520817` | Scheduler/resource hang → TIMEOUT + OOM | 12 h wall with AveCPU stuck ~7.5 min; MaxRSS at 80 GB ceiling; 49 `oom_kill`; never `run_mcmc done` | emcee `Pool` workers received full coupled site payloads including ~GB-scale ELM case objects; repeated pickling/shipping of those objects hung progress and exhausted memory | Pre-extract slim arrays (`prepare_coupled_site_arrays` / `predict_coupled_sr_prepared`); pass arrays + artifact paths only; `Pool(initializer=...)` so workers load shared state once; keep `n_processes=16` (no serial fallback) | `model_ELM/coupled_surrogate.py`, `model_ELM/MCMC_forcing.py` |
+| `23523589` | Application/numerical postprocess failure | MCMC finished (`run_mcmc done`, flat samples 5120×15) then FAILED writing predictive outputs: `ValueError: Parameters outside ensemble_pmin/pmax`; chain means polluted (~1e42) while best-fit looked in-bounds | OOB proposals returned a finite prior sentinel instead of `-inf`, so emcee retained invalid walkers that later broke `normalize_physical_parameters` | `log_posterior_forcing` returns `-np.inf` on OOB; filter flat samples to in-bounds + finite log-prob (`POSTPROCESS_FILTER`) before `_mcmc_write_outputs` / diagnostics | `model_ELM/MCMC_forcing.py` |
+| `23523645` | — (success) | `CAMPAIGN_PASS`; `POSTPROCESS_FILTER kept=5120/5120` | — | Confirms both fixes under the same 64×500 / 16-worker coupled path | — |
+
+Notes: the TIMEOUT was not under-provisioned CPUs; it was a multiprocessing payload bug. The 24-CPU / 120 GB retune was an authorized resource response during the hang/OOM path and proved oversized once the pickle fix landed.
+
+### Campaign resource usage and recommended allocation (2-site)
+
+Observed `seff` / `sacct` for the three campaign attempts (joint ABBY+JERC, coupled/`drop21_corr080`, `64×500`, `--n-processes=16`):
+
+| Job | Allocated | Wall | Memory used | CPU efficiency | Outcome |
+| --- | --- | --- | --- | --- | --- |
+| `23520817` | 16 CPUs / 80 GB / 12 h | 12:00:08 | 80.00 GB (100% of request) | 0.07% | TIMEOUT + OOM (pre-fix) |
+| `23523589` | 24 CPUs / 120 GB / 12 h | 00:05:54 | 11.10 GB (9.3%) | 38.4% | MCMC OK; FAILED postprocess |
+| `23523645` | 24 CPUs / 120 GB / 12 h | 00:18:18 | 13.59 GB (11.3%) | 20.4% | `CAMPAIGN_PASS` |
+
+Recommended allocation for the same 2-site MCMC shape (after the payload fix):
+
+| Setting | Recommendation | Rationale |
+| --- | --- | --- |
+| CPUs | 16 (`--cpus-per-task=16`, `--n-processes=16`) | Match worker count; 24 was unused headroom |
+| Memory | 32–40 GB | Observed ~14 GB; ~2–3× headroom for peaks / plot postprocess |
+| Walltime | 1–2 h | Observed ~18 min; leave margin for longer chains |
+| Nodes | 1 | Single-node `Pool` |
+
+Do not re-request 80–120 GB for this shape unless slim payloads regress. Scale walltime first when increasing `nsteps` or site count.
+
 ## Validation, Evaluation, and Decision
 
 | Work unit | Complete and eligible | Evidence | Gate result | Decision rationale |
