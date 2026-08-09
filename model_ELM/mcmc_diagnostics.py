@@ -79,6 +79,13 @@ def write_mcmc_diagnostics(
     predictive_cache: Mapping[str, Mapping[str, Any]],
     nwalkers: int,
     nsteps: int,
+    raw_chain: Optional[np.ndarray] = None,
+    raw_log_probs: Optional[np.ndarray] = None,
+    discard: Optional[int] = None,
+    thin: Optional[int] = None,
+    seed: Optional[int] = None,
+    selection_payload: Optional[Mapping[str, Any]] = None,
+    tau_values: Optional[np.ndarray] = None,
 ) -> Dict[str, Any]:
     root = Path(output_root)
     diag_dir = root / "diagnostics"
@@ -128,7 +135,7 @@ def write_mcmc_diagnostics(
         "nerr_parms": int(nerr_parms),
     }
     try:
-        tau = sampler.get_autocorr_time(tol=0)
+        tau = np.asarray(tau_values, dtype=float) if tau_values is not None else sampler.get_autocorr_time(tol=0)
         tau_a = np.asarray(tau, dtype=float)
         chain_health["mean_autocorr_time"] = float(np.nanmean(tau_a))
         chain_health["max_autocorr_time"] = float(np.nanmax(tau_a))
@@ -140,6 +147,7 @@ def write_mcmc_diagnostics(
         )
     except Exception as exc:  # noqa: BLE001 - characterization only
         chain_health["autocorr_error"] = str(exc)
+        tau_a = np.full(len(ensemble_parms), np.nan, dtype=float)
         chain_health["mean_autocorr_time"] = float("nan")
         chain_health["max_autocorr_time"] = float("nan")
         chain_health["approx_ess"] = float("nan")
@@ -158,6 +166,47 @@ def write_mcmc_diagnostics(
     (diag_dir / "chain_health.json").write_text(
         json.dumps(chain_health, indent=2) + "\n", encoding="utf-8"
     )
+
+    # Per-walker acceptance and per-parameter autocorrelation/stationarity evidence.
+    with (diag_dir / "walker_acceptance.csv").open("w", newline="", encoding="utf-8") as fp:
+        writer = csv.DictWriter(fp, fieldnames=["walker", "acceptance_fraction"])
+        writer.writeheader()
+        writer.writerows(
+            {"walker": int(i), "acceptance_fraction": float(value)}
+            for i, value in enumerate(accept)
+        )
+    with (diag_dir / "parameter_chain_health.csv").open("w", newline="", encoding="utf-8") as fp:
+        fields = [
+            "parameter", "autocorr_time", "steps_per_tau", "ess_approx",
+            "first_half_mean", "second_half_mean", "stationarity_delta",
+        ]
+        writer = csv.DictWriter(fp, fieldnames=fields)
+        writer.writeheader()
+        chain_for_health = np.asarray(raw_chain if raw_chain is not None else sampler.get_chain(), dtype=float)
+        start = int(discard or 0)
+        step = int(thin or 1)
+        chain_for_health = chain_for_health[start::step]
+        midpoint = max(1, chain_for_health.shape[0] // 2)
+        for i, name in enumerate(ensemble_parms):
+            values = chain_for_health[:, :, i] if chain_for_health.size else np.empty((0, nwalkers))
+            first = float(np.mean(values[:midpoint])) if values.size else float("nan")
+            second = float(np.mean(values[midpoint:])) if values.size else float("nan")
+            tau_i = float(tau_a[i]) if i < tau_a.size else float("nan")
+            writer.writerow(
+                {
+                    "parameter": name,
+                    "autocorr_time": tau_i,
+                    "steps_per_tau": (float(nsteps) / tau_i if np.isfinite(tau_i) and tau_i > 0 else float("nan")),
+                    "ess_approx": (float(nwalkers * max(chain_for_health.shape[0], 0)) / tau_i if np.isfinite(tau_i) and tau_i > 0 else float("nan")),
+                    "first_half_mean": first,
+                    "second_half_mean": second,
+                    "stationarity_delta": second - first if np.isfinite(first) and np.isfinite(second) else float("nan"),
+                }
+            )
+    if selection_payload is not None:
+        (diag_dir / "selection_summary.json").write_text(
+            json.dumps(selection_payload, indent=2) + "\n", encoding="utf-8"
+        )
 
     # --- Posterior summary + prior-edge occupancy ---
     edge_eps = 1e-6
@@ -334,6 +383,40 @@ def write_mcmc_diagnostics(
         writer.writeheader()
         writer.writerows(residual_rows)
 
+    # Human-readable, evidence-linked site report.  This is deliberately descriptive:
+    # Iter008 has integrity gates, not scientific quality thresholds.
+    report_lines = [
+        "# Iter008 MCMC diagnostic report",
+        "",
+        "## Reproducible setup",
+        f"- Sites: {', '.join(map(str, sites))}",
+        f"- Variables: {', '.join(map(str, myvars))}",
+        f"- Walkers x steps: {nwalkers} x {nsteps}",
+        f"- Seed: {seed}",
+        f"- Discard/thin: {discard}; {thin}",
+        f"- Eligible draws: {samples.shape[0]}; predictive draws: {(selection_payload or {}).get('predictive_draws', 'unknown')}",
+        "",
+        "## Data and likelihood audit",
+        "See `collocation_audit.csv`, `skill_table.csv`, `delta_logL.csv`, and `residual_summary.csv`.",
+        "The fitted error parameter is site-specific under the locked `--fit-error` formulation.",
+        "",
+        "## Chain health and stationarity",
+        "See `walker_acceptance.csv`, `parameter_chain_health.csv`, `chain_health.json`, and trace plots.",
+        f"- Mean acceptance fraction: {chain_health.get('mean_acceptance_fraction')}",
+        f"- Mean/max autocorrelation time: {chain_health.get('mean_autocorr_time')} / {chain_health.get('max_autocorr_time')}",
+        f"- Approximate ESS: {chain_health.get('approx_ess')}",
+        "",
+        "## Posterior, identifiability, and prior edges",
+        "See `posterior_summary.csv`, `prior_edge_occupancy.csv`, and the parameter posterior plots.",
+        "",
+        "## Predictive and residual diagnostics",
+        "See prediction plots, residual plots, `skill_table.csv`, and `residual_summary.csv`.",
+        "",
+        "## Site conclusion",
+        "Scientific quality is characterization only. The paired validator must classify the next direction as sampler-limited, likelihood-limited, site-specific model/data limitation, joint-calibration candidate, or inconclusive.",
+    ]
+    (root / "diagnostic_report.md").write_text("\n".join(report_lines) + "\n", encoding="utf-8")
+
     index = {
         "schema": "spinup-forcing-coupling-mcmc-diagnostics-v1",
         "diagnostics_dir": str(diag_dir),
@@ -341,6 +424,11 @@ def write_mcmc_diagnostics(
         "chain_health": chain_health,
         "n_collocation_rows": len(collocation_rows),
         "n_skill_rows": len(skill_rows),
+        "raw_chain_shape": None if raw_chain is None else list(np.asarray(raw_chain).shape),
+        "raw_log_prob_shape": None if raw_log_probs is None else list(np.asarray(raw_log_probs).shape),
+        "discard": discard,
+        "thin": thin,
+        "seed": seed,
     }
     (diag_dir / "diagnostics_index.json").write_text(
         json.dumps(index, indent=2) + "\n", encoding="utf-8"

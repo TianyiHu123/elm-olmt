@@ -464,3 +464,44 @@ no skill floors applied. See **MCMC optimization summary report** above for skil
 diagnostic targets, and improvement directions. Next state:
 Proposed iteration: `iter008` (planning only; diagnostic-driven joint MCMC improvement under
 locked coupled/`drop21_corr080` primitives).
+
+## iter008 — Single-site ABBY and JERC coupled SR MCMC diagnostics
+
+- Closed at: `2026-08-09T14:56:00-0700`
+- Status: `completed`
+- Work type: `implementation`
+- Summary path: `development/spinup_forcing_coupling/summaries/iter008`
+- Output root: `/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/spinup_forcing_coupling`
+
+### Objective and bounded scope
+
+Objective label: `Single-site ABBY and JERC coupled/drop21_corr080 SR MCMC diagnostic campaign`.
+Bounded scope label: `ABBY and JERC separately; coupled drop21_corr080; SR; 64x4000; seed 8008; raw-chain diagnostics; integrity-only`.
+
+Demonstrate reproducible, diagnostically interpretable single-site ABBY and JERC `SR` MCMC
+results through the locked coupled `drop21_corr080` interface before further joint-site
+calibration. The bounded scope was separate ABBY and JERC campaigns, `--fit-error`, 64 walkers
+× 4,000 steps, seed 8008, 16 workers, retained raw chains, adaptive diagnostics, and
+integrity-only acceptance; no scientific quality hard gate was applied.
+
+### Locked settings and evidence
+
+- Forcing artifact SHA-256: `8d139b32473eebe3f75f77042e542f49ec3c80e89bc65c76b2e98a5c70f4553e`.
+- Spinup `drop21_corr080` artifact SHA-256:
+  `1427dc565af858e9c089a5b9545a7f127e42789ef1fe5c9af3af7f8cb12a3023`.
+- Preflight `23527081`: `COMPLETED 0:0`, `PREFLIGHT_PASS`; both-site collocation and ABBY
+  32×20 smoke passed.
+- ABBY `23527105`: `COMPLETED 0:0`, 00:24:50, `CAMPAIGN_PASS`; raw-chain SHA-256
+  `5eef997b62fadc8d41505627fdfd11fa86b409573da6192383476a0aa78b5d87`.
+- JERC `23527106`: `COMPLETED 0:0`, 00:49:39, `CAMPAIGN_PASS`; raw-chain SHA-256
+  `34a70beadf021acbc8ddeca160c80cb2c3bbf9b4926a3665402b0cefeb08c080`.
+- Validation `23527337`: `COMPLETED 0:0`, 00:00:24, `VALIDATE_PASS`; paired route
+  `sampler-limited`.
+
+### Gate outcome and conclusion
+
+- Overall acceptance: `pass` (integrity-only).
+- Decision: `sampler-limited`.
+- Both site chains have complete shape/provenance/checksum/standard-product evidence. The
+  paired diagnostics characterize limited mixing and low effective sample behavior; they do
+  not claim calibrated scientific adequacy. `/xdisk` retention remains temporary and unbacked.

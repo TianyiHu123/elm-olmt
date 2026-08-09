@@ -97,6 +97,12 @@ def _build_parser() -> argparse.ArgumentParser:
         default=None,
         help="Number of worker processes for emcee (defaults to SLURM_CPUS_PER_TASK or cpu_count).",
     )
+    parser.add_argument(
+        "--seed",
+        type=int,
+        default=None,
+        help="Deterministic NumPy/emcee initialization seed for reproducible campaigns.",
+    )
     parser.add_argument("--workdir", default=".", help="OLMT root directory with pklfiles/")
     parser.add_argument(
         "--outputdir",
@@ -358,6 +364,7 @@ def main() -> int:
         smoke_likelihood_evals=smoke_n,
         output_root=mcmc_output_root,
         write_diagnostics=bool(args.write_diagnostics),
+        seed=args.seed,
     )
     if smoke_n > 0:
         print(

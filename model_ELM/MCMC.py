@@ -146,6 +146,7 @@ def _mcmc_write_outputs(
     olmtdir="/global/u1/t/tianyihu/elm-olmt",
     output_root=None,
     predictive_cache=None,
+    predictive_samples=None,
     ):
     # Get summary statistics and best parameters
     n_model_parms = len(ensemble_parms) - nerr_parms
@@ -178,7 +179,10 @@ def _mcmc_write_outputs(
         # Tianyi Hu added to output samples
         np.savetxt(f"{outdir}/{ensemble_parms[i]}.txt", samples[:, i])
 
-    n_samples = samples.shape[0]
+    # Posterior summaries use all eligible samples, while expensive predictive
+    # products may use the deterministic Iter008 draw subset.
+    predictive_samples = samples if predictive_samples is None else np.asarray(predictive_samples)
+    n_samples = predictive_samples.shape[0]
     case_by_site = _resolve_cases_by_site(self, sites, olmtdir)
     if baseline_output is None:
         baseline_output = {}
@@ -187,7 +191,7 @@ def _mcmc_write_outputs(
     for s in sites:
         output_dict = {v: [] for v in myvars}
         for i in range(n_samples):
-            parms_model = samples[i, :n_model_parms]
+            parms_model = predictive_samples[i, :n_model_parms]
             output = run_predict_fn[s](parms_model)
             for v in myvars:
                 output_dict[v].append(np.asarray(output[v]).flatten())
@@ -395,4 +399,3 @@ def write_best_params_to_clm(self, best_parms, labels_model, out_nc_path):
             else:
                 print(f"Warning: Parameter {pname} not found in NetCDF file.")
     print(f"Best-fit parameters written to {out_nc_path}")
-

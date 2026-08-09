@@ -2,68 +2,75 @@
 
 ## Live State
 
-- Active iteration: `iter007`
+- Active iteration: `iter008`
 - Status: `completed`
 - Phase: `closed`
-- Active job IDs: none
+- Active job IDs: none; ABBY `23527105`, JERC `23527106`, and validate `23527337` all passed
 - Site profile: `development/hpc/puma.md`
-- Last updated: `2026-08-08T15:13:30-0700`
+- Last updated: `2026-08-09T14:56:00-0700`
 
 ## Active Kickoff Package and Runtime Authority
 
-- Package state: `exhausted` (Iter007 closed; Iter008 package not yet presented)
-- Kickoff goal and stop boundary: Iter007 complete; awaiting Iter008 consolidated kickoff
-  approval for diagnostic-driven MCMC improvement.
-- User response and approval timestamp: Iter007 approved `2026-08-07T18:16:45-0700`;
-  Iter008 none yet.
-- Confirmed HPC system and profile: Puma; `development/hpc/puma.md` (for prior Iter007).
-- Approved output root: none until Iter008 package approval; proposed root remains
-  `/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/spinup_forcing_coupling`.
-- Locked dependencies/gates/decision: none until Iter008 approval; see proposed plan.
-- Outside-sandbox and closeout authorities: none until Iter008 package approval.
+- Package state: `approved` (Iter008 initialized under the consolidated package).
+- Kickoff goal and stop boundary: demonstrate reproducible, diagnostically interpretable
+  single-site ABBY and JERC coupled/drop21_corr080 SR MCMC results; stop after accounting,
+  integrity gates, paired decision, durable records, handoff validation, and closeout.
+- User response and approval timestamp: `approved the complete package`,
+  `2026-08-08T19:59:06-0700`.
+- Confirmed HPC system and profile: Puma; `development/hpc/puma.md`.
+- Approved output root: `/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/spinup_forcing_coupling`;
+  creation limited to the four Iter008 run directories.
+- Locked dependencies/gates/decision: Iter002 forcing SHA-256
+  `8d139b32473eebe3f75f77042e542f49ec3c80e89bc65c76b2e98a5c70f4553e`; Iter012
+  `drop21_corr080` SHA-256 `1427dc565af858e9c089a5b9545a7f127e42789ef1fe5c9af3af7f8cb12a3023`;
+  64x4000 per site; seed 8008; integrity gates and diagnostic classification as recorded
+  in `iterations/iter008.md`.
+- Outside-sandbox and closeout authorities: locked `sbatch` and contract-authorized retries;
+  job-scoped monitoring/accounting; bounded cancellation of recorded Iter008 jobs; one
+  bounded local closeout commit after validation.
 
 ## Current Objective
 
-Joint ABBY+JERC coupled/drop21_corr080 SR MCMC campaign
+Single-site ABBY and JERC coupled/drop21_corr080 SR MCMC diagnostic campaign
 
 ## Best Evidence So Far
 
 - Work type: `implementation`
-- Bounded scope: ABBY+JERC joint; coupled drop21_corr080; SR; 64x500; flat campaign layout; suggested diagnostics; integrity-only
+- Bounded scope: separate ABBY and JERC campaigns; coupled drop21_corr080; SR; 64x4000;
+  fit-error; raw-chain retention and diagnostics; paired comparison; integrity-only
+- Bounded scope label: `ABBY and JERC separately; coupled drop21_corr080; SR; 64x4000; seed 8008; raw-chain diagnostics; integrity-only`
 - Output root: `/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/spinup_forcing_coupling`
-- Summary path: `development/spinup_forcing_coupling/summaries/iter007`
-- Prior evidence: Preflight `23520801` pass; campaign `23523645` `CAMPAIGN_PASS`
-  (after TIMEOUT/OOM `23520817` and postprocess fail `23523589`); validate `23523701`
-  `VALIDATE_PASS`; mean acceptance ≈0.120; approx ESS ≈94
+- Summary path: `development/spinup_forcing_coupling/summaries/iter008`
+- Iter008 evidence: preflight `23527081` `PREFLIGHT_PASS`; ABBY `23527105` and JERC
+  `23527106` `CAMPAIGN_PASS`; validate `23527337` `VALIDATE_PASS`; paired route
+  `sampler-limited`; integrity-only acceptance passed
 - Forcing identity: `8d139b32473eebe3f75f77042e542f49ec3c80e89bc65c76b2e98a5c70f4553e`
 - Acceptance result: `pass`
-- Decision: Joint ABBY+JERC production MCMC campaign executed successfully through the locked coupled interface and wrote required products; diagnostic contents are characterization only; calibrated scientific adequacy not claimed
+- Decision: Single-site ABBY and JERC chains executed successfully through the locked coupled
+  interface and wrote integrity-valid products; paired diagnostics classify the result as
+  sampler-limited; scientific adequacy remains characterization-only
+- Four-record precommit handoff validation: `ITER008_HANDOFF_VALIDATE_PASS`; expected closeout
+  subject: `Close Iter008 single-site coupling diagnostics`.
+- Postcommit handoff validation: `ITER008_HANDOFF_VALIDATE_PASS`; expected parent
+  `88547e394af0cc53cf6fc97680032f8873538152`; worktree clean and no active jobs.
 
 ## Current Risks or Blockers
 
 - `/xdisk` retention is temporary and unbacked.
 - Iter007 chain health and predictive skill remain weak (characterization only).
-- Awaiting one approval of a complete Iter008 consolidated kickoff package.
+- Iter008 used the approved amendment after two classified preflight defects; amended
+  preflight, both campaigns, and validation passed. `/xdisk` retention is temporary and
+  unbacked; scientific diagnostics are not a quality gate.
 
 ## Next Action
 
-1. Present one complete consolidated Iter008 kickoff package (single-site MCMC diagnostic
-   validation) and obtain explicit user approval before initialization.
+1. Workflow stop condition reached: preserve the closed Iter008 records and handoff; no next
+   iteration is proposed or authorized by this closeout.
 
-## Proposed Next-Iteration Plan (Planning Only)
+## Next-Iteration Status
 
-### Planning Status and Authority Boundary
-
-- Proposed iteration: `iter008`
-- Proposed work type: `implementation`
-- Status: planning only; not initialized
-- Consolidated kickoff package: not approved
-- Runtime, scheduler, directory-creation, and commit authority: none
-
-This planning-only proposal grants no initialization, Python, compute, scheduler, retry,
-cancellation, or commit authority. It becomes the finalized plan only when included unchanged
-in an approved consolidated kickoff package. Copy this section unchanged into
-`handoff/CURRENT.md`.
+- No next iteration is proposed or authorized by the Iter008 closeout.
+- Any future iteration must begin with a fresh consolidated package and explicit approval.
 
 ### 1. Sequential ID and work type
 
@@ -224,10 +231,10 @@ Python, scheduler action, or commit.
 
 ## Artifact References
 
-- Current/latest report: `development/spinup_forcing_coupling/iterations/iter007.md`
+- Current/latest report: `development/spinup_forcing_coupling/iterations/iter008.md`
 - Registry: `development/spinup_forcing_coupling/registry.csv`
 - Cumulative summary: `development/spinup_forcing_coupling/ITERATION_SUMMARY.md`
-- Summaries: `development/spinup_forcing_coupling/summaries/iter007`
-- Canonical scripts: `development/spinup_forcing_coupling/slurm/iter007/`
-- Submitted scripts/configurations: under each `spinup_forcing_coupling_iter007_*` run dir
+- Summaries: `development/spinup_forcing_coupling/summaries/iter008`
+- Canonical scripts: `development/spinup_forcing_coupling/slurm/iter008/`
+- Submitted scripts/configurations: under each `spinup_forcing_coupling_iter008_*` run dir
 - Scratch output: `/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/spinup_forcing_coupling`
