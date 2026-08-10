@@ -497,6 +497,8 @@ integrity-only acceptance; no scientific quality hard gate was applied.
   `34a70beadf021acbc8ddeca160c80cb2c3bbf9b4926a3665402b0cefeb08c080`.
 - Validation `23527337`: `COMPLETED 0:0`, 00:00:24, `VALIDATE_PASS`; paired route
   `sampler-limited`.
+- Comprehensive skill, raw-chain, route-selection, hypothesis, and next-experiment report:
+  [`summaries/iter008/iter008_comprehensive_mcmc_report.md`](summaries/iter008/iter008_comprehensive_mcmc_report.md).
 
 ### Gate outcome and conclusion
 
@@ -504,4 +506,7 @@ integrity-only acceptance; no scientific quality hard gate was applied.
 - Decision: `sampler-limited`.
 - Both site chains have complete shape/provenance/checksum/standard-product evidence. The
   paired diagnostics characterize limited mixing and low effective sample behavior; they do
-  not claim calibrated scientific adequacy. `/xdisk` retention remains temporary and unbacked.
+  not claim calibrated scientific adequacy. The comprehensive report concludes that neither
+  chain is converged; JERC has a useful best-fit prediction while ABBY remains poor, and
+  likelihood and ABBY-specific limitations require controlled follow-up after sampler repair.
+  `/xdisk` retention remains temporary and unbacked.

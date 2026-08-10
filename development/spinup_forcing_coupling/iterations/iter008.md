@@ -164,6 +164,12 @@
 
 ## Validation, Evaluation, and Decision
 
+The complete scientific evaluation is
+[`../summaries/iter008/iter008_comprehensive_mcmc_report.md`](../summaries/iter008/iter008_comprehensive_mcmc_report.md).
+It reports site-level best-fit skill, every Iter007 diagnostic criterion, additional raw-chain
+walker/parameter evidence, explicit good/bad judgments, all five route evaluations, the basis
+for selecting `sampler-limited`, and falsifiable next experiments.
+
 | Work unit | Complete and eligible | Evidence | Gate result | Decision rationale |
 | --- | --- | --- | --- | --- |
 | preflight | yes | `23527081` terminal accounting, two-site collocation, ABBY smoke, `PREFLIGHT_PASS` | pass | preflight and smoke integrity gates pass |
