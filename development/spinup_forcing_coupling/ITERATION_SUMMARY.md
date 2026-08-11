@@ -510,3 +510,33 @@ integrity-only acceptance; no scientific quality hard gate was applied.
   chain is converged; JERC has a useful best-fit prediction while ABBY remains poor, and
   likelihood and ABBY-specific limitations require controlled follow-up after sampler repair.
   `/xdisk` retention remains temporary and unbacked.
+
+## iter009 — ABBY and JERC sampler-geometry pilot
+
+- Iteration ID: `iter009`
+- Status: `completed`
+- Work type: `implementation`
+- Summary path: `development/spinup_forcing_coupling/summaries/iter009`
+- Output root: `/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/spinup_forcing_coupling`
+- Objective: `ABBY and JERC sampler-geometry pilot`
+- Bounded scope: `ABBY/JERC sampler-geometry pilot; B/T/I/M/TIM; 30 chains; 64x8000; seeds 9009-9011`
+- Overall acceptance result: `pass`
+- Decision: `investigate_multimodality_nonidentifiability_likelihood_or_model_structure`
+- Next state: `No next iteration is proposed; any follow-up requires a new approved package to investigate multimodality, non-identifiability, likelihood discontinuity, or model structure.`
+
+### Evidence and conclusion
+
+- Dependencies: forcing `8d139b32473eebe3f75f77042e542f49ec3c80e89bc65c76b2e98a5c70f4553e`, spinup
+  `1427dc565af858e9c089a5b9545a7f127e42789ef1fe5c9af3af7f8cb12a3023`, ABBY observations
+  `e5f7b6795616e3dbb2f24ef351d84f79da29847e82729db09d8756b3d9a1fdb2`, and JERC observations
+  `a5507878801b83c14a1583a4b9f69a039bee748d8a2da2c50073e5fb94ab2c1f` all matched locks.
+- Preflight `23538751`, initialization `23538764`, all 30 final campaign leaves, and final
+  validation `23540912` completed `0:0`. The first validation `23540890` failed before
+  evaluation from a missing repository import context; the re-reviewed v5 launcher retry passed.
+- The immutable evaluator verified 30 complete 64x8000 dual-coordinate chains and emitted ten
+  site-arm packages. No arm qualified. TIM had the strongest overlap screens (ABBY/JERC maximum
+  split R-hat `1.0317`/`1.02137`; width fractions `0.000713`/`0.002603`) but did not meet every
+  required criterion, so no least-bad arm was selected.
+- The original 42-task cap was exceeded through explicitly user-approved exception attempts;
+  final submitted count was 48. This is an integrity accounting exception, not silent cap
+  satisfaction. Raw products remain on temporary, unbacked `/xdisk`.

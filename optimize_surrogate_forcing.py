@@ -103,6 +103,34 @@ def _build_parser() -> argparse.ArgumentParser:
         default=None,
         help="Deterministic NumPy/emcee initialization seed for reproducible campaigns.",
     )
+    parser.add_argument(
+        "--sampler-coordinates",
+        choices=["physical", "transformed"],
+        default="physical",
+        help="Iter009 sampler coordinates; transformed runs preserve the physical target via Jacobian.",
+    )
+    parser.add_argument(
+        "--move-configuration",
+        choices=["stretch", "de_mixture"],
+        default="stretch",
+        help="Iter009 proposal configuration.",
+    )
+    parser.add_argument(
+        "--initial-state",
+        default=None,
+        help="Optional .npz bundle containing a physical `initial_state` array.",
+    )
+    parser.add_argument(
+        "--backend",
+        default=None,
+        help="Optional emcee HDF backend path for checkpointed continuation to --nsteps.",
+    )
+    parser.add_argument(
+        "--checkpoint-interval",
+        type=int,
+        default=0,
+        help="Optional checkpoint interval; Iter009 requires 2000 for production chains.",
+    )
     parser.add_argument("--workdir", default=".", help="OLMT root directory with pklfiles/")
     parser.add_argument(
         "--outputdir",
@@ -353,6 +381,12 @@ def main() -> int:
 
     smoke_n = int(args.smoke_likelihood_evals or 0)
     mcmc_output_root = str(outputdir) if args.flat_output else None
+    initial_state = None
+    if args.initial_state:
+        bundle = np.load(args.initial_state, allow_pickle=False)
+        if "initial_state" not in bundle:
+            raise ValueError("--initial-state bundle must contain an initial_state array")
+        initial_state = np.asarray(bundle["initial_state"], dtype=float)
     result = primary.MCMC_forcing(
         myvars=myvars,
         forcing_context=forcing_context,
@@ -365,6 +399,11 @@ def main() -> int:
         output_root=mcmc_output_root,
         write_diagnostics=bool(args.write_diagnostics),
         seed=args.seed,
+        sampler_coordinates=args.sampler_coordinates,
+        move_configuration=args.move_configuration,
+        initial_state=initial_state,
+        backend_path=args.backend,
+        checkpoint_interval=args.checkpoint_interval,
     )
     if smoke_n > 0:
         print(

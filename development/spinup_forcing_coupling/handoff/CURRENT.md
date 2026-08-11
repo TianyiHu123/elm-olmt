@@ -2,78 +2,82 @@
 
 ## Live State
 
-- Active iteration: `iter008`
+- Active iteration: `iter009`
 - Status: `completed`
 - Phase: `closed`
-- Active job IDs: none; ABBY `23527105`, JERC `23527106`, and validate `23527337` all passed
+- Active job IDs: none
 - Site profile: `development/hpc/puma.md`
-- Last updated: `2026-08-10T20:22:44-0700`
+- Last updated: `2026-08-11T14:20:00-07:00`
 
 ## Active Kickoff Package and Runtime Authority
 
-- Package state: `approved` (Iter008 initialized under the consolidated package).
-- Kickoff goal and stop boundary: demonstrate reproducible, diagnostically interpretable
-  single-site ABBY and JERC coupled/drop21_corr080 SR MCMC results; stop after accounting,
-  integrity gates, paired decision, durable records, handoff validation, and closeout.
-- User response and approval timestamp: `approved the complete package`,
-  `2026-08-08T19:59:06-0700`.
+- Package state: `approved` (Iter009 initialized under the consolidated package).
+- Kickoff goal and stop boundary: complete the immutable 30-chain ABBY/JERC sampler-geometry
+  pilot; stop after terminal accounting, integrity and geometry evaluation, durable records,
+  handoff validation, and one local closeout commit.
+- User response and approval timestamp: `approve for the complete iter009 package`,
+  `2026-08-10T20:29:27-07:00`.
 - Confirmed HPC system and profile: Puma; `development/hpc/puma.md`.
 - Approved output root: `/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/spinup_forcing_coupling`;
-  creation limited to the four Iter008 run directories.
-- Locked dependencies/gates/decision: Iter002 forcing SHA-256
-  `8d139b32473eebe3f75f77042e542f49ec3c80e89bc65c76b2e98a5c70f4553e`; Iter012
-  `drop21_corr080` SHA-256 `1427dc565af858e9c089a5b9545a7f127e42789ef1fe5c9af3af7f8cb12a3023`;
-  64x4000 per site; seed 8008; integrity gates and diagnostic classification as recorded
-  in `iterations/iter008.md`.
+  creation limited to the eight Iter009 run directories in the finalized plan.
+- Locked dependencies/gates/decision: the exact complete plan below; Iter002 forcing and Iter012
+  `drop21_corr080`, ABBY/JERC observations and Iter008 raw chains have the recorded hashes;
+  five arms, three seeds, 30 leaves, 64x8000, physical posterior fixed, and immutable integrity
+  and geometry-qualification rules.
 - Outside-sandbox and closeout authorities: locked `sbatch` and contract-authorized retries;
-  job-scoped monitoring/accounting; bounded cancellation of recorded Iter008 jobs; one
-  bounded local closeout commit after validation.
+  job-scoped monitoring/accounting; bounded cancellation of recorded Iter009 jobs; one bounded
+  local closeout commit after validation.
 
 ## Current Objective
 
-Single-site ABBY and JERC coupled/drop21_corr080 SR MCMC diagnostic campaign
+ABBY and JERC sampler-geometry pilot
+
+- Iteration ID: `iter009`
+- Status: `completed`
+- Work type: `implementation`
+- Objective: `ABBY and JERC sampler-geometry pilot`
+- Bounded scope: `ABBY/JERC sampler-geometry pilot; B/T/I/M/TIM; 30 chains; 64x8000; seeds 9009-9011`
+- Overall acceptance result: `pass`
+- Decision: `investigate_multimodality_nonidentifiability_likelihood_or_model_structure`
+- Next state: `No next iteration is proposed; any follow-up requires a new approved package to investigate multimodality, non-identifiability, likelihood discontinuity, or model structure.`
 
 ## Best Evidence So Far
 
 - Work type: `implementation`
-- Bounded scope: separate ABBY and JERC campaigns; coupled drop21_corr080; SR; 64x4000;
-  fit-error; raw-chain retention and diagnostics; paired comparison; integrity-only
-- Bounded scope label: `ABBY and JERC separately; coupled drop21_corr080; SR; 64x4000; seed 8008; raw-chain diagnostics; integrity-only`
+- Bounded scope: five-arm sampler-geometry pilot; separate ABBY/JERC; 30 chains; 64x8000;
+  three shared seeds; fixed physical posterior; integrity plus geometry routing
+- Bounded scope label: `ABBY/JERC sampler-geometry pilot; B/T/I/M/TIM; 30 chains; 64x8000; seeds 9009-9011`
 - Output root: `/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/spinup_forcing_coupling`
-- Summary path: `development/spinup_forcing_coupling/summaries/iter008`
-- Iter008 evidence: preflight `23527081` `PREFLIGHT_PASS`; ABBY `23527105` and JERC
-  `23527106` `CAMPAIGN_PASS`; validate `23527337` `VALIDATE_PASS`; paired route
-  `sampler-limited`; integrity-only acceptance passed
+- Summary path: `development/spinup_forcing_coupling/summaries/iter009`
+- Iter008 evidence: integrity-valid chains and paired route `sampler-limited`; all Iter009
+  dependencies were re-hashed and match the finalized plan before approval
 - Forcing identity: `8d139b32473eebe3f75f77042e542f49ec3c80e89bc65c76b2e98a5c70f4553e`
-- Acceptance result: `pass`
-- Decision: Single-site ABBY and JERC chains executed successfully through the locked coupled
-  interface and wrote integrity-valid products; paired diagnostics classify the result as
-  sampler-limited; scientific adequacy remains characterization-only
-- Four-record precommit handoff validation: `ITER008_HANDOFF_VALIDATE_PASS`; expected closeout
-  subject: `Close Iter008 single-site coupling diagnostics`.
-- Postcommit handoff validation: `ITER008_HANDOFF_VALIDATE_PASS`; expected parent
-  `88547e394af0cc53cf6fc97680032f8873538152`; worktree clean and no active jobs.
+- Acceptance result: `pass` for integrity and provenance. All 30 final campaign leaves and the
+  authoritative validation `23540912` completed `0:0`; 30 complete raw-chain/HDF/provenance
+  bundles and ten site-arm packages were verified.
+- Decision: no geometry-qualified arm. `TIM` is nearest to the overlap screens (ABBY/JERC
+  maximum split R-hat 1.0317/1.02137 and cross-seed width fraction 0.000713/0.002603), but it
+  still fails the immutable all-criteria rule; no least-bad winner is selected.
 
 ## Current Risks or Blockers
 
 - `/xdisk` retention is temporary and unbacked.
-- Iter007 chain health and predictive skill remain weak (characterization only).
-- Iter008 used the approved amendment after two classified preflight defects; amended
-  preflight, both campaigns, and validation passed. `/xdisk` retention is temporary and
-  unbacked; scientific diagnostics are not a quality gate.
+- Geometry qualification did not pass for any arm. This is a scientific routing result, not an
+  integrity failure; follow-up requires fresh approval.
+- The original 42-task cap is exceeded by user-approved exception attempts: two additional
+  preflight attempts and two six-leaf B application recoveries make the pre-validation total 46.
+  Final integrity accounting must state the exception and cannot represent the original cap as met.
 
 ## Next Action
 
-1. Preserve the closed Iter008 evidence. At the next kickoff, present the complete
-   planning-only Iter009 proposal below unchanged inside one consolidated runtime package and
-   obtain explicit approval before initialization.
+1. Iter009 is closed after cross-record validation and the bounded local closeout commit.
 
-## Next-Iteration Status
+## Finalized Iter009 Plan
 
-- Proposed iteration: `iter009`; status sentinel `not_initialized`; planning only.
-- The complete proposal is recorded identically here and in `iterations/iter008.md`.
-- No initialization, implementation, external directory, compute, scheduler, retry,
-  cancellation, records-mutation, reviewer-delegation, or commit authority exists.
+- Iteration: `iter009`; plan finalized and approved.
+- The complete plan remains identical to the planning-only proposal in `iterations/iter008.md`.
+- Authority is exactly the approved consolidated package above; no change to an immutable term is
+  authorized.
 
 ### 1. Sequential ID and work type
 
@@ -318,17 +322,13 @@ rebuilds `handoff/CURRENT.md`, and runs a cross-record validator. After all gate
 proposed closeout branch permits exactly one bounded local commit with expected subject
 `Close Iter009 sampler geometry pilot`; raw/large outputs are excluded and no push is proposed.
 
-### 8. Fresh consolidated kickoff boundary
+### 8. Consolidated kickoff approval
 
-This proposal and the preceding stepwise planning decisions grant no initialization,
-implementation, external-directory creation, compute-node Python, reviewer delegation,
-scheduler submission/monitoring/cancellation, retry, records mutation, or commit authority.
-At kickoff, present this plan unchanged inside one consolidated package that states the exact
-source lock and controlled paths; output and retention policy; final resource and task envelope;
-preparation, independent review, preflight, initialization, submission, continuous monitoring,
-terminal accounting, evaluation, records, validation, retry, cancellation, outside-sandbox, and
-closeout authorities; and the one-commit/no-push branch. Obtain one explicit approval of that
-complete package before initializing Iter009.
+The user approved this unchanged plan as the complete Iter009 package on
+`2026-08-10T20:29:27-07:00`. The active contract is recorded above and in
+`iterations/iter009.md`; it authorizes only the stated preparation, review, runtime, recovery,
+record, and closeout actions. Any material change still requires a revised package and fresh
+approval.
 
 ## Next Session Start Protocol
 

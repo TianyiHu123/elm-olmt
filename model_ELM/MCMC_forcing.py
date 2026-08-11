@@ -10,6 +10,7 @@ import emcee
 import numpy as np
 
 from .MCMC import _mcmc_write_outputs, sample_from_prior
+from .mcmc_geometry import CoordinateTransform, make_move_configuration
 
 # Populated in worker processes via Pool initializer (avoids re-pickling large static data).
 _WORKER_STATE: Optional[Dict[str, Any]] = None
@@ -170,6 +171,24 @@ def log_posterior_forcing(
     return post
 
 
+def log_posterior_forcing_sampler(sampler_coordinates):
+    """Evaluate the physical target, including a Jacobian for transformed sampling."""
+    state = _WORKER_STATE
+    if state is None:
+        raise RuntimeError("sampler log posterior requires initialized worker state")
+    transform = state.get("coordinate_transform")
+    if transform is None:
+        return log_posterior_forcing(sampler_coordinates)
+    try:
+        physical = transform.sampler_to_physical(np.asarray(sampler_coordinates, dtype=float))
+        physical_log_prob = log_posterior_forcing(physical)
+        if not np.isfinite(physical_log_prob):
+            return -np.inf
+        return float(physical_log_prob + transform.log_abs_det_dphysical_dsampler(sampler_coordinates))
+    except (ValueError, FloatingPointError, OverflowError):
+        return -np.inf
+
+
 def _attach_forcing_surrogate_from_primary(primary_case, target_case):
     if hasattr(target_case, "surrogate_forcing") and target_case.surrogate_forcing:
         return
@@ -192,6 +211,11 @@ def _write_iter008_raw_chain(
     sites: Sequence[str],
     nwalkers: int,
     nsteps: int,
+    sampler_chain: Optional[np.ndarray] = None,
+    transform_metadata: Optional[Dict[str, Any]] = None,
+    move_configuration: Optional[str] = None,
+    backend_path: Optional[str | Path] = None,
+    physical_log_prob: Optional[np.ndarray] = None,
 ) -> Dict[str, Any]:
     """Write the immutable raw-chain package before any postprocessing."""
     root = Path(output_root)
@@ -200,15 +224,19 @@ def _write_iter008_raw_chain(
     meta_path = root / "raw_chain_metadata.json"
     if raw_path.exists() or meta_path.exists():
         raise FileExistsError("Iter008 raw-chain package already exists; refusing overwrite")
-    np.savez_compressed(
-        raw_path,
-        chain=np.asarray(chain, dtype=np.float64),
-        log_prob=np.asarray(log_prob, dtype=np.float64),
-        initial_state=np.asarray(initial_state, dtype=np.float64),
-        parameter_names=np.asarray(list(parameter_names), dtype="U"),
-        pmin=np.asarray(pmin, dtype=np.float64),
-        pmax=np.asarray(pmax, dtype=np.float64),
-    )
+    payload = {
+        "chain": np.asarray(chain, dtype=np.float64),
+        "log_prob": np.asarray(log_prob, dtype=np.float64),
+        "initial_state": np.asarray(initial_state, dtype=np.float64),
+        "parameter_names": np.asarray(list(parameter_names), dtype="U"),
+        "pmin": np.asarray(pmin, dtype=np.float64),
+        "pmax": np.asarray(pmax, dtype=np.float64),
+    }
+    if sampler_chain is not None:
+        payload["sampler_chain"] = np.asarray(sampler_chain, dtype=np.float64)
+    if physical_log_prob is not None:
+        payload["physical_log_prob"] = np.asarray(physical_log_prob, dtype=np.float64)
+    np.savez_compressed(raw_path, **payload)
     raw_hash = hashlib.sha256(raw_path.read_bytes()).hexdigest()
     provenance: Dict[str, Any] = {}
     for key in (
@@ -225,7 +253,7 @@ def _write_iter008_raw_chain(
             if candidate.is_file():
                 provenance[f"{key}_sha256"] = hashlib.sha256(candidate.read_bytes()).hexdigest()
     metadata = {
-        "schema": "spinup-forcing-coupling-iter008-raw-chain-v1",
+        "schema": "spinup-forcing-coupling-raw-chain-v2",
         "chain_shape": list(np.asarray(chain).shape),
         "log_prob_shape": list(np.asarray(log_prob).shape),
         "initial_state_shape": list(np.asarray(initial_state).shape),
@@ -236,6 +264,15 @@ def _write_iter008_raw_chain(
         "sites": list(sites),
         "nwalkers": int(nwalkers),
         "nsteps": int(nsteps),
+        "sampler_chain_shape": None if sampler_chain is None else list(np.asarray(sampler_chain).shape),
+        "physical_log_prob_shape": None if physical_log_prob is None else list(np.asarray(physical_log_prob).shape),
+        "sampler_log_prob_convention": (
+            "physical_log_posterior + log_abs_det_dphysical_dsampler"
+            if sampler_chain is not None else "physical_log_posterior"
+        ),
+        "transform": transform_metadata,
+        "move_configuration": move_configuration,
+        "backend_path": None if backend_path is None else str(backend_path),
         "provenance": provenance,
         "raw_chain_sha256": raw_hash,
     }
@@ -354,6 +391,11 @@ def MCMC_forcing(
     output_root: Optional[str] = None,
     write_diagnostics: bool = False,
     seed: Optional[int] = None,
+    sampler_coordinates: str = "physical",
+    move_configuration: str = "stretch",
+    initial_state: Optional[np.ndarray] = None,
+    backend_path: Optional[str | Path] = None,
+    checkpoint_interval: int = 0,
 ):
     sites = self.all_sites
     pmin = np.array(self.ensemble_pmin, dtype=float)
@@ -580,7 +622,31 @@ def MCMC_forcing(
 
     if seed is not None:
         np.random.seed(int(seed))
-    p0 = sample_from_prior(pmin, pmax, nwalkers)
+    transform = CoordinateTransform.from_parameters(
+        ensemble_parms, pmin, pmax, enabled=(sampler_coordinates == "transformed")
+    )
+    if sampler_coordinates not in {"physical", "transformed"}:
+        raise ValueError(f"unsupported sampler coordinate system: {sampler_coordinates}")
+    if output_root is None:
+        raise ValueError("raw-chain retention requires output_root")
+    if checkpoint_interval and (checkpoint_interval <= 0 or nsteps % checkpoint_interval):
+        raise ValueError("checkpoint interval must be a positive divisor of nsteps")
+    if initial_state is None:
+        physical_initial = sample_from_prior(pmin, pmax, nwalkers)
+    else:
+        physical_initial = np.asarray(initial_state, dtype=float)
+        if physical_initial.shape != (nwalkers, nparms_ensemble):
+            raise ValueError(
+                f"initial state must have shape {(nwalkers, nparms_ensemble)}, got {physical_initial.shape}"
+            )
+        # Enforce strict bounds, uniqueness, and full rank before an Iter009 chain starts.
+        if not np.all(np.isfinite(physical_initial)) or np.any(physical_initial <= pmin) or np.any(physical_initial >= pmax):
+            raise ValueError("initial state is non-finite or outside strict physical bounds")
+        if np.unique(physical_initial, axis=0).shape[0] != nwalkers:
+            raise ValueError("initial state must contain distinct walkers")
+        if np.linalg.matrix_rank(physical_initial - physical_initial.mean(axis=0)) < nparms_ensemble:
+            raise ValueError("initial state does not have full parameter rank")
+    p0 = transform.physical_to_sampler(physical_initial)
 
     # Determine worker count (and cap it to available CPUs).
     avail = os.cpu_count() or 1
@@ -614,13 +680,56 @@ def MCMC_forcing(
         "nparms_ensemble": int(nparms_ensemble),
         "nerr_parms": int(nerr_parms),
         "site_data_by_site": site_data_by_site,
+        "coordinate_transform": transform,
     }
     # Parent process also uses worker state so log_posterior_forcing has one code path.
     _init_mcmc_worker(worker_state)
     print(
         f"MCMC_WORKER_STATE_READY n_processes={n_processes} "
-        f"sites={list(sites)} nwalkers={nwalkers} nsteps={nsteps}"
+        f"sites={list(sites)} nwalkers={nwalkers} nsteps={nsteps} coordinates={sampler_coordinates}"
     )
+
+    moves = make_move_configuration(move_configuration)
+    backend = None
+    if backend_path is not None:
+        backend_file = Path(backend_path)
+        backend_file.parent.mkdir(parents=True, exist_ok=True)
+        backend = emcee.backends.HDFBackend(str(backend_file))
+        if not backend_file.exists():
+            backend.reset(nwalkers, nparms_ensemble)
+        else:
+            backend_iteration = int(backend.iteration)
+            if backend_iteration == 0:
+                backend.reset(nwalkers, nparms_ensemble)
+            elif backend_iteration > nsteps:
+                raise ValueError(f"HDF backend has {backend_iteration} steps, exceeds locked {nsteps}")
+
+    checkpoint_path = Path(output_root, "checkpoint_manifest.json") if checkpoint_interval else None
+
+    def record_checkpoint() -> None:
+        if checkpoint_path is None:
+            return
+        backend_hash = None
+        if backend_path is not None and Path(backend_path).is_file():
+            backend_hash = hashlib.sha256(Path(backend_path).read_bytes()).hexdigest()
+        payload = {
+            "schema": "spinup-forcing-coupling-iter009-checkpoints-v1",
+            "backend": None if backend_path is None else str(backend_path),
+            "backend_sha256": backend_hash,
+            "backend_iteration": int(sampler.iteration),
+            "required_steps": list(range(checkpoint_interval, nsteps + 1, checkpoint_interval)),
+            "recorded_steps": list(range(checkpoint_interval, int(sampler.iteration) + 1, checkpoint_interval)),
+        }
+        temporary = checkpoint_path.with_suffix(".json.tmp")
+        temporary.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+        temporary.replace(checkpoint_path)
+
+    def run_locked_chunks() -> None:
+        while int(sampler.iteration) < nsteps:
+            remaining = nsteps - int(sampler.iteration)
+            chunk = min(remaining, checkpoint_interval if checkpoint_interval else remaining)
+            sampler.run_mcmc(None if sampler.iteration else p0, chunk, progress=True)
+            record_checkpoint()
 
     if n_processes > 1:
         with multiprocessing.Pool(
@@ -631,30 +740,38 @@ def MCMC_forcing(
             sampler = emcee.EnsembleSampler(
                 nwalkers,
                 nparms_ensemble,
-                log_posterior_forcing,
+                log_posterior_forcing_sampler,
                 args=(),
                 pool=pool,
+                moves=moves,
+                backend=backend,
             )
-            sampler.run_mcmc(p0, nsteps, progress=True)
+            run_locked_chunks()
     else:
         sampler = emcee.EnsembleSampler(
             nwalkers,
             nparms_ensemble,
-            log_posterior_forcing,
+            log_posterior_forcing_sampler,
             args=(),
+            moves=moves,
+            backend=backend,
         )
-        sampler.run_mcmc(p0, nsteps, progress=True)
+        run_locked_chunks()
     
     print("run_mcmc done")
-    raw_chain = np.asarray(sampler.get_chain(discard=0, thin=1, flat=False), dtype=float)
+    sampler_chain = np.asarray(sampler.get_chain(discard=0, thin=1, flat=False), dtype=float)
+    raw_chain = transform.sampler_to_physical(sampler_chain)
     raw_log_probs = np.asarray(sampler.get_log_prob(discard=0, thin=1, flat=False), dtype=float)
-    if output_root is None:
-        raise ValueError("Iter008 raw-chain retention requires output_root")
+    raw_physical_log_probs = raw_log_probs - transform.log_abs_det_dphysical_dsampler(sampler_chain)
+    if raw_chain.shape[0] != nsteps:
+        raise RuntimeError(f"locked chain length mismatch: expected {nsteps}, got {raw_chain.shape[0]}")
+    if checkpoint_interval:
+        record_checkpoint()
     raw_metadata = _write_iter008_raw_chain(
         output_root,
         chain=raw_chain,
         log_prob=raw_log_probs,
-        initial_state=p0,
+        initial_state=physical_initial,
         parameter_names=ensemble_parms,
         pmin=pmin,
         pmax=pmax,
@@ -662,6 +779,11 @@ def MCMC_forcing(
         sites=sites,
         nwalkers=nwalkers,
         nsteps=nsteps,
+        sampler_chain=sampler_chain,
+        transform_metadata=transform.metadata(),
+        move_configuration=move_configuration,
+        backend_path=backend_path,
+        physical_log_prob=raw_physical_log_probs,
     )
     try:
         print(
