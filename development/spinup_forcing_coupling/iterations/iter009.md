@@ -141,3 +141,7 @@ geometry qualification criterion: the best overlap screens occur in TIM, while i
 screens still fail. The original 42-task cap was exceeded only through user-approved exception
 attempts: final submitted count is 48, including the failed first validation attempt; this is
 recorded as an exception rather than treated as cap satisfaction.
+
+The complete arm-by-arm diagnostic interpretation, causal assessment, and proposed follow-up
+experiments are in
+[`summaries/iter009/ITER009_REPORT.md`](../summaries/iter009/ITER009_REPORT.md).

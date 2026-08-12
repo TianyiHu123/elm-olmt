@@ -540,3 +540,5 @@ integrity-only acceptance; no scientific quality hard gate was applied.
 - The original 42-task cap was exceeded through explicitly user-approved exception attempts;
   final submitted count was 48. This is an integrity accounting exception, not silent cap
   satisfaction. Raw products remain on temporary, unbacked `/xdisk`.
+- Comprehensive arm-by-arm diagnostic implications, conclusion logic, and proposed next
+  experiments: [`summaries/iter009/ITER009_REPORT.md`](summaries/iter009/ITER009_REPORT.md).
