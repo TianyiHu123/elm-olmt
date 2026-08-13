@@ -2,36 +2,57 @@
 
 ## Live State
 
-- Active iteration: `iter009`
+- Active iteration: `iter010`
 - Status: `completed`
 - Phase: `closed`
 - Active job IDs: none
 - Site profile: `development/hpc/puma.md`
-- Last updated: `2026-08-12T18:57:28-07:00`
+- Last updated: `2026-08-12T20:05:00-07:00`
 
 ## Active Kickoff Package and Runtime Authority
 
-- Package state: `approved` (Iter009 initialized under the consolidated package).
-- Kickoff goal and stop boundary: complete the immutable 30-chain ABBY/JERC sampler-geometry
-  pilot; stop after terminal accounting, integrity and geometry evaluation, durable records,
-  handoff validation, and one local closeout commit.
-- User response and approval timestamp: `approve for the complete iter009 package`,
-  `2026-08-10T20:29:27-07:00`.
+- Package state: `approved` (Iter010 initialized under the consolidated package).
+- Kickoff goal and stop boundary: complete the six-chain TIM terminal-partition topology diagnosis,
+  conditional prediction/skip, terminal accounting, durable records, validation, and one local
+  closeout commit.
+- User response and approval timestamp: `approved the full package`, `2026-08-12`.
 - Confirmed HPC system and profile: Puma; `development/hpc/puma.md`.
 - Approved output root: `/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/spinup_forcing_coupling`;
-  creation limited to the eight Iter009 run directories in the finalized plan.
+  creation limited to the four Iter010 run directories in the finalized plan.
 - Locked dependencies/gates/decision: the exact complete plan below; Iter002 forcing and Iter012
   `drop21_corr080`, ABBY/JERC observations and Iter008 raw chains have the recorded hashes;
   five arms, three seeds, 30 leaves, 64x8000, physical posterior fixed, and immutable integrity
   and geometry-qualification rules.
-- Outside-sandbox and closeout authorities: locked `sbatch` and contract-authorized retries;
-  job-scoped monitoring/accounting; bounded cancellation of recorded Iter009 jobs; one bounded
-  local closeout commit after validation.
-- Iter010 authority: none. The planning-only proposal below is `not_initialized`; it grants no
-  Python, implementation, directory-creation, compute, scheduler, retry, cancellation, closeout,
-  or later commit authority.
+- Outside-sandbox and closeout authorities: locked `sbatch`; job-scoped monitoring/accounting;
+  bounded cancellation of recorded Iter010 jobs; one bounded local closeout commit after validation.
+- Iter010 authority: approved full package. The primary agent may perform the locked preparation,
+  independent read-only review, bounded Puma preflight/submission/monitoring/accounting,
+  evaluation, durable records, and one local closeout commit within the plan below.
 
 ## Current Objective
+
+TIM terminal-partition topology diagnosis
+
+- Iteration ID: `iter010`
+- Status: `completed`
+- Phase: `closed`
+- Objective: determine whether the six Iter009 TIM terminal partitions are reproducible basins,
+  a connected ridge, a screen artifact, or inconclusive, separately for ABBY and JERC.
+- Bounded scope: six immutable TIM chains; terminal windows 500/1000/2000/4000; rolling and
+  late-half diagnostics; five figures per chain and three-seed site syntheses; prediction only
+  for a site classified `two_basin_supported`.
+- Kickoff approval: exact response `approved the full package`, received 2026-08-12.
+- Active job IDs: none; preflight `23554607`, topology `23554935`, prediction `23555136`, and
+  finalize `23555187` terminal `COMPLETED 0:0`.
+- Overall acceptance result: `pass` for integrity/provenance/evidence completeness.
+- Site results: ABBY `two_basin_declined`; JERC `two_basin_declined`; conditional prediction
+  `skipped` with zero evaluations.
+- Next route: replace the forced screen, reassess TIM/JERC, and propose Experiment 5 for ABBY
+  acceptance/saturation.
+- Stop reached: terminal accounting, integrity evaluation, topology/convergence decision,
+  validated conditional skip, report/routing, durable-record validation, and closeout commit.
+
+## Previous Iter009 Objective
 
 ABBY and JERC sampler-geometry pilot
 
@@ -51,7 +72,7 @@ ABBY and JERC sampler-geometry pilot
   three shared seeds; fixed physical posterior; integrity plus geometry routing
 - Bounded scope label: `ABBY/JERC sampler-geometry pilot; B/T/I/M/TIM; 30 chains; 64x8000; seeds 9009-9011`
 - Output root: `/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/spinup_forcing_coupling`
-- Summary path: `development/spinup_forcing_coupling/summaries/iter009`
+- Summary path: `development/spinup_forcing_coupling/summaries/iter010`
 - Iter008 evidence: integrity-valid chains and paired route `sampler-limited`; all Iter009
   dependencies were re-hashed and match the finalized plan before approval
 - Forcing identity: `8d139b32473eebe3f75f77042e542f49ec3c80e89bc65c76b2e98a5c70f4553e`
@@ -73,9 +94,8 @@ ABBY and JERC sampler-geometry pilot
 
 ## Next Action
 
-1. Iter009 remains closed. Present one complete Iter010 consolidated kickoff package, including an
-   explicit commit or validated-uncommitted closeout branch, and obtain fresh approval before any
-   Iter010 initialization or execution action.
+1. Submit and monitor the reviewed Iter010 preflight, then submit topology only after a passing
+   terminal preflight and immediate identity check.
 
 ## Planning-Only Proposed Iter010 Plan
 
@@ -602,10 +622,10 @@ approval.
 
 ## Artifact References
 
-- Current/latest report: `development/spinup_forcing_coupling/iterations/iter008.md`
+- Current/latest report: `development/spinup_forcing_coupling/iterations/iter010.md`
 - Registry: `development/spinup_forcing_coupling/registry.csv`
 - Cumulative summary: `development/spinup_forcing_coupling/ITERATION_SUMMARY.md`
-- Summaries: `development/spinup_forcing_coupling/summaries/iter008`
-- Canonical scripts: `development/spinup_forcing_coupling/slurm/iter008/`
-- Submitted scripts/configurations: under each `spinup_forcing_coupling_iter008_*` run dir
+- Summaries: `development/spinup_forcing_coupling/summaries/iter010`
+- Canonical scripts: `development/spinup_forcing_coupling/slurm/iter010/`
+- Submitted scripts/configurations: under each `spinup_forcing_coupling_iter010_*` run dir
 - Scratch output: `/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/spinup_forcing_coupling`

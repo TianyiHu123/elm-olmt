@@ -542,3 +542,23 @@ integrity-only acceptance; no scientific quality hard gate was applied.
   satisfaction. Raw products remain on temporary, unbacked `/xdisk`.
 - Comprehensive arm-by-arm diagnostic implications, conclusion logic, and proposed next
   experiments: [`summaries/iter009/ITER009_REPORT.md`](summaries/iter009/ITER009_REPORT.md).
+## iter010 - TIM terminal-partition topology diagnosis (2026-08-12)
+
+- Objective: determine whether the six Iter009 TIM terminal partitions represent reproducible
+  physical basins, a ridge, a screen artifact, or inconclusive topology, separately for ABBY/JERC.
+- Locked scope: six immutable `(8000,64,15)` raw chains; terminal windows 500/1000/2000/4000;
+  rolling 1000-step windows with 250-step stride; late-half comparison; 32 deterministic draws
+  per walker; five figures per chain and three-seed syntheses.
+- Accounting: preflight `23554607`, topology `23554935`, prediction skip `23555136`, and
+  finalize `23555187` all `COMPLETED 0:0`; no retries or cancellations.
+- Integrity evidence: all six raw/backend/metadata/checkpoint/selection hash families and
+  site/seed/schema/log-prob provenance passed; 32 figures, six metric archives, decision/table,
+  final report, and validated conditional skip were produced.
+- Results: ABBY `two_basin_declined`; JERC `two_basin_declined`. Scalar, multivariate, and
+  temporal requirements opposed in all three seeds at both sites; corresponding group locations
+  supported. Prediction branch skipped with zero evaluations.
+- Decision: the forced terminal screen is declined as evidence for two physical basins at both
+  sites; this does not establish convergence or posterior basin weights. Next route: replace the
+  forced screen, reassess TIM/JERC, and propose Experiment 5 for ABBY acceptance/saturation.
+- Closeout: `validate_iter010_handoff.py` returned `ITER010_HANDOFF_VALIDATE_PASS`; one authorized
+  local commit remains as the final closeout action.
