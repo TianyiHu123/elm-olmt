@@ -544,21 +544,25 @@ integrity-only acceptance; no scientific quality hard gate was applied.
   experiments: [`summaries/iter009/ITER009_REPORT.md`](summaries/iter009/ITER009_REPORT.md).
 ## iter010 - TIM terminal-partition topology diagnosis (2026-08-12)
 
-- Objective: determine whether the six Iter009 TIM terminal partitions represent reproducible
-  physical basins, a ridge, a screen artifact, or inconclusive topology, separately for ABBY/JERC.
-- Locked scope: six immutable `(8000,64,15)` raw chains; terminal windows 500/1000/2000/4000;
-  rolling 1000-step windows with 250-step stride; late-half comparison; 32 deterministic draws
-  per walker; five figures per chain and three-seed syntheses.
-- Accounting: preflight `23554607`, topology `23554935`, prediction skip `23555136`, and
-  finalize `23555187` all `COMPLETED 0:0`; no retries or cancellations.
-- Integrity evidence: all six raw/backend/metadata/checkpoint/selection hash families and
-  site/seed/schema/log-prob provenance passed; 32 figures, six metric archives, decision/table,
-  final report, and validated conditional skip were produced.
-- Results: ABBY `two_basin_declined`; JERC `two_basin_declined`. Scalar, multivariate, and
-  temporal requirements opposed in all three seeds at both sites; corresponding group locations
-  supported. Prediction branch skipped with zero evaluations.
-- Decision: the forced terminal screen is declined as evidence for two physical basins at both
-  sites; this does not establish convergence or posterior basin weights. Next route: replace the
-  forced screen, reassess TIM/JERC, and propose Experiment 5 for ABBY acceptance/saturation.
-- Closeout: `validate_iter010_handoff.py` returned `ITER010_HANDOFF_VALIDATE_PASS`; one authorized
-  local commit remains as the final closeout action.
+- Iteration ID: `iter010`
+- Status: `completed`
+- Work type: `implementation`
+- Objective: `TIM terminal-partition topology diagnosis`
+- Bounded scope: `Six immutable TIM chains; ABBY/JERC; seeds 9009-9011; terminal/rolling topology diagnostics; conditional prediction skip`
+- Overall acceptance result: `pass`
+- Decision: `ABBY and JERC two_basin_declined; forced terminal screen declined as evidence for two physical basins; replace the screen, reassess TIM/JERC, and route to ABBY proposal-scale Experiment 5`
+- Output root: `/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/spinup_forcing_coupling`
+- Summary path: `development/spinup_forcing_coupling/summaries/iter010`
+- Accounting: preflight `23554607`, topology `23554935`, conditional prediction `23555136`, and
+  finalize `23555187` all reached terminal `COMPLETED 0:0`; no retry or cancellation occurred.
+- Evidence: all six source identity/provenance families passed; 32 figures, six metric archives,
+  topology decisions/tables, source manifest, comprehensive report, and validated zero-evaluation
+  conditional skip are complete.
+- Interpretation: scalar, multivariate, and temporal requirements oppose in every seed at both
+  sites, while corresponding locations reproduce. JERC receives the revised convergence screening
+  label; ABBY remains not established because acceptance/saturation fails. No general convergence,
+  basin-weight, global-unimodality, or equifinality claim is made.
+- Next state: `Iter011 is not_initialized; its complete planning-only ABBY target-equivalent DE proposal-scale pilot is recorded in iterations/iter010.md and CURRENT.md, and execution requires a fresh consolidated kickoff package with explicit approval.`
+- Closeout: the 2026-08-13 corrective validator enforces exact cross-record agreement and externally
+  verifies the selected follow-up commit against parent `ed42024d513f879d7dd88c998944b80f79b02ebe`,
+  subject `Correct Iter010 closeout records`, controlled paths, and a clean tree.
