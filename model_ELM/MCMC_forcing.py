@@ -144,6 +144,11 @@ def log_posterior_forcing(
         nparms_ensemble = state["nparms_ensemble"]
         nerr_parms = state["nerr_parms"]
         site_data_by_site = state["site_data_by_site"]
+        likelihood_resolution = state.get("likelihood_resolution", "hourly")
+        daily_index_maps = state.get("daily_index_maps", {})
+    else:
+        likelihood_resolution = "hourly"
+        daily_index_maps = {}
 
     prior = 1.0
     for j in range(nparms_ensemble):
@@ -161,9 +166,21 @@ def log_posterior_forcing(
                 mask = (myobs > -9000) & (myerr > 0)
                 if nerr_parms > 0:
                     myerr[mask] = parms[-len(myvars) + myvars.index(v)]
-                resid = myoutput[mask] - myobs[mask]
-                ri = (resid / myerr[mask]) ** 2
-                li = -0.5 * np.log(2.0 * np.pi) - np.log(myerr[mask]) - 0.5 * ri
+                if likelihood_resolution == "daily":
+                    if v != "SR" or s not in daily_index_maps:
+                        raise ValueError("daily likelihood is defined only for locked SR maps")
+                    groups = daily_index_maps[s]["groups"]
+                    daily_pred = np.asarray([np.mean(myoutput[group]) for group in groups], dtype=float)
+                    daily_obs = np.asarray([np.mean(myobs[group]) for group in groups], dtype=float)
+                    # The approved daily target uses fitted sigma_SR directly, without sqrt(24).
+                    sigma = parms[-len(myvars) + myvars.index(v)] if nerr_parms > 0 else np.mean(myerr[mask])
+                    resid = daily_pred - daily_obs
+                    ri = (resid / sigma) ** 2
+                    li = -0.5 * np.log(2.0 * np.pi) - np.log(sigma) - 0.5 * ri
+                else:
+                    resid = myoutput[mask] - myobs[mask]
+                    ri = (resid / myerr[mask]) ** 2
+                    li = -0.5 * np.log(2.0 * np.pi) - np.log(myerr[mask]) - 0.5 * ri
                 post += np.sum(li)
     else:
         # Properly reject out-of-bounds proposals (finite sentinels can corrupt emcee chains).
@@ -214,6 +231,8 @@ def _write_iter008_raw_chain(
     sampler_chain: Optional[np.ndarray] = None,
     transform_metadata: Optional[Dict[str, Any]] = None,
     move_configuration: Optional[str] = None,
+    de_move_scale: float = 1.0,
+    likelihood_resolution: str = "hourly",
     backend_path: Optional[str | Path] = None,
     physical_log_prob: Optional[np.ndarray] = None,
 ) -> Dict[str, Any]:
@@ -272,6 +291,8 @@ def _write_iter008_raw_chain(
         ),
         "transform": transform_metadata,
         "move_configuration": move_configuration,
+        "de_move_scale": float(de_move_scale),
+        "likelihood_resolution": likelihood_resolution,
         "backend_path": None if backend_path is None else str(backend_path),
         "provenance": provenance,
         "raw_chain_sha256": raw_hash,
@@ -396,6 +417,8 @@ def MCMC_forcing(
     initial_state: Optional[np.ndarray] = None,
     backend_path: Optional[str | Path] = None,
     checkpoint_interval: int = 0,
+    de_move_scale: float = 1.0,
+    likelihood_resolution: str = "hourly",
 ):
     sites = self.all_sites
     pmin = np.array(self.ensemble_pmin, dtype=float)
@@ -403,6 +426,7 @@ def MCMC_forcing(
     nparms_ensemble = int(self.nparms_ensemble)
     obs = {}
     obs_err = {}
+    daily_index_maps = {}
     baseline_output: Dict[str, Dict[str, np.ndarray]] = {}
     site_data_by_site: Dict[str, Dict[str, Any]] = {}
 
@@ -460,6 +484,10 @@ def MCMC_forcing(
                 )
             obs[s] = case_obj.obs.copy()
             obs_err[s] = case_obj.obs_err.copy()
+        if likelihood_resolution == "daily":
+            if "daily_index_map" not in fctx:
+                raise KeyError(f"forcing_context[{s}] is missing the locked daily index map")
+            daily_index_maps[s] = fctx["daily_index_map"]
 
         if mode == "coupled":
             if case_obj is None:
@@ -586,14 +614,31 @@ def MCMC_forcing(
 
     smoke_n = int(smoke_likelihood_evals or 0)
     if smoke_n > 0:
-        mid = 0.5 * (pmin + pmax)
+        # Smoke calls must use the same locked hourly/daily target as production.  This state
+        # deliberately omits a coordinate transform because the fixture evaluates physical states.
+        _init_mcmc_worker({
+            "sites": sites,
+            "myvars": list(myvars),
+            "pmin": np.asarray(pmin, dtype=float),
+            "pmax": np.asarray(pmax, dtype=float),
+            "obs": obs,
+            "obs_err": obs_err,
+            "nparms_ensemble": int(nparms_ensemble),
+            "nerr_parms": int(nerr_parms),
+            "site_data_by_site": site_data_by_site,
+            "likelihood_resolution": likelihood_resolution,
+            "daily_index_maps": daily_index_maps,
+        })
+        if initial_state is None:
+            states = [0.5 * (pmin + pmax)]
+        else:
+            states = np.asarray(initial_state, dtype=float)
+            if states.shape != (nwalkers, nparms_ensemble):
+                raise ValueError(f"initial state must have shape {(nwalkers, nparms_ensemble)}, got {states.shape}")
+            if not np.all(np.isfinite(states)) or np.any(states <= pmin) or np.any(states >= pmax):
+                raise ValueError("smoke initial state is non-finite or outside strict physical bounds")
         logps = []
-        for i in range(smoke_n):
-            # Deterministic tiny budget around the prior midpoint.
-            frac = float(i) / float(max(smoke_n - 1, 1))
-            parms = pmin + frac * (pmax - pmin)
-            if i == 0:
-                parms = mid
+        for i, parms in enumerate(states):
             lp = log_posterior_forcing(
                 parms,
                 sites,
@@ -608,12 +653,14 @@ def MCMC_forcing(
             )
             logps.append(float(lp))
             print(f"SMOKE_LIKELIHOOD_EVAL i={i} log_posterior={lp}")
+        if not np.all(np.isfinite(logps)):
+            raise RuntimeError("smoke likelihood produced a non-finite value")
         print(
-            f"SMOKE_LIKELIHOOD_DONE n={smoke_n} "
+            f"SMOKE_LIKELIHOOD_DONE n={len(logps)} "
             f"log_posterior_min={min(logps)} log_posterior_max={max(logps)}"
         )
         return {
-            "smoke_likelihood_evals": smoke_n,
+            "smoke_likelihood_evals": len(logps),
             "log_posteriors": logps,
             "spinup_modes": {
                 s: site_data_by_site[s].get("spinup_mode") for s in sites
@@ -629,6 +676,19 @@ def MCMC_forcing(
         raise ValueError(f"unsupported sampler coordinate system: {sampler_coordinates}")
     if output_root is None:
         raise ValueError("raw-chain retention requires output_root")
+    if likelihood_resolution not in {"hourly", "daily"}:
+        raise ValueError(f"unsupported likelihood resolution: {likelihood_resolution}")
+    if not np.isfinite(de_move_scale) or de_move_scale <= 0:
+        raise ValueError("DEMove scale must be finite and positive")
+    if likelihood_resolution == "daily":
+        daily_path = Path(output_root) / "daily_index_maps.json"
+        daily_payload = {"schema": "spinup-forcing-coupling-iter011-daily-maps-v1", "maps": daily_index_maps}
+        if daily_path.exists():
+            existing = json.loads(daily_path.read_text(encoding="utf-8"))
+            if existing != daily_payload:
+                raise ValueError("existing daily-map provenance differs from the locked target")
+        else:
+            daily_path.write_text(json.dumps(daily_payload, indent=2) + "\n", encoding="utf-8")
     if checkpoint_interval and (checkpoint_interval <= 0 or nsteps % checkpoint_interval):
         raise ValueError("checkpoint interval must be a positive divisor of nsteps")
     if initial_state is None:
@@ -681,6 +741,8 @@ def MCMC_forcing(
         "nerr_parms": int(nerr_parms),
         "site_data_by_site": site_data_by_site,
         "coordinate_transform": transform,
+        "likelihood_resolution": likelihood_resolution,
+        "daily_index_maps": daily_index_maps,
     }
     # Parent process also uses worker state so log_posterior_forcing has one code path.
     _init_mcmc_worker(worker_state)
@@ -689,7 +751,7 @@ def MCMC_forcing(
         f"sites={list(sites)} nwalkers={nwalkers} nsteps={nsteps} coordinates={sampler_coordinates}"
     )
 
-    moves = make_move_configuration(move_configuration)
+    moves = make_move_configuration(move_configuration, de_move_scale=de_move_scale, ndim=nparms_ensemble)
     backend = None
     if backend_path is not None:
         backend_file = Path(backend_path)
@@ -782,6 +844,8 @@ def MCMC_forcing(
         sampler_chain=sampler_chain,
         transform_metadata=transform.metadata(),
         move_configuration=move_configuration,
+        de_move_scale=de_move_scale,
+        likelihood_resolution=likelihood_resolution,
         backend_path=backend_path,
         physical_log_prob=raw_physical_log_probs,
     )

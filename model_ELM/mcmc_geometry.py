@@ -114,12 +114,24 @@ class CoordinateTransform:
         }
 
 
-def make_move_configuration(name: str):
-    """Return only the proposal mechanisms permitted by the Iter009 contract."""
+def make_move_configuration(name: str, *, de_move_scale: float = 1.0, ndim: int | None = None):
+    """Return the locked Iter009/Iter011 proposal mechanisms.
+
+    A unit Iter011 multiplier deliberately constructs the same default DEMove object; lower
+    multipliers only change DEMove's gamma and leave DESnookerMove unchanged.
+    """
     import emcee
 
     if name == "stretch":
         return emcee.moves.StretchMove(a=2.0)
     if name == "de_mixture":
-        return [(emcee.moves.DEMove(), 0.8), (emcee.moves.DESnookerMove(), 0.2)]
+        if de_move_scale <= 0:
+            raise ValueError("de_move_scale must be positive")
+        if de_move_scale == 1.0:
+            de_move = emcee.moves.DEMove()
+        else:
+            if ndim is None or ndim <= 0:
+                raise ValueError("ndim is required for a non-default DEMove scale")
+            de_move = emcee.moves.DEMove(gamma0=float(de_move_scale) * 2.38 / np.sqrt(2.0 * ndim))
+        return [(de_move, 0.8), (emcee.moves.DESnookerMove(), 0.2)]
     raise ValueError(f"unsupported Iter009 move configuration: {name}")

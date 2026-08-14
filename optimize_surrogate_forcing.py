@@ -2,6 +2,8 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
+import json
 import os
 import pickle
 import sys
@@ -116,6 +118,24 @@ def _build_parser() -> argparse.ArgumentParser:
         help="Iter009 proposal configuration.",
     )
     parser.add_argument(
+        "--de-move-scale",
+        type=float,
+        default=1.0,
+        help=(
+            "Iter011 multiplier for DEMove's default gamma; valid only with "
+            "--move-configuration de_mixture."
+        ),
+    )
+    parser.add_argument(
+        "--likelihood-resolution",
+        choices=["hourly", "daily"],
+        default="hourly",
+        help=(
+            "Iter011 likelihood target. Daily retains only complete 24-hour paired "
+            "SR/error days while prediction products remain hourly."
+        ),
+    )
+    parser.add_argument(
         "--initial-state",
         default=None,
         help="Optional .npz bundle containing a physical `initial_state` array.",
@@ -174,6 +194,47 @@ def _parse_obs_err_vars(raw: str) -> Dict[str, str]:
         k, v = item.split(":", 1)
         mapping[k.strip()] = v.strip()
     return mapping
+
+
+def _complete_day_groups(time_axis, obs, obs_err) -> dict:
+    """Build the immutable Iter011 complete-day SR aggregation map."""
+    times = np.asarray(time_axis).reshape(-1)
+    values = np.asarray(obs["SR"], dtype=float).reshape(-1)
+    errors = np.asarray(obs_err["SR"], dtype=float).reshape(-1)
+    if not (times.size == values.size == errors.size):
+        raise ValueError("daily likelihood requires aligned time, SR, and SR_err arrays")
+    by_day: Dict[tuple[int, int, int], list[tuple[int, int]]] = {}
+    for index, timestamp in enumerate(times):
+        if not all(hasattr(timestamp, field) for field in ("year", "month", "day", "hour")):
+            raise ValueError("daily likelihood requires absolute hourly model-calendar timestamps")
+        if values[index] <= -9000 or not np.isfinite(errors[index]) or errors[index] <= 0:
+            continue
+        by_day.setdefault((int(timestamp.year), int(timestamp.month), int(timestamp.day)), []).append(
+            (int(timestamp.hour), index)
+        )
+    groups, included, excluded = [], [], []
+    for key in sorted(by_day):
+        rows = by_day[key]
+        if len(rows) == 24 and sorted(hour for hour, _ in rows) == list(range(24)):
+            groups.append([index for _, index in sorted(rows)])
+            included.append(f"{key[0]:04d}-{key[1]:02d}-{key[2]:02d}")
+        else:
+            excluded.append(f"{key[0]:04d}-{key[1]:02d}-{key[2]:02d}")
+    if not groups:
+        raise ValueError("daily likelihood retained zero complete valid 24-hour SR days")
+    payload = {
+        "schema": "spinup-forcing-coupling-iter011-daily-index-map-v1",
+        "aggregation": "arithmetic_mean_of_same_24_hourly_indices",
+        "included_dates": included,
+        "excluded_dates": excluded,
+        "hourly_count": int(times.size),
+        "daily_count": len(groups),
+        "groups": groups,
+    }
+    payload["sha256"] = hashlib.sha256(
+        json.dumps(payload, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    ).hexdigest()
+    return payload
 
 
 def _parse_obs_spec(raw: str):
@@ -349,6 +410,10 @@ def main() -> int:
             },
             "baseline_output": case_obj.output,
         }
+        if args.likelihood_resolution == "daily":
+            forcing_context[s]["daily_index_map"] = _complete_day_groups(
+                forcing_time_overlap, obs, obs_err
+            )
         if spinup_mode == "coupled":
             forcing_context[s]["spinup_artifact"] = str(spinup_artifact_path)
             forcing_context[s]["forcing_artifact"] = str(
@@ -401,6 +466,8 @@ def main() -> int:
         seed=args.seed,
         sampler_coordinates=args.sampler_coordinates,
         move_configuration=args.move_configuration,
+        de_move_scale=args.de_move_scale,
+        likelihood_resolution=args.likelihood_resolution,
         initial_state=initial_state,
         backend_path=args.backend,
         checkpoint_interval=args.checkpoint_interval,

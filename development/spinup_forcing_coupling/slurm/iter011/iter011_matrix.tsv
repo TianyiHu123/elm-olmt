@@ -1,0 +1,7 @@
+array_index	leaf_id	site	seed	resolution	de_scale	initialization
+1	leaf_01_abby_seed9009	ABBY	9009	hourly	1.00	high
+2	leaf_02_abby_seed9010	ABBY	9010	hourly	1.00	high
+3	leaf_03_abby_seed9011	ABBY	9011	hourly	1.00	high
+4	leaf_04_jerc_seed9009	JERC	9009	hourly	1.00	high
+5	leaf_05_jerc_seed9010	JERC	9010	hourly	1.00	high
+6	leaf_06_jerc_seed9011	JERC	9011	hourly	1.00	high

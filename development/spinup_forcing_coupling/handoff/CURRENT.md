@@ -2,64 +2,59 @@
 
 ## Live state
 
-- Active iteration: `iter010`
+- Active iteration: `iter011`
 - Status: `completed`
 - Phase: `closed`
 - Work type: `implementation`
-- Objective: `TIM terminal-partition topology diagnosis`
-- Bounded scope: `Six immutable TIM chains; ABBY/JERC; seeds 9009-9011; terminal/rolling topology diagnostics; conditional prediction skip`
+- Objective: `Site-specific TIM DE-scale and hourly-versus-daily likelihood-resolution pilot at ABBY and JERC`
+- Bounded scope: `ABBY/JERC separately; hourly/daily likelihood; DEMove scales 0.50/0.75/1.00; seeds 9009-9011; 36 64x8000 chains`
 - Overall acceptance result: `pass`
-- Decision: `ABBY and JERC two_basin_declined; forced terminal screen declined as evidence for two physical basins; replace the screen, reassess TIM/JERC, and route to ABBY proposal-scale Experiment 5`
+- Decision: `ABBY preferred_configuration_supported: daily_0.75; JERC inconclusive_metric_tradeoff: no selected configuration`
 - Active job IDs: none
 - Site profile: `development/hpc/puma.md`
-- Last updated: `2026-08-13`
+- Last updated: `2026-08-14T15:05:00-07:00`
 
 ## Authority and stop boundary
 
-The Iter010 consolidated package is exhausted. Its bounded lifecycle reached terminal accounting,
-evaluation, aggregation, durable records, handoff validation, and closeout. The user's 2026-08-13
-instruction separately authorized correction of the incomplete closeout and one follow-up commit.
-No current authority exists to initialize Iter011, run repository Python, create external campaign
-directories, submit or cancel jobs, retry work, or make another closeout commit.
+The user response `the kickoff package and outside sandbox authority is approved` at
+`2026-08-13T20:15:40-07:00` approves the complete Iter011 package copied below. It authorizes the
+primary agent to prepare, obtain independent read-only review, create the approved external layout,
+submit and monitor the locked preflight and staged campaign, apply the recorded bounded retry and
+cancellation rules, evaluate, update durable records, validate the handoff, and make one local
+closeout commit. It also authorizes outside-sandbox `sbatch`, job-scoped `squeue`, `scontrol show
+job`, `sacct`, `seff`, `job-history`, and `job-limits`, plus `scancel` only for recorded Iter011 IDs
+under the contract's cancellation conditions. No scope, code, dependency, numerical, or gate change
+outside this contract is authorized.
 
 ## Best evidence
 
 - Output root: `/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/spinup_forcing_coupling`
-- Summary path: `development/spinup_forcing_coupling/summaries/iter010`
-- Dependencies: six immutable Iter009 TIM chain bundles; fixed Iter002 forcing, Iter012
-  `drop21_corr080`, ABBY/JERC observations and cases, physical bounds/order, and posterior target.
-- Accounting: preflight `23554607`, topology `23554935`, conditional prediction `23555136`, and
-  finalize `23555187` are all terminal `COMPLETED 0:0`; no Iter010 job is active or unaccounted.
-- Integrity: source identity/hash/schema/shape/finiteness and posterior provenance passed. The
-  compact package contains 32 PNG figures, six metric archives, decisions/tables, source manifest,
-  validated conditional skip, accounting, and comprehensive report.
-- Topology: ABBY and JERC are separately `two_basin_declined`; scalar, multivariate, and temporal
-  requirements oppose in all three seeds at both sites, while corresponding occupied locations
-  reproduce across seeds.
-- Secondary interpretation: JERC is
-  `convergence_supported_under_revised_iter009_diagnostics` as a screening conclusion; ABBY is
-  `convergence_not_established_abby_acceptance_and_saturation`; no general TIM convergence claim.
-- Conditional branch: `skipped`, zero evaluations; equifinality
-  `not_applicable_no_supported_basins`.
+- Summary path: `development/spinup_forcing_coupling/summaries/iter011`
+- Dependencies: Iter002 forcing, Iter012 `drop21_corr080`, matching-site/seed Iter009 TIM bundles,
+  and ABBY/JERC observations/cases were identity-verified by the completed preflight and v5 aggregate.
+- Terminal evidence: preflight `23561067`, all 36 campaign leaves, and aggregate `23565465` completed
+  `0:0`; aggregate emitted `AGGREGATE_PASS leaves=36` and `AGGREGATE_PASS`.
 
 ## Risks and limitations
 
-- Declining the forced partition does not prove global unimodality, connectedness, stationarity,
-  walker exchange, or independent posterior samples.
-- PCA and corner projections can miss nonlinear high-dimensional separation; interacting-walker
-  assignment counts are diagnostic rather than independent evidence.
-- ABBY's low acceptance and transformed-coordinate saturation remain unresolved.
+- Aggregate v1--v4 application/launcher failures are classified in `iterations/iter011.md`; their
+  material and v3/v4 partial outputs are preserved. The bounded v5 correction was independently
+  reviewed and passed before submission.
+- ABBY's preferred `daily_0.75` is only future-proposal evidence. JERC's hourly configurations have
+  an unresolved material trade-off and no selected configuration.
 - `/xdisk` products are temporary and unbacked.
 
 ## Next action
 
-`Iter011 is not_initialized; its complete planning-only two-site TIM DE-scale and likelihood-resolution pilot is recorded in iterations/iter010.md and CURRENT.md, and execution requires a fresh consolidated kickoff package with explicit approval.`
+Closed. Preserve the complete Iter011 package and its failed-attempt provenance. A future ABBY
+site-specific production proposal or a JERC diagnostic must be defined and explicitly approved as a
+new iteration; no scheduler action is currently authorized or required.
 
 <!-- ITER011_PLAN_BEGIN -->
-## Planning-only Iter011 proposal
+## Approved Iter011 plan and runtime contract
 
 - Sequential ID: `iter011`
-- Status: `not_initialized`
+- Status: `planned`
 - Work type: `implementation`
 - Objective: `Site-specific TIM DE-scale and hourly-versus-daily likelihood-resolution pilot at ABBY and JERC`
 - Evidence basis: Iter010 declined the forced terminal partition at both sites. JERC retains the
@@ -194,19 +189,24 @@ directories, submit or cancel jobs, retry work, or make another closeout commit.
 - A later site-specific production proposal may use a supported configuration only after the full
   reproducible non-inferential initialization search, frozen fresh bundles, and independent burn-in
   described in the Iter009 report. Inconclusive sites require narrower follow-up, not forced choice.
-- This proposal creates no directory, file, job, retry, cancellation, commit, initialization, or
-  execution authority. Iter011 requires one fresh consolidated kickoff package and explicit user
-  approval before any runtime or iteration-specific work.
+- The approved package authorizes only this Iter011 lifecycle. A later proposal still requires a
+  fresh complete consolidated kickoff package and explicit approval.
 <!-- ITER011_PLAN_END -->
 
 ## Closeout references
 
-- Iteration record: `development/spinup_forcing_coupling/iterations/iter010.md`
-- Comprehensive report: `development/spinup_forcing_coupling/summaries/iter010/ITER010_REPORT.md`
-- Decision: `development/spinup_forcing_coupling/summaries/iter010/topology_decision.json`
-- Accounting: `development/spinup_forcing_coupling/summaries/iter010/iter010_accounting.csv`
-- Validator: `development/spinup_forcing_coupling/slurm/iter010/validate_iter010_handoff.sh`
+- Closeout identity: Iteration ID `iter011`; Status `completed`; Work type `implementation`;
+  Objective `Site-specific TIM DE-scale and hourly-versus-daily likelihood-resolution pilot at ABBY and JERC`;
+  Bounded scope `ABBY/JERC separately; hourly/daily likelihood; DEMove scales 0.50/0.75/1.00; seeds 9009-9011; 36 64x8000 chains`;
+  Overall acceptance result `pass`; Decision `ABBY preferred_configuration_supported daily_0.75; JERC inconclusive_metric_tradeoff with no selected configuration`.
+- Iteration record: `development/spinup_forcing_coupling/iterations/iter011.md`
+- Comprehensive report: `development/spinup_forcing_coupling/summaries/iter011/ITER011_REPORT.md`
+- Decisions: `development/spinup_forcing_coupling/summaries/iter011/abby_decision.json` and
+  `development/spinup_forcing_coupling/summaries/iter011/jerc_decision.json`
+- Accounting/evidence: aggregate `23565465`; external result
+  `spinup_forcing_coupling_iter011_aggregate/result/aggregate_result.json`
+- Validator: `development/spinup_forcing_coupling/slurm/iter011/validate_iter011_handoff.py`
 
-Start the next session by reading this file, `WORKFLOW.md`, the Iter010 record/report, and
+Start the next session by reading this file, `WORKFLOW.md`, the Iter011 record/report, and
 `development/hpc/puma.md`. Reconcile any claimed live state against scheduler accounting before
 requesting a new consolidated package.

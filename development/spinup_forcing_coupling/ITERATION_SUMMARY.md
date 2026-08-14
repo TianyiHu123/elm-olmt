@@ -566,3 +566,29 @@ integrity-only acceptance; no scientific quality hard gate was applied.
 - Closeout: the 2026-08-13 corrective validator enforces exact cross-record agreement and externally
   verifies the selected follow-up commit against parent `ed42024d513f879d7dd88c998944b80f79b02ebe`,
   subject `Correct Iter010 closeout records`, controlled paths, and a clean tree.
+
+## iter011 - TIM DE-scale and likelihood-resolution pilot (2026-08-14)
+
+- Closeout identity: Iteration ID `iter011`; Status `completed`; Work type `implementation`;
+  Objective `Site-specific TIM DE-scale and hourly-versus-daily likelihood-resolution pilot at ABBY and JERC`;
+  Bounded scope `ABBY/JERC separately; hourly/daily likelihood; DEMove scales 0.50/0.75/1.00; seeds 9009-9011; 36 64x8000 chains`;
+  Overall acceptance result `pass`; Decision `ABBY preferred_configuration_supported daily_0.75; JERC inconclusive_metric_tradeoff with no selected configuration`.
+- Iteration ID: `iter011`; status: `completed`; work type: `implementation`.
+- Objective and locked scope: Site-specific TIM DE-scale and hourly-versus-daily likelihood-resolution
+  pilot at ABBY and JERC; hourly/daily likelihood evaluation only;
+  DEMove scales 0.50/0.75/1.00; matching Iter009 TIM seed bundles 9009--9011; 36 immutable
+  64-walker x 8,000-step chains. Hourly collocation, diagnostics, fitted `sigma_SR`, priors,
+  transforms, and all upstream dependencies stayed locked.
+- Overall acceptance result: `pass`. Preflight `23561067`, every campaign leaf in six six-leaf
+  arrays, and aggregate `23565465` reached terminal `COMPLETED 0:0`. The final aggregate validated
+  complete raw/HDF/checkpoint packages and emitted `AGGREGATE_PASS leaves=36` and `AGGREGATE_PASS`.
+- Decision: ABBY `preferred_configuration_supported`, selecting `daily_0.75`; JERC
+  `inconclusive_metric_tradeoff`, selecting none. The conclusion is site-specific; it is not a
+  universal resolution or scale selection, nor authorization for production inference.
+- Quantitative evidence: ABBY daily/0.75 combines acceptance 0.23671, saturation 0.013359, and
+  minimum steps/tau 33.095. JERC's eligible hourly 0.75 and 1.00 retain a material trade-off;
+  daily arms are tau-unstable with acceptance below the locked healthy range. Full seed-paired
+  metric evidence is retained in `summaries/iter011/`.
+- Provenance and limitations: v1--v4 aggregate failures were classified and preserved; v5 was
+  independently reviewed before submission. `/xdisk` products are temporary and unbacked. Any
+  ABBY production proposal or JERC follow-up is a new, separately approved iteration.

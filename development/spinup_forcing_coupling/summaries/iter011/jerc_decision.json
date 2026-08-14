@@ -1,0 +1,17 @@
+{
+  "schema": "spinup-forcing-coupling-iter011-site-decision-v1",
+  "site": "JERC",
+  "integrity_pass": true,
+  "interpretability_pass": true,
+  "eligible_configurations": [
+    "hourly_0.50",
+    "hourly_0.75",
+    "hourly_1.00"
+  ],
+  "decision": "inconclusive_metric_tradeoff",
+  "unique_non_dominated": [
+    "hourly_0.75",
+    "hourly_1.00"
+  ],
+  "selected_configuration": null
+}
