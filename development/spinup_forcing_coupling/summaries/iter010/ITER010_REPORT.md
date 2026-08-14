@@ -51,6 +51,29 @@ JERC in prior-width-normalized physical space. This supports reproducibility of 
 location, but it does not rescue the forced partition: all six chains oppose robust scalar
 separation, physical multivariate separation, and temporal persistence.
 
+These metrics test three different aspects of the proposed two-band interpretation:
+
+  - Scalar separation: are there actually two populations of log-posterior levels?
+  - Physical separation: do those labels correspond to different regions of the 15-dimensional parameter space?
+  - Temporal persistence: do walkers remain in those groups over time?
+
+  All metrics are computed separately for each site and seed. The common reference split is based on each walker’s median physical log posterior over steps 7001–8000.
+
+  ## Metric-by-metric explanation
+
+| Metric                                   | What it measures                                                | Interpretation                                                  |
+|------------------------------------------|-----------------------------------------------------------------|-----------------------------------------------------------------|
+| Forced groups                            | Number of walkers assigned to lower/higher terminal-log-posterior groups        | Shows balance only; it does not establish separation           |                                                   |
+| BIC2−BIC1                                | Whether two Gaussian populations describe the 64 terminal medians better than one Gaussian after complexity penalty     | Negative favors two populations; positive favors one           |
+| Classifier                               | Whether physical parameter vectors can recover the scalar group label      | Near 1 means physical separation; near 0.5 means overlap       |                                                               |
+| Centroid distance                        | Distance between group-average physical parameter vectors after prior-width normalization     | Large means physically separated centers; near zero means nearly identical centers     |
+| Assignment agreement                     | Stability of walker labels under different terminal windows     | Near 1 means stable labels; lower values mean window- sensitive labels          |
+| Occupancy change                         | Change in the fraction of walkers assigned to the higher group between late-chain halves       | Near zero means stable aggregate occupancy; large means unstable occupancy      |
+| Transitions                              | Total walker label changes between adjacent rolling windows     | Few changes suggest persistence; many changes suggest unstable labels                                                |
+| Max residence windows                    | Longest uninterrupted run in one rolling group by any walker    | Large values show at least one persistent walker, but not necessarily persistent populations                             |
+| Max standardized parameter difference    | Largest group-mean difference among the 15 parameters,measured in chain-standard-deviation units          | Large values indicate physical differentiation; values near zero indicate overlap     |
+
+
 ## Immutable topology synthesis
 
 | Site | Scalar separation | Multivariate separation | Temporal persistence | Corresponding locations | Topology result |
