@@ -12,7 +12,7 @@
 - Decision: `ABBY preferred_configuration_supported: daily_0.75; JERC inconclusive_metric_tradeoff: no selected configuration`
 - Active job IDs: none
 - Site profile: `development/hpc/puma.md`
-- Last updated: `2026-08-14T15:05:00-07:00`
+- Last updated: `2026-08-14T19:08:12-07:00`
 
 ## Authority and stop boundary
 
@@ -24,7 +24,8 @@ cancellation rules, evaluate, update durable records, validate the handoff, and 
 closeout commit. It also authorizes outside-sandbox `sbatch`, job-scoped `squeue`, `scontrol show
 job`, `sacct`, `seff`, `job-history`, and `job-limits`, plus `scancel` only for recorded Iter011 IDs
 under the contract's cancellation conditions. No scope, code, dependency, numerical, or gate change
-outside this contract is authorized.
+outside this contract is authorized. That authority is exhausted and does not authorize any
+Iter012 action.
 
 ## Best evidence
 
@@ -41,157 +42,153 @@ outside this contract is authorized.
   material and v3/v4 partial outputs are preserved. The bounded v5 correction was independently
   reviewed and passed before submission.
 - ABBY's preferred `daily_0.75` is only future-proposal evidence. JERC's hourly configurations have
-  an unresolved material trade-off and no selected configuration.
+  an unresolved material trade-off; `hourly_0.75` is a user-selected future production choice, not
+  an Iter011-supported unique preference.
 - `/xdisk` products are temporary and unbacked.
 
 ## Next action
 
-Closed. Preserve the complete Iter011 package and its failed-attempt provenance. A future ABBY
-site-specific production proposal or a JERC diagnostic must be defined and explicitly approved as a
-new iteration; no scheduler action is currently authorized or required.
+Closed. Preserve the complete Iter011 package and its failed-attempt provenance. The identical
+planning-only Iter012 proposal below is ready for a fresh consolidated kickoff package. Iter012 is
+not initialized, and no implementation or scheduler action is authorized.
 
-<!-- ITER011_PLAN_BEGIN -->
-## Approved Iter011 plan and runtime contract
+<!-- ITER012_PLAN_BEGIN -->
+## Proposed Iter012 plan - standard initialization and fixed production MCMC
 
-- Sequential ID: `iter011`
-- Status: `planned`
+- Sequential ID: `iter012`
+- Status: `not_initialized`
 - Work type: `implementation`
-- Objective: `Site-specific TIM DE-scale and hourly-versus-daily likelihood-resolution pilot at ABBY and JERC`
-- Evidence basis: Iter010 declined the forced terminal partition at both sites. JERC retains the
-  healthy remaining TIM screens, while ABBY retains mean acceptance near 0.146--0.148 and marked
-  transformed-coordinate saturation. Iter008 also showed residual lag-1 correlation above 0.99
-  and ABBY `sigma_SR` saturation, motivating a bounded daily-information-reduction comparison.
-- Hypotheses: reduced DEMove scale may improve ABBY proposal movement and transformed saturation;
-  JERC may benefit, remain neutral, or be harmed; and a complete-day mean likelihood may reduce
-  redundant hourly information. Conclusions must remain site-specific. A preferred configuration
-  requires material improvement without a material regression in another locked metric.
+- Objective: implement a reusable initialization-to-production MCMC pipeline, then run fixed
+  independent production inference for ABBY at `daily/0.75` and JERC at `hourly/0.75`.
+- Evidence basis: Iter011 uniquely supported ABBY `daily/0.75`. JERC `hourly/0.75` is the user's
+  selected production configuration from Iter011's two non-dominated hourly choices; Iter011 itself
+  remained `inconclusive_metric_tradeoff` for JERC. Conclusions and posterior products remain
+  site-specific.
 
-### Dependencies and unchanged TIM contract
+### Fixed targets and dependencies
 
-- Re-lock the Iter002 forcing surrogate, Iter012 `drop21_corr080` spinup surrogate, ABBY/JERC cases
-  and NEON v4 observations, 14 physical parameters plus fitted `sigma_SR`, bounds, priors, order,
-  transformed coordinates, analytic Jacobian, software environment, repository source, and Puma
-  profile. Preserve the 80% DEMove / 20% DESnookerMove mixture and IID Gaussian form.
-- Reuse the exact Iter009 TIM site/seed initialization bundles: seed 9009 uses its seed-9009 bundle,
-  9010 uses seed-9010, and 9011 uses seed-9011. The same bundle is reused across all six
-  scale/resolution configurations for that site and seed. These states are non-inferential
-  initialization evidence, not posterior draws.
+- Run two isolated targets only: ABBY and JERC. Do not run joint ABBY+JERC production.
+- Re-lock the Iter002 forcing surrogate, Iter012 `drop21_corr080` spinup surrogate, matching cases
+  and NEON v4 observations, physical parameter names/order, priors, bounds, transformations,
+  analytic Jacobian, software environment, source, and Puma profile.
+- Preserve 14 shared physical parameters plus fitted `sigma_SR`, transformed sampler coordinates,
+  the physical-posterior target, and the 80% `DEMove` / 20% `DESnookerMove` mixture.
+- ABBY uses the existing complete-day `daily` likelihood with fitted `sigma_SR` directly and no
+  `sqrt(24)` adjustment. JERC uses the existing `hourly` likelihood. Both retain hourly
+  collocation, predictions, and performance evaluation.
+- Use DEMove multiplier `0.75` and production seeds `9009`, `9010`, and `9011` at both sites.
 
-### Fixed matrix and chain contract
+### Reusable target and pipeline interface
 
-- Sites: ABBY and JERC, analyzed separately.
-- Likelihood resolutions: `hourly` and `daily`.
-- DEMove scale multipliers: `0.50`, `0.75`, and `1.00`; the multiplier changes only DEMove, while
-  DESnookerMove remains unchanged. Record the resolved numerical scale and prove that `1.00`
-  matches default `DEMove()` behavior.
-- Seeds: `9009`, `9010`, and `9011`.
-- Total: 36 independent 64-walker x 8,000-step chains, checkpointed at 2,000-step intervals, with
-  incremental HDF persistence and immutable sampler- and physical-coordinate raw-chain packages.
+- Factor one shared target builder used by both initialization and production so cases,
+  observations, collocation, daily maps, artifacts, parameter schema, fitted-error bounds, and
+  target fingerprints cannot drift between stages.
+- `--cases` is the sole authority for target membership. Observation/artifact mappings configure
+  selected cases but cannot add cases. Canonicalize case order and reject missing, extra,
+  duplicated, or mismatched case configuration.
+- Support multiple selected cases in the reusable code: apply the prior once, sum every selected
+  case likelihood once, produce one shared physical parameter vector, and fit one shared
+  `sigma_<variable>` from all valid collocated observations across those cases.
+- Permit only one global likelihood resolution per invocation. Reject mixed-resolution targets,
+  manifests, pools, and continuations. Iter012 exercises only the two single-case targets above;
+  deterministic fixtures test multi-case behavior.
+- Implement a separate initialization command backed by a reusable initialization engine. Extend
+  `optimize_surrogate_forcing.py` with a candidate-pool interface; do not make the optimizer
+  generate or overwrite a pool implicitly.
 
-### Likelihood-only daily aggregation
+### Candidate-pool initialization
 
-- Preserve hourly observation loading, exact hourly collocation, hourly coupled-surrogate
-  prediction, baseline output, plots, skill calculations, and residual diagnostics.
-- Precompute a hashed daily index map from collocated model-calendar timestamps. Retain only dates
-  with exactly 24 valid paired hourly SR/error entries and use the arithmetic mean of the same 24
-  indices for observation and prediction.
-- Each retained daily mean contributes one IID Gaussian likelihood term using fitted `sigma_SR`
-  directly, with no `sqrt(24)` adjustment. Preserve the existing `sigma_SR` prior and upper bound.
-- Record included/excluded dates, hourly/daily counts, aggregation rules, and map identity. Hourly
-  is the backward-compatible default. Target equivalence applies across DE scales within a
-  resolution; hourly and daily are intentionally different targets.
+- Generate one pool for ABBY's exact daily target and one for JERC's exact hourly target. Do not
+  generate seed-specific initialization bundles.
+- Exclude Iter008/Iter009/Iter011 chains and all transferred states. Generate candidates only from
+  the new search under the current site target.
+- Use `sobol_multistart_local_v1`: 8,192 scrambled Sobol states in normalized physical-prior
+  coordinates, with deterministic expansion to 16,384, 32,768, and at most 65,536 states only when
+  the pool gate remains unmet.
+- Select 32 dispersed high-physical-posterior anchors and run bounded L-BFGS-B with at most 512
+  posterior evaluations per anchor. Retain all evaluated states, not only endpoints, and rank only
+  by physical log posterior.
+- Filter finite, strictly in-bound, exact-unique states; preserve diversity strata without treating
+  clusters as posterior modes. Require at least 640 selected states, nonzero spread in every
+  parameter, full normalized-space rank, normalized condition number at most `1e6`, and
+  representation of every robust retained stratum.
+- Freeze `search_contract.json`, the complete candidate ledger and metadata, the high-posterior
+  pool and manifest, diversity diagnostics, the initialization report, and all hashes before
+  production. Pool failure stops production without threshold changes or fallback states.
 
-### Preflight and staged submission
+### Pool-to-production checkpoint
 
-- Preflight must verify dependency/bundle identity, complete-day behavior on a deterministic
-  fixture, manual daily-likelihood equality, exact fixed-vector equivalence of the old and explicit
-  hourly paths, `1.00` DEMove equivalence, finite evaluation of every reused bundle under both
-  targets, and HDF/checkpoint/raw-chain wiring.
-- Submit the six hourly/`1.00` leaves first. Release the remaining five unthrottled six-leaf arrays
-  only when all six baseline leaves are `COMPLETED 0:0` with campaign-pass markers, their
-  site/seed/bundle/resolution/scale identities are correct, and preflight hourly equivalence passed.
-  No intermediate scientific comparison or detailed artifact audit is required.
-- After that checkpoint submit hourly/`0.50`, hourly/`0.75`, daily/`0.50`, daily/`0.75`, and
-  daily/`1.00` as five unthrottled six-leaf arrays, subject to Puma scheduling.
+- For each new production leaf, reconstruct the target and require exact equality of cases,
+  resolution, case/observation/artifact/collocation identities, daily-map identity where applicable,
+  parameter schema, priors, bounds, fitted-error configuration, source, pool manifest, and hashes.
+- Derive pool-selection randomness separately from sampler randomness using the production seed and
+  pool hash. Allocate across all retained robust strata, then select 64 unique states by seeded
+  maximin selection.
+- Verify strict bounds, finiteness, full normalized-space rank, condition number, and nonzero
+  spread. Re-evaluate the 64 selected states under the production physical posterior and compare
+  their stored likelihood/prior/posterior components before opening the HDF backend.
+- Record the realized pool indices, selected physical states, derived selection seed, production
+  seed, validation results, and hashes in each production leaf. A continuation must reproduce and
+  verify this ledger and must never select walkers again.
 
-### Slim metric package and immutable material thresholds
+### Fixed production runs
 
-- Mean acceptance: `0.20--0.50` is healthy; an absolute change of at least 0.03 toward or away from
-  that interval is material; values already within the interval are equivalent for ranking.
-- Worst transformed-coordinate saturation fraction: at most 0.05 is healthy; an absolute change
-  of at least 0.10 is material; configurations both at or below 0.05 are equivalent.
-- Minimum steps per tau: below 20 is insufficient, 20--50 is pilot-adequate, and at least 50 is
-  strong; a tier crossing or at least 20% change within a tier is material. Tau must first satisfy
-  the existing at-most-20% stability screen, which is interpretability evidence, not another rank.
-- Maximum prior-width-normalized cross-seed Wasserstein distance: values at or below 0.05 are
-  equivalent; crossing 0.05 is material.
-- Absolute hourly posterior-predictive residual correlation at lag 24 hours: an absolute change of
-  at least 0.05 is material; lower is better, including for daily-likelihood chains.
-- `sigma_SR` upper-edge occupancy: define the edge as the top 5% of its unchanged prior; at most
-  0.10 is healthy, at least 0.50 is saturated, and an absolute change of at least 0.20 is material.
-- ESS, split R-hat, minimum walker acceptance, RMSE, R2, KGE, best likelihood, MAP, and the retired
-  terminal two-means screen do not select a configuration.
+- Run six independent chains: ABBY/JERC x seeds `9009--9011`.
+- Each chain uses 64 walkers x exactly 32,000 steps, 16 workers, incremental HDF persistence,
+  checkpoints every 8,000 steps, and complete unthinned sampler- and physical-coordinate raw-chain
+  packages.
+- Do not perform diagnostic-driven extension, early stopping, configuration comparison, or
+  follow-up sampling. A compatible scheduler/resource recovery may resume the same locked
+  32,000-step target but cannot extend it.
 
-### Site-specific decision rule
+### Concise final evaluation
 
-- Use paired matching-seed comparisons. Require all three seeds to point in the same direction,
-  the median paired difference to reach the material threshold, and no materially opposite seed.
-- A site supports a configuration only if it passes integrity/interpretability requirements,
-  materially improves at least one core metric, materially worsens none, and is the unique
-  non-dominated configuration among the six tested combinations.
-- Allowed independent outcomes for each site are `preferred_configuration_supported`,
-  `default_configuration_retained`, `inconclusive_metric_tradeoff`,
-  `inconclusive_seed_instability`, `inconclusive_no_unique_preference`, and
-  `no_eligible_configuration`. Neither site may veto, rescue, or determine the other.
+- Evaluate once after all three seeds for a site finish. Use
+  `discard=max(ceil(0.20*32000), ceil(5*tau_max))`; record unavailable or unstable tau rather than
+  substituting a favorable discard.
+- Report mean and walker acceptance, tau and its retrospective stability, post-burn steps per tau,
+  rank-normalized split R-hat, bulk/tail ESS, prior-width-normalized cross-seed Wasserstein distance,
+  transformed saturation, and physical prior-edge occupancy.
+- Report hourly-prediction RMSE, R2, KGE, bias, fitted `sigma_SR`, and valid observation count for
+  posterior-median parameters, MAP parameters as a descriptive point, and a bounded deterministic
+  posterior-predictive sample. Metrics are descriptive and cannot override MCMC diagnostics.
+- Retain compact parameter/physical-log-posterior traces, a physical-coordinate corner plot, and
+  observed plus posterior-predicted hourly time series. Do not produce an observed-versus-predicted
+  scatter plot, topology package, configuration ranking, or non-domination analysis.
+- Label each site `diagnostically_qualified` only when tau is stable to 20%, every parameter has at
+  least 50 post-burn tau, rank-normalized split R-hat is at most `1.05`, bulk and tail ESS are each
+  at least 400, and maximum cross-seed normalized Wasserstein distance is at most `0.05`.
+  Otherwise label it `fixed_length_inconclusive`; either outcome ends sampling.
 
-### Plots, gates, and exclusions
+### Integrity, work units, outputs, and exclusions
 
-- Retain the standard per-chain hourly SR prediction time series, one-dimensional physical PDFs,
-  physical-coordinate corner plot, parameter and physical-log-posterior traces, and walker
-  acceptance overview. Daily-likelihood chains still show hourly predictions and residuals.
-  Use steps 4001--8000 with deterministic display-only subsampling and fixed within-site axes/bins.
-- Hard gates are exact identity/provenance, complete finite HDF/raw chains, physical bounds/order,
-  transform/Jacobian/target convention, synchronized checkpoints/metadata, daily-map provenance,
-  terminal accounting, complete metric/plot/decision packages, and durable-record agreement.
-  Sampler quality and site decisions are diagnostic outcomes, not iteration-integrity failures.
-- Exclude new initialization search, production inference, automatic extension, transform redesign,
-  boundary-aware replacement proposals, prior/bound/Jacobian/observation/case/surrogate/site-window
-  changes, AR(1)/robust/weighted likelihoods, joint or pooled site inference, adaptive tuning,
-  fit-based selection, and automatic follow-up execution.
-
-### Puma resources, retries, outputs, and stop
-
-- Puma `standard` / `chopinsong` / `OLMT_puma`: preflight 2 CPUs/10 GB/30 min; each chain leaf
-  16 CPUs/80 GB/4 h/16 workers; aggregate/report/validation 4 CPUs/20 GB/2 h.
-- Submission shape: preflight, six six-leaf arrays, and aggregate/validation = 38 nominal scheduler
-  tasks across eight submissions. Stage A is at most 96 CPUs/480 GB; Stage B is at most
-  480 CPUs/2,400 GB, subject to Puma scheduling.
-- Retry rule: one minimal preflight-only correction/rerun; at most six campaign-leaf recoveries
-  total and at most one per leaf; one unchanged aggregate/validation scheduler/resource retry;
-  hard cap 46 tasks. A leaf recovery requires verified compatible HDF/checkpoint state and cannot
-  change scientific or sampler terms. Application/code/schema/dependency/numerical/scientific/
-  threshold/scope failures stop for fresh approval.
-- Cancellation is limited to recorded Iter011 IDs: a proven universal pre-execution defect may
-  cancel all affected pending leaves, while a configuration-specific defect may cancel only its
-  array. Cancellation grants no correction or resubmission authority.
-- External root: `/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/spinup_forcing_coupling` with
-  one preflight directory, six configuration parents containing six immutable leaves each, and one
-  aggregate/validation directory. Large raw/HDF/prediction/full-plot products remain outside Git;
-  `/xdisk` is temporary and unbacked.
-- Compact `summaries/iter011` evidence must include a comprehensive report, six-configuration table
-  per site, separate ABBY/JERC machine-readable decisions, selected comparison figures, aggregation
-  provenance, and terminal accounting, plus cumulative summary, registry, handoff, and validator.
-- Stop only after terminal accounting, integrity evaluation, independent site decisions, complete
-  reports/plots, durable-record agreement, final validation, and a valid handoff.
-
-### Next-production and authority boundary
-
-- A later site-specific production proposal may use a supported configuration only after the full
-  reproducible non-inferential initialization search, frozen fresh bundles, and independent burn-in
-  described in the Iter009 report. Inconclusive sites require narrower follow-up, not forced choice.
-- The approved package authorizes only this Iter011 lifecycle. A later proposal still requires a
-  fresh complete consolidated kickoff package and explicit approval.
-<!-- ITER011_PLAN_END -->
+- Hard gates are exact identity/provenance, target and pool agreement, complete valid initialization
+  artifacts, finite in-bound 32,000-step HDF/raw chains, synchronized checkpoints/metadata,
+  terminal accounting, complete concise evaluation artifacts, and durable-record agreement.
+  Scientific diagnostic outcomes are not iteration-integrity failures.
+- Proposed scheduler work is one technical preflight, two initialization leaves, one pool
+  validation, six production leaves, two site evaluations, and one aggregate/handoff validation:
+  13 nominal tasks across six staged submissions.
+- Proposed Puma resources are 2 CPUs/10 GB/30 min for preflight; 16 CPUs/80 GB/4 h per
+  initialization leaf; 4 CPUs/20 GB/1 h for pool validation; 16 CPUs/80 GB/8 h per production
+  leaf; and 4 CPUs/20 GB/2 h per evaluation or aggregate task.
+- Proposed retry ceiling is one minimal preflight correction/rerun, one unchanged
+  scheduler/resource retry per initialization leaf, one compatible scheduler/resource recovery per
+  production leaf, one unchanged retry per evaluation leaf, and one unchanged aggregate retry: at
+  most 25 scheduler tasks. Application/code/schema/dependency/numerical/target/pool/scientific/scope
+  failures stop for a revised package.
+- Proposed external layout is
+  `/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/spinup_forcing_coupling/spinup_forcing_coupling_iter012/`
+  with `preflight/`, `initialization/{abby,jerc}/`,
+  `production/{abby,jerc}/seed_{9009,9010,9011}/`, `evaluation/{abby,jerc}/`, and `aggregate/`.
+  Large pools, ledgers, HDF/raw chains, and full predictions remain outside Git; `/xdisk` is
+  temporary and unbacked.
+- Exclude joint production, mixed resolutions, annealed SMC, transferred initialization states,
+  automatic extension, alternate likelihoods, site weighting, changes to scientific dependencies
+  or targets, pooled conclusions, and automatic follow-up execution.
+- This planning-only proposal becomes executable only through a fresh consolidated kickoff under
+  `WORKFLOW.md`; Iter012 remains uninitialized.
+<!-- ITER012_PLAN_END -->
 
 ## Closeout references
 
