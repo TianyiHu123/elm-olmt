@@ -1,0 +1,81 @@
+{
+  "schema": "spinup-forcing-coupling-iter012-aggregate-v2",
+  "canonical_sites": [
+    {
+      "site": "ABBY",
+      "role": "canonical",
+      "label": "fixed_length_inconclusive",
+      "target_sha256": "bf9ade8b68bf7179cdb5c5712682dd1c343d510749efd7041cf0414ec4773bbd",
+      "move_matches_contract": true,
+      "mean_acceptance_by_seed": [
+        0.2388974609375,
+        0.23174462890625,
+        0.23752880859375
+      ],
+      "max_wasserstein": 0.004413728686093194,
+      "rhat_max": 1.0179384837793102,
+      "bulk_ess_min": 6518.634776713473,
+      "tail_ess_min": 3426.0543737379885,
+      "tau_available": true,
+      "diagnostic_window_valid": true
+    },
+    {
+      "site": "JERC",
+      "role": "canonical",
+      "label": "fixed_length_inconclusive",
+      "target_sha256": "26e5caa07f25bea9bfc76d21348440918869603937f2cae5335d3ca0dcfeb196",
+      "move_matches_contract": true,
+      "mean_acceptance_by_seed": [
+        0.18173193359375,
+        0.22122998046874998,
+        0.15695849609375
+      ],
+      "max_wasserstein": 0.5484297360956368,
+      "rhat_max": 2.2240997503507947,
+      "bulk_ess_min": 241.33456584940285,
+      "tail_ess_min": 1746.0491825660556,
+      "tau_available": true,
+      "diagnostic_window_valid": true
+    }
+  ],
+  "legacy_misconfigured_sampler_sites": [
+    {
+      "site": "ABBY",
+      "role": "legacy",
+      "label": "legacy_misconfigured_sampler",
+      "target_sha256": "1404d53f93397a432952e7aa52b7816035c6c4a64c609a541a6eef1b74fe2eb2",
+      "move_matches_contract": false,
+      "mean_acceptance_by_seed": [
+        0.17681982421874998,
+        0.25496386718749997,
+        0.13431005859375
+      ],
+      "max_wasserstein": 0.2550868466199096,
+      "rhat_max": 1.8805927934511826,
+      "bulk_ess_min": 269.25286368121186,
+      "tail_ess_min": 195.30208701542006,
+      "tau_available": true,
+      "diagnostic_window_valid": true
+    },
+    {
+      "site": "JERC",
+      "role": "legacy",
+      "label": "legacy_misconfigured_sampler",
+      "target_sha256": "0e1278c065ab9f4e098e2c886ccd2e5df411229f13e468f6e188bd0a28db8202",
+      "move_matches_contract": false,
+      "mean_acceptance_by_seed": [
+        0.02989794921875,
+        0.02962939453125,
+        0.02713720703125
+      ],
+      "max_wasserstein": 0.22845981958286113,
+      "rhat_max": 11.820993519602778,
+      "bulk_ess_min": 193.44526738278347,
+      "tail_ess_min": 194.17500738311242,
+      "tau_available": true,
+      "diagnostic_window_valid": true
+    }
+  ],
+  "decision_policy": "Canonical Package v2 controls Iter012 conclusions. Package v1 is retained only as separately labeled misconfigured-sampler context.",
+  "status": "pass"
+}

@@ -16,6 +16,7 @@ from model_ELM.load_obs_nc import (
     collocate_obs_to_forcing_time,
     load_observations_with_time_from_nc,
 )
+from model_ELM.coupling_pipeline import build_coupling_target, run_fixed_production_chain
 from model_ELM.mcmc_spinup_modes import (
     DEFAULT_COUPLED_VARIANT,
     resolve_coupled_spinup_artifact,
@@ -140,6 +141,22 @@ def _build_parser() -> argparse.ArgumentParser:
         default=None,
         help="Optional .npz bundle containing a physical `initial_state` array.",
     )
+    parser.add_argument(
+        "--candidate-pool",
+        default=None,
+        help=(
+            "Frozen candidate_pool.npz for provenance-checked fixed production. "
+            "When set, this CLI selects and records walkers through the reusable pipeline."
+        ),
+    )
+    parser.add_argument("--repository-commit", default=None)
+    parser.add_argument("--source-manifest", default=None)
+    parser.add_argument("--dependency-manifest", default=None)
+    parser.add_argument("--expected-physical-parameter-count", type=int, default=None)
+    parser.add_argument("--target-schema", default="coupled-target-v1")
+    parser.add_argument("--daily-map-schema", default="coupled-daily-map-v1")
+    parser.add_argument("--selection-schema", default="coupling-selection-ledger-v1")
+    parser.add_argument("--production-schema", default="coupling-production-v1")
     parser.add_argument(
         "--backend",
         default=None,
@@ -317,6 +334,89 @@ def main() -> int:
         return 1
     obs_map = _parse_obs_spec(args.obs)
     obs_err_vars = _parse_obs_err_vars(args.obs_err_vars)
+
+    if args.candidate_pool:
+        if spinup_mode != "coupled":
+            raise ValueError("--candidate-pool production requires --spinup-mode coupled")
+        if myvars != ["SR"]:
+            raise ValueError("--candidate-pool production currently requires --vars SR")
+        if not args.flat_output:
+            raise ValueError("--candidate-pool production requires --flat-output")
+        required_provenance = {
+            "--repository-commit": args.repository_commit,
+            "--source-manifest": args.source_manifest,
+            "--dependency-manifest": args.dependency_manifest,
+        }
+        missing = [name for name, value in required_provenance.items() if not value]
+        if missing:
+            raise ValueError(
+                "candidate-pool production requires provenance arguments: "
+                + ", ".join(missing)
+            )
+        if args.initial_state:
+            raise ValueError("--initial-state and --candidate-pool are mutually exclusive")
+        if args.backend and Path(args.backend).resolve() != outputdir / "backend.h5":
+            raise ValueError(
+                "--backend must be omitted or equal <outputdir>/backend.h5 "
+                "for candidate-pool production"
+            )
+        if "*" in obs_map:
+            if len(case_names) != 1:
+                raise ValueError(
+                    "a shared --obs path is ambiguous for multi-site candidate-pool production; "
+                    "use SITE:path mappings"
+                )
+            case_for_site = _load_case(workdir, case_names[0])
+            observation_paths = {
+                _site_key_from_case(case_for_site): obs_map["*"],
+            }
+        else:
+            observation_paths = obs_map
+        target = build_coupling_target(
+            repo_root=workdir,
+            cases=case_names,
+            resolution=args.likelihood_resolution,
+            forcing_artifact=args.artifact,
+            spinup_artifact=spinup_artifact_path,
+            observation_paths=observation_paths,
+            fit_error=args.fit_error,
+            expected_physical_parameter_count=args.expected_physical_parameter_count,
+            target_schema=args.target_schema,
+            daily_map_schema=args.daily_map_schema,
+        )
+        site_label = target["sites"][0] if len(target["sites"]) == 1 else ",".join(target["sites"])
+        run_fixed_production_chain(
+            target=target,
+            site=site_label,
+            resolution=args.likelihood_resolution,
+            seed=int(args.seed) if args.seed is not None else -1,
+            pool_path=args.candidate_pool,
+            output=outputdir,
+            repository_commit=str(args.repository_commit),
+            source_manifest=args.source_manifest,
+            dependency_manifest=args.dependency_manifest,
+            cases=case_names,
+            nwalkers=args.nwalkers,
+            nsteps=args.nsteps,
+            checkpoint_interval=args.checkpoint_interval,
+            n_processes=(
+                args.n_processes
+                if args.n_processes is not None
+                else int(os.environ.get("SLURM_CPUS_PER_TASK", os.cpu_count() or 1))
+            ),
+            sampler_coordinates=args.sampler_coordinates,
+            move_configuration=args.move_configuration,
+            de_move_scale=args.de_move_scale,
+            write_diagnostics=bool(args.write_diagnostics),
+            selection_schema=args.selection_schema,
+            production_schema=args.production_schema,
+            daily_map_schema=args.daily_map_schema,
+        )
+        print(
+            f"FIXED_PRODUCTION_PASS sites={site_label} "
+            f"resolution={args.likelihood_resolution} seed={args.seed}"
+        )
+        return 0
 
     case_objs: List[Tuple[str, Any]] = []
     for cname in case_names:

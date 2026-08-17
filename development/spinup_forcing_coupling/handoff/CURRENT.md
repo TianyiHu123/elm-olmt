@@ -1,59 +1,121 @@
 # Spinup-Forcing Coupling - Current Handoff
 
+Closeout identity: Iteration ID `iter012`; Status `completed`; Work type `implementation`; Objective `Reusable general-pipeline fixed production MCMC for ABBY daily/0.75 and JERC hourly/0.75`; Bounded scope `Package v2 canonical: two fresh pools; six 64x32000 chains; two canonical evaluations; Package v1 legacy audit/evaluation; aggregate and handoff validation`; Overall acceptance result `pass`; Decision `ABBY fixed_length_inconclusive; JERC fixed_length_inconclusive`
+
 ## Live state
 
-- Active iteration: `iter011`
+- Active iteration: `iter012`
 - Status: `completed`
 - Phase: `closed`
 - Work type: `implementation`
-- Objective: `Site-specific TIM DE-scale and hourly-versus-daily likelihood-resolution pilot at ABBY and JERC`
-- Bounded scope: `ABBY/JERC separately; hourly/daily likelihood; DEMove scales 0.50/0.75/1.00; seeds 9009-9011; 36 64x8000 chains`
+- Objective: `Reusable general-pipeline fixed production MCMC for ABBY daily/0.75 and JERC hourly/0.75`
+- Bounded scope: `Package v2 canonical: two fresh pools; six 64x32000 chains; two canonical evaluations; Package v1 legacy audit/evaluation; aggregate and handoff validation`
 - Overall acceptance result: `pass`
-- Decision: `ABBY preferred_configuration_supported: daily_0.75; JERC inconclusive_metric_tradeoff: no selected configuration`
-- Active job IDs: none
+- Decision: `ABBY fixed_length_inconclusive; JERC fixed_length_inconclusive`
+- Active job IDs: none; handoff validation `23575977` completed `0:0` with
+  `ITER012_HANDOFF_VALIDATE_PASS`; canonical evaluations ABBY/JERC `23575950`/`23575951` completed `0:0`
+  with `fixed_length_inconclusive`; legacy-audit evaluations ABBY/JERC `23575952`/`23575953`
+  completed `0:0` with `legacy_misconfigured_sampler`; production ABBY seeds 9009/9010/9011
+  `23574707`/`23574706`/`23574708` and JERC seeds 9009/9010/9011
+  `23574709`/`23574710`/`23574711`, all completed `0:0` with `FIXED_PRODUCTION_PASS`;
+  pool validation `23574678` completed `0:0` with
+  `POOL_VALIDATION_PASS`; Revision1 initialization ABBY `23574453` and JERC `23574454` completed
+  `0:0` with `INITIALIZE_PASS`;
+  Revision1 preflight `23574395` completed `0:0` with `PREFLIGHT_PASS`;
+  Package v2 preflights `23574254` and `23574301` both terminal `OUT_OF_MEMORY 0:125`; Package v1 jobs
+  `23570407--23570412` are reconciled `COMPLETED 0:0`
 - Site profile: `development/hpc/puma.md`
-- Last updated: `2026-08-14T19:08:12-07:00`
+- Canonical Package v2 root: `/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/spinup_forcing_coupling/spinup_forcing_coupling_iter012_general_pipeline_v2`
+- Active Revision1 root: `/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/spinup_forcing_coupling/spinup_forcing_coupling_iter012_general_pipeline_v2/revision1`
+- Legacy Package v1 root: `/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/spinup_forcing_coupling/spinup_forcing_coupling_iter012`
+- Last updated: `2026-08-17T12:47:17-07:00`
 
 ## Authority and stop boundary
 
-The user response `the kickoff package and outside sandbox authority is approved` at
-`2026-08-13T20:15:40-07:00` approves the complete Iter011 package copied below. It authorizes the
-primary agent to prepare, obtain independent read-only review, create the approved external layout,
-submit and monitor the locked preflight and staged campaign, apply the recorded bounded retry and
-cancellation rules, evaluate, update durable records, validate the handoff, and make one local
-closeout commit. It also authorizes outside-sandbox `sbatch`, job-scoped `squeue`, `scontrol show
-job`, `sacct`, `seff`, `job-history`, and `job-limits`, plus `scancel` only for recorded Iter011 IDs
-under the contract's cancellation conditions. No scope, code, dependency, numerical, or gate change
-outside this contract is authorized. That authority is exhausted and does not authorize any
-Iter012 action.
+The original Package v1 authority remains historical provenance. On `2026-08-16`, the user confirmed
+that this session is on UArizona Puma, selected the canonical/legacy and cleanup boundaries, and
+responded `agreed. Are you ready to resume the iteration with the new package now?` after reviewing
+the complete revised contract and record-amendment plan. This approves Package v2 preparation,
+repository scripts/tests, the new external layout, locked Slurm submissions, job-scoped monitoring
+and accounting, bounded retries and cancellation, evaluation, durable records, relocation of the
+misplaced Package v1 logs, removal of superseded Iter012 Python adapters after external preservation,
+and one local closeout commit. No push is authorized.
+
+Package v2 has 16 nominal work units. After both approved 10 GB preflight attempts ended
+`OUT_OF_MEMORY 0:125`, the user approved Revision1: exactly one 4 CPU/20 GB, 30-minute preflight
+attempt with no retry, unchanged source behavior/dependencies/gates/downstream resources, and a
+revised ceiling of 32 total scheduler tasks. Every downstream eligible leaf retains at most one
+unchanged scheduler/resource retry. Any application, code, interface, schema, dependency,
+numerical, target, scientific-gate, or scope failure stops for another revised package.
 
 ## Best evidence
 
-- Output root: `/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/spinup_forcing_coupling`
-- Summary path: `development/spinup_forcing_coupling/summaries/iter011`
-- Dependencies: Iter002 forcing, Iter012 `drop21_corr080`, matching-site/seed Iter009 TIM bundles,
-  and ABBY/JERC observations/cases were identity-verified by the completed preflight and v5 aggregate.
-- Terminal evidence: preflight `23561067`, all 36 campaign leaves, and aggregate `23565465` completed
-  `0:0`; aggregate emitted `AGGREGATE_PASS leaves=36` and `AGGREGATE_PASS`.
+- Output root: `/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/spinup_forcing_coupling/spinup_forcing_coupling_iter012`
+- Dependencies: Iter002 forcing, Iter012 `drop21_corr080`, ABBY/JERC case pickles, observations,
+  source closure, and Puma environment were hash-verified by revised preflight `23569607`.
+- Revised Iter012 preflight `23569607` completed `0:0` with `PREFLIGHT_PASS`; corrected generalized-package preflight `23569843` completed `0:0` with `PREFLIGHT_PASS`; ABBY retry
+  `23569633` failed `1:0` after 35:07 on `r6u01n1` during JSON serialization of initialization
+  metadata/report (`numpy.int64` not serializable). Its artifacts and prior manifests are preserved.
+- The approved retry now uses reusable `model_ELM/coupling_pipeline.py` target and initialization
+  interfaces with thin Iter012 adapters; the retry package is materialized under
+  `initialization/abby_retry_23569633` and has passed independent review.
+- ABBY retry `23569844` completed `FAILED 1:0` after `03:02:13` on `r7u05n1` with 16 CPUs/80 GB;
+  terminal traceback reports `pool gate failed: 12106 robust strata exceed pool size 640`.
+  `seff` reports 8.65 GB memory use, so this is an application/pool-gate failure, not a
+  scheduler/resource failure. No initialization gate is met and no retry is authorized.
+- Material design finding: Iter012 also introduced iteration-specific production/optimization
+  surfaces even though reusable root-level optimization code already exists. This does not match
+  the pipeline objective. Preserve the active ABBY job, audit the boundary after terminal
+  accounting, and do not advance to pool validation or production until a revised package makes
+  Iter012 files thin adapters and places reusable behavior in root-level engines/interfaces.
+- Revised package approval: user approved the revised package on `2026-08-15T19:41:27-07:00`.
+  The corrected pool contract uses marginal parameter-bin strata (`15` parameters x `4` bins,
+  at most `60` required representatives) while retaining the `640` pool, exact-unique,
+  full-rank, condition-number, and nonzero-spread gates. Reusable walker selection and fixed
+  production execution are now in `model_ELM/coupling_pipeline.py`; Iter012 production is a
+  configuration adapter. The preserved failed attempts remain immutable; the revised ABBY
+  initialization will use `initialization/abby_retry_23569844_revised`.
+- Historical Iter011 closeout remains provenance context only; it is not current Iter012 evidence.
+- Package v1 terminal accounting is complete. Its six production leaves completed `0:0`, but raw
+  metadata proves they used `move_configuration=stretch` instead of the locked `de_mixture`.
+  Misplaced logs were hash-verified into their matching leaves, and superseded Python adapters were
+  preserved under Package v1 provenance before repository removal.
 
 ## Risks and limitations
 
-- Aggregate v1--v4 application/launcher failures are classified in `iterations/iter011.md`; their
-  material and v3/v4 partial outputs are preserved. The bounded v5 correction was independently
-  reviewed and passed before submission.
-- ABBY's preferred `daily_0.75` is only future-proposal evidence. JERC's hourly configurations have
-  an unresolved material trade-off; `hourly_0.75` is a user-selected future production choice, not
-  an Iter011-supported unique preference.
+- Canonical Package v2 conclusions are `fixed_length_inconclusive` at both sites. JERC additionally
+  shows severe cross-seed nonconvergence (max split R-hat `2.22410`, Wasserstein `0.54843`).
+  Neither posterior is promoted.
+- Package v1 is comparison-only `legacy_misconfigured_sampler` evidence (`stretch` instead of
+  `de_mixture`).
+- Production stderr accumulated large empirical-range warning streams; they did not change terminal
+  status and remain a pipeline usability finding.
 - `/xdisk` products are temporary and unbacked.
+
+## Package v2 invariants
+
+- Package v2 is canonical. Package v1 is retained and evaluated only as legacy corroboration.
+- Scientific targets, dependencies, settings, seeds, fixed 32,000-step length, and diagnostic
+  qualification gates are unchanged.
+- Reusable behavior lives in `model_ELM/coupling_pipeline.py`; `initialize_pipeline.py` and
+  `optimize_surrogate_forcing.py` are the public initialization and production entry points.
+- Iteration-specific Python adapters are removed only after their executed copies and hashes are
+  verified under the Package v1 external tree. Iteration-specific Slurm files remain thin,
+  auditable orchestration and provenance.
+- Slurm logs use explicit work-unit-local paths. The twelve Package v1 root logs are relocated to
+  their matching external production leaves with before/after hash verification.
+- ABBY and JERC remain separate invocations because they use different likelihood resolutions.
+  The reusable interface may support multiple sites only under one common resolution.
 
 ## Next action
 
-Closed. Preserve the complete Iter011 package and its failed-attempt provenance. The identical
-planning-only Iter012 proposal below is ready for a fresh consolidated kickoff package. Iter012 is
-not initialized, and no implementation or scheduler action is authorized.
+No next iteration is proposed. This workflow is intentionally stopped because both canonical
+fixed-length outcomes are inconclusive. Start the next session by reading this file, `WORKFLOW.md`,
+the Iter012 record/report, and `development/hpc/puma.md`. Any continuation requires a fresh planning
+package and explicit approval.
 
 <!-- ITER012_PLAN_BEGIN -->
-## Proposed Iter012 plan - standard initialization and fixed production MCMC
+## Historical Package v1 plan - superseded operationally by approved Package v2
 
 - Sequential ID: `iter012`
 - Status: `not_initialized`
@@ -192,18 +254,19 @@ not initialized, and no implementation or scheduler action is authorized.
 
 ## Closeout references
 
-- Closeout identity: Iteration ID `iter011`; Status `completed`; Work type `implementation`;
-  Objective `Site-specific TIM DE-scale and hourly-versus-daily likelihood-resolution pilot at ABBY and JERC`;
-  Bounded scope `ABBY/JERC separately; hourly/daily likelihood; DEMove scales 0.50/0.75/1.00; seeds 9009-9011; 36 64x8000 chains`;
-  Overall acceptance result `pass`; Decision `ABBY preferred_configuration_supported daily_0.75; JERC inconclusive_metric_tradeoff with no selected configuration`.
-- Iteration record: `development/spinup_forcing_coupling/iterations/iter011.md`
-- Comprehensive report: `development/spinup_forcing_coupling/summaries/iter011/ITER011_REPORT.md`
-- Decisions: `development/spinup_forcing_coupling/summaries/iter011/abby_decision.json` and
-  `development/spinup_forcing_coupling/summaries/iter011/jerc_decision.json`
-- Accounting/evidence: aggregate `23565465`; external result
-  `spinup_forcing_coupling_iter011_aggregate/result/aggregate_result.json`
-- Validator: `development/spinup_forcing_coupling/slurm/iter011/validate_iter011_handoff.py`
+- Closeout identity: Iteration ID `iter012`; Status `completed`; Work type `implementation`; Objective `Reusable general-pipeline fixed production MCMC for ABBY daily/0.75 and JERC hourly/0.75`; Bounded scope `Package v2 canonical: two fresh pools; six 64x32000 chains; two canonical evaluations; Package v1 legacy audit/evaluation; aggregate and handoff validation`; Overall acceptance result `pass`; Decision `ABBY fixed_length_inconclusive; JERC fixed_length_inconclusive`
+- Iteration record: `development/spinup_forcing_coupling/iterations/iter012.md`
+- Comprehensive report: `development/spinup_forcing_coupling/summaries/iter012/ITER012_REPORT.md`
+- Aggregate: `development/spinup_forcing_coupling/summaries/iter012/aggregate_result.json`
+- Accounting: `development/spinup_forcing_coupling/summaries/iter012/accounting.csv`
+- Canonical evaluations: `summaries/iter012/abby_evaluation_result.json` and
+  `summaries/iter012/jerc_evaluation_result.json`
+- Validator: `development/spinup_forcing_coupling/slurm/iter012/validate_iter012_handoff.py`
+- Validator job: `23575977` `COMPLETED 0:0`; output
+  `ITER012_HANDOFF_VALIDATE_PASS abby=fixed_length_inconclusive jerc=fixed_length_inconclusive`
+- Canonical output root:
+  `/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/spinup_forcing_coupling/spinup_forcing_coupling_iter012_general_pipeline_v2/revision1`
 
-Start the next session by reading this file, `WORKFLOW.md`, the Iter011 record/report, and
+Start the next session by reading this file, `WORKFLOW.md`, the Iter012 record/report, and
 `development/hpc/puma.md`. Reconcile any claimed live state against scheduler accounting before
 requesting a new consolidated package.

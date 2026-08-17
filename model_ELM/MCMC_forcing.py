@@ -235,14 +235,13 @@ def _write_iter008_raw_chain(
     likelihood_resolution: str = "hourly",
     backend_path: Optional[str | Path] = None,
     physical_log_prob: Optional[np.ndarray] = None,
+    allow_existing: bool = False,
 ) -> Dict[str, Any]:
     """Write the immutable raw-chain package before any postprocessing."""
     root = Path(output_root)
     root.mkdir(parents=True, exist_ok=True)
     raw_path = root / "raw_chain.npz"
     meta_path = root / "raw_chain_metadata.json"
-    if raw_path.exists() or meta_path.exists():
-        raise FileExistsError("Iter008 raw-chain package already exists; refusing overwrite")
     payload = {
         "chain": np.asarray(chain, dtype=np.float64),
         "log_prob": np.asarray(log_prob, dtype=np.float64),
@@ -255,13 +254,42 @@ def _write_iter008_raw_chain(
         payload["sampler_chain"] = np.asarray(sampler_chain, dtype=np.float64)
     if physical_log_prob is not None:
         payload["physical_log_prob"] = np.asarray(physical_log_prob, dtype=np.float64)
-    np.savez_compressed(raw_path, **payload)
-    raw_hash = hashlib.sha256(raw_path.read_bytes()).hexdigest()
+    hashes_path = root / "raw_chain_hashes.json"
+    if raw_path.exists():
+        if not allow_existing or not raw_path.is_file():
+            raise FileExistsError("raw-chain package already exists; refusing overwrite")
+        existing = np.load(raw_path, allow_pickle=False)
+        if set(existing.files) != set(payload):
+            raise ValueError("existing raw-chain arrays differ from recovered backend")
+        for key, expected in payload.items():
+            if not np.array_equal(np.asarray(existing[key]), expected):
+                raise ValueError(f"existing raw-chain array differs on recovery: {key}")
+        raw_hash = hashlib.sha256(raw_path.read_bytes()).hexdigest()
+        if meta_path.is_file() and hashes_path.is_file():
+            metadata = json.loads(meta_path.read_text(encoding="utf-8"))
+            meta_hash = hashlib.sha256(meta_path.read_bytes()).hexdigest()
+            hashes = json.loads(hashes_path.read_text(encoding="utf-8"))
+            if (
+                metadata.get("raw_chain_sha256") != raw_hash
+                or hashes.get("raw_chain_sha256") != raw_hash
+                or hashes.get("metadata_sha256") != meta_hash
+            ):
+                raise ValueError("existing raw-chain package hash mismatch on recovery")
+            print(f"RAW_CHAIN_REUSED path={raw_path} sha256={raw_hash}")
+            return metadata
+    else:
+        if meta_path.exists() or hashes_path.exists():
+            raise ValueError("raw-chain metadata exists without the raw chain")
+        raw_temporary = root / "raw_chain.npz.tmp"
+        with raw_temporary.open("wb") as handle:
+            np.savez_compressed(handle, **payload)
+        raw_temporary.replace(raw_path)
+        raw_hash = hashlib.sha256(raw_path.read_bytes()).hexdigest()
     provenance: Dict[str, Any] = {}
     for key in (
-        "ITERATION_ID", "SITE_NAME", "CASE_NAME", "OBS_PATH", "FORCING_ARTIFACT",
+        "ITERATION_ID", "REPOSITORY_COMMIT", "SITE_NAME", "CASE_NAME", "OBS_PATH", "FORCING_ARTIFACT",
         "SPINUP_ARTIFACT", "SPINUP_MODE", "COUPLED_VARIANT", "N_WALKERS", "N_STEPS",
-        "N_PROCESSES", "SEED", "SOURCE_MANIFEST", "CASE_HASH_MANIFEST",
+        "N_PROCESSES", "SEED", "SOURCE_MANIFEST", "DEPENDENCY_MANIFEST", "CASE_HASH_MANIFEST",
         "ARTIFACT_HASH_MANIFEST", "SUBMISSION_CONFIG", "MICROMAMBA_ENV",
         "MICROMAMBA_MODULE",
     ):
@@ -297,7 +325,11 @@ def _write_iter008_raw_chain(
         "provenance": provenance,
         "raw_chain_sha256": raw_hash,
     }
-    meta_path.write_text(json.dumps(metadata, indent=2) + "\n", encoding="utf-8")
+    meta_temporary = root / "raw_chain_metadata.json.tmp"
+    meta_temporary.write_text(
+        json.dumps(metadata, indent=2) + "\n", encoding="utf-8"
+    )
+    meta_temporary.replace(meta_path)
     meta_hash = hashlib.sha256(meta_path.read_bytes()).hexdigest()
     hashes = {
         "schema": "spinup-forcing-coupling-iter008-raw-chain-hashes-v1",
@@ -306,9 +338,11 @@ def _write_iter008_raw_chain(
         "metadata": str(meta_path),
         "metadata_sha256": meta_hash,
     }
-    (root / "raw_chain_hashes.json").write_text(
+    hashes_temporary = root / "raw_chain_hashes.json.tmp"
+    hashes_temporary.write_text(
         json.dumps(hashes, indent=2) + "\n", encoding="utf-8"
     )
+    hashes_temporary.replace(hashes_path)
     print(f"RAW_CHAIN_WRITTEN path={raw_path} sha256={raw_hash}")
     return metadata
 
@@ -419,6 +453,9 @@ def MCMC_forcing(
     checkpoint_interval: int = 0,
     de_move_scale: float = 1.0,
     likelihood_resolution: str = "hourly",
+    daily_map_schema: str = "spinup-forcing-coupling-iter011-daily-maps-v1",
+    posterior_selection_filename: str = "selection_ledger.json",
+    allow_existing_raw_chain: bool = False,
 ):
     sites = self.all_sites
     pmin = np.array(self.ensemble_pmin, dtype=float)
@@ -605,7 +642,8 @@ def MCMC_forcing(
         print("Fitting observation error parameters")
         for v in myvars:
             mask = (obs[sites[0]][v] > -9000) & (obs_err[sites[0]][v] > 0)
-            max_obs = max([np.max(np.abs(obs[sites[0]][v][mask])), 0.01])
+            valid_maxima = [np.max(np.abs(obs[s][v][(obs[s][v] > -9000) & np.isfinite(obs[s][v]) & (obs_err[s][v] > 0) & np.isfinite(obs_err[s][v])])) for s in sites if np.any((obs[s][v] > -9000) & np.isfinite(obs[s][v]) & (obs_err[s][v] > 0) & np.isfinite(obs_err[s][v]))]
+            max_obs = max(valid_maxima + [0.01])
             pmin = np.append(pmin, 0.0)
             pmax = np.append(pmax, 0.25 * max_obs)
             ensemble_parms = ensemble_parms + ["sigma_" + v]
@@ -682,7 +720,7 @@ def MCMC_forcing(
         raise ValueError("DEMove scale must be finite and positive")
     if likelihood_resolution == "daily":
         daily_path = Path(output_root) / "daily_index_maps.json"
-        daily_payload = {"schema": "spinup-forcing-coupling-iter011-daily-maps-v1", "maps": daily_index_maps}
+        daily_payload = {"schema": daily_map_schema, "maps": daily_index_maps}
         if daily_path.exists():
             existing = json.loads(daily_path.read_text(encoding="utf-8"))
             if existing != daily_payload:
@@ -848,14 +886,19 @@ def MCMC_forcing(
         likelihood_resolution=likelihood_resolution,
         backend_path=backend_path,
         physical_log_prob=raw_physical_log_probs,
+        allow_existing=allow_existing_raw_chain,
     )
     try:
+        acceptance_by_walker = np.asarray(sampler.acceptance_fraction, dtype=float)
+        mean_acceptance = float(np.mean(acceptance_by_walker))
         print(
             "Mean acceptance fraction ",
-            float(np.mean(np.asarray(sampler.acceptance_fraction, dtype=float))),
+            mean_acceptance,
         )
     except Exception as exc:  # noqa: BLE001
         print(f"Acceptance fraction unavailable: {exc}")
+        acceptance_by_walker = np.full(nwalkers, np.nan)
+        mean_acceptance = float("nan")
 
     n_model_parms = len(ensemble_parms) - nerr_parms
     try:
@@ -893,7 +936,7 @@ def MCMC_forcing(
         "per_walker": selection["per_walker"],
         "ledger": selection["selected_ledger"],
     }
-    Path(output_root, "selection_ledger.json").write_text(
+    Path(output_root, posterior_selection_filename).write_text(
         json.dumps(selection_payload, indent=2) + "\n", encoding="utf-8"
     )
 
@@ -950,3 +993,9 @@ def MCMC_forcing(
             selection_payload=selection_payload,
             tau_values=tau_values,
         )
+    return {
+        "mean_acceptance_fraction": mean_acceptance,
+        "walker_acceptance_fraction": acceptance_by_walker.tolist(),
+        "tau": None if tau_values is None else tau_values.tolist(),
+        "posterior_selection": selection_payload,
+    }

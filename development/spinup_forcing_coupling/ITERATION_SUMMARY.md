@@ -592,3 +592,40 @@ integrity-only acceptance; no scientific quality hard gate was applied.
 - Provenance and limitations: v1--v4 aggregate failures were classified and preserved; v5 was
   independently reviewed before submission. `/xdisk` products are temporary and unbacked. Any
   ABBY production proposal or JERC follow-up is a new, separately approved iteration.
+
+## iter012 - Reusable general-pipeline fixed production MCMC
+
+Closeout identity: Iteration ID `iter012`; Status `completed`; Work type `implementation`; Objective `Reusable general-pipeline fixed production MCMC for ABBY daily/0.75 and JERC hourly/0.75`; Bounded scope `Package v2 canonical: two fresh pools; six 64x32000 chains; two canonical evaluations; Package v1 legacy audit/evaluation; aggregate and handoff validation`; Overall acceptance result `pass`; Decision `ABBY fixed_length_inconclusive; JERC fixed_length_inconclusive`
+
+- Closed at: `2026-08-17T01:45:03-07:00`
+- Output root:
+  `/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/spinup_forcing_coupling/spinup_forcing_coupling_iter012_general_pipeline_v2/revision1`
+- Summary path: `development/spinup_forcing_coupling/summaries/iter012`
+
+### Locked settings
+
+- Separate ABBY daily/0.75 and JERC hourly/0.75 targets; 64 walkers × 32,000 steps; seeds
+  9009–9011; transformed coordinates; `de_mixture`; frozen 640-member site pools.
+- Package v1 is retained only as separately labeled misconfigured-sampler context.
+- Revision1 source, dependency, and scaffold manifest hashes are
+  `7ce581f0d736e9d82f7d7439c538c9c459ec41be5549178e917b728c515357bf`,
+  `540bf3d0816a3a6a103d4e2e5d83a19f43a4a5b58fead598f09b1a0d58365e2d`, and
+  `1d6d482b320a2c181fface19adae7c5e4c5bffe38b80033de3454899db6a5035`.
+
+### Quantitative evidence
+
+- Two 10 GB preflights ended `OUT_OF_MEMORY 0:125`; approved Revision1 preflight `23574395`
+  completed `0:0` with `PREFLIGHT_PASS`. Initialization `23574453`/`23574454`, pool validation
+  `23574678`, six production leaves `23574706`–`23574711`, evaluations `23575950`–`23575953`,
+  and aggregate `23575960` all completed `0:0`.
+- ABBY: acceptance `0.23890/0.23174/0.23753`; max split R-hat `1.01794`; minimum bulk/tail ESS
+  `6518.63`/`3426.05`; cross-seed distance `0.00441`.
+- JERC: acceptance `0.18173/0.22123/0.15696`; max split R-hat `2.22410`; minimum bulk/tail ESS
+  `241.33`/`1746.05`; cross-seed distance `0.54843`.
+
+### Gate outcome and conclusion
+
+The implementation/integrity contract passed, but both fixed-length scientific outcomes are
+inconclusive. No posterior is promoted and no rerun is authorized. No next iteration is proposed;
+any continuation requires a fresh planning package and explicit approval. `/xdisk` remains
+temporary and unbacked, and repetitive empirical-range warning logs are a maintenance finding.
