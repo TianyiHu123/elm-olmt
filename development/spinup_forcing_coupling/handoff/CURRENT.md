@@ -41,41 +41,64 @@ The Iter013 kickoff package approved on `2026-08-17T17:59:00-07:00` (`approved t
 Iter013 is closed. Copy the Iter014 planning-only proposal below into a fresh consolidated kickoff package before any scaffolding or submission.
 
 <!-- ITER014_PLAN_BEGIN -->
-## Proposed Iter014 plan - JERC walker-selection contrast on frozen Iter012 pool
+## Proposed Iter014 plan - JERC high-likelihood candidate-pool reconstruction
 
 - Sequential ID: `iter014`
 - Status: `not_initialized`
-- Work type: `validation`
-- Objective: test whether JERC production mixing can be repaired by changing only how 64
-  walkers are taken from the frozen Iter012 independent pool, without reverting to TIM or
-  regenerating the pool.
-- Evidence basis: Iter013 classified both sites `separated` and `diversity_dominated`. TIM
-  walkers are compact and higher under the Iter012 target; Iter012 walkers span near-full
-  prior width and almost never coincide with ledger top-64/top-640. Independent search remains
-  the preferred production philosophy; the live question is walker placement.
-- Hypothesis: selecting 64 walkers from a high-posterior membership subset of the same Iter012
-  JERC pool recovers TIM-like seed agreement under `hourly/0.75`, while the current
-  strata/maximin 64-walker rule does not.
+- Work type: `implementation`
+- Objective: test whether JERC production mixing can be repaired by rebuilding the 640-member
+  candidate pool from the frozen Iter012 independent search ledger under high-likelihood pool
+  rules, without reverting to TIM or rerunning Sobol/L-BFGS search.
+- Evidence basis: Iter013 classified both sites `separated` and `diversity_dominated`. The
+  Iter012 ledger contains high-posterior states, but `choose_candidate_pool` filled most of the
+  640 by maximin over the full finite unique set, so the production pool almost never coincides
+  with ledger top-640 and walkers miss the TIM neighborhood. Independent search remains the
+  preferred production philosophy; the live failure is pool construction, not walker sampling
+  alone.
+- Hypothesis: a rank-dominated or high-L-restricted hybrid 640 recovered from the same JERC
+  ledger restores TIM-like seed agreement under `hourly/0.75`, while the current
+  `diversity_maximin` pool does not.
+
+### Code change (required before campaign)
+
+- Extend reusable initialization so pool construction is selectable:
+  - `diversity_maximin` — current Iter012 behavior; remain the default.
+  - `rank_dominated` — Variant A.
+  - `hybrid_high_l_maximin` — Variant B.
+- Thread `pool_rule` (and Variant B `high_l_quantile`) through `choose_candidate_pool`,
+  `initialize_candidate_pool`, and `initialize_pipeline.py`; record the rule in pool
+  diagnostics / search-contract metadata.
+- Iter014 execution should rebuild A/B pools from the frozen Iter012 JERC ledger (no new
+  search). Full init must still honor the same rules for later campaigns.
 
 ### Fixed targets and dependencies
 
-- JERC only; locked Iter012 hourly target and frozen Revision1 JERC pool/ledger hashes.
-- Do not use TIM/Iter008/009/011 transferred states.
+- JERC only; locked Iter012 hourly target and frozen Revision1 JERC ledger/pool hashes.
+- Do not use TIM/Iter008/009/011 transferred states as starts.
 - Preserve DEMove `0.75`, 80/20 mixture, seeds `9009--9011`.
+- Keep current `select_production_walkers` so the contrast is pool policy only.
 
 ### Tentative matrix
 
-- Control: existing Iter012 JERC production selection ledgers (no rerun required if reused as
-  evidence only).
-- Variant A: top-64 unique ledger states by stored physical log posterior.
-- Variant B: robust high-posterior subset (e.g. top decile of the frozen pool) then maximin to 64.
-- Optional short diagnostic length `64 x 8000` only; no 32k production extension in Iter014.
+- Control: reuse existing Iter012 JERC production/evaluation evidence only; no control MCMC
+  rerun. Prefer the 8k checkpoint metrics when available for length-matched comparison against
+  A/B; otherwise treat the published Iter012 screens as reference.
+- Variant A (`rank_dominated`): top-640 unique ledger states by stored physical log posterior;
+  then current walker selection; short diagnostic `64 x 8000` for seeds `9009--9011`.
+- Variant B (`hybrid_high_l_maximin`): restrict unique finite ledger states to logp at or above
+  the 0.90 quantile (top decile); if fewer than 640 uniques, widen the quantile only as needed
+  to reach 640; then apply existing strata-required + maximin fill inside that high-L set;
+  then current walker selection; same `64 x 8000` seeds.
+- No 32k production extension in Iter014.
 
 ### Gates and exclusions
 
-- Integrity gates only plus the Iter012 diagnostic qualification screens for cross-seed
-  Wasserstein and acceptance. No posterior promotion. No pool regeneration. No ABBY. No
-  likelihood change.
+- Integrity gates plus the Iter012 diagnostic qualification screens for cross-seed Wasserstein
+  and acceptance (characterization only). Retain existing pool geometry gates (full rank,
+  nonzero spread, condition number) for all rules unless a rule fails them as scientific
+  evidence.
+- No posterior promotion. No new Sobol/L-BFGS search. No ABBY. No likelihood or DE-scale
+  change. No TIM revert.
 - Fresh consolidated kickoff required before any scaffolding or submission.
 <!-- ITER014_PLAN_END -->
 
