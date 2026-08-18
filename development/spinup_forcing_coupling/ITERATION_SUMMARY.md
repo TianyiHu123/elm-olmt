@@ -632,3 +632,29 @@ clouds at ABBY and JERC; that proposal is recorded in `iterations/iter012.md` an
 `handoff/CURRENT.md` and remains `not_initialized` until a fresh consolidated kickoff.
 `/xdisk` remains temporary and unbacked, and repetitive empirical-range warning logs are a
 maintenance finding.
+
+## iter013 - Stage A initialization-cloud comparison
+
+Closeout identity: Iteration ID `iter013`; Status `completed`; Work type `validation`; Objective `Stage-A TIM vs Iter012 initialization-cloud comparison at ABBY and JERC`; Bounded scope `preflight; ABBY analysis; JERC analysis; aggregate; handoff validation`; Overall acceptance result `pass`; Decision `ABBY separated/diversity_dominated; JERC separated/diversity_dominated`
+
+- Closed at: `2026-08-17T18:55:00-07:00`
+- Output root: `/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/spinup_forcing_coupling/spinup_forcing_coupling_iter013`
+- Summary path: `development/spinup_forcing_coupling/summaries/iter013`
+
+### Locked settings
+
+- Stage A only: TIM high-L pools/bundles vs Iter012 frozen pools/walkers at ABBY daily and JERC hourly.
+- Prior-normalized geometry, common-target TIM logp under Iter012 targets, and ledger top-k counterfactuals.
+- No MCMC, no pool regeneration, no PCA.
+
+### Quantitative evidence
+
+- Preflight `23584374` failed `1:0` on stale source manifest; authorized correction then `23584377` completed `0:0` with `PREFLIGHT_PASS`.
+- Analyses `23584383`/`23584384` and aggregate `23584395` completed `0:0`.
+- ABBY: geometry `separated`; selection `diversity_dominated`; max walker Wasserstein `0.490`; TIM↔Iter012 walker overlap `0`; pool∩top640 `0`; TIM pairwise `0.050` vs Iter012 walker pairwise `1.873`.
+- JERC: geometry `separated`; selection `diversity_dominated`; max walker Wasserstein `0.540`; TIM↔Iter012 walker overlap `0`; pool∩top640 `0.0078125`; TIM pairwise `0.069` vs Iter012 walker pairwise `1.818`.
+- Common-target median logp TIM walkers minus Iter012 walkers: ABBY `+2216`; JERC `+31578`.
+
+### Gate outcome and conclusion
+
+Integrity passed. Both sites are `separated` and `diversity_dominated`, confirming that Iter012 independent production starts do not occupy the TIM neighborhood and are not top-k rank sets. This supports the Iter012 initialization-geometry explanation for JERC mixing without authorizing a TIM revert. Proposed next plan: planning-only Iter014 JERC walker-selection contrast on the frozen Iter012 pool.

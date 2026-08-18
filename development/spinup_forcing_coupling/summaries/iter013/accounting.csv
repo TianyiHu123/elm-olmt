@@ -1,0 +1,7 @@
+package_id,work_unit,job_id,state,exit_code,classification,run_dir,elapsed,maxrss
+iter013,preflight,23584374,FAILED,1:0,preflight_launcher_manifest,/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/spinup_forcing_coupling/spinup_forcing_coupling_iter013/preflight,00:00:08,2524K
+iter013,preflight,23584377,COMPLETED,0:0,,/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/spinup_forcing_coupling/spinup_forcing_coupling_iter013/preflight,00:01:15,11285816K
+iter013,analysis_abby,23584383,COMPLETED,0:0,,/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/spinup_forcing_coupling/spinup_forcing_coupling_iter013/analysis/abby,00:03:52,5410280K
+iter013,analysis_jerc,23584384,COMPLETED,0:0,,/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/spinup_forcing_coupling/spinup_forcing_coupling_iter013/analysis/jerc,00:02:42,5061012K
+iter013,aggregate,23584395,COMPLETED,0:0,,/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/spinup_forcing_coupling/spinup_forcing_coupling_iter013/aggregate,00:00:15,4323420K
+iter013,handoff_validation,23584405,COMPLETED,0:0,,/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/spinup_forcing_coupling/spinup_forcing_coupling_iter013/handoff_validation,00:00:11,

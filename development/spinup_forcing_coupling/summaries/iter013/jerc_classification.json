@@ -1,0 +1,22 @@
+{
+  "schema": "spinup-forcing-coupling-iter013-classification-v1",
+  "site": "JERC",
+  "geometry_class": "separated",
+  "selection_class": "diversity_dominated",
+  "geometry_inputs": {
+    "max_per_parameter_wasserstein_walkers": 0.5404911208831203,
+    "overlap_tim_walkers_to_iter012_walkers": 0.0,
+    "overlap_tim_walkers_to_iter012_pool": 0.0,
+    "mean_pairwise_distance_tim_walkers": 0.0686816592294884,
+    "mean_pairwise_distance_iter012_walkers": 1.8184792350100876
+  },
+  "selection_inputs": {
+    "pool_intersection_fraction_of_actual_640": 0.0078125,
+    "walker_intersection_fractions": {
+      "9009": 0.0,
+      "9010": 0.0,
+      "9011": 0.0
+    }
+  },
+  "status": "pass"
+}

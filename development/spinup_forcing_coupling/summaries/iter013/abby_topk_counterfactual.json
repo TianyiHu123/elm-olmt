@@ -1,0 +1,57 @@
+{
+  "schema": "spinup-forcing-coupling-iter013-topk-counterfactual-v1",
+  "site": "ABBY",
+  "pool_vs_ledger_top640": {
+    "count_a": 640.0,
+    "count_b": 640.0,
+    "intersection_count": 0.0,
+    "intersection_fraction_of_a": 0.0
+  },
+  "walkers_vs_ledger_top64": {
+    "9009": {
+      "count_a": 64.0,
+      "count_b": 64.0,
+      "intersection_count": 0.0,
+      "intersection_fraction_of_a": 0.0
+    },
+    "9010": {
+      "count_a": 64.0,
+      "count_b": 64.0,
+      "intersection_count": 0.0,
+      "intersection_fraction_of_a": 0.0
+    },
+    "9011": {
+      "count_a": 64.0,
+      "count_b": 64.0,
+      "intersection_count": 0.0,
+      "intersection_fraction_of_a": 0.0
+    }
+  },
+  "actual_pool_spread": {
+    "mean": 0.9985889864516132,
+    "max": 0.9998682246018978
+  },
+  "top640_spread": {
+    "mean": 0.576446172900764,
+    "max": 1.0
+  },
+  "top64_spread": {
+    "mean": 0.0012090794916537497,
+    "max": 0.009403050135312938
+  },
+  "top640_logp_percentiles": {
+    "p05": -3418.230008881317,
+    "p50": -3343.265714235364,
+    "p95": -3328.500680495463,
+    "mean": -3358.692893368957,
+    "n": 640
+  },
+  "top64_logp_percentiles": {
+    "p05": -3328.6443586881596,
+    "p50": -3328.497741025377,
+    "p95": -3328.4929616405548,
+    "mean": -3328.533065600801,
+    "n": 64
+  },
+  "status": "pass"
+}

@@ -1,0 +1,38 @@
+{
+  "schema": "spinup-forcing-coupling-iter013-common-target-logp-v1",
+  "site": "ABBY",
+  "resolution": "daily",
+  "target_sha256": "bf9ade8b68bf7179cdb5c5712682dd1c343d510749efd7041cf0414ec4773bbd",
+  "clouds": {
+    "tim_pool_under_iter012_target": {
+      "p05": -3330.6350231490133,
+      "p50": -3329.4227557900294,
+      "p95": -3328.1456571684876,
+      "mean": -3329.373876256824,
+      "n": 2212
+    },
+    "tim_walkers_under_iter012_target": {
+      "p05": -3330.642220253433,
+      "p50": -3329.6914722024585,
+      "p95": -3328.284592464249,
+      "mean": -3329.5361465555106,
+      "n": 192
+    },
+    "iter012_pool_stored": {
+      "p05": -3211517.0723527423,
+      "p50": -8796.268880281896,
+      "p95": -4154.4180834886565,
+      "mean": -1996337246.8329856,
+      "n": 640
+    },
+    "iter012_walkers_stored": {
+      "p05": -6561363.404983111,
+      "p50": -5545.300264187052,
+      "p95": -3722.758662991792,
+      "mean": -452097453.4068203,
+      "n": 192
+    }
+  },
+  "median_difference_tim_walkers_minus_iter012_walkers": 2215.608791984593,
+  "status": "pass"
+}
