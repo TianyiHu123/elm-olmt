@@ -1,0 +1,28 @@
+{
+  "schema": "spinup-forcing-coupling-iter014-evaluation-v1",
+  "site": "JERC",
+  "pool_rule": "rank_dominated",
+  "status": "geometry_gate_failed",
+  "label": "geometry_gate_failed",
+  "integrity_pass": false,
+  "nsteps": 8000,
+  "seeds": [
+    9009,
+    9010,
+    9011
+  ],
+  "mean_acceptance": NaN,
+  "mean_acceptance_by_seed": [
+    NaN,
+    NaN,
+    NaN
+  ],
+  "max_cross_seed_normalized_wasserstein": NaN,
+  "control_comparison": {
+    "acceptance_improved": false,
+    "wasserstein_improved": false
+  },
+  "preflight_error": "pool gate failed: rank=15 condition=17208034.05132191",
+  "target_sha256": "26e5caa07f25bea9bfc76d21348440918869603937f2cae5335d3ca0dcfeb196",
+  "pool_sha256": null
+}

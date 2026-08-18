@@ -1,0 +1,15 @@
+package_id,work_unit,job_id,state,exit_code,classification,run_dir,elapsed,maxrss
+iter014,preflight,23584865,FAILED,1:0,application_scientific_geometry_gate,/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/spinup_forcing_coupling/spinup_forcing_coupling_iter014/preflight,00:00:48,6383520K
+iter014,preflight,23584908,FAILED,1:0,preflight_launcher_manifest,/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/spinup_forcing_coupling/spinup_forcing_coupling_iter014/preflight,00:00:07,
+iter014,preflight,23584912,COMPLETED,0:0,,/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/spinup_forcing_coupling/spinup_forcing_coupling_iter014/preflight,00:00:55,4725516K
+iter014,pool_rebuild_rank_dominated,rejected_geometry_rank_rebuild,rejected,,geometry_gate_failed,/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/spinup_forcing_coupling/spinup_forcing_coupling_iter014/pool_rebuild/rank_dominated,,
+iter014,production_rank_dominated_9009,rejected_geometry_rank_9009,rejected,,geometry_gate_failed,/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/spinup_forcing_coupling/spinup_forcing_coupling_iter014/production/rank_dominated/seed_9009,,
+iter014,production_rank_dominated_9010,rejected_geometry_rank_9010,rejected,,geometry_gate_failed,/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/spinup_forcing_coupling/spinup_forcing_coupling_iter014/production/rank_dominated/seed_9010,,
+iter014,production_rank_dominated_9011,rejected_geometry_rank_9011,rejected,,geometry_gate_failed,/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/spinup_forcing_coupling/spinup_forcing_coupling_iter014/production/rank_dominated/seed_9011,,
+iter014,pool_rebuild_hybrid_high_l_maximin,23584917,COMPLETED,0:0,,/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/spinup_forcing_coupling/spinup_forcing_coupling_iter014/pool_rebuild/hybrid_high_l_maximin,00:01:37,5742368K
+iter014,production_hybrid_high_l_maximin_9009,23584923,COMPLETED,0:0,,/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/spinup_forcing_coupling/spinup_forcing_coupling_iter014/production/hybrid_high_l_maximin/seed_9009,00:57:46,5872876K
+iter014,production_hybrid_high_l_maximin_9010,23584924,COMPLETED,0:0,,/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/spinup_forcing_coupling/spinup_forcing_coupling_iter014/production/hybrid_high_l_maximin/seed_9010,01:10:01,5845136K
+iter014,production_hybrid_high_l_maximin_9011,23584925,COMPLETED,0:0,,/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/spinup_forcing_coupling/spinup_forcing_coupling_iter014/production/hybrid_high_l_maximin/seed_9011,01:48:40,8069876K
+iter014,evaluate,23585172,COMPLETED,0:0,,/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/spinup_forcing_coupling/spinup_forcing_coupling_iter014/evaluation,00:01:08,4746380K
+iter014,aggregate,23585173,COMPLETED,0:0,,/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/spinup_forcing_coupling/spinup_forcing_coupling_iter014/aggregate,00:00:09,35832K
+iter014,handoff_validation,23585174,COMPLETED,0:0,,/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/spinup_forcing_coupling/spinup_forcing_coupling_iter014/handoff_validation,00:00:09,11124K

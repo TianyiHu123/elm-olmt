@@ -1,0 +1,63 @@
+{
+  "schema": "spinup-forcing-coupling-iter014-aggregate-v1",
+  "site": "JERC",
+  "control": {
+    "path": "/xdisk/chopinsong/tianyihu/elm-olmt/development/spinup_forcing_coupling/summaries/iter012/jerc_evaluation_result.json",
+    "mean_acceptance": 0.18664013671875002,
+    "max_cross_seed_normalized_wasserstein": 0.5484297360956368,
+    "note": "Iter012 JERC canonical evaluation reused as diversity-pool control; no control MCMC rerun."
+  },
+  "decision_policy": {
+    "repair_supported": "integrity_pass AND mean_acceptance>=0.25 AND max_cross_seed_normalized_wasserstein<=0.05",
+    "partial_repair": "integrity_pass AND improvement vs control on acceptance and/or Wasserstein without clearing both repair_supported thresholds",
+    "not_supported": "otherwise for evaluated MCMC variants",
+    "geometry_gate_failed": "variant failed locked pool geometry gates before MCMC; counted as not a mixing repair",
+    "overall": "best available among MCMC-evaluated variants: repair_supported > partial_repair > not_supported; geometry_gate_failed only if no MCMC-evaluated variant exists"
+  },
+  "variants": {
+    "rank_dominated": {
+      "site": "JERC",
+      "pool_rule": "rank_dominated",
+      "integrity_pass": false,
+      "label": "geometry_gate_failed",
+      "mean_acceptance": "",
+      "max_cross_seed_normalized_wasserstein": "",
+      "control_mean_acceptance": 0.18664013671875002,
+      "control_max_cross_seed_normalized_wasserstein": 0.5484297360956368,
+      "acceptance_improved": false,
+      "wasserstein_improved": false,
+      "decision": "geometry_gate_failed",
+      "mean_acceptance_by_seed": [
+        NaN,
+        NaN,
+        NaN
+      ],
+      "target_sha256": "26e5caa07f25bea9bfc76d21348440918869603937f2cae5335d3ca0dcfeb196",
+      "pool_sha256": null,
+      "preflight_error": "pool gate failed: rank=15 condition=17208034.05132191"
+    },
+    "hybrid_high_l_maximin": {
+      "site": "JERC",
+      "pool_rule": "hybrid_high_l_maximin",
+      "integrity_pass": true,
+      "label": "fixed_length_inconclusive",
+      "mean_acceptance": 0.189787109375,
+      "max_cross_seed_normalized_wasserstein": 0.43647775846271103,
+      "control_mean_acceptance": 0.18664013671875002,
+      "control_max_cross_seed_normalized_wasserstein": 0.5484297360956368,
+      "acceptance_improved": true,
+      "wasserstein_improved": true,
+      "decision": "partial_repair",
+      "mean_acceptance_by_seed": [
+        0.08913867187499999,
+        0.22109179687500002,
+        0.259130859375
+      ],
+      "target_sha256": "26e5caa07f25bea9bfc76d21348440918869603937f2cae5335d3ca0dcfeb196",
+      "pool_sha256": "40ac807e17803316b1200b7caa316d2ee45dde3a82fa1570345b3da4e282e4df"
+    }
+  },
+  "overall_decision": "partial_repair",
+  "status": "pass",
+  "summaries_copy_instructions": "Copy aggregate_result.json, variant_table.csv, and per-rule evaluation_result.json files into /xdisk/chopinsong/tianyihu/elm-olmt/development/spinup_forcing_coupling/summaries/iter014"
+}

@@ -9,6 +9,7 @@ from __future__ import annotations
 import hashlib
 import json
 import pickle
+import shutil
 from pathlib import Path
 from typing import Any, Mapping, Sequence
 
@@ -299,18 +300,21 @@ def select_maximin(points: np.ndarray, count: int, seed: int) -> np.ndarray:
     return np.asarray(selected, dtype=int)
 
 
-def choose_candidate_pool(states: np.ndarray, logp: np.ndarray, pmin: np.ndarray, pmax: np.ndarray, *, pool_size: int = 640, strata_bins: int = 4, seed: int = 0):
-    finite = np.isfinite(logp) & np.all(np.isfinite(states), axis=1)
-    finite &= np.all((states > pmin) & (states < pmax), axis=1)
-    unique_states, unique_indices = np.unique(states[finite], axis=0, return_index=True)
-    finite_indices = np.flatnonzero(finite)[unique_indices]
-    unique_logp = logp[finite_indices]
-    if len(unique_states) < pool_size:
-        raise RuntimeError(f"pool gate failed: only {len(unique_states)} finite exact-unique states")
-    normalized = (unique_states - pmin) / (pmax - pmin)
+POOL_RULES = ("diversity_maximin", "rank_dominated", "hybrid_high_l_maximin")
+
+
+def _diversity_maximin_indices(
+    normalized: np.ndarray,
+    logp: np.ndarray,
+    *,
+    pool_size: int,
+    strata_bins: int,
+    robust_quantile: float = 0.75,
+) -> tuple[np.ndarray, dict[str, Any]]:
+    """Select pool indices by robust strata reps plus maximin fill."""
     strata = np.minimum((normalized * strata_bins).astype(int), strata_bins - 1)
-    top_cut = np.quantile(unique_logp, 0.75)
-    robust_mask = unique_logp >= top_cut
+    top_cut = float(np.quantile(logp, robust_quantile))
+    robust_mask = logp >= top_cut
     robust_ids: list[list[int]] = []
     for axis in range(strata.shape[1]):
         for bin_id in range(strata_bins):
@@ -318,8 +322,8 @@ def choose_candidate_pool(states: np.ndarray, logp: np.ndarray, pmin: np.ndarray
                 robust_ids.append([int(axis), int(bin_id)])
     if not robust_ids:
         raise RuntimeError("pool gate failed: no robust retained marginal stratum")
-    ordered = np.argsort(unique_logp)[::-1]
-    required = []
+    ordered = np.argsort(logp)[::-1]
+    required: list[int] = []
     for axis, bin_id in robust_ids:
         candidates = [int(i) for i in ordered if strata[i, axis] == bin_id and robust_mask[i]]
         if candidates:
@@ -332,10 +336,99 @@ def choose_candidate_pool(states: np.ndarray, logp: np.ndarray, pmin: np.ndarray
     remaining = [i for i in ordered if i not in set(required)]
     selected = list(required)
     while len(selected) < pool_size:
-        distances = np.min(np.sum((normalized[remaining, None, :] - normalized[np.asarray(selected), :][None, :, :]) ** 2, axis=2), axis=1)
+        distances = np.min(
+            np.sum(
+                (normalized[remaining, None, :] - normalized[np.asarray(selected), :][None, :, :]) ** 2,
+                axis=2,
+            ),
+            axis=1,
+        )
         pick = int(remaining[int(np.argmax(distances))])
         selected.append(pick)
         remaining.remove(pick)
+    return np.asarray(selected, dtype=int), {
+        "robust_logp_cutoff": top_cut,
+        "robust_quantile": float(robust_quantile),
+        "strata_scheme": "marginal_parameter_bins_v1",
+        "strata_bins": int(strata_bins),
+        "robust_strata": robust_ids,
+    }
+
+
+def choose_candidate_pool(
+    states: np.ndarray,
+    logp: np.ndarray,
+    pmin: np.ndarray,
+    pmax: np.ndarray,
+    *,
+    pool_size: int = 640,
+    strata_bins: int = 4,
+    seed: int = 0,
+    pool_rule: str = "diversity_maximin",
+    high_l_quantile: float = 0.90,
+):
+    """Compress a search ledger into a candidate pool under a named pool rule.
+
+    ``seed`` is retained for API compatibility; current rules are deterministic given
+    the ledger contents and rule parameters.
+    """
+    del seed  # deterministic under the locked Iter014 pool rules
+    if pool_rule not in POOL_RULES:
+        raise ValueError(f"unsupported pool_rule={pool_rule!r}; expected one of {POOL_RULES}")
+    if not (0.0 <= float(high_l_quantile) < 1.0):
+        raise ValueError(f"high_l_quantile must be in [0, 1), got {high_l_quantile}")
+    finite = np.isfinite(logp) & np.all(np.isfinite(states), axis=1)
+    finite &= np.all((states > pmin) & (states < pmax), axis=1)
+    unique_states, unique_indices = np.unique(states[finite], axis=0, return_index=True)
+    finite_indices = np.flatnonzero(finite)[unique_indices]
+    unique_logp = logp[finite_indices]
+    if len(unique_states) < pool_size:
+        raise RuntimeError(f"pool gate failed: only {len(unique_states)} finite exact-unique states")
+    normalized = (unique_states - pmin) / (pmax - pmin)
+    rule_diagnostics: dict[str, Any] = {
+        "pool_rule": pool_rule,
+        "high_l_quantile_requested": float(high_l_quantile),
+    }
+    if pool_rule == "rank_dominated":
+        selected = np.argsort(unique_logp)[::-1][:pool_size]
+        rule_diagnostics.update(
+            {
+                "robust_logp_cutoff": float(unique_logp[selected[-1]]),
+                "strata_scheme": "marginal_parameter_bins_v1",
+                "strata_bins": int(strata_bins),
+                "robust_strata": [],
+            }
+        )
+    elif pool_rule == "hybrid_high_l_maximin":
+        quantile = float(high_l_quantile)
+        universe = np.flatnonzero(unique_logp >= np.quantile(unique_logp, quantile))
+        while len(universe) < pool_size and quantile > 0.0:
+            quantile = max(0.0, quantile - 0.05)
+            universe = np.flatnonzero(unique_logp >= np.quantile(unique_logp, quantile))
+        if len(universe) < pool_size:
+            raise RuntimeError(
+                f"pool gate failed: high-L universe has only {len(universe)} states for pool_size {pool_size}"
+            )
+        local_selected, diversity_diag = _diversity_maximin_indices(
+            normalized[universe],
+            unique_logp[universe],
+            pool_size=pool_size,
+            strata_bins=strata_bins,
+        )
+        selected = universe[local_selected]
+        rule_diagnostics.update(diversity_diag)
+        rule_diagnostics["high_l_quantile_applied"] = float(quantile)
+        rule_diagnostics["high_l_universe_count"] = int(len(universe))
+    else:
+        selected, diversity_diag = _diversity_maximin_indices(
+            normalized,
+            unique_logp,
+            pool_size=pool_size,
+            strata_bins=strata_bins,
+        )
+        rule_diagnostics.update(diversity_diag)
+        rule_diagnostics["high_l_quantile_applied"] = None
+    strata_all = np.minimum((normalized * strata_bins).astype(int), strata_bins - 1)
     selected = np.asarray(selected, dtype=int)
     selected_norm = normalized[selected]
     centered = selected_norm - np.mean(selected_norm, axis=0)
@@ -347,13 +440,14 @@ def choose_candidate_pool(states: np.ndarray, logp: np.ndarray, pmin: np.ndarray
     if np.any(spread <= 0):
         raise RuntimeError("pool gate failed: zero normalized spread")
     diagnostics = {
-        "finite_exact_unique": int(len(unique_states)), "robust_logp_cutoff": float(top_cut),
-        "strata_scheme": "marginal_parameter_bins_v1", "strata_bins": int(strata_bins),
-        "robust_strata": robust_ids, "selected_count": int(len(selected)),
-        "normalized_rank": rank, "normalized_condition_number": condition,
+        "finite_exact_unique": int(len(unique_states)),
+        "selected_count": int(len(selected)),
+        "normalized_rank": rank,
+        "normalized_condition_number": condition,
         "normalized_spread": spread.tolist(),
+        **rule_diagnostics,
     }
-    return unique_states[selected], unique_logp[selected], strata[selected], diagnostics
+    return unique_states[selected], unique_logp[selected], strata_all[selected], diagnostics
 
 
 def select_production_walkers(
@@ -694,6 +788,115 @@ def run_fixed_production_chain(
     return result
 
 
+def _write_candidate_pool_artifacts(
+    *,
+    target: Mapping[str, Any],
+    output_path: Path,
+    pool: np.ndarray,
+    pool_logp: np.ndarray,
+    pool_strata: np.ndarray,
+    diagnostics: Mapping[str, Any],
+    states_array: np.ndarray,
+    logp_array: np.ndarray,
+    evaluations: Sequence[Mapping[str, Any]] | None,
+    contract_fields: Mapping[str, Any],
+    provenance: Mapping[str, Any] | None,
+    contract_schema: str,
+    candidate_metadata_schema: str,
+) -> dict[str, Any]:
+    """Persist pool, ledger, diagnostics, and search-contract artifacts."""
+    pool_components = [target["log_components"](state) for state in pool]
+    pool_prior = np.asarray(
+        [item["prior_component"] for item in pool_components], dtype=float
+    )
+    pool_likelihood = np.asarray(
+        [item["log_likelihood"] for item in pool_components], dtype=float
+    )
+    if not np.allclose(pool_prior + pool_likelihood, pool_logp, rtol=0, atol=1e-8):
+        raise RuntimeError("candidate-pool posterior component decomposition failed")
+    np.savez_compressed(
+        output_path / "candidate_pool.npz",
+        physical_states=pool,
+        physical_log_posterior=pool_logp,
+        prior_component=pool_prior,
+        log_likelihood=pool_likelihood,
+        strata=pool_strata,
+    )
+    np.savez_compressed(output_path / "candidate_ledger.npz", states=states_array, log_posterior=logp_array)
+    candidate_metadata = {
+        "schema": candidate_metadata_schema,
+        "evaluations": list(evaluations or []),
+        "target_sha256": target["identity"]["sha256"],
+        "pool_sha256": sha256_file(output_path / "candidate_pool.npz"),
+        "pool_rule": diagnostics.get("pool_rule"),
+        "high_l_quantile_requested": diagnostics.get("high_l_quantile_requested"),
+        "high_l_quantile_applied": diagnostics.get("high_l_quantile_applied"),
+    }
+    (output_path / "candidate_metadata.json").write_text(
+        json.dumps(candidate_metadata, indent=2, default=str) + "\n",
+        encoding="utf-8",
+    )
+    (output_path / "diversity_diagnostics.json").write_text(
+        json.dumps(diagnostics, indent=2, default=str) + "\n",
+        encoding="utf-8",
+    )
+    report = {
+        "site": target["sites"][0] if len(target["sites"]) == 1 else target["sites"],
+        "resolution": target["identity"]["resolution"],
+        "parameter_names": target["parameter_names"],
+        "pmin": np.asarray(target["pmin"], dtype=float).tolist(),
+        "pmax": np.asarray(target["pmax"], dtype=float).tolist(),
+        "diagnostics": diagnostics,
+        "status": "pass",
+    }
+    (output_path / "initialization_report.json").write_text(
+        json.dumps(report, indent=2, default=str) + "\n",
+        encoding="utf-8",
+    )
+    contract = {
+        "schema": contract_schema,
+        "site": target["sites"][0] if len(target["sites"]) == 1 else target["sites"],
+        "resolution": target["identity"]["resolution"],
+        "cases": target["identity"]["cases"],
+        "pool_gate": dict(diagnostics),
+        "target_identity": target["identity"],
+        "pool_sha256": sha256_file(output_path / "candidate_pool.npz"),
+        "ledger_sha256": sha256_file(output_path / "candidate_ledger.npz"),
+        "candidate_metadata_sha256": sha256_file(output_path / "candidate_metadata.json"),
+        "diversity_diagnostics_sha256": sha256_file(
+            output_path / "diversity_diagnostics.json"
+        ),
+        "initialization_report_sha256": sha256_file(
+            output_path / "initialization_report.json"
+        ),
+        "status": "pass",
+    }
+    contract.update(dict(contract_fields))
+    contract.update(dict(provenance or {}))
+    (output_path / "search_contract.json").write_text(
+        json.dumps(contract, indent=2, default=str) + "\n", encoding="utf-8"
+    )
+    artifact_names = (
+        "candidate_pool.npz",
+        "candidate_ledger.npz",
+        "candidate_metadata.json",
+        "diversity_diagnostics.json",
+        "initialization_report.json",
+        "search_contract.json",
+    )
+    artifact_manifest = {
+        "schema": "coupling-initialization-artifact-manifest-v1",
+        "artifacts": {
+            name: sha256_file(output_path / name) for name in artifact_names
+        },
+        "status": "pass",
+    }
+    (output_path / "artifact_manifest.json").write_text(
+        json.dumps(artifact_manifest, indent=2) + "\n", encoding="utf-8"
+    )
+    return {"pool": pool, "contract": contract, "diagnostics": diagnostics, "evaluations": int(len(states_array))}
+
+
 def initialize_candidate_pool(
     *,
     target: Mapping[str, Any],
@@ -703,6 +906,8 @@ def initialize_candidate_pool(
     anchor_count: int = 32,
     anchor_max_evaluations: int = 512,
     pool_size: int = 640,
+    pool_rule: str = "diversity_maximin",
+    high_l_quantile: float = 0.90,
     provenance: Mapping[str, Any] | None = None,
     contract_schema: str = "coupling-search-contract-v1",
     candidate_metadata_schema: str = "coupling-candidate-metadata-v1",
@@ -727,7 +932,16 @@ def initialize_candidate_pool(
         evaluated_counts.append(int(len(all_states)))
         if np.sum(np.isfinite(np.asarray(all_logp))) >= pool_size:
             try:
-                choose_candidate_pool(np.asarray(all_states), np.asarray(all_logp), pmin, pmax, pool_size=pool_size, seed=seed)
+                choose_candidate_pool(
+                    np.asarray(all_states),
+                    np.asarray(all_logp),
+                    pmin,
+                    pmax,
+                    pool_size=pool_size,
+                    seed=seed,
+                    pool_rule=pool_rule,
+                    high_l_quantile=high_l_quantile,
+                )
                 break
             except RuntimeError:
                 pass
@@ -766,94 +980,117 @@ def initialize_candidate_pool(
             }
         )
     states_array, logp_array = np.asarray(all_states, dtype=float), np.asarray(all_logp, dtype=float)
-    pool, pool_logp, pool_strata, diagnostics = choose_candidate_pool(states_array, logp_array, pmin, pmax, pool_size=pool_size, seed=seed + 200)
-    pool_components = [target["log_components"](state) for state in pool]
-    pool_prior = np.asarray(
-        [item["prior_component"] for item in pool_components], dtype=float
+    pool, pool_logp, pool_strata, diagnostics = choose_candidate_pool(
+        states_array,
+        logp_array,
+        pmin,
+        pmax,
+        pool_size=pool_size,
+        seed=seed + 200,
+        pool_rule=pool_rule,
+        high_l_quantile=high_l_quantile,
     )
-    pool_likelihood = np.asarray(
-        [item["log_likelihood"] for item in pool_components], dtype=float
-    )
-    if not np.allclose(pool_prior + pool_likelihood, pool_logp, rtol=0, atol=1e-8):
-        raise RuntimeError("candidate-pool posterior component decomposition failed")
-    np.savez_compressed(
-        output_path / "candidate_pool.npz",
-        physical_states=pool,
-        physical_log_posterior=pool_logp,
-        prior_component=pool_prior,
-        log_likelihood=pool_likelihood,
-        strata=pool_strata,
-    )
-    np.savez_compressed(output_path / "candidate_ledger.npz", states=states_array, log_posterior=logp_array)
-    candidate_metadata = {
-        "schema": candidate_metadata_schema,
-        "evaluations": evaluations,
-        "target_sha256": target["identity"]["sha256"],
-        "pool_sha256": sha256_file(output_path / "candidate_pool.npz"),
-    }
-    (output_path / "candidate_metadata.json").write_text(
-        json.dumps(candidate_metadata, indent=2, default=str) + "\n",
-        encoding="utf-8",
-    )
-    (output_path / "diversity_diagnostics.json").write_text(
-        json.dumps(diagnostics, indent=2, default=str) + "\n",
-        encoding="utf-8",
-    )
-    report = {
-        "site": target["sites"][0] if len(target["sites"]) == 1 else target["sites"],
-        "resolution": target["identity"]["resolution"],
-        "parameter_names": target["parameter_names"],
-        "pmin": pmin.tolist(),
-        "pmax": pmax.tolist(),
-        "diagnostics": diagnostics,
-        "status": "pass",
-    }
-    (output_path / "initialization_report.json").write_text(
-        json.dumps(report, indent=2, default=str) + "\n",
-        encoding="utf-8",
-    )
-    contract = {
-        "schema": contract_schema,
-        "algorithm": "sobol_multistart_local_v1",
-        "site": target["sites"][0] if len(target["sites"]) == 1 else target["sites"],
-        "resolution": target["identity"]["resolution"],
-        "cases": target["identity"]["cases"],
-        "sobol_counts": [int(x) for x in sobol_counts],
-        "evaluated_sobol_counts": evaluated_counts,
-        "actual_evaluated_before_local": evaluations_count_before,
-        "anchor_count": int(len(anchor_indices)),
-        "anchor_max_posterior_evaluations": int(anchor_max_evaluations),
-        "pool_gate": diagnostics,
-        "target_identity": target["identity"],
-        "pool_sha256": sha256_file(output_path / "candidate_pool.npz"),
-        "ledger_sha256": sha256_file(output_path / "candidate_ledger.npz"),
-        "candidate_metadata_sha256": sha256_file(output_path / "candidate_metadata.json"),
-        "diversity_diagnostics_sha256": sha256_file(
-            output_path / "diversity_diagnostics.json"
-        ),
-        "initialization_report_sha256": sha256_file(
-            output_path / "initialization_report.json"
-        ),
-        "status": "pass",
-    }
-    contract.update(dict(provenance or {}))
-    (output_path / "search_contract.json").write_text(json.dumps(contract, indent=2, default=str) + "\n", encoding="utf-8")
-    artifact_names = (
-        "candidate_pool.npz",
-        "candidate_ledger.npz",
-        "candidate_metadata.json",
-        "diversity_diagnostics.json",
-        "initialization_report.json",
-        "search_contract.json",
-    )
-    artifact_manifest = {
-        "schema": "coupling-initialization-artifact-manifest-v1",
-        "artifacts": {
-            name: sha256_file(output_path / name) for name in artifact_names
+    return _write_candidate_pool_artifacts(
+        target=target,
+        output_path=output_path,
+        pool=pool,
+        pool_logp=pool_logp,
+        pool_strata=pool_strata,
+        diagnostics=diagnostics,
+        states_array=states_array,
+        logp_array=logp_array,
+        evaluations=evaluations,
+        contract_fields={
+            "algorithm": "sobol_multistart_local_v1",
+            "sobol_counts": [int(x) for x in sobol_counts],
+            "evaluated_sobol_counts": evaluated_counts,
+            "actual_evaluated_before_local": evaluations_count_before,
+            "anchor_count": int(len(anchor_indices)),
+            "anchor_max_posterior_evaluations": int(anchor_max_evaluations),
+            "pool_rule": pool_rule,
+            "high_l_quantile": float(high_l_quantile),
         },
-        "status": "pass",
-    }
-    (output_path / "artifact_manifest.json").write_text(
-        json.dumps(artifact_manifest, indent=2) + "\n", encoding="utf-8"
+        provenance=provenance,
+        contract_schema=contract_schema,
+        candidate_metadata_schema=candidate_metadata_schema,
     )
-    return {"pool": pool, "contract": contract, "diagnostics": diagnostics, "evaluations": int(len(states_array))}
+
+
+def rebuild_candidate_pool_from_ledger(
+    *,
+    target: Mapping[str, Any],
+    ledger_path: str | Path,
+    output: str | Path,
+    pool_rule: str,
+    high_l_quantile: float = 0.90,
+    pool_size: int = 640,
+    seed: int = 0,
+    expected_ledger_sha256: str | None = None,
+    provenance: Mapping[str, Any] | None = None,
+    contract_schema: str = "coupling-search-contract-v1",
+    candidate_metadata_schema: str = "coupling-candidate-metadata-v1",
+):
+    """Rebuild a candidate pool from a frozen search ledger without new search."""
+    root = Path(output)
+    ledger_file = Path(ledger_path)
+    root.mkdir(parents=True, exist_ok=True)
+    artifacts = root / "artifacts"
+    staging = root / ".artifacts.build"
+    if artifacts.exists():
+        raise FileExistsError(f"refusing to overwrite rebuilt pool artifacts: {artifacts}")
+    if staging.exists():
+        shutil.rmtree(staging)
+    staging.mkdir(parents=True, exist_ok=False)
+    ledger_hash = sha256_file(ledger_file)
+    if expected_ledger_sha256 is not None and ledger_hash != expected_ledger_sha256:
+        raise ValueError(
+            f"ledger hash mismatch: expected {expected_ledger_sha256}, found {ledger_hash}"
+        )
+    ledger = np.load(ledger_file, allow_pickle=False)
+    if "states" not in ledger.files or "log_posterior" not in ledger.files:
+        raise ValueError(f"ledger missing states/log_posterior arrays: {ledger_file}")
+    states_array = np.asarray(ledger["states"], dtype=float)
+    logp_array = np.asarray(ledger["log_posterior"], dtype=float)
+    pmin = np.asarray(target["pmin"], dtype=float)
+    pmax = np.asarray(target["pmax"], dtype=float)
+    pool, pool_logp, pool_strata, diagnostics = choose_candidate_pool(
+        states_array,
+        logp_array,
+        pmin,
+        pmax,
+        pool_size=pool_size,
+        seed=seed,
+        pool_rule=pool_rule,
+        high_l_quantile=high_l_quantile,
+    )
+    result = _write_candidate_pool_artifacts(
+        target=target,
+        output_path=staging,
+        pool=pool,
+        pool_logp=pool_logp,
+        pool_strata=pool_strata,
+        diagnostics=diagnostics,
+        states_array=states_array,
+        logp_array=logp_array,
+        evaluations=[
+            {
+                "kind": "ledger_rebuild",
+                "source_ledger": str(ledger_file),
+                "source_ledger_sha256": ledger_hash,
+                "pool_rule": pool_rule,
+                "high_l_quantile": float(high_l_quantile),
+            }
+        ],
+        contract_fields={
+            "algorithm": "ledger_pool_rebuild_v1",
+            "source_ledger": str(ledger_file),
+            "source_ledger_sha256": ledger_hash,
+            "pool_rule": pool_rule,
+            "high_l_quantile": float(high_l_quantile),
+        },
+        provenance=provenance,
+        contract_schema=contract_schema,
+        candidate_metadata_schema=candidate_metadata_schema,
+    )
+    staging.replace(artifacts)
+    return result

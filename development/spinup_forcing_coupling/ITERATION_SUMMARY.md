@@ -658,3 +658,29 @@ Closeout identity: Iteration ID `iter013`; Status `completed`; Work type `valida
 ### Gate outcome and conclusion
 
 Integrity passed. Both sites are `separated` and `diversity_dominated`, confirming that Iter012 independent production starts do not occupy the TIM neighborhood and are not top-k rank sets. This supports the Iter012 initialization-geometry explanation for JERC mixing without authorizing a TIM revert. Proposed next plan: planning-only Iter014 JERC walker-selection contrast on the frozen Iter012 pool.
+
+## iter014 - JERC high-likelihood candidate-pool reconstruction
+
+Closeout identity: Iteration ID `iter014`; Status `completed`; Work type `implementation`; Overall acceptance result `pass`; Decision `partial_repair`
+
+- Closed at: `2026-08-17T22:34:00-07:00`
+- Output root: `/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/spinup_forcing_coupling/spinup_forcing_coupling_iter014`
+- Summary path: `development/spinup_forcing_coupling/summaries/iter014`
+
+### Locked settings
+
+- Frozen Iter012 Revision1 JERC ledger; rebuild `rank_dominated` and `hybrid_high_l_maximin` (`q=0.90`).
+- Diagnostic MCMC `64×8000` DEMove `0.75` seeds `9009–9011` under JERC hourly/0.75; control reused from Iter012 evaluation.
+- Revised package: A geometry failure is scientific evidence; hybrid required for MCMC path.
+
+### Quantitative evidence
+
+- Preflight `23584865` FAILED A geometry (`condition≈1.72e7`); `23584908` FAILED stale manifest; `23584912` COMPLETED with hybrid eligible (`condition≈359`).
+- Hybrid rebuild `23584917` and productions `23584923`/`23584924`/`23584925` COMPLETED `0:0`; evaluate `23585172`; aggregate `23585173`.
+- Hybrid pool SHA-256 `40ac807e…`; mean acceptance `0.1898` (by seed `0.0891/0.2211/0.2591`); cross-seed W `0.4365` vs control `0.1866`/`0.5484`.
+- Decisions: `rank_dominated=geometry_gate_failed`; `hybrid_high_l_maximin=partial_repair`; overall `partial_repair`.
+
+### Gate outcome and conclusion
+
+Implementation integrity passed. Pure high-L rank pools are geometry-infeasible at JERC under locked gates. Hybrid high-L+maximin yields a partial mixing improvement versus the diversity control without clearing repair thresholds. No posterior promotion. Planning-only Iter015 may probe longer/milder hybrid diagnostics without TIM revert or new search.
+

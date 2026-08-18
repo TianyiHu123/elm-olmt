@@ -1,0 +1,44 @@
+{
+  "schema": "spinup-forcing-coupling-iter014-evaluation-summary-v1",
+  "site": "JERC",
+  "pool_rules": [
+    {
+      "pool_rule": "rank_dominated",
+      "label": "geometry_gate_failed",
+      "integrity_pass": false,
+      "mean_acceptance": null,
+      "max_cross_seed_normalized_wasserstein": null,
+      "control_comparison": {
+        "acceptance_improved": false,
+        "wasserstein_improved": false
+      }
+    },
+    {
+      "pool_rule": "hybrid_high_l_maximin",
+      "label": "fixed_length_inconclusive",
+      "integrity_pass": true,
+      "mean_acceptance": 0.189787109375,
+      "max_cross_seed_normalized_wasserstein": 0.43647775846271103,
+      "control_comparison": {
+        "control_path": "/xdisk/chopinsong/tianyihu/elm-olmt/development/spinup_forcing_coupling/summaries/iter012/jerc_evaluation_result.json",
+        "control_mean_acceptance": 0.18664013671875002,
+        "control_max_cross_seed_normalized_wasserstein": 0.5484297360956368,
+        "acceptance_delta": 0.0031469726562499967,
+        "wasserstein_delta": -0.1119519776329258,
+        "acceptance_improved": true,
+        "wasserstein_improved": true,
+        "acceptance_clearly_above": false,
+        "wasserstein_meets_gate": false
+      }
+    }
+  ],
+  "geometry_gate_failed": [
+    "rank_dominated"
+  ],
+  "control": {
+    "path": "/xdisk/chopinsong/tianyihu/elm-olmt/development/spinup_forcing_coupling/summaries/iter012/jerc_evaluation_result.json",
+    "mean_acceptance": 0.18664013671875002,
+    "max_cross_seed_normalized_wasserstein": 0.5484297360956368
+  },
+  "status": "pass"
+}
