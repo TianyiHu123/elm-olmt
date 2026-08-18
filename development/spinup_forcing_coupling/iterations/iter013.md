@@ -139,4 +139,4 @@ Closeout identity: Iteration ID `iter013`; Status `completed`; Work type `valida
 - [x] Four-record validator identity, command, output, and passing result recorded
   - identity: `slurm/iter013/validate_iter013_handoff.py`; job `23584405`; output `ITER013_HANDOFF_VALIDATE_PASS abby=separated/diversity_dominated jerc=separated/diversity_dominated`
 - [x] No job is active or unaccounted and every failure is classified
-- [ ] Authorized closeout branch satisfied: one verified commit or `validated_uncommitted`
+- [x] Authorized closeout branch satisfied: one verified commit `74fcd59`
