@@ -626,6 +626,9 @@ Closeout identity: Iteration ID `iter012`; Status `completed`; Work type `implem
 ### Gate outcome and conclusion
 
 The implementation/integrity contract passed, but both fixed-length scientific outcomes are
-inconclusive. No posterior is promoted and no rerun is authorized. No next iteration is proposed;
-any continuation requires a fresh planning package and explicit approval. `/xdisk` remains
-temporary and unbacked, and repetitive empirical-range warning logs are a maintenance finding.
+inconclusive. No posterior is promoted and no rerun is authorized. On `2026-08-17` the user
+requested a Stage-A-only `iter013` planning package that compares TIM and Iter012 initial
+clouds at ABBY and JERC; that proposal is recorded in `iterations/iter012.md` and
+`handoff/CURRENT.md` and remains `not_initialized` until a fresh consolidated kickoff.
+`/xdisk` remains temporary and unbacked, and repetitive empirical-range warning logs are a
+maintenance finding.

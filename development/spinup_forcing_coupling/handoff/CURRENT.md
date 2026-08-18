@@ -28,7 +28,7 @@ Closeout identity: Iteration ID `iter012`; Status `completed`; Work type `implem
 - Canonical Package v2 root: `/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/spinup_forcing_coupling/spinup_forcing_coupling_iter012_general_pipeline_v2`
 - Active Revision1 root: `/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/spinup_forcing_coupling/spinup_forcing_coupling_iter012_general_pipeline_v2/revision1`
 - Legacy Package v1 root: `/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/spinup_forcing_coupling/spinup_forcing_coupling_iter012`
-- Last updated: `2026-08-17T12:47:17-07:00`
+- Last updated: `2026-08-17T17:50:00-07:00`
 
 ## Authority and stop boundary
 
@@ -109,10 +109,173 @@ numerical, target, scientific-gate, or scope failure stops for another revised p
 
 ## Next action
 
-No next iteration is proposed. This workflow is intentionally stopped because both canonical
-fixed-length outcomes are inconclusive. Start the next session by reading this file, `WORKFLOW.md`,
-the Iter012 record/report, and `development/hpc/puma.md`. Any continuation requires a fresh planning
-package and explicit approval.
+Iter013 is recorded as a planning-only Stage A initialization-cloud comparison at ABBY and JERC.
+It is `not_initialized`. Do not scaffold, submit, or run jobs until a consolidated kickoff package
+is approved under `WORKFLOW.md`. Copy the plan below unchanged into that kickoff package.
+
+<!-- ITER013_PLAN_BEGIN -->
+## Proposed Iter013 plan - Stage A initialization-cloud comparison
+
+- Sequential ID: `iter013`
+- Status: `not_initialized`
+- Work type: `validation`
+- Objective: compare Iter009 TIM high-posterior start clouds with Iter012 production
+  candidate-pool start clouds at ABBY and JERC, and test whether the Iter012 640/64 sets are
+  high-posterior rank sets or diversity-dominated sets.
+- Evidence basis: Iter012 JERC mixing collapsed relative to Iter011 `hourly/0.75` while MAP
+  skill matched; Iter012 hypothesized initialization geometry rather than likelihood form.
+  Iter011/009 TIM starts are transferred top-decile Iter008 chain states. Iter012 starts come
+  from an independent Sobol plus L-BFGS-B search with marginal-quartile representation and
+  maximin fill. ABBY is included as the geometry control because the same pool recipe did not
+  split Iter012 ABBY seeds.
+- Hypothesis: the TIM walker cloud is a compact high-posterior neighborhood, while the Iter012
+  pool and walkers span near-full prior width; the Iter012 640/64 sets are not the top-k
+  posterior states from the same search.
+
+### Fixed targets and dependencies
+
+- Re-lock the Iter012 Package v2 Revision1 site targets and the Iter009 TIM high-likelihood
+  artifacts. Do not rebuild pools, replay MCMC, or change priors, bounds, transforms, surrogates,
+  observations, or likelihood resolution.
+- ABBY comparison uses the Iter012 daily target
+  (`target_sha256=bf9ade8b68bf7179cdb5c5712682dd1c343d510749efd7041cf0414ec4773bbd`).
+- JERC comparison uses the Iter012 hourly target
+  (`target_sha256=26e5caa07f25bea9bfc76d21348440918869603937f2cae5335d3ca0dcfeb196`).
+- Forcing artifact SHA-256 `8d139b32473eebe3f75f77042e542f49ec3c80e89bc65c76b2e98a5c70f4553e`.
+- Spinup `drop21_corr080` SHA-256
+  `1427dc565af858e9c089a5b9545a7f127e42789ef1fe5c9af3af7f8cb12a3023`.
+- Iter012 pools: ABBY `982350b16e17202acb4f2b82ab40c26e24c31dff159bb68dafbd6d8cc69a2d19`;
+  JERC `32d2ba5fa7e21f60a9df38fa8bcc6d6fe06a08bcbfa3ba6ce4fdcb62e5afaf96`.
+- Iter012 candidate ledgers: ABBY
+  `ec8b34ede77f3d9dd519c3b759bfa0d9daee018fe2a2ff2c7fc9e1c5c0bf036b`; JERC
+  `25382a57acd91b2b03db5a94312ba932a2c2c9501a392ed84e2a3e8633dedc3d`.
+- TIM high-likelihood pools: ABBY
+  `b19cbe90bdc746a4c2bf577fc2dc4877a32d89ee6bf77d76b6058c3f9085ad4a` (2,212 states, top-decile
+  cutoff `-81162.4853383585`); JERC
+  `fcd909188789ab97b222773fc21f2a60e401a730f16e95edeee1e7aac49140e8` (1,208 states, top-decile
+  cutoff `-52719.034473135165`).
+- TIM high-seed bundles 9009/9010/9011: ABBY
+  `37f51011638e93ef1420d092d7f97bbd8e6bfa24342d205fcc09b9d5a9d8716a`,
+  `49a32268e72a183414e2ba684717b1b7675c84f4ebf12b2ffd23df850c9f69cb`,
+  `8c30198df99da7225f9c3235866c3020fef8d1e7a9349494149ddcfa11d14e0c`; JERC
+  `394902f2c2378a6793196f226c7cf136872a2631012f559ba857c989c47bd8fe`,
+  `86fa8a3a732be080454bb451ab025cf604c1c8c0a98ffbdce26ed2b46d3870d6`,
+  `fa19ed47a533f540e88992c1eac6346f46478192ed85b1132222ac08599f063e`.
+- Iter012 walker starts are the `selected_physical_states` in Revision1
+  `production/{abby,jerc}/seed_{9009,9010,9011}/selection_ledger.json`.
+- Physical parameter order remains
+  `k_l1, k_l2, k_l3, k_s1, k_s2, k_s3, k_s4, k_frag, rf_l1s1, rf_l2s2, rf_l3s3, rf_s1s2, rf_s2s3, rf_s3s4, sigma_SR`.
+- Use Iter012 site bounds, including site-specific `sigma_SR` upper bounds. Trust assumption:
+  TIM physical states are in that same order and strictly in bounds; hash mismatch or order
+  mismatch is an integrity failure, not a scientific result.
+
+### Clouds, coordinates, and comparison methods
+
+- Per site, compare four primary clouds: TIM high-L pool; TIM walker starts (per seed and the
+  192-row union); Iter012 640-member pool; Iter012 walker starts (per seed and union).
+- Add two Iter012-ledger counterfactual clouds: the unique states with the top 640 stored
+  physical log posteriors, and the top 64 stored physical log posteriors.
+- All geometry uses prior-normalized coordinates
+  `(theta - pmin) / (pmax - pmin)` with the Iter012 site bounds. Do not compare stored TIM log
+  posterior values with stored Iter012 log posterior values. TIM stored logp is Iter008 hourly
+  chain posterior; Iter012 ABBY logp is daily.
+- Geometry metrics, all in prior-normalized units: per-parameter mean, standard deviation, range,
+  and 5–95 width; per-parameter 1D Wasserstein between each TIM cloud and each Iter012 cloud;
+  centroid Euclidean distance; mean pairwise distance; mean nearest-neighbor distance;
+  overlap fraction at Euclidean radius `0.05` from each TIM walker to the nearest Iter012 walker
+  and to the nearest Iter012 pool member, and the reverse fractions.
+- On JERC, highlight `k_s1`–`k_s4` versus `k_l1` and `rf_l3s3`. On ABBY, highlight `sigma_SR`.
+- Common-target logp: reconstruct each Iter012 site target and re-evaluate TIM pool and TIM
+  walker physical states under that target. Compare those values with stored Iter012 pool and
+  walker physical log posteriors. Report 5/50/95 percentiles for each cloud and the median
+  difference TIM walkers minus Iter012 walkers. Do not re-evaluate the full Iter012 search
+  ledger except as needed to confirm stored pool/ledger logp identity.
+- Rank-versus-diversity counterfactual: exact-row intersection of the Iter012 640 with the
+  ledger top 640, and of each seed's 64 walkers with the ledger top 64. Report intersection
+  counts, intersection fractions, and the max/mean normalized spread of actual versus top-k
+  sets.
+- Plots: one per-parameter overlay figure per site (violin or histogram) for the four primary
+  clouds. No PCA scatter, no corner plot, and no observed-versus-predicted plot. Tables and JSON
+  are the primary evidence.
+
+### Classification and decision rule
+
+Classify each site independently after integrity passes. Geometry classes are mutually exclusive
+in this order:
+
+1. `coincide` if the maximum per-parameter 1D Wasserstein between the TIM walker union and the
+   Iter012 walker union is `<= 0.05` and at least 80% of TIM walkers have an Iter012 walker
+   within Euclidean radius `0.05`.
+2. `tim_nested_in_iter012_pool` if not `coincide`, at least 80% of TIM walkers have an Iter012
+   pool member within radius `0.05`, and Iter012 walker mean pairwise distance is at least twice
+   the TIM walker mean pairwise distance.
+3. `separated` if fewer than 20% of TIM walkers have an Iter012 walker within radius `0.05` and
+   the maximum per-parameter 1D Wasserstein between those walker unions is `> 0.05`.
+4. `inconclusive_geometry` otherwise.
+
+Separately classify Iter012 selection:
+
+- `rank_dominated` if `|actual 640 ∩ top 640| / 640 >= 0.80`.
+- `diversity_dominated` if that fraction is `< 0.50`.
+- `mixed_rank_and_diversity` otherwise.
+
+Also report the same intersection fractions for each seed's 64 walkers versus the ledger top 64.
+These classes are descriptive. They do not promote a posterior, change the initializer, or
+authorize MCMC.
+
+### Bounded scope, work units, and exclusions
+
+- Stage A only. No MCMC, no new candidate search, no pool regeneration, no TIM production replay,
+  no DE-scale change, no likelihood or error-model change, no joint ABBY+JERC target, no
+  initializer code change, and no automatic follow-up experiment.
+- Proposed scheduler work: one compute-node preflight; one ABBY analysis leaf; one JERC analysis
+  leaf; one aggregate/handoff validation: 4 nominal tasks.
+- Preflight verifies artifact paths, hashes, parameter order, bounds, TIM-bundle membership in
+  the TIM pool, Iter012 selection-ledger identity, and target fingerprints. It may run one
+  midpoint posterior fixture per site. It must not re-evaluate TIM clouds or write scientific
+  classifications.
+- Each analysis leaf writes that site's geometry JSON, common-target logp JSON, top-k
+  counterfactual JSON, overlay figure, and site classification.
+- Aggregate concatenates both sites, writes the comparison table and report, and runs the
+  four-record handoff validator after durable records exist.
+- Exclude Iter009 uniform bundles, Iter012 Package v1 stretch-move chains, and any transferred
+  chain states except the locked TIM high-L pools and high-seed bundles above.
+
+### Proposed site, resources, retry, and stop boundary
+
+- Proposed site: UArizona Puma; `development/hpc/puma.md`; account `chopinsong`; partition
+  `standard`; environment `OLMT_puma`.
+- Proposed output root:
+  `/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/spinup_forcing_coupling/spinup_forcing_coupling_iter013/`
+  with `preflight/`, `analysis/{abby,jerc}/`, and `aggregate/`. Large arrays remain outside Git;
+  `/xdisk` is temporary and unbacked.
+- Proposed resources: preflight 4 CPUs / 20 GB / 30 min; each analysis leaf 16 CPUs / 80 GB / 4 h;
+  aggregate/handoff 4 CPUs / 20 GB / 1 h.
+- Proposed retry ceiling: one minimal preflight correction/rerun; one unchanged
+  scheduler/resource retry per analysis or aggregate leaf; at most 8 scheduler tasks.
+  Application, code, schema, dependency, numerical, target, hash, or scope failures stop for a
+  revised package.
+- Cancellation only for recorded Iter013 job IDs, and only for a proven universal pre-execution
+  defect that would make remaining Iter013 work fail.
+- Stop after both site analyses, aggregate/handoff validation, complete terminal accounting,
+  classified failures, and durable-record agreement. Do not start MCMC or Stage B.
+
+### Expected evidence, artifacts, and record updates
+
+- External: hashed analysis JSON, overlay figures, `aggregate_result.json`, `accounting.csv`,
+  and `ITER013_REPORT.md` under the approved output root, with compact copies in
+  `development/spinup_forcing_coupling/summaries/iter013/`.
+- Repository: `iterations/iter013.md`, canonical scripts under `slurm/iter013/`, registry row,
+  `ITERATION_SUMMARY.md` append, and rebuilt `handoff/CURRENT.md` at closeout.
+- Required completeness: both sites classified; all locked hashes verified; common-target TIM
+  logp finite for every TIM pool and walker row; top-k counterfactuals present; no PCA plot.
+
+### Fresh consolidated kickoff-approval boundary
+
+This planning-only proposal does not authorize initialization, scaffolding, repository Python,
+Slurm, retry, cancellation, or a closeout commit. It becomes executable only when included in
+an approved consolidated kickoff package under `WORKFLOW.md`.
+<!-- ITER013_PLAN_END -->
 
 <!-- ITER012_PLAN_BEGIN -->
 ## Historical Package v1 plan - superseded operationally by approved Package v2
@@ -267,6 +430,7 @@ package and explicit approval.
 - Canonical output root:
   `/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/spinup_forcing_coupling/spinup_forcing_coupling_iter012_general_pipeline_v2/revision1`
 
-Start the next session by reading this file, `WORKFLOW.md`, the Iter012 record/report, and
-`development/hpc/puma.md`. Reconcile any claimed live state against scheduler accounting before
-requesting a new consolidated package.
+Start the next session by reading this file, `WORKFLOW.md`, the Iter012 record/report, the
+Iter013 planning-only proposal in this file, and `development/hpc/puma.md`. Reconcile any claimed
+live state against scheduler accounting. Iter013 remains `not_initialized` until one consolidated
+kickoff package is approved.
