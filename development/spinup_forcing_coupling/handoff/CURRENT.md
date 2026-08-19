@@ -13,7 +13,7 @@ Closeout identity: Iteration ID `iter015`; Status `completed`; Work type `implem
 - Active job IDs: none
 - Site profile: `development/hpc/puma.md`
 - Output root: `/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/spinup_forcing_coupling/spinup_forcing_coupling_iter015`
-- Last updated: `2026-08-18T19:14:00-07:00`
+- Last updated: `2026-08-19T15:22:00-07:00`
 
 ## Active Kickoff Package and Runtime Authority
 
@@ -29,7 +29,7 @@ Closeout identity: Iteration ID `iter015`; Status `completed`; Work type `implem
 
 ## Current Objective
 
-Iter015 is closed. Iter016 planning targets a multi-seed equifinal parameter ensemble for operational SR use. Do not execute until a fresh consolidated kickoff package is approved.
+Iter015 is closed. Iter016 kickoff is **approved** (`2026-08-19`): experimental multi-seed MAP ensemble procedure at ABBY `daily/0.50` and JERC `hourly/0.75` with nine seeds, Tier-A acceptance retention, reusable diagnostic tools, and a comprehensive closeout report. Do **not** initialize scaffold, submit jobs, or execute until the user explicitly authorizes workflow start.
 
 ## Best Evidence So Far
 
@@ -51,82 +51,163 @@ Iter015 is closed. Iter016 planning targets a multi-seed equifinal parameter ens
 
 ## Next Action
 
-Iter016 remains `not_initialized`. Next step is to discuss and lock the equifinal-ensemble kickoff package (operational configuration per site, seed-health thresholds, ensemble schema).
+Iter016 remains `not_initialized` (kickoff approved; workflow not started). Next step when authorized: initialize `iterations/iter016.md`, scaffold `slurm/iter016/` and reusable `tools/`, independent review, then preflight through closeout per the approved package below.
 
-## Next Iteration Plan (Planning Only)
-
-This is planning-only. Do not initialize, scaffold, or submit until a fresh consolidated kickoff approval.
+## Next Iteration Plan (Kickoff Approved — Do Not Execute Yet)
 
 <!-- ITER016_PLAN_BEGIN -->
-## Proposed Iter016 plan - multi-seed equifinal parameter ensemble for operational SR use
+## Iter016 — multi-seed MAP ensemble operational experiment (kickoff approved)
 
 - Sequential ID: `iter016`
-- Status: `not_initialized`
-- Work type: `implementation`
+- Status: `not_initialized` (kickoff approved; workflow not started)
+- Work type: `implementation` (experimental operational procedure; evidence collection for future operational policy)
 - Run slug: `spinup_forcing_coupling_iter016_<work_unit>`
+- User approval timestamp: `2026-08-19T15:22:00-07:00`
 
 ### Evidence-derived objective and hypothesis
 
-- Objective: define and characterize a **multi-seed equifinal parameter ensemble** for operational SR use at ABBY and JERC. Treat Iter015 hybrid `64×8000` chains as **mode-discovery evidence**, not as a calibrated posterior. Publish one representative parameter set per retained seed/mode, plus local cloud geometry and an SR predictive envelope across modes.
-- Hypothesis: JERC physical-corner plots and cross-seed width (0.345–0.896 on hourly configs vs Iter011 TIM ~0.003) reflect **parameter equifinality for soil decomposition**: different `(k, rf)` clusters can yield nearly identical MAP SR (~0.667 RMSE) because SR alone does not identify the cascade. Multiple MCMC seeds are a practical way to discover distinct high-likelihood modes; an operational product should retain those modes as an ensemble rather than collapse to one vector.
-- Evidence basis: Iter015 integrity passed but both sites are `inconclusive_seed_instability`; JERC has no tau-eligible configuration, R-hat ~2, bulk ESS ~250, and seed 9009 remains unhealthy on `hourly/0.75` (acceptance 0.089); MAP skill is flat across the six-configuration matrix; ABBY `daily/0.50` shows low cross-seed width (0.024) and may represent a single well-agreed mode rather than JERC-style seed separation.
+- Objective: run a **bounded multi-seed MAP ensemble experiment** at fixed site-specific configurations to establish an operational procedure for collecting best parameter sets per healthy seed, documenting seed-health exclusions, and diagnosing whether retained MAPs show **equifinality** or **convergence**. Treat `64×8000` hybrid-init chains as mode-discovery evidence, not a calibrated posterior. Publish one MAP vector per Tier-A-healthy seed plus a diagnostic package (not a success gate).
+- Hypothesis: additional seeds at JERC `hourly/0.75` will discover distinct high-likelihood decomposition modes with near-equal SR skill (equifinality under SR-only constraints); ABBY `daily/0.50` may instead show seed agreement (convergence). Site-specific outcomes are valid; equifinality is not required for iteration success.
+- Evidence basis: Iter015 integrity passed with `ABBY=inconclusive_seed_instability; JERC=inconclusive_seed_instability`; JERC cross-seed width ~0.485 on `hourly/0.75` with flat MAP SR (~0.667) and seed 9009 unhealthy (acceptance 0.089); ABBY `daily/0.50` unique non-dominated with low width (0.024).
+
+### Locked experimental design
+
+| Site | Config | Resolution | DE-scale | Seeds |
+| --- | --- | --- | --- | --- |
+| ABBY | `daily/0.50` | daily | 0.50 | `9009–9017` (9) |
+| JERC | `hourly/0.75` | hourly | 0.75 | `9009–9017` (9) |
+
+- Chain: `64×8000`, checkpoints every 2000; transformed coordinates; `de_mixture`; `site_hybrid_pool_reuse_v1`
+- Initialization: `hybrid_high_l_maximin` q=0.90; frozen pools ABBY `3627bb1d…`, JERC `40ac807e…` (Iter015 rebuild identity)
+- **Rerun all nine seeds** in iter016 scratch for uniform provenance (operational procedure)
 
 ### Upstream dependencies and trust assumptions
 
-| Dependency | Role | Path | Identity |
-| --- | --- | --- | --- |
-| Iter015 production leaves | read-only mode-discovery evidence | `.../spinup_forcing_coupling_iter015/production/` | 36 `CAMPAIGN_PASS` leaves |
-| Iter015 summaries and analysis | paired metrics, corners, skill | `summaries/iter015/`, scratch `analysis/` | aggregate + per-leaf diagnostics |
-| Iter002 forcing SR | coupled likelihood reference | Iter002 release pickle | `8d139b32473eebe3f75f77042e542f49ec3c80e89bc65c76b2e98a5c70f4553e` |
-| Spinup `drop21_corr080` | coupled spinup | Iter012 spinup release | `1427dc565af858e9c089a5b9545a7f127e42789ef1fe5c9af3af7f8cb12a3023` |
-| Iter015 frozen hybrid pools | provenance for walker geometry | ABBY `3627bb1d…`; JERC `40ac807e…` | Iter015 rebuild hashes |
-| NEON v4 observations | SR target | eval v4 | ABBY `e5f7b679…`; JERC `a5507878…` |
+| Dependency | Role | Path / identity |
+| --- | --- | --- |
+| Iter002 forcing SR | coupled likelihood | `8d139b32473eebe3f75f77042e542f49ec3c80e89bc65c76b2e98a5c70f4553e` |
+| Spinup `drop21_corr080` | coupled spinup | `1427dc565af858e9c089a5b9545a7f127e42789ef1fe5c9af3af7f8cb12a3023` |
+| ABBY Iter012 Revision1 ledger | hybrid rebuild input | `ec8b34ede77f3d9dd519c3b759bfa0d9daee018fe2a2ff2c7fc9e1c5c0bf036b` |
+| JERC Iter012 Revision1 ledger | hybrid rebuild input | `25382a57acd91b2b03db5a94312ba932a2c2c9501a392ed84e2a3e8633dedc3d` |
+| Iter015 frozen hybrid pools | walker geometry provenance | ABBY `3627bb1d…`; JERC `40ac807e…` |
+| NEON v4 observations | SR target | ABBY `e5f7b679…`; JERC `a5507878…` |
+| Iter015 summaries | prior evidence / contrast | `summaries/iter015/` (read-only reference) |
+
+### Tier A filter (strict retention only)
+
+| Gate | Criterion |
+| --- | --- |
+| A1 | `CAMPAIGN_PASS` and full production artifact contract |
+| A2 | Mean walker acceptance ∈ **[0.20, 0.50]** |
+
+All Tier-A-passing seeds: MAP vector saved to ensemble inventory. Tier-A-failing seeds: documented exclusion rationale. Wasserstein, τ-change, R̂/ESS, and equifinality metrics are **diagnostic only**, not retention gates.
+
+### Equifinality / convergence diagnostics (non-gating)
+
+**Layer 1 — MAP cross-seed (primary):** on Tier-A-healthy seeds, pairwise parameter distance/Wasserstein (full physical + decomposition `(k, rf)` subspace), MAP SR RMSE spread, overlap-aligned MAP SR timeseries overlay with ELM precal reference.
+
+**Layer 2 — per-seed post-burn clouds (confirmatory):** subsampled walkers per seed; seed-to-seed cloud Wasserstein; between-seed / within-seed width ratio; seed-colored physical corner. Compare seed clouds pairwise; do not pool all walkers without seed structure.
+
+**Diagnostic labels (informational, not pass/fail):**
+
+| Label | Heuristic |
+| --- | --- |
+| `converged` | max pairwise MAP W &lt; 0.05; MAP SR spread &lt; 0.01 |
+| `equifinal_candidate` | MAP SR spread &lt; 0.01; decomposition W ≥ 0.05 between ≥2 groups |
+| `mixed` | partial separation |
+| `insufficient_retained` | &lt;2 Tier-A seeds |
+
+Cloud layer adds `confirmed` / `revised` / `unconfirmed` relative to the MAP label.
 
 ### Bounded scope, work units, and exclusions
 
-Proposed work sequence (planning only; exact work units to be locked at kickoff):
+| # | Work unit | Submitters | Tasks |
+| --- | --- | ---: | ---: |
+| 1 | Materialization | — | — |
+| 2 | Preflight | 1 | — |
+| 3 | Pool rebuild ABBY | 1 | — |
+| 4 | Pool rebuild JERC | 1 | — |
+| 5 | Production array ABBY | 1 | 9 |
+| 6 | Production array JERC | 1 | 9 |
+| 7 | Analysis (orchestrates reusable tools) | 1 | — |
+| 8 | Handoff validation | 1 | — |
 
-1. **Do not operationalize parameters from Iter015 8k chains as a calibrated posterior.** Chains remain discovery evidence under incomplete mixing.
-2. **Treat SR as the operational target and parameters as a set.** The deliverable is a documented equifinal ensemble and SR predictive envelope, not a single “best” vector per site.
-3. **Build a per-site mode inventory from existing multi-seed runs.** For each site and locked operational configuration (to be chosen at kickoff; JERC evidence points to hourly hybrid; ABBY TBD), retain one representative parameter set per healthy seed (MAP or documented local representative) plus the associated local cloud from post-burn samples.
-4. **Apply explicit seed-health gates before retention.** Exclude seeds with clearly unhealthy sampler behavior (e.g. JERC 9009 on `hourly/0.75`: acceptance 0.089, tau-change 0.548). Document exclusion criteria in the kickoff package.
-5. **Test claimed equifinality before labeling a mode physical.** Require near-equal log-posterior and SR skill across retained modes, parameter separation in decomposition space, and either cross-seed recurrence or confirmation that a mode is not a single-short-chain artifact. Modes failing these tests remain “candidate modes under incomplete mixing.”
-6. **Within-seed clustering is diagnostic only, not the primary product generator.** If clustering is used at all, apply it to **pooled post-burn samples across seeds** to name modes; do not emit separate operational products from within-seed clusters by default.
-7. **If unique parameters are required later**, that is out of scope for this line unless additional constraints (stocks, other fluxes, tighter priors) are added in a separate iteration.
+Nominal **8 submitters, 18 production tasks**; cap ~25 (one preflight correction; ≤3 array-index recoveries per site; one analysis retry; one handoff retry).
 
-Tentative work units: mode-inventory analysis on Iter015 artifacts; equifinality and seed-health audit; ensemble manifest authoring; SR envelope plots; handoff validation. Optional bounded re-run only if kickoff proves existing leaves insufficient for mode labeling.
+**Production scheduling:** one Slurm **array job per site** (`#SBATCH --array=0-8`); array index maps to `SEEDS=(9009 9010 9011 9012 9013 9014 9015 9016 9017)`. Per-task resources: 16 CPU / 4 h / `standard` / `chopinsong`.
 
-Exclusions: no TIM revert; no new search; no `rank_dominated`; no 36-leaf matrix rerun; no within-seed clustering as primary operational product; no posterior promotion; no claim of unique soil-decomposition parameters from SR alone; no reuse of Iter015 8k chains as fully mixed posterior evidence without explicit kickoff language.
+**Approved output root and layout:**
 
-### Tentative acceptance gates and decision rule
+`/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/spinup_forcing_coupling/spinup_forcing_coupling_iter016/` with `preflight/`, `pool_rebuild/{abby,jerc}/`, `production/{abby,jerc}/<config>/seed_<seed>/`, `analysis/`. Array submitters live under `production/abby/` and `production/jerc/`.
 
-- Integrity: reproducible mode inventory from Iter015 artifacts; overlap-aligned ELM precal on any replotted SR figures.
-- Operational gates: each retained mode documents MAP (or representative), log-posterior, SR skill vs ELM precal, and local cloud stats; excluded seeds have recorded health rationale; equifinality claims are either supported or explicitly downgraded to “candidate under incomplete mixing.”
-- Decision rule (tentative): `ensemble_supported` if at least two healthy, SR-equivalent modes are documented per site; `partial_ensemble` if only one healthy mode survives gates; `inconclusive` if modes cannot be separated from mixing artifacts. This replaces the Iter011 configuration-selection rule for this iteration.
+**Exclusions:** no 36-leaf matrix; no TIM revert; no new search; no `rank_dominated`; no posterior promotion; no within-seed clustering as primary operational product; no equifinality success gate; no claim of unique decomposition parameters from SR alone.
 
-### Proposed site and resource envelope
+### Reusable tools (`development/spinup_forcing_coupling/tools/`)
 
-- Primary path: **offline analysis** on existing Iter015 scratch and Git summaries; Puma not required unless kickoff adds validation reruns.
-- If validation reruns are added: Puma `chopinsong`/`standard`; `OLMT_puma` / micromamba `2.0.2-2`; scope locked at kickoff.
-- Retry/cancellation: standard bounded analysis retry; no large matrix unless explicitly approved.
+Implement as JSON-spec CLIs (merge-ready to main code later); `slurm/iter016/analyze_iter016.py` orchestrates only.
+
+| Tool | Purpose |
+| --- | --- |
+| `ensemble_seed_health.py` | Tier A acceptance filter + per-seed sampler stats |
+| `ensemble_map_inventory.py` | MAP extraction, log-posterior, SR skill; retained inventory |
+| `ensemble_equifinality_diagnostics.py` | MAP cross-seed matrix; cloud geometry; diagnostic labels |
+| `plot_ensemble_sr_overlay.py` | MAP SR timeseries overlay + ELM precal |
+| `plot_ensemble_physical_corner.py` | Seed-colored post-burn physical corner |
+
+Schemas: `spinup-forcing-coupling-ensemble-seed-health-v1`, `ensemble-map-inventory-v1`, `ensemble-equifinality-diagnostics-v1`. Reuse `fixed_length_mcmc_diagnostics.py` and physical-corner helpers where applicable. Update `tools/README.md` at closeout.
+
+### Acceptance gates (integrity only — no equifinality success gate)
+
+- Preflight `PREFLIGHT_PASS`; pool rebuild hashes match Iter015 identities
+- All 18 array tasks terminal-accounted
+- Tier A applied to every seed with documented rationale
+- Ensemble inventory and full diagnostic package complete
+- **Comprehensive closeout report** finalized (see below)
+- Handoff four-record validation pass
+
+Overall acceptance result: `pass` when integrity and completeness gates pass regardless of per-site equifinality/convergence label.
+
+### Closeout report requirement
+
+At closeout, produce **`summaries/iter016/ITER016_REPORT.md`** — a comprehensive report with evidence and conclusions, following the depth of prior iteration reports (`ITER015_REPORT.md` pattern). Required sections:
+
+1. **Closeout identity** — iteration ID, objective, bounded scope, overall acceptance result
+2. **Integrity and provenance** — preflight, rebuilds, array jobs, pool hashes, source/dependency manifests
+3. **Per-seed production evidence** — acceptance, Tier A pass/fail, MAP skill, exclusion rationale for failed seeds
+4. **Ensemble inventory** — all Tier-A-retained MAP parameter sets per site
+5. **Equifinality / convergence diagnosis** — Layer 1 MAP results, Layer 2 cloud confirmation, per-site diagnostic label with supporting metrics and figures
+6. **Site-specific rationale** — interpret ABBY vs JERC patterns; contrast with Iter015 where relevant
+7. **Integrated conclusion** — what this experiment establishes for a future operational MAP-ensemble procedure; explicit limitations (8k chains, SR-only constraints, no posterior promotion)
+8. **Next experiment routing** — planning-only suggestions; no unauthorized execution
+
+Supporting tables and JSON artifacts under `summaries/iter016/` must be cited in the report. Copy required evidence from scratch `analysis/` into Git summaries before closeout commit.
+
+### Site and resource envelope
+
+- HPC: UArizona Puma; `development/hpc/puma.md`; account `chopinsong`; partition `standard`
+- Environment: `OLMT_puma` / micromamba `2.0.2-2`
+- Resources: preflight 4 CPU / 30 min; rebuild 8 CPU / 2 h each; array task 16 CPU / 4 h; analysis 4 CPU / 2 h; handoff 2 CPU / 30 min
+- Closeout: one local closeout commit authorized; no push unless user requests
 
 ### Expected evidence, artifacts, and record updates
 
-- Git summaries under `summaries/iter016/`: per-site mode inventory, equifinality audit, seed-health exclusions, SR predictive envelope, ensemble manifest schema.
-- Optional scratch under `spinup_forcing_coupling_iter016/` if kickoff adds reruns.
-- Records: `iterations/iter016.md`, `ITERATION_SUMMARY.md`, `registry.csv`, `handoff/CURRENT.md`.
+- Git summaries under `summaries/iter016/`: `ITER016_REPORT.md`, seed health, MAP inventory, equifinality diagnosis, plots, ensemble manifests
+- Scratch under `spinup_forcing_coupling_iter016/`
+- Records at closeout: `iterations/iter016.md`, `ITERATION_SUMMARY.md`, `registry.csv`, `handoff/CURRENT.md`
+- Reusable tools under `tools/` with README examples
 
-### Fresh consolidated kickoff-approval boundary
+### Workflow start boundary
 
-Planning only. Iter016 remains `not_initialized` until the user approves a complete consolidated kickoff package. Detailed operational configuration choice, seed-health thresholds, and ensemble schema will be discussed and locked at kickoff.
+Kickoff is approved. Iter016 remains `not_initialized` until the user explicitly authorizes workflow start (scaffold, review, preflight, submission). Do not materialize, submit, or execute before that authorization.
 <!-- ITER016_PLAN_END -->
 
 ## Next Session Start Protocol
 
 1. Read this handoff, `WORKFLOW.md`, `iterations/iter015.md`, and `development/hpc/puma.md`.
 2. Treat Iter015 as closed. Do not reuse the Iter015 package for new jobs.
-3. If starting Iter016, present a fresh consolidated kickoff package copied from the planning-only proposal above.
-4. Inspect Git and scheduler state before any new execution.
+3. Iter016 kickoff is approved in the `ITER016_PLAN_BEGIN` block below. Do not initialize or execute until the user explicitly authorizes workflow start.
+4. When authorized, initialize from the approved package: `iterations/iter016.md`, `slurm/iter016/`, reusable `tools/`, independent review, then preflight through closeout including `summaries/iter016/ITER016_REPORT.md`.
+5. Inspect Git and scheduler state before any new execution.
 
 ## Artifact References
 
