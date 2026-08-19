@@ -202,6 +202,7 @@ def build_coupling_target(
             "n_spinup": int(prepared["n_spinup"]), "case": case,
             "obs": observations[site], "obs_err": errors[site],
             "overlap_diagnostics": dict(overlap), "daily_index_map": daily_maps.get(site),
+            "baseline_output": case.output,
         }
         identity.setdefault("sites_detail", {})[site] = {
             "case": case_name, "case_pickle_sha256": sha256_file(repo / "pklfiles" / f"{case_name}.pkl"),

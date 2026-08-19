@@ -29,7 +29,7 @@ Closeout identity: Iteration ID `iter015`; Status `completed`; Work type `implem
 
 ## Current Objective
 
-Iter015 is closed. Do not execute Iter016 until a fresh consolidated kickoff package is approved.
+Iter015 is closed. Iter016 planning targets a multi-seed equifinal parameter ensemble for operational SR use. Do not execute until a fresh consolidated kickoff package is approved.
 
 ## Best Evidence So Far
 
@@ -51,14 +51,14 @@ Iter015 is closed. Do not execute Iter016 until a fresh consolidated kickoff pac
 
 ## Next Action
 
-Iter016 remains `not_initialized`. Obtain a fresh consolidated kickoff approval before any initialization or scheduler work.
+Iter016 remains `not_initialized`. Next step is to discuss and lock the equifinal-ensemble kickoff package (operational configuration per site, seed-health thresholds, ensemble schema).
 
 ## Next Iteration Plan (Planning Only)
 
 This is planning-only. Do not initialize, scaffold, or submit until a fresh consolidated kickoff approval.
 
 <!-- ITER016_PLAN_BEGIN -->
-## Proposed Iter016 plan - longer hybrid MCMC at the two Iter015 interesting configurations
+## Proposed Iter016 plan - multi-seed equifinal parameter ensemble for operational SR use
 
 - Sequential ID: `iter016`
 - Status: `not_initialized`
@@ -67,50 +67,58 @@ This is planning-only. Do not initialize, scaffold, or submit until a fresh cons
 
 ### Evidence-derived objective and hypothesis
 
-- Objective: test whether a longer fixed-length hybrid chain removes the Iter015 tau-change veto at the two scientifically interesting configurations, then apply the Iter011 decision rule at those configs only.
-- Hypothesis: Iter015 hybrid `64×8000` left ABBY `daily/0.50` uniquely non-dominated but ineligible, and left JERC with no tau-eligible configuration. The 8k length, not the hybrid pool, may be driving `max_tau_change > 0.20`.
-- Evidence basis: Iter015 integrity passed; ABBY `inconclusive_seed_instability` with eligible `hourly/1.00` and unique non-dominated `daily/0.50`; JERC `inconclusive_seed_instability` with unique non-dominated hourly `0.50/0.75/1.00` and no eligible configs; JERC hourly/0.75 remains the Iter014 hybrid control.
+- Objective: define and characterize a **multi-seed equifinal parameter ensemble** for operational SR use at ABBY and JERC. Treat Iter015 hybrid `64×8000` chains as **mode-discovery evidence**, not as a calibrated posterior. Publish one representative parameter set per retained seed/mode, plus local cloud geometry and an SR predictive envelope across modes.
+- Hypothesis: JERC physical-corner plots and cross-seed width (0.345–0.896 on hourly configs vs Iter011 TIM ~0.003) reflect **parameter equifinality for soil decomposition**: different `(k, rf)` clusters can yield nearly identical MAP SR (~0.667 RMSE) because SR alone does not identify the cascade. Multiple MCMC seeds are a practical way to discover distinct high-likelihood modes; an operational product should retain those modes as an ensemble rather than collapse to one vector.
+- Evidence basis: Iter015 integrity passed but both sites are `inconclusive_seed_instability`; JERC has no tau-eligible configuration, R-hat ~2, bulk ESS ~250, and seed 9009 remains unhealthy on `hourly/0.75` (acceptance 0.089); MAP skill is flat across the six-configuration matrix; ABBY `daily/0.50` shows low cross-seed width (0.024) and may represent a single well-agreed mode rather than JERC-style seed separation.
 
 ### Upstream dependencies and trust assumptions
 
 | Dependency | Role | Path | Identity |
 | --- | --- | --- | --- |
-| Iter002 forcing SR | coupled likelihood | Iter002 release pickle | `8d139b32473eebe3f75f77042e542f49ec3c80e89bc65c76b2e98a5c70f4553e` |
+| Iter015 production leaves | read-only mode-discovery evidence | `.../spinup_forcing_coupling_iter015/production/` | 36 `CAMPAIGN_PASS` leaves |
+| Iter015 summaries and analysis | paired metrics, corners, skill | `summaries/iter015/`, scratch `analysis/` | aggregate + per-leaf diagnostics |
+| Iter002 forcing SR | coupled likelihood reference | Iter002 release pickle | `8d139b32473eebe3f75f77042e542f49ec3c80e89bc65c76b2e98a5c70f4553e` |
 | Spinup `drop21_corr080` | coupled spinup | Iter012 spinup release | `1427dc565af858e9c089a5b9545a7f127e42789ef1fe5c9af3af7f8cb12a3023` |
-| Iter015 ABBY hybrid pool | walker source | `.../iter015/pool_rebuild/abby/artifacts/candidate_pool.npz` | `3627bb1df152e2f4356787a6634c96dfe533bc2ca55a30a7aa90fc4d9fd50592` |
-| Iter015 JERC hybrid pool | walker source | `.../iter015/pool_rebuild/jerc/artifacts/candidate_pool.npz` | `40ac807e17803316b1200b7caa316d2ee45dde3a82fa1570345b3da4e282e4df` |
-| Frozen Iter012 Revision1 ledgers | provenance only | Iter012 revision1 | ABBY `ec8b34ed…`; JERC `25382a57…` |
-| NEON v4 observations | likelihood obs | eval v4 | ABBY `e5f7b679…`; JERC `a5507878…` |
+| Iter015 frozen hybrid pools | provenance for walker geometry | ABBY `3627bb1d…`; JERC `40ac807e…` | Iter015 rebuild hashes |
+| NEON v4 observations | SR target | eval v4 | ABBY `e5f7b679…`; JERC `a5507878…` |
 
 ### Bounded scope, work units, and exclusions
 
-- Work units: 1 preflight; 6 MCMC leaves (ABBY `daily/0.50` seeds `9009/9010/9011`; JERC `hourly/0.75` seeds `9009/9010/9011`); 1 analysis; 1 handoff validation.
-- Locked chain: reuse Iter015 hybrid pools under `site_hybrid_pool_reuse_v1`; proposed length `64×32000` unless the kickoff package locks a different fixed length.
-- Required plot contract: overlap-aligned ELM precal overlay on `Predictions_SR_posterior.png` and `elm_precal` skill rows.
-- Exclusions: no TIM, no new search, no `rank_dominated`, no 36-leaf matrix rerun, no reuse of Iter015 8k chains as production evidence, no posterior promotion unless Iter016 gates pass.
+Proposed work sequence (planning only; exact work units to be locked at kickoff):
+
+1. **Do not operationalize parameters from Iter015 8k chains as a calibrated posterior.** Chains remain discovery evidence under incomplete mixing.
+2. **Treat SR as the operational target and parameters as a set.** The deliverable is a documented equifinal ensemble and SR predictive envelope, not a single “best” vector per site.
+3. **Build a per-site mode inventory from existing multi-seed runs.** For each site and locked operational configuration (to be chosen at kickoff; JERC evidence points to hourly hybrid; ABBY TBD), retain one representative parameter set per healthy seed (MAP or documented local representative) plus the associated local cloud from post-burn samples.
+4. **Apply explicit seed-health gates before retention.** Exclude seeds with clearly unhealthy sampler behavior (e.g. JERC 9009 on `hourly/0.75`: acceptance 0.089, tau-change 0.548). Document exclusion criteria in the kickoff package.
+5. **Test claimed equifinality before labeling a mode physical.** Require near-equal log-posterior and SR skill across retained modes, parameter separation in decomposition space, and either cross-seed recurrence or confirmation that a mode is not a single-short-chain artifact. Modes failing these tests remain “candidate modes under incomplete mixing.”
+6. **Within-seed clustering is diagnostic only, not the primary product generator.** If clustering is used at all, apply it to **pooled post-burn samples across seeds** to name modes; do not emit separate operational products from within-seed clusters by default.
+7. **If unique parameters are required later**, that is out of scope for this line unless additional constraints (stocks, other fluxes, tighter priors) are added in a separate iteration.
+
+Tentative work units: mode-inventory analysis on Iter015 artifacts; equifinality and seed-health audit; ensemble manifest authoring; SR envelope plots; handoff validation. Optional bounded re-run only if kickoff proves existing leaves insufficient for mode labeling.
+
+Exclusions: no TIM revert; no new search; no `rank_dominated`; no 36-leaf matrix rerun; no within-seed clustering as primary operational product; no posterior promotion; no claim of unique soil-decomposition parameters from SR alone; no reuse of Iter015 8k chains as fully mixed posterior evidence without explicit kickoff language.
 
 ### Tentative acceptance gates and decision rule
 
-- Completeness: preflight pass; 6 `CAMPAIGN_PASS` leaves; analysis; handoff validation.
-- Interpretability: `max_tau_change ≤ 0.20` on every seed of a configuration.
-- Decision rule: sites independent; Iter011 labels (`preferred_configuration_supported`, `default_configuration_retained`, `inconclusive_*`); W/R̂/ESS reported not veto; no posterior promotion unless a site is preferred or default-retained.
+- Integrity: reproducible mode inventory from Iter015 artifacts; overlap-aligned ELM precal on any replotted SR figures.
+- Operational gates: each retained mode documents MAP (or representative), log-posterior, SR skill vs ELM precal, and local cloud stats; excluded seeds have recorded health rationale; equifinality claims are either supported or explicitly downgraded to “candidate under incomplete mixing.”
+- Decision rule (tentative): `ensemble_supported` if at least two healthy, SR-equivalent modes are documented per site; `partial_ensemble` if only one healthy mode survives gates; `inconclusive` if modes cannot be separated from mixing artifacts. This replaces the Iter011 configuration-selection rule for this iteration.
 
 ### Proposed site and resource envelope
 
-- Puma `chopinsong`/`standard`; `OLMT_puma` / micromamba `2.0.2-2`.
-- Tentative resources: preflight 4 CPU / 30 min; leaf 16 CPU / 12 h; analysis 4 CPU / 2 h; handoff 2 CPU / 30 min.
-- Retry: one preflight correction; ≤2 leaf recoveries; one analysis retry; one handoff retry.
-- Cancellation: recorded Iter016 job IDs only; universal pre-execution defect or user emergency.
-- Stop: terminal accounting, analysis, four-record validation, and the authorized closeout branch.
+- Primary path: **offline analysis** on existing Iter015 scratch and Git summaries; Puma not required unless kickoff adds validation reruns.
+- If validation reruns are added: Puma `chopinsong`/`standard`; `OLMT_puma` / micromamba `2.0.2-2`; scope locked at kickoff.
+- Retry/cancellation: standard bounded analysis retry; no large matrix unless explicitly approved.
 
 ### Expected evidence, artifacts, and record updates
 
-- Scratch tree `spinup_forcing_coupling_iter016/` with `preflight/`, `production/{abby,jerc}/...`, `analysis/`.
-- Git records: `iterations/iter016.md`, `summaries/iter016/`, `ITERATION_SUMMARY.md`, `registry.csv`, `handoff/CURRENT.md`.
+- Git summaries under `summaries/iter016/`: per-site mode inventory, equifinality audit, seed-health exclusions, SR predictive envelope, ensemble manifest schema.
+- Optional scratch under `spinup_forcing_coupling_iter016/` if kickoff adds reruns.
+- Records: `iterations/iter016.md`, `ITERATION_SUMMARY.md`, `registry.csv`, `handoff/CURRENT.md`.
 
 ### Fresh consolidated kickoff-approval boundary
 
-Planning only. Iter016 remains `not_initialized` until the user approves a complete consolidated kickoff package.
+Planning only. Iter016 remains `not_initialized` until the user approves a complete consolidated kickoff package. Detailed operational configuration choice, seed-health thresholds, and ensemble schema will be discussed and locked at kickoff.
 <!-- ITER016_PLAN_END -->
 
 ## Next Session Start Protocol

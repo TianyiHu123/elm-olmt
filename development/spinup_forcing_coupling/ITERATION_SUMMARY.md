@@ -708,5 +708,5 @@ Closeout identity: Iteration ID `iter015`; Status `completed`; Work type `implem
 
 ### Gate outcome and conclusion
 
-Integrity passed. Decision `ABBY=inconclusive_seed_instability; JERC=inconclusive_seed_instability`. No configuration preferred and no posterior promotion. Planning-only Iter016 may run longer hybrid MCMC at ABBY `daily/0.50` and JERC `hourly/0.75` without repeating the 36-leaf matrix.
+Integrity passed. Decision `ABBY=inconclusive_seed_instability; JERC=inconclusive_seed_instability`. No configuration preferred and no posterior promotion. Planning-only Iter016 proposes a **multi-seed equifinal parameter ensemble** for operational SR use (mode inventory from Iter015 artifacts, seed-health gates, equifinality audit, SR envelope; within-seed clustering diagnostic only).
 
