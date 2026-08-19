@@ -1,0 +1,122 @@
+{
+  "schema": "spinup-forcing-coupling-iter015-aggregate-v1",
+  "status": "pass",
+  "leaves": 36,
+  "decisions": [
+    {
+      "schema": "spinup-forcing-coupling-iter015-site-decision-v1",
+      "site": "ABBY",
+      "integrity_pass": true,
+      "interpretability_pass": true,
+      "eligible_configurations": [
+        "hourly_1.00"
+      ],
+      "decision": "inconclusive_seed_instability",
+      "unique_non_dominated": [
+        "daily_0.50"
+      ],
+      "selected_configuration": null
+    },
+    {
+      "schema": "spinup-forcing-coupling-iter015-site-decision-v1",
+      "site": "JERC",
+      "integrity_pass": true,
+      "interpretability_pass": false,
+      "eligible_configurations": [],
+      "decision": "inconclusive_seed_instability",
+      "unique_non_dominated": [
+        "hourly_0.50",
+        "hourly_0.75",
+        "hourly_1.00"
+      ],
+      "selected_configuration": null
+    }
+  ],
+  "reported_diagnostics": {
+    "ABBY_hourly_0.50": {
+      "max_cross_seed_normalized_wasserstein": 0.3443511363317596,
+      "max_rank_normalized_split_rhat": null,
+      "min_bulk_ess": null,
+      "min_tail_ess": null,
+      "label": null
+    },
+    "JERC_hourly_0.50": {
+      "max_cross_seed_normalized_wasserstein": 0.347438124728018,
+      "max_rank_normalized_split_rhat": null,
+      "min_bulk_ess": null,
+      "min_tail_ess": null,
+      "label": null
+    },
+    "ABBY_hourly_0.75": {
+      "max_cross_seed_normalized_wasserstein": 0.0005703321197340478,
+      "max_rank_normalized_split_rhat": null,
+      "min_bulk_ess": null,
+      "min_tail_ess": null,
+      "label": null
+    },
+    "JERC_hourly_0.75": {
+      "max_cross_seed_normalized_wasserstein": 0.43647775846271103,
+      "max_rank_normalized_split_rhat": null,
+      "min_bulk_ess": null,
+      "min_tail_ess": null,
+      "label": null
+    },
+    "ABBY_hourly_1.00": {
+      "max_cross_seed_normalized_wasserstein": 0.4611421630791632,
+      "max_rank_normalized_split_rhat": null,
+      "min_bulk_ess": null,
+      "min_tail_ess": null,
+      "label": null
+    },
+    "JERC_hourly_1.00": {
+      "max_cross_seed_normalized_wasserstein": 0.9030001266217336,
+      "max_rank_normalized_split_rhat": null,
+      "min_bulk_ess": null,
+      "min_tail_ess": null,
+      "label": null
+    },
+    "ABBY_daily_0.50": {
+      "max_cross_seed_normalized_wasserstein": 0.024733385091352835,
+      "max_rank_normalized_split_rhat": null,
+      "min_bulk_ess": null,
+      "min_tail_ess": null,
+      "label": null
+    },
+    "JERC_daily_0.50": {
+      "max_cross_seed_normalized_wasserstein": 0.10062753563490806,
+      "max_rank_normalized_split_rhat": null,
+      "min_bulk_ess": null,
+      "min_tail_ess": null,
+      "label": null
+    },
+    "ABBY_daily_0.75": {
+      "max_cross_seed_normalized_wasserstein": 0.05088208920559601,
+      "max_rank_normalized_split_rhat": null,
+      "min_bulk_ess": null,
+      "min_tail_ess": null,
+      "label": null
+    },
+    "JERC_daily_0.75": {
+      "max_cross_seed_normalized_wasserstein": 0.08042323900664929,
+      "max_rank_normalized_split_rhat": null,
+      "min_bulk_ess": null,
+      "min_tail_ess": null,
+      "label": null
+    },
+    "ABBY_daily_1.00": {
+      "max_cross_seed_normalized_wasserstein": 0.19643369536251523,
+      "max_rank_normalized_split_rhat": null,
+      "min_bulk_ess": null,
+      "min_tail_ess": null,
+      "label": null
+    },
+    "JERC_daily_1.00": {
+      "max_cross_seed_normalized_wasserstein": 0.10746535663336051,
+      "max_rank_normalized_split_rhat": null,
+      "min_bulk_ess": null,
+      "min_tail_ess": null,
+      "label": null
+    }
+  },
+  "pool_reuse_policy": "site_hybrid_pool_reuse_v1"
+}

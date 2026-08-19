@@ -684,3 +684,29 @@ Closeout identity: Iteration ID `iter014`; Status `completed`; Work type `implem
 
 Implementation integrity passed. Pure high-L rank pools are geometry-infeasible at JERC under locked gates. Hybrid high-L+maximin yields a partial mixing improvement versus the diversity control without clearing repair thresholds. No posterior promotion. Planning-only Iter015 may probe longer/milder hybrid diagnostics without TIM revert or new search.
 
+## iter015 - hybrid-init Iter011 configuration matrix at ABBY and JERC
+
+Closeout identity: Iteration ID `iter015`; Status `completed`; Work type `implementation`; Objective `hybrid-init Iter011 configuration matrix at ABBY and JERC`; Bounded scope `1 preflight; 2 hybrid rebuilds; 36 64x8000 leaves; 1 analysis; 1 handoff validation; user-directed ELM-precal plot makeup`; Overall acceptance result `pass`; Decision `ABBY=inconclusive_seed_instability; JERC=inconclusive_seed_instability`
+
+- Closed at: `2026-08-18T19:20:00-07:00`
+- Output root: `/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/spinup_forcing_coupling/spinup_forcing_coupling_iter015`
+- Summary path: `development/spinup_forcing_coupling/summaries/iter015`
+
+### Locked settings
+
+- Sites ABBY and JERC independently; hourly/daily × DEMove `0.50/0.75/1.00` × seeds `9009/9010/9011`; `64×8000`; `hybrid_high_l_maximin` q=0.90; `site_hybrid_pool_reuse_v1`.
+- Frozen Iter012 Revision1 ledgers; JERC rebuilt pool must equal Iter014 `40ac807e…`; no TIM, no new search, no posterior promotion.
+- User-directed makeup after production: overlap-aligned ELM precal on all 36 `Predictions_SR_posterior.png` figures.
+
+### Quantitative evidence
+
+- Preflight `23589106`; rebuilds `23589146`/`23589147`; 36 production leaves `23589174–23589191` and `23589195–23589212`; makeup `23589330`; analysis `23589339`; handoff `23589486` all COMPLETED `0:0`. Analysis `23589325` FAILED `1:0` missing `elm_precal`.
+- ABBY pool `3627bb1d…`; JERC pool `40ac807e…`.
+- ABBY medians: hourly/1.00 acceptance `0.13538`, min steps/τ `18.731`, width `0.46115`; daily/0.50 acceptance `0.26943`, width `0.023529`; ELM RMSE `6.6896`.
+- JERC medians: hourly/0.75 acceptance `0.22109`, width `0.48541`; daily acceptances `0.025/0.015/0.012`; ELM RMSE `1.5752`.
+- ABBY eligible `hourly_1.00`; unique non-dominated `daily_0.50`. JERC eligible none; unique non-dominated hourly `0.50/0.75/1.00`.
+
+### Gate outcome and conclusion
+
+Integrity passed. Decision `ABBY=inconclusive_seed_instability; JERC=inconclusive_seed_instability`. No configuration preferred and no posterior promotion. Planning-only Iter016 may run longer hybrid MCMC at ABBY `daily/0.50` and JERC `hourly/0.75` without repeating the 36-leaf matrix.
+

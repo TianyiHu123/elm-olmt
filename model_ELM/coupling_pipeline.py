@@ -450,6 +450,89 @@ def choose_candidate_pool(
     return unique_states[selected], unique_logp[selected], strata_all[selected], diagnostics
 
 
+POOL_REUSE_POLICIES = ("exact_target", "site_hybrid_pool_reuse_v1")
+SHARED_TARGET_IDENTITY_KEYS = (
+    "schema",
+    "cases",
+    "sites",
+    "forcing_artifact",
+    "forcing_artifact_sha256",
+    "spinup_artifact",
+    "spinup_artifact_sha256",
+    "fit_error",
+    "parameter_names",
+    "pmin",
+    "pmax",
+    "training_layout",
+)
+
+
+def assert_pool_target_compatible(
+    contract: Mapping[str, Any],
+    target: Mapping[str, Any],
+    resolution: str,
+    *,
+    pool_reuse_policy: str,
+) -> dict[str, Any]:
+    """Validate frozen-pool vs campaign-target identity under the locked reuse policy."""
+    if pool_reuse_policy not in POOL_REUSE_POLICIES:
+        raise ValueError(
+            f"unsupported pool_reuse_policy={pool_reuse_policy!r}; "
+            f"expected one of {POOL_REUSE_POLICIES}"
+        )
+    expected_site = target["sites"][0] if len(target["sites"]) == 1 else target["sites"]
+    canonical_cases = target["identity"]["cases"]
+    if contract.get("site") != expected_site or contract.get("cases") != canonical_cases:
+        raise ValueError("candidate pool site/case membership does not match production target")
+    pool_resolution = contract.get("resolution")
+    pool_identity = contract.get("target_identity") or {}
+    campaign_identity = target["identity"]
+    matching_resolution = pool_resolution == resolution
+    if pool_reuse_policy == "exact_target" or matching_resolution:
+        if pool_resolution != resolution:
+            raise ValueError("candidate pool site/resolution/case membership does not match production target")
+        if pool_identity != campaign_identity:
+            raise ValueError("candidate pool target identity differs from reconstructed production target")
+        return {
+            "pool_reuse_policy": pool_reuse_policy,
+            "resolutions_match": True,
+            "require_stored_posterior_match": True,
+            "pool_resolution": pool_resolution,
+            "pool_target_sha256": pool_identity.get("sha256"),
+            "campaign_target_sha256": campaign_identity.get("sha256"),
+        }
+    for key in SHARED_TARGET_IDENTITY_KEYS:
+        if pool_identity.get(key) != campaign_identity.get(key):
+            raise ValueError(
+                f"site_hybrid_pool_reuse_v1 shared identity mismatch for {key}"
+            )
+    pool_detail = pool_identity.get("sites_detail") or {}
+    campaign_detail = campaign_identity.get("sites_detail") or {}
+    if set(pool_detail) != set(campaign_detail):
+        raise ValueError("site_hybrid_pool_reuse_v1 sites_detail membership mismatch")
+    for site_key, campaign_site in campaign_detail.items():
+        pool_site = pool_detail.get(site_key) or {}
+        for field in (
+            "case",
+            "case_pickle_sha256",
+            "observation_path",
+            "observation_sha256",
+            "overlap_rows",
+        ):
+            if pool_site.get(field) != campaign_site.get(field):
+                raise ValueError(
+                    f"site_hybrid_pool_reuse_v1 sites_detail mismatch for {site_key}.{field}"
+                )
+    return {
+        "pool_reuse_policy": pool_reuse_policy,
+        "resolutions_match": False,
+        "require_stored_posterior_match": False,
+        "pool_resolution": pool_resolution,
+        "pool_target_sha256": pool_identity.get("sha256"),
+        "campaign_target_sha256": campaign_identity.get("sha256"),
+    }
+
+
 def select_production_walkers(
     pool: np.ndarray,
     logp: np.ndarray,
@@ -460,6 +543,7 @@ def select_production_walkers(
     log_posterior,
     *,
     walker_count: int = 64,
+    require_stored_posterior_match: bool = True,
 ) -> tuple[np.ndarray, np.ndarray]:
     """Select, validate, and re-evaluate one production walker's initial state."""
     normalized = (pool - pmin) / (pmax - pmin)
@@ -491,7 +575,11 @@ def select_production_walkers(
     states = pool[selected_array]
     stored_logp = logp[selected_array]
     reevaluated_logp = np.asarray([log_posterior(state) for state in states], dtype=float)
-    if not np.all(np.isfinite(reevaluated_logp)) or not np.allclose(reevaluated_logp, stored_logp, rtol=0, atol=1e-8):
+    if not np.all(np.isfinite(reevaluated_logp)):
+        raise RuntimeError("selected pool posterior values failed pre-backend re-evaluation")
+    if require_stored_posterior_match and not np.allclose(
+        reevaluated_logp, stored_logp, rtol=0, atol=1e-8
+    ):
         raise RuntimeError("selected pool posterior values failed pre-backend re-evaluation")
     centered = ((states - pmin) / (pmax - pmin)) - np.mean((states - pmin) / (pmax - pmin), axis=0)
     if np.unique(states, axis=0).shape[0] != walker_count or np.linalg.matrix_rank(centered) != len(pmin):
@@ -545,6 +633,7 @@ def run_fixed_production_chain(
     selection_schema: str = "coupling-selection-ledger-v1",
     production_schema: str = "coupling-production-v1",
     daily_map_schema: str = "coupling-daily-maps-v1",
+    pool_reuse_policy: str = "exact_target",
 ):
     """Run one fixed production chain from a frozen, provenance-checked pool."""
     output_path, pool_file = Path(output), Path(pool_path)
@@ -595,15 +684,12 @@ def run_fixed_production_chain(
         raise FileNotFoundError(f"missing frozen search contract: {contract_path}")
     contract = json.loads(contract_path.read_text(encoding="utf-8"))
     canonical_cases = sorted(str(case).strip() for case in cases if str(case).strip())
-    expected_site = target["sites"][0] if len(target["sites"]) == 1 else target["sites"]
-    if (
-        contract.get("site") != expected_site
-        or contract.get("resolution") != resolution
-        or contract.get("cases") != canonical_cases
-    ):
-        raise ValueError("candidate pool site/resolution/case membership does not match production target")
-    if contract.get("target_identity") != target["identity"]:
-        raise ValueError("candidate pool target identity differs from reconstructed production target")
+    reuse = assert_pool_target_compatible(
+        contract,
+        target,
+        resolution,
+        pool_reuse_policy=pool_reuse_policy,
+    )
     if contract.get("repository_commit") != repository_commit or contract.get("source_manifest_sha256") != sha256_file(source_manifest) or contract.get("dependency_manifest_sha256") != sha256_file(dependency_manifest):
         raise ValueError("candidate pool source/dependency provenance differs from locked production package")
     if contract.get("pool_sha256") != sha256_file(pool_file):
@@ -649,6 +735,10 @@ def run_fixed_production_chain(
             "target_identity": target["identity"],
             "search_contract_sha256": sha256_file(contract_path),
             "target_sha256": target["identity"]["sha256"],
+            "pool_reuse_policy": reuse["pool_reuse_policy"],
+            "pool_resolution": reuse["pool_resolution"],
+            "pool_target_sha256": reuse["pool_target_sha256"],
+            "campaign_target_sha256": reuse["campaign_target_sha256"],
         }
         for key, value in expected_selection.items():
             if selection.get(key) != value:
@@ -662,7 +752,11 @@ def run_fixed_production_chain(
         ):
             raise ValueError("existing selection ledger state/index mismatch")
         reevaluated = np.asarray([target["log_posterior"](state) for state in states])
-        if not np.allclose(reevaluated, pool_logp[indices], rtol=0, atol=1e-8):
+        if not np.all(np.isfinite(reevaluated)):
+            raise ValueError("existing selection ledger posterior mismatch")
+        if reuse["require_stored_posterior_match"] and not np.allclose(
+            reevaluated, pool_logp[indices], rtol=0, atol=1e-8
+        ):
             raise ValueError("existing selection ledger posterior mismatch")
         if selection.get("stored_prior_component") != pool_prior[indices].tolist():
             raise ValueError("existing selection ledger prior-component mismatch")
@@ -682,6 +776,7 @@ def run_fixed_production_chain(
             selection_seed,
             target["log_posterior"],
             walker_count=nwalkers,
+            require_stored_posterior_match=bool(reuse["require_stored_posterior_match"]),
         )
         components = [target["log_components"](state) for state in states]
         reevaluated_prior = np.asarray(
@@ -693,7 +788,13 @@ def run_fixed_production_chain(
         reevaluated_posterior = np.asarray(
             [item["physical_log_posterior"] for item in components], dtype=float
         )
-        if (
+        if not (
+            np.all(np.isfinite(reevaluated_prior))
+            and np.all(np.isfinite(reevaluated_likelihood))
+            and np.all(np.isfinite(reevaluated_posterior))
+        ):
+            raise RuntimeError("selected pool posterior components failed re-evaluation")
+        if reuse["require_stored_posterior_match"] and (
             not np.allclose(
                 reevaluated_prior, pool_prior[indices], rtol=0, atol=1e-12
             )
@@ -734,6 +835,10 @@ def run_fixed_production_chain(
             "target_identity": target["identity"],
             "search_contract_sha256": sha256_file(contract_path),
             "target_sha256": target["identity"]["sha256"],
+            "pool_reuse_policy": reuse["pool_reuse_policy"],
+            "pool_resolution": reuse["pool_resolution"],
+            "pool_target_sha256": reuse["pool_target_sha256"],
+            "campaign_target_sha256": reuse["campaign_target_sha256"],
             "status": "validated_before_backend",
         }
         selection["validation_sha256"] = selection_validation_sha256(selection)
@@ -776,6 +881,10 @@ def run_fixed_production_chain(
         "de_move_scale": de_move_scale,
         "target_sha256": target["identity"]["sha256"],
         "pool_sha256": sha256_file(pool_file),
+        "pool_reuse_policy": reuse["pool_reuse_policy"],
+        "pool_resolution": reuse["pool_resolution"],
+        "pool_target_sha256": reuse["pool_target_sha256"],
+        "campaign_target_sha256": reuse["campaign_target_sha256"],
         "repository_commit": repository_commit,
         "source_manifest_sha256": sha256_file(source_manifest),
         "dependency_manifest_sha256": sha256_file(dependency_manifest),

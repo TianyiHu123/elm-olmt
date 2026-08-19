@@ -158,6 +158,16 @@ def _build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--selection-schema", default="coupling-selection-ledger-v1")
     parser.add_argument("--production-schema", default="coupling-production-v1")
     parser.add_argument(
+        "--pool-reuse-policy",
+        choices=["exact_target", "site_hybrid_pool_reuse_v1"],
+        default="exact_target",
+        help=(
+            "exact_target requires frozen-pool and campaign target identity equality. "
+            "site_hybrid_pool_reuse_v1 allows a site hybrid pool from the ledger "
+            "resolution to initialize a different likelihood resolution."
+        ),
+    )
+    parser.add_argument(
         "--backend",
         default=None,
         help="Optional emcee HDF backend path for checkpointed continuation to --nsteps.",
@@ -411,6 +421,7 @@ def main() -> int:
             selection_schema=args.selection_schema,
             production_schema=args.production_schema,
             daily_map_schema=args.daily_map_schema,
+            pool_reuse_policy=args.pool_reuse_policy,
         )
         print(
             f"FIXED_PRODUCTION_PASS sites={site_label} "
