@@ -1,0 +1,44 @@
+{
+  "schema": "spinup-forcing-coupling-iter016-aggregate-v1",
+  "status": "pass",
+  "leaves": 18,
+  "sites": [
+    {
+      "site": "ABBY",
+      "integrity_pass": true,
+      "tier_a_retained": [
+        9009,
+        9010,
+        9011,
+        9012,
+        9013,
+        9014,
+        9015,
+        9016,
+        9017
+      ],
+      "diagnostic_label": "equifinal_candidate",
+      "cloud_confirmation": "equifinal_candidate",
+      "excluded_seeds": []
+    },
+    {
+      "site": "JERC",
+      "integrity_pass": true,
+      "tier_a_retained": [
+        9010,
+        9011,
+        9012,
+        9014,
+        9015,
+        9017
+      ],
+      "diagnostic_label": "equifinal_candidate",
+      "cloud_confirmation": "equifinal_candidate",
+      "excluded_seeds": [
+        9009,
+        9013,
+        9016
+      ]
+    }
+  ]
+}

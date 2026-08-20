@@ -1,0 +1,17 @@
+{
+  "schema": "spinup-forcing-coupling-ensemble-physical-corner-v1",
+  "corner_schema": "spinup-forcing-coupling-physical-corner-v1",
+  "site": "ABBY",
+  "seeds": [
+    9009,
+    9010,
+    9011,
+    9012,
+    9013,
+    9014,
+    9015,
+    9016,
+    9017
+  ],
+  "plot": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/spinup_forcing_coupling/spinup_forcing_coupling_iter016/analysis/abby/physical_corner_by_seed.png"
+}

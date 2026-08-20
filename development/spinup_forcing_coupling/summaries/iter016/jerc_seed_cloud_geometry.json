@@ -1,0 +1,109 @@
+{
+  "pairs": [
+    {
+      "site": "JERC",
+      "seed_left": 9010,
+      "seed_right": 9011,
+      "cloud_wasserstein_full": 0.12292445708398657,
+      "between_within_ratio": 1.0875928756934468
+    },
+    {
+      "site": "JERC",
+      "seed_left": 9010,
+      "seed_right": 9012,
+      "cloud_wasserstein_full": 0.012624640894810083,
+      "between_within_ratio": 0.11169843512916572
+    },
+    {
+      "site": "JERC",
+      "seed_left": 9010,
+      "seed_right": 9014,
+      "cloud_wasserstein_full": 0.04990897780988054,
+      "between_within_ratio": 0.4415772905312231
+    },
+    {
+      "site": "JERC",
+      "seed_left": 9010,
+      "seed_right": 9015,
+      "cloud_wasserstein_full": 0.19253157480692665,
+      "between_within_ratio": 1.703452462376842
+    },
+    {
+      "site": "JERC",
+      "seed_left": 9010,
+      "seed_right": 9017,
+      "cloud_wasserstein_full": 0.09835089975510367,
+      "between_within_ratio": 0.8701745806256288
+    },
+    {
+      "site": "JERC",
+      "seed_left": 9011,
+      "seed_right": 9012,
+      "cloud_wasserstein_full": 0.12385301773678856,
+      "between_within_ratio": 1.095808457641852
+    },
+    {
+      "site": "JERC",
+      "seed_left": 9011,
+      "seed_right": 9014,
+      "cloud_wasserstein_full": 0.13380436049214364,
+      "between_within_ratio": 1.1838544798985384
+    },
+    {
+      "site": "JERC",
+      "seed_left": 9011,
+      "seed_right": 9015,
+      "cloud_wasserstein_full": 0.25740278743881095,
+      "between_within_ratio": 2.2774104067086793
+    },
+    {
+      "site": "JERC",
+      "seed_left": 9011,
+      "seed_right": 9017,
+      "cloud_wasserstein_full": 0.1615929372788298,
+      "between_within_ratio": 1.429718149796311
+    },
+    {
+      "site": "JERC",
+      "seed_left": 9012,
+      "seed_right": 9014,
+      "cloud_wasserstein_full": 0.045719758413989536,
+      "between_within_ratio": 0.40451253321791714
+    },
+    {
+      "site": "JERC",
+      "seed_left": 9012,
+      "seed_right": 9015,
+      "cloud_wasserstein_full": 0.1926513181020235,
+      "between_within_ratio": 1.704511909436839
+    },
+    {
+      "site": "JERC",
+      "seed_left": 9012,
+      "seed_right": 9017,
+      "cloud_wasserstein_full": 0.0976274639104126,
+      "between_within_ratio": 0.8637738716912814
+    },
+    {
+      "site": "JERC",
+      "seed_left": 9014,
+      "seed_right": 9015,
+      "cloud_wasserstein_full": 0.20225612138230795,
+      "between_within_ratio": 1.7894918708527943
+    },
+    {
+      "site": "JERC",
+      "seed_left": 9014,
+      "seed_right": 9017,
+      "cloud_wasserstein_full": 0.13034711435381297,
+      "between_within_ratio": 1.1532659675815948
+    },
+    {
+      "site": "JERC",
+      "seed_left": 9015,
+      "seed_right": 9017,
+      "cloud_wasserstein_full": 0.1751259953168122,
+      "between_within_ratio": 1.5494539441012585
+    }
+  ]
+}

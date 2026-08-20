@@ -150,3 +150,25 @@ micromamba run -n OLMT_puma python development/spinup_forcing_coupling/tools/plo
   --output-dir /path/to/output \
   --overwrite
 ```
+
+## Iter016 MAP ensemble tools
+
+Introduced in Iter016; orchestrated by `slurm/iter016/analyze_iter016.py`.
+
+| Script | Purpose |
+| --- | --- |
+| `ensemble_common.py` | Shared leaf loading, Tier A filter, MAP from chain argmax |
+| `ensemble_seed_health.py` | Per-seed acceptance/saturation/tau + Tier A pass/fail |
+| `ensemble_map_inventory.py` | Tier-A MAP parameter and skill inventory |
+| `ensemble_equifinality_diagnostics.py` | MAP Wasserstein + cloud confirmation labels |
+| `plot_ensemble_sr_overlay.py` | Tier-A MAP SR overlay vs observations and ELM precal |
+| `plot_ensemble_physical_corner.py` | Tier-A MAP + subsampled cloud corner plot |
+
+Tier A rule: mean acceptance ∈ [0.20, 0.50] only (no Wasserstein in Tier A).
+
+```bash
+module load micromamba/2.0.2-2
+ROOT=/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/spinup_forcing_coupling/spinup_forcing_coupling_iter016
+micromamba run -n OLMT_puma python development/spinup_forcing_coupling/tools/ensemble_seed_health.py \
+  --root "$ROOT" --site ABBY --output-dir "$ROOT/analysis/abby" --overwrite
+```

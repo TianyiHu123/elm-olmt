@@ -710,3 +710,27 @@ Closeout identity: Iteration ID `iter015`; Status `completed`; Work type `implem
 
 Integrity passed. Decision `ABBY=inconclusive_seed_instability; JERC=inconclusive_seed_instability`. No configuration preferred and no posterior promotion. Planning-only Iter016 proposes a **multi-seed equifinal parameter ensemble** for operational SR use (mode inventory from Iter015 artifacts, seed-health gates, equifinality audit, SR envelope; within-seed clustering diagnostic only).
 
+## iter016 - multi-seed MAP ensemble operational experiment
+
+Closeout identity: Iteration ID `iter016`; Status `completed`; Work type `implementation`; Objective `multi-seed MAP ensemble operational experiment at ABBY daily/0.50 and JERC hourly/0.75`; Bounded scope `1 preflight; 2 hybrid rebuilds; 2 production arrays (18 tasks); 1 analysis; 1 handoff validation`; Overall acceptance result `pass`; Decision `ABBY=equifinal_candidate_all_tier_a; JERC=equifinal_candidate_partial_tier_a`
+
+- Closed at: `2026-08-19T18:00:00-07:00`
+- Output root: `/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/spinup_forcing_coupling/spinup_forcing_coupling_iter016`
+- Summary path: `development/spinup_forcing_coupling/summaries/iter016`
+
+### Locked settings
+
+- ABBY `daily/0.50`, JERC `hourly/0.75`; seeds `9009–9017`; `64×8000`; `hybrid_high_l_maximin` q=0.90; `site_hybrid_pool_reuse_v1`.
+- Tier A: acceptance ∈ [0.20, 0.50] only; equifinality labels diagnostic only; no success gate.
+- Pools: ABBY `3627bb1d…`, JERC `40ac807e…` (Iter015 identities).
+
+### Quantitative evidence
+
+- Preflight `23594435`; rebuilds `23594478`/`23594479`; arrays `23594502`/`23594503` (18/18 leaves `0:0`); analysis correction `23595316` after failed `23595280`/`23595293`.
+- ABBY: 9/9 Tier A; MAP RMSE spread `0.00509`; diagnostic `equifinal_candidate`.
+- JERC: 6/9 Tier A (excluded 9009, 9013, 9016); MAP RMSE spread `0.00117`; diagnostic `equifinal_candidate`.
+
+### Gate outcome and conclusion
+
+Integrity passed. Decision `ABBY=equifinal_candidate_all_tier_a; JERC=equifinal_candidate_partial_tier_a`. Establishes bounded MAP-ensemble operational procedure; no posterior promotion. Planning-only follow-on may test SR envelope aggregation from retained MAP inventory.
+
