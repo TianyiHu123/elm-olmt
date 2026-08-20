@@ -161,7 +161,7 @@ Introduced in Iter016; orchestrated by `slurm/iter016/analyze_iter016.py`.
 | `ensemble_seed_health.py` | Per-seed acceptance/saturation/tau + Tier A pass/fail |
 | `ensemble_map_inventory.py` | Tier-A MAP parameter and skill inventory |
 | `ensemble_equifinality_diagnostics.py` | MAP Wasserstein + cloud confirmation labels |
-| `plot_ensemble_sr_overlay.py` | Tier-A MAP SR overlay vs observations and ELM precal |
+| `plot_ensemble_sr_overlay.py` | Tier-A MAP SR overlay vs observations and ELM precal (invalid obs/err masked with likelihood `_valid_mask`) |
 | `plot_ensemble_physical_corner.py` | Tier-A MAP + subsampled cloud corner plot |
 
 Tier A rule: mean acceptance ∈ [0.20, 0.50] only (no Wasserstein in Tier A).

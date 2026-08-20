@@ -78,7 +78,7 @@ Interpretation: ABBY shows **parameter-space multiplicity** with **near-identica
 
 Interpretation: JERC retained ensemble reproduces Iter015 hourly/0.75 flat MAP SR (~0.667) with continued seed-health fragility (9009 still fails Tier A).
 
-Artifacts: `abby_equifinality_diagnosis.json`, `jerc_equifinality_diagnosis.json`, SR overlays, physical-corner plots (or skip manifests when applicable).
+Artifacts: `abby_equifinality_diagnosis.json`, `jerc_equifinality_diagnosis.json`, SR overlays (`ensemble-sr-overlay-v2`, invalid timesteps masked with likelihood `_valid_mask`; makeup job `23595515`), physical-corner plots (or skip manifests when applicable).
 
 ## Site-specific rationale
 

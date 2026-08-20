@@ -1,9 +1,6 @@
 {
-  "schema": "spinup-forcing-coupling-ensemble-sr-overlay-v2",
+  "schema": "spinup-forcing-coupling-ensemble-sr-overlay-v1",
   "site": "ABBY",
-  "valid_mask": "(obs > -9000) & (err > 0) & finite",
-  "n_total": 26280,
-  "n_valid": 26264,
   "series": [
     {
       "seed": 9009,

@@ -34,6 +34,7 @@ See kickoff block in `iterations/iter016.md` initialization and `handoff/CURRENT
 | analysis | `analyze_iter016.slurm` | `23595316` | COMPLETED | `0:0` | `00:04:14` | `ANALYSIS_PASS` |
 | analysis (failed) | `analyze_iter016.slurm` | `23595280`, `23595293` | FAILED | `1:0` | — | tool schema fixes |
 | handoff_validation | `validate_iter016_handoff.slurm` | `23595354` | COMPLETED | `0:0` | `00:00:18` | `HANDOFF_VALIDATE_PASS` |
+| sr_overlay_replot | `replot_sr_overlay_iter016.slurm` | `23595515` | COMPLETED | `0:0` | `00:01:46` | valid-mask makeup |
 
 Repository commit at materialization: `eca6014c87012075e51ec48448957395a46e52b7`.
 

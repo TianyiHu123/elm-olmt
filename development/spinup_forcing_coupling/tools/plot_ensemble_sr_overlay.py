@@ -22,9 +22,16 @@ for path in (REPO_ROOT, TOOLS_DIR):
 from ensemble_common import DEFAULT_SEEDS, SITE_CONFIG, load_leaf, tier_a_result  # noqa: E402
 from model_ELM.coupling_pipeline import build_coupling_target  # noqa: E402
 from model_ELM.MCMC_forcing import run_forcing_surrogate_site  # noqa: E402
+from model_ELM.mcmc_diagnostics import _valid_mask  # noqa: E402
 
 CASES = {"ABBY": "ABBY_ppe6_I20TRCNPRDCTCBC", "JERC": "JERC_ppe6_I20TRCNPRDCTCBC"}
-SCHEMA = "spinup-forcing-coupling-ensemble-sr-overlay-v1"
+SCHEMA = "spinup-forcing-coupling-ensemble-sr-overlay-v2"
+
+
+def mask_to_nan(values: np.ndarray, valid: np.ndarray) -> np.ndarray:
+    masked = np.asarray(values, dtype=float).copy().ravel()
+    masked[~valid] = np.nan
+    return masked
 
 
 def elm_baseline(target: dict, site: str) -> np.ndarray:
@@ -41,6 +48,15 @@ def elm_baseline(target: dict, site: str) -> np.ndarray:
     aligned = aligned.copy()
     aligned[aligned < -9000] = np.nan
     return aligned
+
+
+def masked_obs_err(
+    target: dict, site: str
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    obs = np.asarray(target["obs"][site]["SR"], float)
+    err = np.asarray(target["obs_err"][site]["SR"], float)
+    valid = _valid_mask(obs, err)
+    return obs, err, valid, np.arange(len(obs))
 
 
 def main() -> int:
@@ -63,10 +79,10 @@ def main() -> int:
         expected_physical_parameter_count=14,
     )
     context = target["context"][args.site]
-    obs = np.asarray(target["obs"][args.site]["SR"], float)
-    err = np.asarray(target["obs_err"][args.site]["SR"], float)
-    elm = elm_baseline(target, args.site)
-    x = np.arange(len(obs))
+    obs, err, valid, x = masked_obs_err(target, args.site)
+    obs_plot = mask_to_nan(obs, valid)
+    err_plot = mask_to_nan(err, valid)
+    elm = mask_to_nan(elm_baseline(target, args.site), valid)
 
     args.output_dir.mkdir(parents=True, exist_ok=True)
     plot_path = args.output_dir / "Predictions_SR_MAP_ensemble.png"
@@ -84,12 +100,13 @@ def main() -> int:
         pred = np.asarray(
             run_forcing_surrogate_site(context, leaf["map_state"][:-1], ["SR"])["SR"], float
         ).ravel()
+        pred_plot = mask_to_nan(pred, valid)
         label = f"MAP seed {seed}"
-        plt.plot(x, pred, linewidth=0.8, alpha=0.7, label=label)
+        plt.plot(x, pred_plot, linewidth=0.8, alpha=0.7, label=label)
         series.append({"seed": seed, "rmse": leaf["map_rmse"]})
     plt.plot(x, elm, color="darkgreen", linewidth=0.8, linestyle="--", label="ELM precal", alpha=0.8)
-    plt.plot(x, obs, color="blue", linewidth=0.8, label="Observations", alpha=0.8)
-    plt.fill_between(x, obs - err, obs + err, color="blue", alpha=0.2)
+    plt.plot(x, obs_plot, color="blue", linewidth=0.8, label="Observations", alpha=0.8)
+    plt.fill_between(x, obs_plot - err_plot, obs_plot + err_plot, color="blue", alpha=0.2)
     plt.xlabel("Overlap index")
     plt.ylabel("SR")
     plt.title(f"{args.site} MAP ensemble SR overlay")
@@ -98,7 +115,15 @@ def main() -> int:
     plt.savefig(plot_path, dpi=150)
     plt.close()
 
-    manifest = {"schema": SCHEMA, "site": args.site, "series": series, "plot": str(plot_path)}
+    manifest = {
+        "schema": SCHEMA,
+        "site": args.site,
+        "valid_mask": "(obs > -9000) & (err > 0) & finite",
+        "n_total": int(len(obs)),
+        "n_valid": int(np.count_nonzero(valid)),
+        "series": series,
+        "plot": str(plot_path),
+    }
     manifest_path.write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
     print(f"SR_OVERLAY_PASS site={args.site} series={len(series)}")
     return 0
