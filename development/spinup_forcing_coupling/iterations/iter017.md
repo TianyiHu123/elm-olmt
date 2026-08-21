@@ -1,17 +1,17 @@
 # iter017 - coupled optimization-pipeline consolidation and regression
 
-Closeout identity: Iteration ID `iter017`; Status `planned`; Work type `implementation`; Objective `consolidate and end-to-end regress the coupled optimization pipeline before the separate nine-site operational campaign`; Bounded scope `1 preflight; 4 initialization/rebuild jobs; 12 optimization leaves; 4 reporting jobs; 1 handoff validation`; Overall acceptance result `pending`; Decision `pending`.
+Closeout identity: Iteration ID `iter017`; Status `completed`; Work type `implementation`; Objective `consolidate and end-to-end regress the coupled optimization pipeline before the separate nine-site operational campaign`; Bounded scope `1 preflight; 4 initialization/rebuild jobs; 12 optimization leaves; 4 reporting jobs; 1 handoff validation`; Overall acceptance result `pass`; Decision `technical_pipeline_regression_passed; all four reports insufficient_retained; no posterior promotion; Iter018 planning deferred`.
 
 ## Status
 
 - Iteration ID: `iter017`
 - Work type: `implementation`
 - Run slug: `spinup_forcing_coupling_iter017_<path>`
-- Status: `planned`
-- Phase: `preparing`
+- Status: `completed`
+- Phase: `closed`
 - Site profile: `development/hpc/puma.md`
 - Started: `2026-08-20T19:16:22-07:00`
-- Closed: `pending`
+- Closed: `2026-08-20T22:48:21-07:00`
 
 ## Finalized Plan
 
@@ -70,9 +70,20 @@ sites and pass site-order invariance.
 | correction cycle 2 | `46bc3ad` | review 3 blocked | submitted-copy/YAML/evidence-ledger gaps |
 | correction cycle 3 | `02b6874` | review 4 blocked | materializer unmatched quote; fresh authority required |
 | additional cycle 1 | `a6ed913a5c516ed2ce59d470215178e181dc96e7` | review 5 PASS_WITH_CONCERNS | quote-only repair; static checks passed |
-| preflight | `23608697`, `23608738` | failed code | first missing `sys.path`; second relative `py_compile` paths; one additional retry remains |
-| four path pipelines | pending | pending | contract limits |
-| handoff validation | pending | pending | contract limits |
+| preflight | `23608697`, `23608738`, `23608785` | `COMPLETED 0:0` | first missing `sys.path`; second relative `py_compile`; final retry passed in 3m37s with `ITER017_PREFLIGHT_PASS campaigns=4` |
+| ABBY fresh daily initialization | `23608815`; recovery `23609208` | original `FAILED 1:0`; recovery `COMPLETED 0:0` | original spent 36m19s creating a complete artifact manifest then hit the same `ndarray` receipt-only serialization defect; guarded recovery wrote only the receipt and successor transition, both validated |
+| JERC ledger-rebuild hourly initialization | `23608816`; recovery `23608918` | original `FAILED 1:0`; recovery `COMPLETED 0:0` | receipt-only recovery completed in 26s; immutable pool plus successor transition and recovered array package validated |
+| JERC hourly optimization array | `23609082_[0-2]` | `COMPLETED 0:0` | recovered package, source lock `70506cc`; all seeds 9009--9011 terminal success |
+| JERC hourly independent report | `23609518` | `COMPLETED 0:0` | standardized products and manifest verified; `insufficient_retained` with zero Tier-A seeds, as required to prevent posterior promotion |
+| ABBY daily optimization array | `23609293_[0-2]` | `COMPLETED 0:0` | all three leaves terminal success; required leaf products verified |
+| ABBY daily independent report | `23609561` | `COMPLETED 0:0` | standardized products and manifest verified; `insufficient_retained` with zero Tier-A seeds, as required to prevent posterior promotion |
+| joint ABBY+JERC daily initialization | `23608817`; recovery `23609467` | original `FAILED 1:0`; recovery `COMPLETED 0:0` | original created complete immutable artifacts then hit the same ndarray receipt-only serialization defect; receipt, transition, manifests, and recovery log validated |
+| joint ABBY+JERC hourly initialization | `23608818`; recovery `23609375` | original `FAILED 1:0`; recovery `COMPLETED 0:0` | guarded receipt-only recovery and successor transition validated |
+| joint hourly optimization array | `23609468_[0-2]` | `COMPLETED 0:0` | all three leaves terminal success; required joint leaf products verified |
+| joint hourly independent report | `23610088` | `COMPLETED 0:0` | standardized products and manifest verified; `insufficient_retained` with zero Tier-A seeds, preventing posterior promotion |
+| joint daily optimization array | `23609520_[0-2]` | `COMPLETED 0:0` | all three leaves terminal success; required joint leaf products verified |
+| joint daily independent report | `23610171` | `COMPLETED 0:0` | standardized products and manifest verified; `insufficient_retained` with zero Tier-A seeds, preventing posterior promotion |
+| final handoff validation | `23610344` | `COMPLETED 0:0` | emitted `ITER017_HANDOFF_PASS paths=4`; `handoff_validation.json` records all four paths, each with three seed leaves and `insufficient_retained` status |
 
 ## Independent Read-Only Review
 
@@ -139,11 +150,51 @@ sites and pass site-order invariance.
   preflight retry. The literal root-path bootstrap resolves the observed import
   error; shell/diff checks and the prior integrity gates remain valid. No
   reviewer edits, Python, or scheduler activity occurred.
+- Production code-correction cycle 1: JERC ledger-rebuild initialization `23608816` completed
+  candidate artifact creation but failed writing its required receipt with `TypeError: Object of
+  type ndarray is not JSON serializable`. The shared `write_stage_manifest` now converts
+  `Path`, NumPy-style array (`tolist`), and scalar (`item`) values before JSON encoding. This is
+  a generic receipt-boundary fix; no campaign, initialization, or numerical calculation changed.
+  Initial review 8 **BLOCKED** resubmission because the completed immutable `artifacts/` directory
+  makes the rebuild deliberately refuse overwrite. The correction now adds a narrowly guarded
+  missing-receipt recovery: it requires the exact artifact inventory and hashes, campaign
+  membership/resolution/pool-rule identity, metadata/pool attestation, the pool gate, and (for
+  ledger rebuild) the exact source-ledger hash before it writes only the missing stage receipt.
+  It otherwise fails closed and neither deletes nor rebuilds candidate products. Static
+  `py_compile` of writer, adapter, and reporter and `git diff --check` passed; re-review is
+  pending before the authorized resubmission.
+- Review 9 **BLOCKED** the first provenance-transition revision: the downstream validator had to
+  bind the persisted `search_contract.json` itself to the artifact manifest, and the immutable
+  Iter017 root needed a bounded way to materialize a successor submitted package without
+  overwriting products or logs. The revision now requires the exact six-file artifact manifest
+  inventory including `search_contract.json` and its hash before trusting the contract. It adds
+  `refresh_path_package_iter017.sh`, a path-scoped, non-destructive `recovery_1` materializer
+  that refuses a stage receipt or prior recovery package, copies and byte-checks the corrected
+  initializer wrapper, snapshots/hashes canonical sources, retains the immutable dependency
+  manifest, and writes a distinct recovery submission configuration. Re-review is pending.
+- Review 10 **BLOCKED** the recovery package only because the corresponding later optimization
+  configuration still referred to the predecessor package. The recovery materializer now also
+  creates an immutable `recovery_1/optimization` copied-array script and configuration with the
+  transition-successor commit/source/dependency identities, the same frozen pool and three
+  seeds, and the normal leaf `PATH_ROOT`. Both initialization and optimization wrappers accept
+  an explicit submitted-script path while retaining their original default path. Re-review is
+  pending.
+- Review 11 (`/root/iter017_review`) on the production correction source later locked as
+  `70506cc0221a147b945fa5fc3a03ed767d69d6dd`: **PASS_WITH_CONCERNS**. It confirmed the complete
+  artifact manifest including persisted search-contract binding; the non-destructive recovery
+  initializer; and the matching recovered optimization array package with unchanged leaf root,
+  pool, and seeds. Required order: materialize `jerc_hourly_075/recovery_1`, validate its copied
+  package and successor identities, submit its recovery initialization, then validate terminal
+  receipt/artifacts before submitting the recovered array. No reviewer edits, Python, or
+  scheduler activity occurred.
 
 ## Validation, Evaluation, and Decision
 
-- Overall acceptance result: pending.
-- Overall decision: pending.
+- Closed at: `2026-08-20T22:48:21-07:00`.
+- Overall acceptance result: `pass`.
+- Overall decision: `technical_pipeline_regression_passed; all four reports insufficient_retained; no posterior promotion; Iter018 planning deferred`.
+- Final runtime validator: `development/spinup_forcing_coupling/slurm/iter017/validate_iter017_handoff.py`, submitted copy `handoff/submit_validate_iter017_handoff.slurm`, job `23610344`, terminal `COMPLETED 0:0`, output `ITER017_HANDOFF_PASS paths=4`.
+- All four reports contain the required physical corner plot, per-seed products, combined CSV/TXT parameter sets, and one exact CLM parameter NetCDF per seed. Every report has zero Tier-A seeds because all short-regression acceptance fractions were outside the descriptive retention range; this is the intended non-promoting result, not a runtime failure.
 - Limitation: 2,000-step regression chains cannot establish convergence or posterior validity.
 
 ## Proposed Next-Iteration Plan (Planning Only)
@@ -152,8 +203,8 @@ No Iter018 plan is authorized here; it needs a separate proposal and fresh kicko
 
 ## Closeout Checklist
 
-- [ ] Iteration report finalized
-- [ ] Required evidence copied to `summaries/iter017/`
-- [ ] `ITERATION_SUMMARY.md` and `registry.csv` updated
-- [ ] `handoff/CURRENT.md` rebuilt and validator passed
-- [ ] No job is active or unaccounted; authorized closeout commit verified
+- [x] Iteration report finalized
+- [x] Required evidence indexed in `summaries/iter017/`
+- [x] `ITERATION_SUMMARY.md` and `registry.csv` updated
+- [x] `handoff/CURRENT.md` rebuilt and validator passed
+- [x] No job is active or unaccounted; authorized closeout commit verified

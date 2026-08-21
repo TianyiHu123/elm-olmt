@@ -734,3 +734,26 @@ Closeout identity: Iteration ID `iter016`; Status `completed`; Work type `implem
 
 Integrity passed. Decision `ABBY=equifinal_candidate_all_tier_a; JERC=equifinal_candidate_partial_tier_a`. Establishes bounded MAP-ensemble operational procedure; no posterior promotion. Planning-only follow-on may test SR envelope aggregation from retained MAP inventory.
 
+## iter017 - coupled optimization-pipeline consolidation and regression
+
+Closeout identity: Iteration ID `iter017`; Status `completed`; Work type `implementation`; Objective `consolidate and end-to-end regress the coupled optimization pipeline before the separate nine-site operational campaign`; Bounded scope `1 preflight; 4 initialization/rebuild jobs; 12 optimization leaves; 4 reporting jobs; 1 handoff validation`; Overall acceptance result `pass`; Decision `technical_pipeline_regression_passed; all four reports insufficient_retained; no posterior promotion; Iter018 planning deferred`.
+
+- Closed at: `2026-08-20T22:48:21-07:00`
+- Output root: `/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/spinup_forcing_coupling/spinup_forcing_coupling_iter017_pipeline_regression`
+- Summary path: `development/spinup_forcing_coupling/summaries/iter017`
+
+### Locked settings
+
+- Consolidated parallel top-level MCMC modules; generic `MCMC.py` remains isolated. Reporting is an independent third stage and writes under the submitted job root.
+- One universal YAML with stage-specific sections; three seeds `9009--9011`; `64x2000` regression leaves. Tested ABBY daily/0.50, JERC hourly/0.75, and joint ABBY+JERC daily/0.50 and hourly/0.75.
+- Production source `70506cc0221a147b945fa5fc3a03ed767d69d6dd`; source manifest `f2d9ea2d51cdc9180e357172e4bdfcf5cacb9fc3cc695d0f113528a02a490756`; dependency manifest `a636037c452618d4588e3de3a758ef922c6ce4dd43e950ad5d51ef441f7ecefe`.
+
+### Quantitative evidence
+
+- Final preflight `23608785`, four guarded receipt-only initialization recoveries, all 12 leaves, four reports, and final handoff `23610344` completed `0:0`; handoff emitted `ITER017_HANDOFF_PASS paths=4`.
+- All reports contain physical corner plots, per-seed diagnostics/time series, combined `parameter_sets.csv`/`.txt`, and exact per-seed `clm_params_seed_*.nc` files.
+- Retained Tier-A seeds: ABBY `0/3`, JERC `0/3`, joint daily `0/3`, joint hourly `0/3`. Each report is therefore `insufficient_retained`; no posterior was promoted.
+
+### Gate outcome and conclusion
+
+The end-to-end integrity regression passed across all four configurations. The 2,000-step runs are deliberately insufficient to establish posterior validity, and their retention result is descriptive only. No Iter018 plan is authorized; the next action is a separate discussion of an operational nine-site design.

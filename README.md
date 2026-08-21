@@ -583,6 +583,20 @@ sbatch examples/slurm/case.standard_gsa.slurm
 
 After training a forcing surrogate (which saves `surrogate_forcing_artifacts.pkl` under `<outputdir>/<case-or-run-name>/surrogate_forcing/`), you can optimize (calibrate) parameters with MCMC against observations stored in a NetCDF file. Observations are collocated to the surrogate's hourly time axis before likelihood evaluation.
 
+### Coupled pipeline workflow
+
+For a reproducible single-site or joint-site campaign, submit the stages manually in this order:
+
+1. **Initialization** builds or validates the shared candidate pool and writes its immutable artifact manifest.
+2. **Optimization** runs one seeded MCMC leaf per configured seed against that pool.
+3. **Reporting** is a separate job that reads completed leaves and writes standardized products under the job-submission root, rather than into the repository.
+
+Use one YAML file with `shared`, `initialization`, `optimization`, and `reporting` sections. Each stage consumes `shared` plus its own section and records its source/dependency identities in a stage manifest; do not alter the YAML between stages. The reviewed examples are in [`development/spinup_forcing_coupling/examples/iter017/`](development/spinup_forcing_coupling/examples/iter017/).
+
+The report directory contains `plots/physical_corner.png`, per-seed default corner and posterior time-series plots in `per_seed/`, and `best_parameters/parameter_sets.{csv,txt}`. It also copies one exact model-ready `clm_params_seed_<seed>.nc` file per seed in `best_parameters/clm_params/`; NetCDF parameter files are deliberately not merged. A report is always written even if no seed meets the configured descriptive retention rule, in which case its manifest says `status: insufficient_retained` and no posterior is promoted.
+
+The Iter017 integrity regression tested three seeds (`9009`--`9011`) at `64 × 2000` for ABBY daily/0.50, JERC hourly/0.75, and joint ABBY+JERC daily/0.50 and hourly/0.75. These are pipeline examples, not convergence settings or scientific calibration results.
+
 ### Observation NetCDF units
 
 Observations are loaded by [`model_ELM/load_obs_nc.py`](model_ELM/load_obs_nc.py). Flux variables are converted to **daily units** to match surrogate training targets (the same daily flux units produced by ELM postprocessing, e.g. `gC/m^2/day` for carbon fluxes such as `GPP`/`NEE`/`NPP`, and `mm/day` for water fluxes such as `QRUNOFF`).
