@@ -1,48 +1,46 @@
 # Spinup-Forcing Coupling - Current Handoff
 
-Closeout identity: Iteration ID `iter016`; Status `completed`; Work type `implementation`; Objective `multi-seed MAP ensemble operational experiment`; Bounded scope `1 preflight; 2 hybrid rebuilds; 2 production arrays (18 tasks); 1 analysis; 1 handoff validation`; Overall acceptance result `pass`; Decision `ABBY=equifinal_candidate_all_tier_a; JERC=equifinal_candidate_partial_tier_a`
+Iteration ID `iter017`; Status `planned`; Work type `implementation`; Objective `coupled optimization-pipeline consolidation and regression`; Bounded scope `1 preflight; 4 initialization/rebuild jobs; 12 optimization leaves; 4 reporting jobs; 1 handoff validation`; Overall acceptance result `pending`; Decision `pending`
 
 ## Live State
 
-- Active iteration: none (Iter016 closed)
+- Active iteration: `iter017`
 - Last closed iteration: `iter016`
-- Status: `completed`
-- Phase: `closed`
-- Active job IDs: none
+- Status: `in_progress`
+- Phase: `preflight`
+- Active job IDs: none; `23608697` and `23608738` preflight attempts terminal `FAILED 1:0`
 - Site profile: `development/hpc/puma.md`
-- Output root: `/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/spinup_forcing_coupling/spinup_forcing_coupling_iter016`
-- Last updated: `2026-08-19T18:00:00-07:00`
+- Output root: `/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/spinup_forcing_coupling/spinup_forcing_coupling_iter017_pipeline_regression`
+- Last updated: `2026-08-20T19:16:22-07:00`
 
 ## Best Evidence So Far
 
-- Iter016: 18/18 production leaves; ABBY 9/9 Tier A with MAP SR spread `0.005`; JERC 6/9 Tier A with spread `0.001`; both sites diagnostic `equifinal_candidate`.
-- Reusable ensemble tools under `tools/` with README.
-- Comprehensive report: `summaries/iter016/ITER016_REPORT.md`.
+- Iter016 provides the settled ABBY/JERC configurations and multi-seed evidence.
+- Iter017 additional correction 3 passed independent review
+  (`ec05d3f6486a58168d6906c97cf275726952eb70`, root-relative compile paths);
+  refresh the preflight package and submit its final authorized retry; no Iter017 result exists.
 
 ## Gate Result and Decision
 
-- Overall acceptance: `pass` (integrity gates).
-- Decision: `ABBY=equifinal_candidate_all_tier_a; JERC=equifinal_candidate_partial_tier_a`.
-- No equifinality success gate; no posterior promotion.
+- Overall acceptance: pending.
+- Decision: pending.
+- No posterior promotion is in scope.
 
 ## Current Risks or Blockers
 
 - `/xdisk` products are temporary and unbacked.
-- Analysis required one correction submission beyond nominal retry (tool schema vs production JSON); recorded in iteration report.
-- Handoff submitter shares receipt filenames with analysis submitter — use direct `sbatch` for handoff or separate receipt paths in future iterations.
+- Extensive code revision requires source lock, independent review, and correction-cycle accounting before each authorized retry.
 
 ## Next Action
 
-Read-only bootstrap for Iter017 kickoff when user approves a new consolidated package. No execution authority until kickoff approval.
+Finish the implementation/source lock, then obtain independent review before materializing and submitting preflight.
 
-## Next Iteration Plan (Planning-Only — Not Approved)
+## Finalized Iter017 Plan and Runtime Contract
 
 ### Iter017 — coupled optimization-pipeline consolidation and regression
 
-**Status:** `not_initialized`. This planning-only proposal authorizes no initialization,
-code/scaffold creation, Python execution, scheduler action, external-directory creation, retry,
-cancellation, or commit beyond the present planning commit. A fresh consolidated kickoff package
-remains required.
+**Status:** `planned`; the user approved the complete package at `2026-08-20T19:16:22-07:00`.
+The authoritative detailed contract and live ledger are in `iterations/iter017.md`.
 
 #### Objective and evidence basis
 
@@ -146,14 +144,14 @@ passing regression; the all-nine-site operational example waits for Iter018.
 
 ## Next Session Start Protocol
 
-1. Read this handoff, `WORKFLOW.md`, `iterations/iter016.md`, and `development/hpc/puma.md`.
+1. Read this handoff, `WORKFLOW.md`, `iterations/iter017.md`, and `development/hpc/puma.md`.
 2. Inspect Git and scheduler state before any submission.
-3. Present consolidated kickoff package for Iter017 or other user-directed work.
+3. Route from the recorded Iter017 phase and contract; do not seek another kickoff package unless a material term changes.
 
 ## Artifact References
 
-- Latest report: `development/spinup_forcing_coupling/iterations/iter016.md`
+- Latest report: `development/spinup_forcing_coupling/iterations/iter017.md`
 - Registry: `development/spinup_forcing_coupling/registry.csv`
 - Cumulative summary: `development/spinup_forcing_coupling/ITERATION_SUMMARY.md`
-- Summaries: `development/spinup_forcing_coupling/summaries/iter016/`
-- Scratch output: `/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/spinup_forcing_coupling/spinup_forcing_coupling_iter016`
+- Summaries: `development/spinup_forcing_coupling/summaries/iter017/` (pending eligible results)
+- Scratch output: `/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/spinup_forcing_coupling/spinup_forcing_coupling_iter017_pipeline_regression`

@@ -1,7 +1,6 @@
 import multiprocessing
 import hashlib
 import json
-import math
 import os
 from pathlib import Path
 from typing import Any, Dict, Optional, Sequence
@@ -10,6 +9,8 @@ import emcee
 import numpy as np
 
 from .MCMC import _mcmc_write_outputs, sample_from_prior
+from .mcmc_artifacts import write_raw_chain_artifact
+from .mcmc_diagnostics import select_postburn_samples
 from .mcmc_geometry import CoordinateTransform, make_move_configuration
 
 # Populated in worker processes via Pool initializer (avoids re-pickling large static data).
@@ -213,224 +214,6 @@ def _attach_forcing_surrogate_from_primary(primary_case, target_case):
     target_case.x_scaler_forcing = primary_case.x_scaler_forcing
     target_case.y_scaler_forcing = primary_case.y_scaler_forcing
     target_case.forcing_surrogate_training = primary_case.forcing_surrogate_training
-
-
-def _write_iter008_raw_chain(
-    output_root: str | Path,
-    *,
-    chain: np.ndarray,
-    log_prob: np.ndarray,
-    initial_state: np.ndarray,
-    parameter_names: Sequence[str],
-    pmin: np.ndarray,
-    pmax: np.ndarray,
-    seed: int,
-    sites: Sequence[str],
-    nwalkers: int,
-    nsteps: int,
-    sampler_chain: Optional[np.ndarray] = None,
-    transform_metadata: Optional[Dict[str, Any]] = None,
-    move_configuration: Optional[str] = None,
-    de_move_scale: float = 1.0,
-    likelihood_resolution: str = "hourly",
-    backend_path: Optional[str | Path] = None,
-    physical_log_prob: Optional[np.ndarray] = None,
-    allow_existing: bool = False,
-) -> Dict[str, Any]:
-    """Write the immutable raw-chain package before any postprocessing."""
-    root = Path(output_root)
-    root.mkdir(parents=True, exist_ok=True)
-    raw_path = root / "raw_chain.npz"
-    meta_path = root / "raw_chain_metadata.json"
-    payload = {
-        "chain": np.asarray(chain, dtype=np.float64),
-        "log_prob": np.asarray(log_prob, dtype=np.float64),
-        "initial_state": np.asarray(initial_state, dtype=np.float64),
-        "parameter_names": np.asarray(list(parameter_names), dtype="U"),
-        "pmin": np.asarray(pmin, dtype=np.float64),
-        "pmax": np.asarray(pmax, dtype=np.float64),
-    }
-    if sampler_chain is not None:
-        payload["sampler_chain"] = np.asarray(sampler_chain, dtype=np.float64)
-    if physical_log_prob is not None:
-        payload["physical_log_prob"] = np.asarray(physical_log_prob, dtype=np.float64)
-    hashes_path = root / "raw_chain_hashes.json"
-    if raw_path.exists():
-        if not allow_existing or not raw_path.is_file():
-            raise FileExistsError("raw-chain package already exists; refusing overwrite")
-        existing = np.load(raw_path, allow_pickle=False)
-        if set(existing.files) != set(payload):
-            raise ValueError("existing raw-chain arrays differ from recovered backend")
-        for key, expected in payload.items():
-            if not np.array_equal(np.asarray(existing[key]), expected):
-                raise ValueError(f"existing raw-chain array differs on recovery: {key}")
-        raw_hash = hashlib.sha256(raw_path.read_bytes()).hexdigest()
-        if meta_path.is_file() and hashes_path.is_file():
-            metadata = json.loads(meta_path.read_text(encoding="utf-8"))
-            meta_hash = hashlib.sha256(meta_path.read_bytes()).hexdigest()
-            hashes = json.loads(hashes_path.read_text(encoding="utf-8"))
-            if (
-                metadata.get("raw_chain_sha256") != raw_hash
-                or hashes.get("raw_chain_sha256") != raw_hash
-                or hashes.get("metadata_sha256") != meta_hash
-            ):
-                raise ValueError("existing raw-chain package hash mismatch on recovery")
-            print(f"RAW_CHAIN_REUSED path={raw_path} sha256={raw_hash}")
-            return metadata
-    else:
-        if meta_path.exists() or hashes_path.exists():
-            raise ValueError("raw-chain metadata exists without the raw chain")
-        raw_temporary = root / "raw_chain.npz.tmp"
-        with raw_temporary.open("wb") as handle:
-            np.savez_compressed(handle, **payload)
-        raw_temporary.replace(raw_path)
-        raw_hash = hashlib.sha256(raw_path.read_bytes()).hexdigest()
-    provenance: Dict[str, Any] = {}
-    for key in (
-        "ITERATION_ID", "REPOSITORY_COMMIT", "SITE_NAME", "CASE_NAME", "OBS_PATH", "FORCING_ARTIFACT",
-        "SPINUP_ARTIFACT", "SPINUP_MODE", "COUPLED_VARIANT", "N_WALKERS", "N_STEPS",
-        "N_PROCESSES", "SEED", "SOURCE_MANIFEST", "DEPENDENCY_MANIFEST", "CASE_HASH_MANIFEST",
-        "ARTIFACT_HASH_MANIFEST", "SUBMISSION_CONFIG", "MICROMAMBA_ENV",
-        "MICROMAMBA_MODULE",
-    ):
-        value = os.environ.get(key)
-        if value:
-            provenance[key] = value
-            candidate = Path(value)
-            if candidate.is_file():
-                provenance[f"{key}_sha256"] = hashlib.sha256(candidate.read_bytes()).hexdigest()
-    metadata = {
-        "schema": "spinup-forcing-coupling-raw-chain-v2",
-        "chain_shape": list(np.asarray(chain).shape),
-        "log_prob_shape": list(np.asarray(log_prob).shape),
-        "initial_state_shape": list(np.asarray(initial_state).shape),
-        "parameter_names": list(parameter_names),
-        "pmin": np.asarray(pmin, dtype=float).tolist(),
-        "pmax": np.asarray(pmax, dtype=float).tolist(),
-        "seed": int(seed),
-        "sites": list(sites),
-        "nwalkers": int(nwalkers),
-        "nsteps": int(nsteps),
-        "sampler_chain_shape": None if sampler_chain is None else list(np.asarray(sampler_chain).shape),
-        "physical_log_prob_shape": None if physical_log_prob is None else list(np.asarray(physical_log_prob).shape),
-        "sampler_log_prob_convention": (
-            "physical_log_posterior + log_abs_det_dphysical_dsampler"
-            if sampler_chain is not None else "physical_log_posterior"
-        ),
-        "transform": transform_metadata,
-        "move_configuration": move_configuration,
-        "de_move_scale": float(de_move_scale),
-        "likelihood_resolution": likelihood_resolution,
-        "backend_path": None if backend_path is None else str(backend_path),
-        "provenance": provenance,
-        "raw_chain_sha256": raw_hash,
-    }
-    meta_temporary = root / "raw_chain_metadata.json.tmp"
-    meta_temporary.write_text(
-        json.dumps(metadata, indent=2) + "\n", encoding="utf-8"
-    )
-    meta_temporary.replace(meta_path)
-    meta_hash = hashlib.sha256(meta_path.read_bytes()).hexdigest()
-    hashes = {
-        "schema": "spinup-forcing-coupling-iter008-raw-chain-hashes-v1",
-        "raw_chain": str(raw_path),
-        "raw_chain_sha256": raw_hash,
-        "metadata": str(meta_path),
-        "metadata_sha256": meta_hash,
-    }
-    hashes_temporary = root / "raw_chain_hashes.json.tmp"
-    hashes_temporary.write_text(
-        json.dumps(hashes, indent=2) + "\n", encoding="utf-8"
-    )
-    hashes_temporary.replace(hashes_path)
-    print(f"RAW_CHAIN_WRITTEN path={raw_path} sha256={raw_hash}")
-    return metadata
-
-
-def _adaptive_chain_selection(
-    *,
-    chain: np.ndarray,
-    log_prob: np.ndarray,
-    pmin: np.ndarray,
-    pmax: np.ndarray,
-    n_model_parms: int,
-    nsteps: int,
-    tau_max: Optional[float],
-) -> Dict[str, Any]:
-    """Apply the locked Iter008 discard/thin and deterministic draw selection."""
-    if tau_max is None or not np.isfinite(tau_max) or tau_max <= 0:
-        discard = int(math.ceil(0.20 * nsteps))
-        thin = 5
-        tau_available = False
-    else:
-        discard = max(int(math.ceil(0.20 * nsteps)), int(math.ceil(5.0 * tau_max)))
-        thin = max(5, int(math.ceil(tau_max / 2.0)))
-        tau_available = True
-    if discard >= chain.shape[0]:
-        raise RuntimeError(
-            f"Adaptive discard={discard} leaves no raw draws for nsteps={chain.shape[0]}"
-        )
-    eligible_chain = chain[discard::thin]
-    eligible_lp = log_prob[discard::thin]
-    bounds = np.all(
-        (eligible_chain >= pmin[None, None, :])
-        & (eligible_chain <= pmax[None, None, :]),
-        axis=2,
-    )
-    finite = np.isfinite(eligible_lp)
-    eligible = bounds & finite
-    eligible_flat = eligible_chain[eligible]
-    eligible_logp = eligible_lp[eligible]
-    if eligible_flat.shape[0] == 0:
-        raise RuntimeError("No eligible raw-chain draws after bounds/log-prob filtering")
-
-    selected_records = []
-    per_walker = []
-    for walker in range(eligible.shape[1]):
-        indices = np.flatnonzero(eligible[:, walker])
-        if indices.size == 0:
-            continue
-        chosen = indices if indices.size < 8 else indices[np.linspace(0, indices.size - 1, 8, dtype=int)]
-        for idx in chosen:
-            selected_records.append((int(idx), int(walker)))
-        per_walker.append({"walker": walker, "eligible": int(indices.size), "selected": int(chosen.size)})
-    if len(selected_records) < 512:
-        selected_records = [
-            (int(step), int(walker))
-            for step in range(eligible.shape[0])
-            for walker in range(eligible.shape[1])
-            if eligible[step, walker]
-        ]
-    selected = np.asarray(
-        [eligible_chain[step, walker] for step, walker in selected_records], dtype=float
-    )
-    selected_lp = np.asarray(
-        [eligible_lp[step, walker] for step, walker in selected_records], dtype=float
-    )
-    ledger = []
-    for rank, ((step, walker), lp) in enumerate(zip(selected_records, selected_lp)):
-        ledger.append(
-            {
-                "selected_draw_rank": int(rank),
-                "walker": int(walker),
-                "raw_step": int(discard + step * thin),
-                "eligible_step": int(step),
-                "log_probability": float(lp),
-            }
-        )
-    return {
-        "samples": eligible_flat,
-        "log_probs": eligible_logp,
-        "predictive_samples": selected,
-        "predictive_log_probs": selected_lp,
-        "discard": discard,
-        "thin": thin,
-        "tau_available": tau_available,
-        "tau_max": None if tau_max is None else float(tau_max),
-        "eligible_mask": eligible,
-        "selected_ledger": ledger,
-        "per_walker": per_walker,
-    }
 
 
 def MCMC_forcing(
@@ -867,7 +650,7 @@ def MCMC_forcing(
         raise RuntimeError(f"locked chain length mismatch: expected {nsteps}, got {raw_chain.shape[0]}")
     if checkpoint_interval:
         record_checkpoint()
-    raw_metadata = _write_iter008_raw_chain(
+    raw_metadata = write_raw_chain_artifact(
         output_root,
         chain=raw_chain,
         log_prob=raw_log_probs,
@@ -908,7 +691,7 @@ def MCMC_forcing(
         print(f"AUTOCORR_UNAVAILABLE {exc}")
         tau_values = None
         tau_max = None
-    selection = _adaptive_chain_selection(
+    selection = select_postburn_samples(
         chain=raw_chain,
         log_prob=raw_log_probs,
         pmin=np.asarray(pmin, dtype=float),

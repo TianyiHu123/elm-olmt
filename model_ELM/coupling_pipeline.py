@@ -534,6 +534,78 @@ def assert_pool_target_compatible(
     }
 
 
+def assert_pool_package_provenance(
+    contract: Mapping[str, Any],
+    *,
+    pool_file: Path,
+    repository_commit: str,
+    source_manifest: str | Path,
+    dependency_manifest: str | Path,
+) -> None:
+    """Require exact pool provenance, or one verified receipt-only transition."""
+    predecessor = {
+        "repository_commit": contract.get("repository_commit"),
+        "source_manifest_sha256": contract.get("source_manifest_sha256"),
+        "dependency_manifest_sha256": contract.get("dependency_manifest_sha256"),
+    }
+    successor = {
+        "repository_commit": repository_commit,
+        "source_manifest_sha256": sha256_file(source_manifest),
+        "dependency_manifest_sha256": sha256_file(dependency_manifest),
+    }
+    if predecessor == successor:
+        return
+    artifacts = pool_file.parent
+    transition_path = artifacts.parent / "pool_provenance_transition.json"
+    if not transition_path.is_file():
+        raise ValueError("candidate pool source/dependency provenance differs from locked production package")
+    transition = json.loads(transition_path.read_text(encoding="utf-8"))
+    if transition.get("schema") != "coupling-pool-provenance-transition-v1":
+        raise ValueError("unsupported candidate-pool provenance transition schema")
+    if transition.get("reason") != "initialization_stage_receipt_serialization_recovery":
+        raise ValueError("candidate-pool provenance transition has an unauthorized reason")
+    if transition.get("predecessor") != predecessor or transition.get("successor") != successor:
+        raise ValueError("candidate-pool provenance transition does not match the production package")
+    manifest_path = artifacts / "artifact_manifest.json"
+    if not manifest_path.is_file() or transition.get("artifact_manifest_sha256") != sha256_file(manifest_path):
+        raise ValueError("candidate-pool provenance transition artifact manifest mismatch")
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    if manifest.get("schema") != "coupling-initialization-artifact-manifest-v1" or manifest.get("status") != "pass":
+        raise ValueError("candidate-pool provenance transition has an invalid artifact manifest")
+    expected_manifest_artifacts = {
+        "candidate_pool.npz",
+        "candidate_ledger.npz",
+        "candidate_metadata.json",
+        "diversity_diagnostics.json",
+        "initialization_report.json",
+        "search_contract.json",
+    }
+    if set(manifest.get("artifacts", {})) != expected_manifest_artifacts:
+        raise ValueError("candidate-pool provenance transition artifact manifest inventory mismatch")
+    contract_path = artifacts / "search_contract.json"
+    if (not contract_path.is_file()
+            or manifest["artifacts"]["search_contract.json"] != sha256_file(contract_path)):
+        raise ValueError("candidate-pool provenance transition search-contract mismatch")
+    expected_hashes = {
+        "pool_sha256": "candidate_pool.npz",
+        "ledger_sha256": "candidate_ledger.npz",
+        "candidate_metadata_sha256": "candidate_metadata.json",
+        "diversity_diagnostics_sha256": "diversity_diagnostics.json",
+        "initialization_report_sha256": "initialization_report.json",
+    }
+    if transition.get("artifact_hashes") != {field: contract.get(field) for field in expected_hashes}:
+        raise ValueError("candidate-pool provenance transition does not attest contract artifact hashes")
+    for field, name in expected_hashes.items():
+        artifact = artifacts / name
+        if (not artifact.is_file() or contract.get(field) != sha256_file(artifact)
+                or manifest.get("artifacts", {}).get(name) != contract.get(field)):
+            raise ValueError(f"candidate-pool provenance transition artifact mismatch: {name}")
+    identity = contract.get("target_identity", {})
+    metadata = json.loads((artifacts / "candidate_metadata.json").read_text(encoding="utf-8"))
+    if transition.get("target_identity_sha256") != identity.get("sha256") or metadata.get("target_sha256") != identity.get("sha256"):
+        raise ValueError("candidate-pool provenance transition target identity mismatch")
+
+
 def select_production_walkers(
     pool: np.ndarray,
     logp: np.ndarray,
@@ -691,8 +763,13 @@ def run_fixed_production_chain(
         resolution,
         pool_reuse_policy=pool_reuse_policy,
     )
-    if contract.get("repository_commit") != repository_commit or contract.get("source_manifest_sha256") != sha256_file(source_manifest) or contract.get("dependency_manifest_sha256") != sha256_file(dependency_manifest):
-        raise ValueError("candidate pool source/dependency provenance differs from locked production package")
+    assert_pool_package_provenance(
+        contract,
+        pool_file=pool_file,
+        repository_commit=repository_commit,
+        source_manifest=source_manifest,
+        dependency_manifest=dependency_manifest,
+    )
     if contract.get("pool_sha256") != sha256_file(pool_file):
         raise ValueError("candidate pool hash differs from frozen search contract")
     pool = np.load(pool_file, allow_pickle=False)

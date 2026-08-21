@@ -1,0 +1,28 @@
+shared:
+  iteration_id: iter017
+  sites: [JERC]
+  cases: [JERC_ppe6_I20TRCNPRDCTCBC]
+  variables: [SR]
+  forcing_artifact: /xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/spinup_forcing_coupling/spinup_forcing_coupling_iter002_release/surrogate_forcing/forcing_surrogate_iter002_sr.pkl
+  spinup_artifact: /xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/UQ_output/spinup_surrogate_iter012_drop21_corr080/surrogate_spinup/spinup_surrogate_iter012_drop21_corr080.pkl
+  observations:
+    JERC: /xdisk/chopinsong/chopinsong/CTSM_inputdata/lnd/clm2/neon_ncar/NEON/eval_files/v4/JERC/JERC_cdo_merge.nc
+initialization:
+  mode: ledger_rebuild
+  resolution: hourly
+  pool_rule: hybrid_high_l_maximin
+  pool_size: 640
+  seed: 17017
+  ledger_path: /xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/spinup_forcing_coupling/spinup_forcing_coupling_iter012_general_pipeline_v2/revision1/initialization/jerc/artifacts/candidate_ledger.npz
+optimization:
+  likelihood_resolution: hourly
+  de_move_scale: 0.75
+  sampler_coordinates: transformed
+  move_configuration: de_mixture
+  nwalkers: 64
+  nsteps: 2000
+  checkpoint_interval: 1000
+  seeds: [9009, 9010, 9011]
+reporting:
+  tier_a_acceptance_range: [0.20, 0.50]
+  copy_leaf_products: true

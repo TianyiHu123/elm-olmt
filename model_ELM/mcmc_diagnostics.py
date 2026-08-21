@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import csv
 import json
+import math
 from pathlib import Path
 from typing import Any, Dict, Mapping, Optional, Sequence
 
@@ -11,6 +12,46 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
+
+
+def select_postburn_samples(
+    *, chain: np.ndarray, log_prob: np.ndarray, pmin: np.ndarray, pmax: np.ndarray,
+    n_model_parms: int, nsteps: int, tau_max: Optional[float],
+) -> Dict[str, Any]:
+    """Select finite in-bounds post-burn draws for derived diagnostics and plots."""
+    del n_model_parms
+    if tau_max is None or not np.isfinite(tau_max) or tau_max <= 0:
+        discard, thin, tau_available = int(math.ceil(0.20 * nsteps)), 5, False
+    else:
+        discard = max(int(math.ceil(0.20 * nsteps)), int(math.ceil(5.0 * tau_max)))
+        thin, tau_available = max(5, int(math.ceil(tau_max / 2.0))), True
+    if discard >= chain.shape[0]:
+        raise RuntimeError(f"Adaptive discard={discard} leaves no raw draws for nsteps={chain.shape[0]}")
+    eligible_chain, eligible_lp = chain[discard::thin], log_prob[discard::thin]
+    eligible = np.all((eligible_chain >= pmin) & (eligible_chain <= pmax), axis=2) & np.isfinite(eligible_lp)
+    if not np.any(eligible):
+        raise RuntimeError("No eligible raw-chain draws after bounds/log-prob filtering")
+    records = []
+    for walker in range(eligible.shape[1]):
+        indices = np.flatnonzero(eligible[:, walker])
+        if indices.size:
+            chosen = indices if indices.size < 8 else indices[np.linspace(0, indices.size - 1, 8, dtype=int)]
+            records.extend((int(step), int(walker)) for step in chosen)
+    if len(records) < 512:
+        records = [(step, walker) for step in range(eligible.shape[0]) for walker in range(eligible.shape[1]) if eligible[step, walker]]
+    selected = np.asarray([eligible_chain[step, walker] for step, walker in records], float)
+    selected_lp = np.asarray([eligible_lp[step, walker] for step, walker in records], float)
+    return {
+        "samples": eligible_chain[eligible], "log_probs": eligible_lp[eligible],
+        "predictive_samples": selected, "predictive_log_probs": selected_lp,
+        "discard": discard, "thin": thin, "tau_available": tau_available,
+        "tau_max": None if tau_max is None else float(tau_max), "eligible_mask": eligible,
+        "selected_ledger": [{"selected_draw_rank": rank, "walker": walker,
+            "raw_step": int(discard + step * thin), "eligible_step": step,
+            "log_probability": float(lp)} for rank, ((step, walker), lp) in enumerate(zip(records, selected_lp))],
+        "per_walker": [{"walker": walker, "eligible": int(np.count_nonzero(eligible[:, walker])),
+            "selected": sum(1 for _, chosen in records if chosen == walker)} for walker in range(eligible.shape[1])],
+    }
 
 
 def _valid_mask(obs: np.ndarray, err: np.ndarray) -> np.ndarray:

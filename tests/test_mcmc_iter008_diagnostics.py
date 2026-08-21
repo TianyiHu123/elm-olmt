@@ -5,14 +5,15 @@ import json
 
 import numpy as np
 
-from model_ELM.MCMC_forcing import _adaptive_chain_selection, _write_iter008_raw_chain
+from model_ELM.mcmc_artifacts import write_raw_chain_artifact
+from model_ELM.mcmc_diagnostics import select_postburn_samples
 
 
 def test_selection_falls_back_to_every_eligible_draw_when_short(tmp_path):
     chain = np.zeros((20, 4, 2), dtype=float)
     chain[:, :, 0] = np.arange(20)[:, None]
     log_prob = np.zeros((20, 4), dtype=float)
-    result = _adaptive_chain_selection(
+    result = select_postburn_samples(
         chain=chain,
         log_prob=log_prob,
         pmin=np.array([-1.0, -1.0]),
@@ -30,7 +31,7 @@ def test_selection_falls_back_to_every_eligible_draw_when_short(tmp_path):
 def test_raw_chain_metadata_and_hashes_are_self_describing(tmp_path):
     chain = np.zeros((20, 4, 2), dtype=float)
     log_prob = np.zeros((20, 4), dtype=float)
-    metadata = _write_iter008_raw_chain(
+    metadata = write_raw_chain_artifact(
         tmp_path,
         chain=chain,
         log_prob=log_prob,
