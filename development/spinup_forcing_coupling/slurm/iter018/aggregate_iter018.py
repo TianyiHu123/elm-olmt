@@ -6,6 +6,7 @@ import json
 from pathlib import Path
 
 SITES = ("ABBY", "JERC", "OSBS", "SOAP", "RMNP", "TALL", "TEAK", "WREF", "YELL")
+SEEDS = {f"seed_{seed}" for seed in range(9009, 9018)}
 
 def main() -> int:
     parser = argparse.ArgumentParser()
@@ -18,9 +19,10 @@ def main() -> int:
         if not report.is_file():
             raise FileNotFoundError(report)
         payload = json.loads(report.read_text())
-        rows.append({"site": site, "status": payload.get("status"), "leaves": len(list((root / "optimization").glob("seed_*")))})
-    if any(row["leaves"] != 9 for row in rows):
-        raise ValueError("every site must have nine leaves")
+        names = {item.name for item in (root / "optimization").glob("seed_*")}
+        if names != SEEDS:
+            raise ValueError(f"unexpected seed set for {site}: {sorted(names)}")
+        rows.append({"site": site, "status": payload.get("status"), "leaves": len(names)})
     destination = args.root / "aggregate" / "iter018_operational_summary.json"
     destination.write_text(json.dumps({"schema": "iter018-operational-v1", "sites": rows}, indent=2) + "\n")
     print("ITER018_AGGREGATE_PASS sites=9 leaves=81")

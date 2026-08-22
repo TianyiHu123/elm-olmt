@@ -16,6 +16,10 @@ source "${SUBMISSION_CONFIG}"
 test "$(pwd -P)" = "${RUN_DIR}"
 test "$(sha256sum "${SUBMITTED_SCRIPT}" | awk '{print $1}')" = "${SUBMITTED_SCRIPT_SHA256}"
 test "$(sha256sum "${CAMPAIGN}" | awk '{print $1}')" = "${CAMPAIGN_SHA256}"
+test -f "${REPO_ROOT}/conda_envs/OLMT_puma.yml"
+sha256sum -c "${SOURCE_MANIFEST}"
+sha256sum -c "${DEPENDENCY_MANIFEST}"
+cd "${REPO_ROOT}"
 module load micromamba/2.0.2-2
 micromamba run -n OLMT_puma python "${REPO_ROOT}/report_optimization.py" \
   --campaign "${CAMPAIGN}" --path-root "${PATH_ROOT}"

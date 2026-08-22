@@ -91,13 +91,18 @@ SUBMITTED_SCRIPT_SHA256=$(sha256sum "${root}/reports/submit_report_iter018.slurm
 CAMPAIGN=${campaign}
 CAMPAIGN_SHA256=$(sha256sum "${campaign}" | awk '{print $1}')
 PATH_ROOT=${root}
+SOURCE_MANIFEST=${source_manifest}
+DEPENDENCY_MANIFEST=${dependency_manifest}
 EOF
 }
 
 for site in ABBY SOAP YELL WREF; do make_campaign "${site}" daily 0.50; done
 for site in JERC OSBS RMNP TALL TEAK; do make_campaign "${site}" hourly 0.75; done
 sha256sum "${REPO_ROOT}/run_optimization_campaign.py" "${REPO_ROOT}/report_optimization.py" \
-  "${REPO_ROOT}/initialize_pipeline.py" "${ITER_DIR}"/* "${OUTPUT_ROOT}/configs"/*.yaml > "${OUTPUT_ROOT}/source_manifest.sha256"
+  "${REPO_ROOT}/initialize_pipeline.py" "${REPO_ROOT}/optimize_surrogate_forcing.py" \
+  "${REPO_ROOT}/model_ELM/optimization_config.py" "${REPO_ROOT}/model_ELM/coupling_pipeline.py" \
+  "${REPO_ROOT}/model_ELM/MCMC_forcing.py" "${REPO_ROOT}/model_ELM/mcmc_artifacts.py" \
+  "${REPO_ROOT}/model_ELM/mcmc_diagnostics.py" "${ITER_DIR}"/* "${OUTPUT_ROOT}/configs"/*.yaml > "${OUTPUT_ROOT}/source_manifest.sha256"
 for site in ABBY JERC OSBS SOAP RMNP TALL TEAK WREF YELL; do
   sha256sum "${REPO_ROOT}/pklfiles/${site}_ppe6_I20TRCNPRDCTCBC.pkl" "${OBS_ROOT}/${site}/${site}_cdo_merge.nc"
 done > "${OUTPUT_ROOT}/dependency_manifest.sha256"
@@ -113,9 +118,17 @@ EOF
 cat > "${OUTPUT_ROOT}/aggregate/submission_config.env" <<EOF
 RUN_DIR=${OUTPUT_ROOT}/aggregate
 OUTPUT_ROOT=${OUTPUT_ROOT}
+SUBMITTED_SCRIPT=${OUTPUT_ROOT}/aggregate/aggregate_iter018.slurm
+SUBMITTED_SCRIPT_SHA256=$(sha256sum "${OUTPUT_ROOT}/aggregate/aggregate_iter018.slurm" | awk '{print $1}')
+SOURCE_MANIFEST=${OUTPUT_ROOT}/source_manifest.sha256
+DEPENDENCY_MANIFEST=${OUTPUT_ROOT}/dependency_manifest.sha256
 EOF
 cat > "${OUTPUT_ROOT}/handoff/submission_config.env" <<EOF
 RUN_DIR=${OUTPUT_ROOT}/handoff
 OUTPUT_ROOT=${OUTPUT_ROOT}
+SUBMITTED_SCRIPT=${OUTPUT_ROOT}/handoff/validate_iter018_handoff.slurm
+SUBMITTED_SCRIPT_SHA256=$(sha256sum "${OUTPUT_ROOT}/handoff/validate_iter018_handoff.slurm" | awk '{print $1}')
+SOURCE_MANIFEST=${OUTPUT_ROOT}/source_manifest.sha256
+DEPENDENCY_MANIFEST=${OUTPUT_ROOT}/dependency_manifest.sha256
 EOF
 echo "ITER018_MATERIALIZED root=${OUTPUT_ROOT} commit=${COMMIT}"

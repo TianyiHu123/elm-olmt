@@ -7,6 +7,7 @@ import json
 from pathlib import Path
 
 SITES = ("ABBY", "JERC", "OSBS", "SOAP", "RMNP", "TALL", "TEAK", "WREF", "YELL")
+SEEDS = {f"seed_{seed}" for seed in range(9009, 9018)}
 
 
 def main() -> int:
@@ -20,7 +21,7 @@ def main() -> int:
         table = path / "reports" / "best_parameters" / "parameter_sets.csv"
         nc_files = sorted((path / "reports" / "best_parameters" / "clm_params").glob("clm_params_seed_*.nc"))
         leaves = sorted((path / "optimization").glob("seed_*"))
-        if not report.is_file() or not table.is_file() or len(leaves) != 9 or len(nc_files) != 9:
+        if not report.is_file() or not table.is_file() or {item.name for item in leaves} != SEEDS or len(nc_files) != 9:
             raise ValueError(f"incomplete site package: {site}")
         payload = json.loads(report.read_text())
         if payload.get("status") not in {"pass", "insufficient_retained"}:
