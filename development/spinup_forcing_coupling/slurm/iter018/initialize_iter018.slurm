@@ -13,6 +13,7 @@ readonly REPO_ROOT=/xdisk/chopinsong/tianyihu/elm-olmt
 test -n "${SUBMISSION_CONFIG:-}"
 test -f "${REPO_ROOT}/development/hpc/puma.md"
 test -f "${REPO_ROOT}/development/spinup_forcing_coupling/WORKFLOW.md"
+test -f "${REPO_ROOT}/conda_envs/OLMT_puma.yml"
 test -f "${SUBMISSION_CONFIG}"
 source "${SUBMISSION_CONFIG}"
 test "$(pwd -P)" = "${RUN_DIR}"
@@ -20,6 +21,7 @@ test "$(sha256sum "${SUBMITTED_SCRIPT}" | awk '{print $1}')" = "${SUBMITTED_SCRI
 test "$(sha256sum "${CAMPAIGN}" | awk '{print $1}')" = "${CAMPAIGN_SHA256}"
 sha256sum -c "${SOURCE_MANIFEST}"
 sha256sum -c "${DEPENDENCY_MANIFEST}"
+cd "${REPO_ROOT}"
 module load micromamba/2.0.2-2
 micromamba run -n OLMT_puma python "${REPO_ROOT}/run_optimization_campaign.py" \
   --stage initialization --campaign "${CAMPAIGN}" --output "${OUTPUT}" \

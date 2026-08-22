@@ -4,7 +4,7 @@
 
 - Active iteration: `iter018`
 - Status: `planned`
-- Phase: `initializing`
+- Phase: `review`
 - Active job IDs: `none`
 - Site profile: `development/hpc/puma.md`
 - Last updated: `2026-08-21T19:17:05-07:00`
@@ -36,8 +36,8 @@
 
 ## Current Objective
 
-Create and source-lock the thin Iter018 adapters/configurations and materialization package, then
-obtain the required independent read-only review before preflight.
+Complete the approved correction and independent re-review of the materialized source-locked
+package before preflight.
 
 ## Best Evidence So Far
 
@@ -49,7 +49,8 @@ obtain the required independent read-only review before preflight.
 
 ## Current Risks or Blockers
 
-- `none`; preparation has not yet created source-locked execution material.
+- Re-review blocked until complete Puma guards and current preparation/review evidence are
+  corrected; no scheduler work is authorized.
 
 ## Next Action
 
