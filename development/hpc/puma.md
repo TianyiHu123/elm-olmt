@@ -364,6 +364,43 @@ diagnosing partial failure. Use `squeue` while active and `sacct` after terminal
 parent ID, array range, per-element terminal states, exit codes, allocation, elapsed time, memory,
 and retry evidence.
 
+For a long-running authorized job, a human-managed Puma login-shell session may poll at a modest
+cadence rather than repeatedly querying the scheduler. This loop treats a failed query as unknown
+instead of mistaking it for terminal state, expands an array by parent ID, and defers the terminal
+result to `sacct`:
+
+```bash
+readonly JOB_ID="<PARENT_JOB_ID>"
+readonly POLL_SECONDS=300
+
+while true; do
+  if ! snapshot="$(squeue --job="${JOB_ID}" -r -h -o '%i|%T|%r|%M' 2>&1)"; then
+    printf '%s squeue query failed for %s: %s\n' \
+      "$(date -Iseconds)" "${JOB_ID}" "${snapshot}" >&2
+    exit 2
+  fi
+
+  if [[ -z "${snapshot}" ]]; then
+    break
+  fi
+
+  printf '%s %s\n' "$(date -Iseconds)" "${snapshot}"
+  sleep "${POLL_SECONDS}"
+done
+
+sacct --jobs="${JOB_ID}" \
+  --parsable2 \
+  --noheader \
+  --format=JobID,JobName,State,ExitCode,Elapsed,TotalCPU,AllocCPUS,MaxRSS,AllocTRES
+```
+
+The loop runs no project Python and is suitable only for a human/session-managed login shell. For
+agent-operated work, use discrete outside-sandbox job-scoped checks at the same or a recorded
+contract-specific cadence; do not represent a background shell loop as persistent across agent
+turns. An empty successful `squeue` response only means that the job left the queue. If `sacct`
+has not yet returned accounting, record state as pending or unknown and repeat the same
+job-scoped accounting query with bounded backoff before classifying the workload.
+
 ### 3.4 Failure classification
 
 Capture authoritative accounting evidence and distinguish:
