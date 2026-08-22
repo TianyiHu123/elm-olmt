@@ -585,17 +585,180 @@ After training a forcing surrogate (which saves `surrogate_forcing_artifacts.pkl
 
 ### Coupled pipeline workflow
 
-For a reproducible single-site or joint-site campaign, submit the stages manually in this order:
+The supported, reproducible interface is a manually submitted three-stage pipeline:
 
-1. **Initialization** builds or validates the shared candidate pool and writes its immutable artifact manifest.
-2. **Optimization** runs one seeded MCMC leaf per configured seed against that pool.
-3. **Reporting** is a separate job that reads completed leaves and writes standardized products under the job-submission root, rather than into the repository.
+```text
+one immutable campaign YAML
+  -> initialization job creates one candidate pool
+  -> optimization Slurm array runs one independent MCMC leaf per seed
+  -> reporting job aggregates completed leaves without modifying them
+```
 
-Use one YAML file with `shared`, `initialization`, `optimization`, and `reporting` sections. Each stage consumes `shared` plus its own section and records its source/dependency identities in a stage manifest; do not alter the YAML between stages. The reviewed examples are in [`development/spinup_forcing_coupling/examples/iter017/`](development/spinup_forcing_coupling/examples/iter017/).
+There is deliberately no pipeline launcher. Each stage is submitted separately from its external
+run directory after the preceding stage has passed its checks. Do not use direct invocation of
+`optimize_surrogate_forcing.py` as a campaign interface; it is the lower-level engine called by
+the stage adapter.
 
-The report directory contains `plots/physical_corner.png`, per-seed default corner and posterior time-series plots in `per_seed/`, and `best_parameters/parameter_sets.{csv,txt}`. It also copies one exact model-ready `clm_params_seed_<seed>.nc` file per seed in `best_parameters/clm_params/`; NetCDF parameter files are deliberately not merged. A report is always written even if no seed meets the configured descriptive retention rule, in which case its manifest says `status: insufficient_retained` and no posterior is promoted.
+The maintained starting files are in [`examples/optimization/`](examples/optimization/):
 
-The Iter017 integrity regression tested three seeds (`9009`--`9011`) at `64 × 2000` for ABBY daily/0.50, JERC hourly/0.75, and joint ABBY+JERC daily/0.50 and hourly/0.75. These are pipeline examples, not convergence settings or scientific calibration results.
+- [`standard_single_site.yaml`](examples/optimization/standard_single_site.yaml) and
+  [`standard_joint_site.yaml`](examples/optimization/standard_joint_site.yaml);
+- [`submit_initialize.slurm`](examples/optimization/submit_initialize.slurm),
+  [`submit_optimization_array.slurm`](examples/optimization/submit_optimization_array.slurm), and
+  [`submit_report.slurm`](examples/optimization/submit_report.slurm); and
+- [`submission_config.env.example`](examples/optimization/submission_config.env.example).
+
+Copy these files to a user-owned external run root, replace every placeholder, generate the
+source/dependency checksum manifests, and submit the copied scripts. The repository copies are
+templates and must not be submitted directly. For coupled-development runs, follow
+[`development/spinup_forcing_coupling/WORKFLOW.md`](development/spinup_forcing_coupling/WORKFLOW.md)
+and the selected HPC profile before submitting any job.
+
+#### Standard campaign YAML
+
+The YAML holds the scientific configuration common to all MCMC leaves. It intentionally does
+**not** contain the MCMC seed ensemble: seeds, the explicit Slurm array range, and concurrency
+belong in the copied optimization Slurm script.
+
+```yaml
+shared:
+  iteration_id: my_campaign
+  sites: [SITE_A]
+  cases: [SITE_A_CASE]
+  variables: [SR]
+  forcing_artifact: /path/to/forcing_surrogate.pkl
+  spinup_artifact: /path/to/spinup_surrogate.pkl
+  observations:
+    SITE_A: /path/to/SITE_A_observations.nc
+
+initialization:
+  mode: fresh
+  resolution: hourly
+  pool_rule: hybrid_high_l_maximin
+  high_l_quantile: 0.90
+  pool_size: 640
+  seed: 17017
+
+optimization:
+  likelihood_resolution: hourly
+  de_move_scale: 0.75
+  sampler_coordinates: transformed
+  move_configuration: de_mixture
+  nwalkers: 64
+  nsteps: 32000
+  checkpoint_interval: 2000
+
+reporting:
+  tier_a_acceptance_range: [0.20, 0.50]
+  copy_leaf_products: true
+```
+
+Use lists in the same order for `sites` and `cases`. In joint mode, add every site/case pair and
+every observation mapping as shown in the joint template. The pipeline then uses one shared
+candidate pool and parameter vector, evaluates the joint likelihood, and estimates the shared
+`sigma_SR` bound over all valid sites. It still writes site-specific skill and posterior
+time-series products for visualization.
+
+#### YAML reference
+
+| Section | Key | Meaning |
+| --- | --- | --- |
+| `shared` | `iteration_id` | User-facing campaign label recorded in stage receipts. |
+| `shared` | `sites`, `cases` | Ordered site labels and matching case-pickle names. A joint run contains more than one pair. |
+| `shared` | `variables` | Surrogate output variables used by the likelihood, for example `[SR]`. |
+| `shared` | `forcing_artifact`, `spinup_artifact` | Exact trained artifacts; these are provenance-checked before stage execution. |
+| `shared` | `observations` | Mapping from every declared site to its observation NetCDF file. |
+| `initialization` | `mode` | `fresh` evaluates a new candidate ledger; `ledger_rebuild` recompresses a frozen `ledger_path`. |
+| `initialization` | `resolution` | Target/candidate-pool resolution: `hourly` or `daily`. |
+| `initialization` | `pool_rule` | Standard value is `hybrid_high_l_maximin`: retain high-likelihood candidates, then choose a diverse maximin pool. |
+| `initialization` | `high_l_quantile` | Fractional likelihood cutoff for the hybrid universe. Use explicit `0.90`; it is now passed to the initializer. |
+| `initialization` | `pool_size` | Number of candidate states retained for walker selection. |
+| `initialization` | `seed` | Candidate-search seed, not an MCMC leaf seed. |
+| `initialization` | `ledger_path` | Required only for `ledger_rebuild`; points to the immutable candidate ledger to recompress. |
+| `optimization` | `likelihood_resolution` | `hourly` uses collocated hourly targets; `daily` uses complete paired days at the likelihood boundary. Prediction products remain site-specific. |
+| `optimization` | `de_move_scale` | DEMove gamma multiplier; valid with `move_configuration: de_mixture`. |
+| `optimization` | `sampler_coordinates` | Use `transformed` for the established coupled sampler coordinates while retaining the physical target through its Jacobian. |
+| `optimization` | `move_configuration` | `de_mixture` selects the DEMove/DESnooker mixture; `stretch` is available for a stretch-move campaign. |
+| `optimization` | `nwalkers`, `nsteps`, `checkpoint_interval` | Per-leaf sampler size, exact terminal length, and HDF checkpoint cadence. |
+| `reporting` | `tier_a_acceptance_range` | Descriptive acceptance interval used to label each completed seed; it is not a convergence proof. |
+| `reporting` | `copy_leaf_products` | When true, copy selected immutable per-seed products into the report package. |
+
+#### Explicit multi-seed array
+
+The copied optimization script owns the seed ensemble. Its default three-seed example is explicit:
+
+```bash
+#SBATCH --array=0-2%2
+readonly SEEDS=(9009 9010 9011)
+readonly SEED="${SEEDS[${SLURM_ARRAY_TASK_ID}]}"
+```
+
+`0-2` means three tasks; `%2` caps concurrent tasks at two. Change the array range and `SEEDS`
+list together. The script rejects an array index outside the seed list, and each task writes only
+`optimization/seed_<seed>/`. This lets users choose a new or partial seed ensemble without
+changing the shared scientific YAML.
+
+#### Manual submission sequence
+
+Prepare an external root with this structure before submission:
+
+```text
+<PATH_ROOT>/
+  campaign.yaml
+  source_manifest.sha256
+  dependency_manifest.sha256
+  initialization/submit_initialize.slurm
+  optimization/submit_optimization_array.slurm
+  postprocess/submit_report.slurm
+```
+
+Set `PATH_ROOT`, `CAMPAIGN`, `POOL`, repository commit, manifests, and process count in a copied
+`submission_config.env`. The source manifest must cover the executed pipeline sources; the
+dependency manifest must cover the frozen artifacts, observation files, case inputs, and other
+declared external inputs. Preserve both next to submitted scripts and logs.
+
+From each copied-script directory, submit manually:
+
+```bash
+# 1. Create and validate initialization/artifacts.
+cd "${PATH_ROOT}/initialization"
+sbatch --export="ALL,SUBMISSION_CONFIG=${PATH_ROOT}/submission_config.env" \
+  ./submit_initialize.slurm
+
+# 2. After initialization is terminal and its candidate pool is validated.
+cd "${PATH_ROOT}/optimization"
+sbatch --export="ALL,SUBMISSION_CONFIG=${PATH_ROOT}/submission_config.env" \
+  ./submit_optimization_array.slurm
+
+# 3. After every intended array task is terminal and its leaf is validated.
+cd "${PATH_ROOT}/postprocess"
+sbatch --export="ALL,SUBMISSION_CONFIG=${PATH_ROOT}/submission_config.env" \
+  ./submit_report.slurm
+```
+
+The array directive is already in `submit_optimization_array.slurm`; do not supply a competing
+`sbatch --array` override. Use the documented Puma monitoring commands against the array parent
+ID before reporting.
+
+#### Outputs and reporting decisions
+
+Initialization writes its immutable candidate artifacts under `initialization/artifacts/`. Each
+array task writes its raw chain, checkpoint, diagnostics, default corner plot, posterior
+time-series plots, `best_params.txt`, and `clm_params_best.nc` under its own
+`optimization/seed_<seed>/` leaf.
+
+Reporting discovers completed validated leaves rather than assuming a fixed seed count. It writes:
+
+- `reports/plots/physical_corner.png` for the aggregate physical-parameter distribution;
+- `reports/per_seed/seed_<seed>/` for copied per-seed corner, diagnostics, and posterior
+  time-series products;
+- `reports/best_parameters/parameter_sets.{csv,txt}` for all discovered seed MAP rows; and
+- one exact model-ready `reports/best_parameters/clm_params/clm_params_seed_<seed>.nc` per seed.
+
+NetCDF parameter files are never merged because ELM consumes one exact parameter vector at a
+time. `reports/report_manifest.json` records `discovered_seeds`, each seed's retention evidence,
+and the aggregate decision. A report with no descriptively retained seed is still valid and is
+written as `status: insufficient_retained`; it must not be treated as a promoted posterior.
 
 ### Observation NetCDF units
 
@@ -613,122 +776,3 @@ Each observation variable (and its error variable, if provided) should include a
 Sub-hourly data are averaged to hourly before unit conversion. Error variables use the same conversion path as their paired observation variable.
 
 When preparing observation files, set `units` explicitly rather than relying on the missing-units default.
-
-### CLI: `optimize_surrogate_forcing.py`
-
-This driver will:
-
-- load the explicit optimization target cases from `--case` (`pklfiles/<case>.pkl`)
-- load a trained forcing surrogate from `surrogate_forcing_artifacts.pkl`
-- use artifact `training_layout` metadata as the schema contract (forcing features, spinup vars, parameter count)
-- rebuild forcing-engineered inputs from each target `case.metdir` using that artifact metadata
-- compute spinup features from restart files (default: **mean across ensemble members**; or choose one member)
-- read observations from a NetCDF file (`--obs`) with their time axis
-- collocate forcing and observations by **exact overlapping hourly timestamps** (both axes on the no-leap calendar, floored to the hour) before likelihood evaluation
-- run MCMC using the forcing surrogate forward model
-- write outputs to `./UQ_output/<casename>/MCMC_forcing_output/`:
-  - `best_params.txt`
-  - `clm_params_best.nc`
-  - posterior PDFs, posterior predictive plots, and a corner plot (same post-processing style as `model_ELM/MCMC.py`)
-
-Posterior predictive plots also overlay **pre-calibration ELM** output when available:
-
-- **`MCMC()` (parameter surrogate):** reads `case.output[var]` from the case pickle. The baseline series must have the **same length** as `obs[var]` used in MCMC (same postprocessing/averaging). Use a non-ensemble baseline run saved in the pickle before ensemble postprocessing fills `output` with multiple members.
-- **`MCMC_forcing()`:** collocated hourly `obs` often differ in length from typical annual/monthly `case.output`. Pass pre-aligned baseline fluxes in `forcing_context[site]["baseline_output"]` as a dict `{var: 1d_array}` with one value per collocated time step. If lengths do not match, the plot skips the baseline curve and prints a warning.
-
-#### Single-site example
-
-```bash
-# Paths
-WORKDIR="/path/to/elm-olmt"
-CASE="<CASE_NAME>"
-
-# Artifact from forcing-surrogate training
-ARTIFACT="/path/to/output/<CASE_OR_RUN_NAME>/surrogate_forcing/surrogate_forcing_artifacts.pkl"
-
-# Observations (NetCDF): variables must match --vars (e.g., GPP, SR)
-OBS_NC="/path/to/obs_${CASE}.nc"
-
-python optimize_surrogate_forcing.py \
-  --workdir "${WORKDIR}" \
-  --case "${CASE}" \
-  --artifact "${ARTIFACT}" \
-  --vars GPP,SR \
-  --obs "${OBS_NC}" \
-  --obs-err-vars "GPP:GPP_SE,SR:SR_SE" \
-  --nwalkers 32 \
-  --nsteps 100 \
-  --spinup-member 1
-```
-
-Notes:
-- Observation variables must use `units` compatible with the table above so values match surrogate training outputs in daily flux units.
-- If an error variable is not provided (or missing in the file), observation uncertainty defaults to **10% of |obs|**.
-- Missing/invalid observations should be encoded as `-9999` (they are masked during likelihood evaluation).
-- The optimizer prints per-site overlap diagnostics (`forcing rows`, `obs rows`, `overlap rows`, overlap time window).
-- To show the pre-calibration ELM curve on forcing MCMC plots, include `baseline_output` in each site's `forcing_context` entry (see above).
-
-#### Dry-run collocation check (recommended)
-
-Use `--dry-run-collocation` to verify forcing/obs overlap sizes and windows before launching MCMC:
-
-```bash
-python optimize_surrogate_forcing.py \
-  --workdir "${WORKDIR}" \
-  --case "${CASE}" \
-  --artifact "${ARTIFACT}" \
-  --vars GPP,SR \
-  --obs "${OBS_NC}" \
-  --obs-err-vars "GPP:GPP_SE,SR:SR_SE" \
-  --spinup-member 1 \
-  --dry-run-collocation
-```
-
-This mode performs all per-site loading and time-overlap collocation, prints a summary, and exits without sampling.
-
-#### Multi-site / multi-case example (shared artifact, per-site obs paths)
-
-The optimizer treats the `--case` list as the authoritative optimization targets. You can pass one observation file for all cases/sites, or provide a per-site/per-case mapping:
-
-```bash
-python optimize_surrogate_forcing.py \
-  --workdir "${WORKDIR}" \
-  --case "<CASE_SITEA>,<CASE_SITEB>" \
-  --artifact "${ARTIFACT}" \
-  --vars SR \
-  --obs "US-UMB:/path/to/obs_US-UMB.nc,US-MOz:/path/to/obs_US-MOz.nc" \
-  --obs-err-vars "SR:SR_SE" \
-  --nwalkers 48 \
-  --nsteps 200
-```
-
-Notes:
-- Artifact metadata in `training_layout` must remain available; model/scaler-only payloads are not sufficient for rebuilding inputs.
-- Each case in `--case` should map to a unique site label (via `case.site`) for per-site diagnostics and outputs.
-
-### Choosing CPUs and walkers (practical guidance)
-
-MCMC cost scales roughly with:
-
-- \(n_{walkers} \\times n_{steps} \\times n_{sites} \\times n_{vars} \\times n_{time}\)
-
-Key points:
-
-- **Walkers**: For `emcee` ensemble sampling, a safe minimum is **\(2 \\times n_{dim}\)** where \(n_{dim} = n_{params} (+ n_{vars} \\text{ if fitting } \\sigma_{var})\). In practice, start with:
-  - **32 walkers** for smaller problems (tens of parameters)
-  - **48–128 walkers** for higher-dimensional calibration
-- **CPUs / processes**: This implementation can parallelize `emcee` log-prob evaluations via a multiprocessing pool (use `--n-processes`, defaulting to `SLURM_CPUS_PER_TASK` when set). Scaling is typically best up to ~`min(nwalkers, n-processes)`, and can be limited by surrogate inference cost and per-site/time-series length.
-- **Avoid oversubscription**: If your environment uses threaded BLAS/OpenMP, set:
-
-```bash
-export OMP_NUM_THREADS=1
-export OPENBLAS_NUM_THREADS=1
-export MKL_NUM_THREADS=1
-export NUMEXPR_NUM_THREADS=1
-export BLIS_NUM_THREADS=1
-```
-
-Suggested starting point on HPC:
-- **`--cpus-per-task=1` to `4`** (unless you have a specific reason to allocate more)
-- **increase `--nwalkers` first** if you need better mixing or higher effective sample size
-- do a short smoke test (`--nsteps 20`) before longer runs

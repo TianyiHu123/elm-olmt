@@ -23,7 +23,7 @@ import matplotlib.pyplot as plt
 from model_ELM.optimization_config import load_campaign, write_stage_manifest
 
 
-SCHEMA = "coupled-optimization-report-v2"
+SCHEMA = "coupled-optimization-report-v3"
 TIER_A_MIN = 0.20
 TIER_A_MAX = 0.50
 
@@ -40,7 +40,9 @@ def _copy_file(source: Path, destination: Path) -> str | None:
     return str(destination)
 
 
-def _leaf_records(root: Path, tier_min: float, tier_max: float) -> list[dict[str, Any]]:
+def _leaf_records(
+    root: Path, tier_min: float, tier_max: float, campaign_sha256: str,
+) -> list[dict[str, Any]]:
     leaves = sorted((root / "optimization").glob("seed_*"))
     if not leaves:
         raise FileNotFoundError(f"no optimization leaves under {root / 'optimization'}")
@@ -49,7 +51,7 @@ def _leaf_records(root: Path, tier_min: float, tier_max: float) -> list[dict[str
         raw_path = leaf / "raw_chain.npz"
         result_path = leaf / "production_result.json"
         required = (
-            "raw_chain.npz", "raw_chain_metadata.json", "raw_chain_hashes.json",
+            "stage_manifest.json", "raw_chain.npz", "raw_chain_metadata.json", "raw_chain_hashes.json",
             "backend.h5", "checkpoint_manifest.json", "selection_ledger.json",
             "production_result.json", "best_params.txt", "clm_params_best.nc",
             "plots/corner/corner_plot.png", "diagnostics/skill_table.csv",
@@ -64,6 +66,13 @@ def _leaf_records(root: Path, tier_min: float, tier_max: float) -> list[dict[str
             raise FileNotFoundError(f"missing site-specific posterior products: {leaf}")
         if not raw_path.is_file() or not result_path.is_file():
             raise FileNotFoundError(f"incomplete optimization leaf: {leaf}")
+        receipt = _json(leaf / "stage_manifest.json")
+        if receipt.get("stage") != "optimization":
+            raise ValueError(f"leaf stage receipt is not optimization: {leaf}")
+        if receipt.get("campaign_sha256") != campaign_sha256:
+            raise ValueError(f"leaf campaign receipt does not match report campaign: {leaf}")
+        if Path(str(receipt.get("output", ""))).resolve() != leaf.resolve():
+            raise ValueError(f"leaf stage receipt output does not match its directory: {leaf}")
         raw = np.load(raw_path, allow_pickle=False)
         chain = np.asarray(raw["chain"], dtype=float)
         logp = np.asarray(raw.get("physical_log_prob", raw["log_prob"]), dtype=float)
@@ -186,7 +195,7 @@ def main() -> int:
     if not isinstance(tier_range, list) or len(tier_range) != 2:
         raise ValueError("reporting.tier_a_acceptance_range must contain two values")
     tier_min, tier_max = (float(value) for value in tier_range)
-    records = _leaf_records(root, tier_min, tier_max)
+    records = _leaf_records(root, tier_min, tier_max, str(contract["campaign_sha256"]))
     parameter_dir = reports / "best_parameters"
     parameter_dir.mkdir(parents=True)
     rows = _write_parameter_tables(parameter_dir, records)
@@ -199,6 +208,7 @@ def main() -> int:
                  "skills": record["skills"], "delta_log_likelihood": record["delta_log_likelihood"]}
                 for record in records]
     manifest = {"schema": SCHEMA, "status": status, "sites": contract["shared"]["sites"],
+                "discovered_seeds": [record["seed"] for record in records],
                 "retained_tier_a_seeds": retained, "all_seed_rows": rows,
                 "tier_a_acceptance_range": [tier_min, tier_max], "copied_leaf_products": copied, "physical_corner": corner,
                 "per_seed_diagnostic_evidence": evidence}

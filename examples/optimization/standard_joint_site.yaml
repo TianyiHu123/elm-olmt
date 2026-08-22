@@ -1,0 +1,34 @@
+# Copy this file to the external run root and replace every ALL_CAPS value.
+# Joint mode has one shared candidate pool and parameter vector; reporting remains site-specific.
+shared:
+  iteration_id: my_joint_campaign
+  sites: [SITE_A, SITE_B]
+  cases: [SITE_A_CASE, SITE_B_CASE]
+  variables: [SR]
+  forcing_artifact: /path/to/forcing_surrogate.pkl
+  spinup_artifact: /path/to/spinup_surrogate.pkl
+  observations:
+    SITE_A: /path/to/SITE_A_observations.nc
+    SITE_B: /path/to/SITE_B_observations.nc
+
+initialization:
+  mode: fresh
+  resolution: hourly
+  pool_rule: hybrid_high_l_maximin
+  high_l_quantile: 0.90
+  pool_size: 640
+  # This initializes the joint candidate search. It is not an MCMC leaf seed.
+  seed: 17017
+
+optimization:
+  likelihood_resolution: hourly
+  de_move_scale: 0.75
+  sampler_coordinates: transformed
+  move_configuration: de_mixture
+  nwalkers: 64
+  nsteps: 32000
+  checkpoint_interval: 2000
+
+reporting:
+  tier_a_acceptance_range: [0.20, 0.50]
+  copy_leaf_products: true

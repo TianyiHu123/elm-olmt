@@ -176,6 +176,7 @@ def _initialize(args: argparse.Namespace) -> int:
         "repository_commit": args.repository_commit, "source_manifest": args.source_manifest,
         "dependency_manifest": args.dependency_manifest, "output": args.output,
         "seed": stage["seed"], "pool_rule": stage["pool_rule"], "pool_size": stage["pool_size"],
+        "high_l_quantile": stage.get("high_l_quantile", 0.90),
         "expected_physical_parameter_count": 14,
     }
     if stage["mode"] == "ledger_rebuild":
