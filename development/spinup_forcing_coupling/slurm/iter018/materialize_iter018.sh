@@ -22,7 +22,7 @@ cp "${REPO_ROOT}/run_optimization_campaign.py" "${REPO_ROOT}/report_optimization
 
 make_campaign() {
   local site="$1" resolution="$2" scale="$3"
-  local name="${site,,}_${resolution}_$(printf '%03d' "${scale/./}")"
+  local name="${site,,}_${resolution}_${scale#0.}"
   cat > "${OUTPUT_ROOT}/configs/${name}.yaml" <<EOF
 shared:
   iteration_id: iter018_${name}
