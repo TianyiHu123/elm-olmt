@@ -6,7 +6,7 @@
 - Work type: `implementation`
 - Run slug: `spinup_forcing_coupling_iter018_operational_nine_site`
 - Status: `planned`
-- Phase: `initializing`
+- Phase: `review`
 - Site profile: `development/hpc/puma.md`
 - Started: `2026-08-21T19:17:05-07:00`
 - Closed: `pending`
@@ -69,22 +69,28 @@ kickoff package` at `2026-08-21T19:17:05-07:00` approves that package unchanged.
 | Work unit | Job IDs | State | Notes |
 | --- | --- | --- | --- |
 | initialization records | none | complete | approved contract recorded; no compute or external root action |
-| preparation/source lock | pending | pending | must precede review and preflight |
+| preparation/source lock | `a3542f3`, corrections through `eeec519` | materialized root and manifests | complete | source/package corrections preserved as diagnostic siblings |
 
 ## Independent Read-Only Review
 
-- Reviewer and outcome: pending; a distinct read-only reviewer is required before preflight.
+- Reviewer: `/root/iter018_review`; read-only.
+- Outcome: initial review and two re-reviews blocked package integrity; final re-review after
+  `eeec519` resolved all execution-material findings but required this record reconciliation.
+- Findings: source locking, submitted-copy guards, exact seed membership, Puma context guards,
+  and durable state evidence were corrected without altering science, seeds, resources, or scope.
 
 ## Execution and Diagnostics
 
-- Static validation, preflight, submissions, accounting, and diagnostics: pending preparation.
+- Static validation: `git diff --check` and `bash -n` passed through `eeec519`; final
+  materialization completed at the approved output root.
+- Preflight, submissions, accounting, and diagnostics: pending record reconciliation and
+  authorized preflight.
 
 ## Validation, Evaluation, and Decision
 
 - Overall acceptance result: pending.
 - Overall decision and closeout conclusion: pending.
-- Next action: create and source-lock canonical Iter018 adapters/configurations, then obtain
-  independent review before preflight.
+- Next action: submit the approved, reviewed preflight from its materialized copy.
 
 ## Proposed Next-Iteration Plan (Planning Only)
 

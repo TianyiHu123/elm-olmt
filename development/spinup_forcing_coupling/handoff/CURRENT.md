@@ -41,7 +41,8 @@ package before preflight.
 
 ## Best Evidence So Far
 
-- Iter017 validator job `23610344` is terminal `COMPLETED 0:0`; no Iter018 root or job exists.
+- Iter017 validator job `23610344` is terminal `COMPLETED 0:0`; the corrected Iter018 root is
+  materialized with nine campaigns and submitted-copy/source/dependency manifests; no Iter018 job exists.
 - All nine case/observation pairs, released artifacts, environment, and entry points were present
   at bootstrap; Puma capacity supports the approved resource cap.
 - The complete planning block was synchronized before approval and is preserved in the Iter017
@@ -54,8 +55,8 @@ package before preflight.
 
 ## Next Action
 
-1. Create canonical Iter018 stage adapters, configurations, aggregate, and validator; statically
-   validate them and make the approved source-lock commit before independent review.
+1. Submit the reviewed materialized preflight, then account for its terminal result before any
+   initialization or optimization work.
 
 ## Next Iteration Plan (Planning Only)
 
@@ -71,6 +72,6 @@ spinup-forcing coupling-development line ends. Any merge is a separate user deci
 ## Artifact References
 
 - Current report: `development/spinup_forcing_coupling/iterations/iter018.md`
-- Canonical scripts: `development/spinup_forcing_coupling/slurm/iter018/` (pending)
-- Submitted package and scratch output: approved Iter018 root (not yet created)
+- Canonical scripts: `development/spinup_forcing_coupling/slurm/iter018/`
+- Submitted package and scratch output: approved Iter018 root (materialized; no runtime output yet)
 - Cumulative records: `ITERATION_SUMMARY.md`, `registry.csv`, `summaries/iter018/` (pending)
