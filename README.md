@@ -756,7 +756,8 @@ It writes:
 - `reports/best_parameters/parameter_sets.{csv,txt}` and
   `reports/best_parameters/clm_params/clm_params_seed_<seed>.nc` for **Tier-A seeds only**;
 - `reports/best_parameters/all_seed_parameter_sets.csv` as the full-seed MAP audit table;
-- `reports/plots/physical_corner.png` from **Tier-A** physical posteriors only;
+- `reports/plots/physical_corner.png` and `reports/plots/physical_corner_by_seed.png` from
+  **Tier-A** post-burn samples, colored by seed (Iter016-style legend);
 - `reports/plots/predictions/<site>/Predictions_SR_MAP_ensemble.png` overlaying every Tier-A MAP
   SR series against observations (valid-mask) and ELM precal, with a companion
   `sr_overlay_manifest.json`; and

@@ -59,18 +59,19 @@
   ],
   "makeup": {
     "reports": [
-      "23651925",
-      "23651926",
-      "23651927",
-      "23651928",
-      "23651929",
-      "23651932",
-      "23651933",
-      "23651934",
-      "23651935"
+      "23652955",
+      "23652956",
+      "23652957",
+      "23652958",
+      "23652960",
+      "23652962",
+      "23652963",
+      "23652964",
+      "23652967"
     ],
-    "aggregate": "23652320",
-    "handoff": "23652321",
-    "contract": "tier_a_only_best_params_corner_and_sr_map_ensemble"
+    "aggregate": "23653056",
+    "handoff": "23653095",
+    "contract": "tier_a_only_best_params_corner_and_sr_map_ensemble",
+    "physical_corner": "tier_a_seed_colored_post_burn_iter016_style"
   }
 }

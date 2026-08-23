@@ -33,6 +33,19 @@ from model_ELM.optimization_config import load_campaign, write_stage_manifest
 SCHEMA = "coupled-optimization-report-v4"
 TIER_A_MIN = 0.20
 TIER_A_MAX = 0.50
+SEED_COLORS = (
+    "tab:blue",
+    "tab:orange",
+    "tab:green",
+    "tab:red",
+    "tab:purple",
+    "tab:brown",
+    "tab:pink",
+    "tab:gray",
+    "tab:olive",
+)
+CORNER_SUBSAMPLE_PER_SEED = 1000
+CORNER_RNG_SEED = 16016
 
 
 def _json(path: Path) -> dict[str, Any]:
@@ -150,42 +163,102 @@ def _write_parameter_tables(
     return all_rows, tier_rows
 
 
-def _write_corner(report_dir: Path, records: list[dict[str, Any]]) -> str | None:
+def _seed_color(seed: str | int) -> str:
+    try:
+        index = int(seed) - 9009
+    except (TypeError, ValueError):
+        index = 0
+    return SEED_COLORS[index % len(SEED_COLORS)]
+
+
+def _post_burn_samples(chain: np.ndarray, subsample: int, rng: np.random.Generator) -> np.ndarray:
+    """Descriptive post-burn subsample in physical coordinates (all parameters)."""
+    nsteps = int(chain.shape[0])
+    discard = max(1, int(np.ceil(0.20 * nsteps)))
+    if discard >= nsteps:
+        discard = max(0, nsteps // 5)
+    flat = chain[discard:].reshape(-1, chain.shape[-1])
+    if len(flat) <= subsample:
+        return flat
+    return flat[rng.choice(len(flat), size=subsample, replace=False)]
+
+
+def _write_corner(report_dir: Path, records: list[dict[str, Any]]) -> dict[str, Any] | None:
+    """Write Iter016-style seed-colored physical corner for Tier-A seeds only."""
     if not records:
         return None
     names = list(records[0]["parameter_names"])
-    physical = [index for index, name in enumerate(names) if not name.startswith("sigma_")]
-    samples = np.concatenate([record["chain"][:, :, physical].reshape(-1, len(physical)) for record in records])
-    if len(samples) > 12000:
-        samples = samples[np.linspace(0, len(samples) - 1, 12000, dtype=int)]
-    count = len(physical)
-    figure, axes = plt.subplots(count, count, figsize=(1.7 * count, 1.7 * count), squeeze=False)
-    for row in range(count):
-        for column in range(count):
+    rng = np.random.default_rng(CORNER_RNG_SEED)
+    series: list[tuple[str, np.ndarray, str]] = []
+    for record in records:
+        seed = str(record["seed"])
+        samples = _post_burn_samples(
+            np.asarray(record["chain"], dtype=float),
+            CORNER_SUBSAMPLE_PER_SEED,
+            rng,
+        )
+        series.append((seed, samples, _seed_color(seed)))
+    ndim = len(names)
+    figure, axes = plt.subplots(ndim, ndim, figsize=(24, 24), squeeze=False)
+    for row in range(ndim):
+        for column in range(ndim):
             axis = axes[row, column]
             if row == column:
-                axis.hist(samples[:, row], bins=35, color="0.35", density=True)
+                for _, samples, color in series:
+                    axis.hist(
+                        samples[:, column],
+                        bins=30,
+                        color=color,
+                        density=True,
+                        alpha=0.45 if len(series) > 1 else 1.0,
+                        histtype="stepfilled",
+                    )
             elif row > column:
-                axis.plot(samples[:, column], samples[:, row], ".", ms=0.25, alpha=0.08, color="0.15")
+                for _, samples, color in series:
+                    axis.scatter(
+                        samples[:, column],
+                        samples[:, row],
+                        s=1,
+                        alpha=0.15 if len(series) == 1 else 0.20,
+                        linewidths=0,
+                        color=color,
+                    )
             else:
                 axis.axis("off")
-                continue
-            if row == count - 1:
-                axis.set_xlabel(names[physical[column]], fontsize=7, rotation=45, ha="right")
-            else:
-                axis.set_xticklabels([])
-            if column == 0 and row:
-                axis.set_ylabel(names[physical[row]], fontsize=7)
-            else:
-                axis.set_yticklabels([])
-    seed_label = ",".join(record["seed"] for record in records)
-    figure.suptitle(f"Physical posterior parameter distribution (Tier-A seeds: {seed_label})", fontsize=11)
+            if row == ndim - 1:
+                axis.set_xlabel(names[column], rotation=45, ha="right", fontsize=6)
+            if column == 0 and row > 0:
+                axis.set_ylabel(names[row], fontsize=6)
+            axis.tick_params(labelsize=5)
+    if len(series) > 1:
+        handles = [
+            plt.Line2D(
+                [0], [0], marker="o", color="none",
+                markerfacecolor=color, markersize=6, label=label,
+            )
+            for label, _, color in series
+        ]
+        figure.legend(handles=handles, loc="upper right", fontsize=8)
+    site_name = str(Path(records[0]["leaf"]).resolve().parent.parent.name).upper()
+    figure.suptitle(
+        f"{site_name} ensemble physical corner (Tier-A seed-colored post-burn)",
+        fontsize=12,
+    )
     figure.tight_layout()
-    path = report_dir.parent / "plots" / "physical_corner.png"
-    path.parent.mkdir(parents=True, exist_ok=True)
-    figure.savefig(path, dpi=160)
+    plots = report_dir.parent / "plots"
+    plots.mkdir(parents=True, exist_ok=True)
+    path = plots / "physical_corner.png"
+    by_seed = plots / "physical_corner_by_seed.png"
+    figure.savefig(path, dpi=150)
+    figure.savefig(by_seed, dpi=150)
     plt.close(figure)
-    return str(path)
+    return {
+        "physical_corner": str(path),
+        "physical_corner_by_seed": str(by_seed),
+        "seeds": [label for label, _, _ in series],
+        "subsample_per_seed": CORNER_SUBSAMPLE_PER_SEED,
+        "discard_fraction": 0.20,
+    }
 
 
 def _mask_to_nan(values: np.ndarray, valid: np.ndarray) -> np.ndarray:
@@ -373,7 +446,9 @@ def main() -> int:
         "tier_a_parameter_rows": tier_rows,
         "tier_a_acceptance_range": [tier_min, tier_max],
         "copied_leaf_products": copied,
-        "physical_corner": corner,
+        "physical_corner": None if corner is None else corner.get("physical_corner"),
+        "physical_corner_by_seed": None if corner is None else corner.get("physical_corner_by_seed"),
+        "physical_corner_detail": corner,
         "sr_map_ensemble_overlay": overlay,
         "per_seed_diagnostic_evidence": evidence,
     }

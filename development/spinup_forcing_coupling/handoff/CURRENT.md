@@ -7,7 +7,7 @@
 - Phase: `closed`
 - Active job IDs: `none`
 - Site profile: `development/hpc/puma.md`
-- Last updated: `2026-08-22T19:51:19-07:00`
+- Last updated: `2026-08-22T20:35:00-07:00`
 
 ## Active Kickoff Package and Runtime Authority
 
@@ -21,10 +21,10 @@ None. The coupling-development line is terminal after Iter018 makeup closeout.
 
 ## Best Evidence So Far
 
-- Integrity passed: 81/81 leaves; makeup reports `23651925`–`23651935`; aggregate `23652320`;
-  handoff `23652321` (`ITER018_HANDOFF_PASS sites=9 leaves=81`).
-- Reporting contract: Tier-A-only best parameters / physical corner / SR MAP ensemble overlay;
-  full-seed audit retained separately; README optimization section updated.
+- Integrity passed: 81/81 leaves; corner makeup reports `23652955`–`23652967`; aggregate
+  `23653056`; handoff `23653095` (`ITER018_HANDOFF_PASS sites=9 leaves=81`).
+- Reporting contract: Tier-A-only best parameters / seed-colored physical corner / SR MAP
+  ensemble overlay; README optimization section updated.
 - Descriptive statuses: ABBY/SOAP/YELL/WREF/TALL `all_tier_a`; JERC/OSBS/RMNP/TEAK
   `partial_tier_a`.
 - Comprehensive closeout narrative:
@@ -42,9 +42,8 @@ None. The coupling-development line is terminal after Iter018 makeup closeout.
 
 ## Next Iteration Plan (Planning Only)
 
-Terminal declaration: after validated Iter018 evidence, reporting-contract makeup, and
-comprehensive closeout, the spinup-forcing coupling-development line ends. Any merge is a
-separate user decision.
+Terminal declaration: after validated Iter018 evidence and reporting makeups, the spinup-forcing
+coupling-development line ends. Any merge is a separate user decision.
 
 ## Next Session Start Protocol
 

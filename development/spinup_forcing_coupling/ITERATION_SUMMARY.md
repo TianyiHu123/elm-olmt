@@ -762,7 +762,7 @@ The end-to-end integrity regression passed across all four configurations. The 2
 
 Closeout identity: Iteration ID `iter018`; Status `completed`; Work type `implementation`; Objective `final nine-site operational coupled-optimization release with comprehensive coupling-development closeout and merge-readiness declaration`; Bounded scope `1 preflight; 9 initializations; 9 arrays/81 leaves; 9 reports; 1 aggregate; 1 handoff validation`; Overall acceptance result `pass`; Decision `operational_release_ready; ABBY/SOAP/YELL/WREF/TALL=all_tier_a; JERC/OSBS/RMNP/TEAK=partial_tier_a; no posterior promotion; coupling-development line terminal; merge separate`.
 
-- Closed at: `2026-08-22T19:51:19-07:00` (includes approved reporting-contract makeup)
+- Closed at: `2026-08-22T20:35:00-07:00` (includes seed-colored physical-corner makeup)
 - Output root: `/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/spinup_forcing_coupling/spinup_forcing_coupling_iter018_operational_nine_site`
 - Summary path: `development/spinup_forcing_coupling/summaries/iter018`
 
@@ -771,11 +771,11 @@ Closeout identity: Iteration ID `iter018`; Status `completed`; Work type `implem
 - Nine independent SR campaigns; daily/0.50 ABBY,SOAP,YELL,WREF; hourly/0.75 JERC,OSBS,RMNP,TALL,TEAK.
 - Fresh hybrid_high_l_maximin pools (`q=0.90`, size 640, search seed 17017); seeds 9009--9017; 64×8000; DE mixture; fitted site-local sigma_SR.
 - Remaining optimization arrays used submitted `--array=0-8` after approved concurrency revision; JERC/WREF historical `%2`.
-- Reporting contract (makeup): Tier-A-only best parameters, physical corner, and SR MAP ensemble overlay; full-seed audit retained separately.
+- Reporting contract (makeup): Tier-A-only best parameters, Iter016-style seed-colored physical corner, and SR MAP ensemble overlay; full-seed audit retained separately.
 
 ### Quantitative evidence
 
-- 81/81 leaves `COMPLETED 0:0` with `production_result` pass; makeup reports `23651925`–`23651935` with Tier-A-only CLM exports and SR MAP ensemble overlays; aggregate `23652320`; handoff `23652321` emitted `ITER018_HANDOFF_PASS sites=9 leaves=81`.
+- 81/81 leaves `COMPLETED 0:0` with `production_result` pass; corner makeup reports `23652955`–`23652967` with Tier-A-only CLM exports, seed-colored physical corners, and SR MAP ensemble overlays; aggregate `23653056`; handoff `23653095` emitted `ITER018_HANDOFF_PASS sites=9 leaves=81`.
 - Tier-A retention: ABBY 9, SOAP 9, YELL 9, WREF 9, TALL 9, RMNP 8, OSBS 4, TEAK 2, JERC 1.
 
 ### Gate outcome and conclusion

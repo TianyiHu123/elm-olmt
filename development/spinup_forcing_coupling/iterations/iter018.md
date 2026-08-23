@@ -9,7 +9,7 @@
 - Phase: `closed`
 - Site profile: `development/hpc/puma.md`
 - Started: `2026-08-21T19:17:05-07:00`
-- Closed: `2026-08-22T19:51:19-07:00` (includes approved reporting-contract makeup)
+- Closed: `2026-08-22T20:35:00-07:00` (includes seed-colored physical-corner makeup)
 
 ## Finalized Plan
 
@@ -54,6 +54,9 @@ is descriptive only.
 | reports (makeup) | ABBY `23651925`; JERC `23651926`; OSBS `23651927`; SOAP `23651928`; RMNP `23651929`; TALL `23651932`; TEAK `23651933`; WREF `23651934`; YELL `23651935` | all `COMPLETED 0:0` | Tier-A-only best params/corner + SR MAP ensemble |
 | aggregate (makeup) | `23652320` | `COMPLETED 0:0` | `ITER018_AGGREGATE_PASS` |
 | handoff (makeup) | `23652321` | `COMPLETED 0:0` | `ITER018_HANDOFF_PASS sites=9 leaves=81` |
+| reports (corner makeup) | ABBY `23652955`; JERC `23652956`; OSBS `23652957`; SOAP `23652958`; RMNP `23652960`; TALL `23652962`; TEAK `23652963`; WREF `23652964`; YELL `23652967` | all `COMPLETED 0:0` | Tier-A seed-colored physical corner |
+| aggregate (corner makeup) | `23653056` | `COMPLETED 0:0` | `ITER018_AGGREGATE_PASS` |
+| handoff (corner makeup) | `23653095` | `COMPLETED 0:0` | `ITER018_HANDOFF_PASS sites=9 leaves=81` |
 
 ## Execution and Diagnostics
 

@@ -53,8 +53,11 @@ def main() -> int:
                 if not overlay.is_file():
                     raise FileNotFoundError(overlay)
             corner = path / "reports" / "plots" / "physical_corner.png"
+            by_seed = path / "reports" / "plots" / "physical_corner_by_seed.png"
             if not corner.is_file():
                 raise FileNotFoundError(corner)
+            if not by_seed.is_file():
+                raise FileNotFoundError(by_seed)
         rows.append({
             "site": site,
             "status": payload["status"],
