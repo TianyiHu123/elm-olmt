@@ -62,12 +62,12 @@ def _build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--outputdir",
         default=".",
-        help="Base directory for UQ_output/<case-or-run-name>/surrogate_forcing/",
+        help="Exact parent directory for <case-or-run-name>/surrogate_forcing/",
     )
     parser.add_argument(
         "--run-name",
         default=None,
-        help="Optional output subfolder name under UQ_output/ (recommended for multi-case runs)",
+        help="Optional output subfolder name under --outputdir (recommended for multi-case runs)",
     )
     parser.add_argument(
         "--stats-only",
@@ -85,6 +85,12 @@ def _build_parser() -> argparse.ArgumentParser:
         default=None,
         metavar="PATH",
         help="Directory containing X_forcing_memmap.dat + layout .npz, or path to the .dat file (skip forcing/spinup IO)",
+    )
+    parser.add_argument(
+        "--permutation-repeats",
+        type=int,
+        default=8,
+        help="Held-out permutation-importance repeats for every ordered input feature",
     )
     return parser
 
@@ -129,6 +135,7 @@ def main() -> int:
             minimal_output=args.stats_only,
             stats_run_id=args.stats_run_id,
             reuse_x_memmap_path=args.reuse_x_memmap,
+            permutation_repeats=args.permutation_repeats,
         )
     else:
         train_multicase_surrogate_with_forcing(
@@ -153,6 +160,7 @@ def main() -> int:
             minimal_output=args.stats_only,
             stats_run_id=args.stats_run_id,
             reuse_x_memmap_path=args.reuse_x_memmap,
+            permutation_repeats=args.permutation_repeats,
         )
     return 0
 

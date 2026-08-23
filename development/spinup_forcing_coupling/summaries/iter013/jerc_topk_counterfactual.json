@@ -1,0 +1,57 @@
+{
+  "schema": "spinup-forcing-coupling-iter013-topk-counterfactual-v1",
+  "site": "JERC",
+  "pool_vs_ledger_top640": {
+    "count_a": 640.0,
+    "count_b": 640.0,
+    "intersection_count": 5.0,
+    "intersection_fraction_of_a": 0.0078125
+  },
+  "walkers_vs_ledger_top64": {
+    "9009": {
+      "count_a": 64.0,
+      "count_b": 64.0,
+      "intersection_count": 0.0,
+      "intersection_fraction_of_a": 0.0
+    },
+    "9010": {
+      "count_a": 64.0,
+      "count_b": 64.0,
+      "intersection_count": 0.0,
+      "intersection_fraction_of_a": 0.0
+    },
+    "9011": {
+      "count_a": 64.0,
+      "count_b": 64.0,
+      "intersection_count": 0.0,
+      "intersection_fraction_of_a": 0.0
+    }
+  },
+  "actual_pool_spread": {
+    "mean": 0.998579963817227,
+    "max": 0.9999888888888889
+  },
+  "top640_spread": {
+    "mean": 0.96978577509865,
+    "max": 1.0
+  },
+  "top64_spread": {
+    "mean": 0.9333333333333333,
+    "max": 1.0
+  },
+  "top640_logp_percentiles": {
+    "p05": NaN,
+    "p50": NaN,
+    "p95": NaN,
+    "mean": NaN,
+    "n": 640
+  },
+  "top64_logp_percentiles": {
+    "p05": NaN,
+    "p50": NaN,
+    "p95": NaN,
+    "mean": NaN,
+    "n": 64
+  },
+  "status": "pass"
+}

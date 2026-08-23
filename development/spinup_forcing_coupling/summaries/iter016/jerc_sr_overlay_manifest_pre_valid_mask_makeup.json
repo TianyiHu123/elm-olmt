@@ -1,0 +1,31 @@
+{
+  "schema": "spinup-forcing-coupling-ensemble-sr-overlay-v1",
+  "site": "JERC",
+  "series": [
+    {
+      "seed": 9010,
+      "rmse": 0.6674447996939864
+    },
+    {
+      "seed": 9011,
+      "rmse": 0.6665543503938129
+    },
+    {
+      "seed": 9012,
+      "rmse": 0.6674491189032512
+    },
+    {
+      "seed": 9014,
+      "rmse": 0.6674316826722946
+    },
+    {
+      "seed": 9015,
+      "rmse": 0.6677201220923831
+    },
+    {
+      "seed": 9017,
+      "rmse": 0.6666511585582968
+    }
+  ],
+  "plot": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/spinup_forcing_coupling/spinup_forcing_coupling_iter016/analysis/jerc/Predictions_SR_MAP_ensemble.png"
+}

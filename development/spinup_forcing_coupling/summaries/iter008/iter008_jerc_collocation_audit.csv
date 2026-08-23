@@ -1,0 +1,2 @@
+site,forcing_rows,obs_rows,overlap_rows,first_overlap_time,last_overlap_time,spinup_mode
+JERC,61320,52560,52560,2018-01-01 00:00:00,2023-12-31 23:00:00,coupled

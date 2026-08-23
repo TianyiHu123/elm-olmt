@@ -107,6 +107,26 @@ def log_posterior(parms, sites, myvars, pmin, pmax, obs, obs_err, nparms_ensembl
     return post
 
 
+def _mcmc_product_paths(self, outdir_name, output_root=None, site=None):
+    """Resolve MCMC product directories.
+
+    Legacy layout (output_root is None):
+      ./UQ_output/<casename>/<outdir_name>/...
+    Flat campaign layout (output_root set):
+      <output_root>/plots/... with predictions under plots/predictions/<site>/
+    """
+    if output_root is None:
+        base = os.path.join(".", "UQ_output", self.casename, outdir_name)
+        if site is None:
+            return base
+        case_dir = self.casename.replace(self.site, site)
+        return os.path.join(".", "UQ_output", case_dir, outdir_name)
+    root = os.path.abspath(output_root)
+    if site is None:
+        return root
+    return root
+
+
 def _mcmc_write_outputs(
     self,
     samples,
@@ -123,7 +143,10 @@ def _mcmc_write_outputs(
     outdir_name="MCMC_output",
     baseline_output=None,
     plot_best_fit=True,
-    olmtdir="/global/u1/t/tianyihu/elm-olmt", 
+    olmtdir="/global/u1/t/tianyihu/elm-olmt",
+    output_root=None,
+    predictive_cache=None,
+    predictive_samples=None,
     ):
     # Get summary statistics and best parameters
     n_model_parms = len(ensemble_parms) - nerr_parms
@@ -140,8 +163,9 @@ def _mcmc_write_outputs(
         print("Best-fit error parameters:")
         print(best_err_parms)
 
+    product_root = _mcmc_product_paths(self, outdir_name, output_root=output_root)
     # Plot histograms for each parameter
-    outdir = "./UQ_output/" + self.casename + "/" + outdir_name + "/plots/pdfs"
+    outdir = os.path.join(product_root, "plots", "pdfs")
     os.makedirs(outdir, exist_ok=True)
     for i in range(samples.shape[1]):
         plt.figure()
@@ -155,14 +179,19 @@ def _mcmc_write_outputs(
         # Tianyi Hu added to output samples
         np.savetxt(f"{outdir}/{ensemble_parms[i]}.txt", samples[:, i])
 
-    n_samples = samples.shape[0]
+    # Posterior summaries use all eligible samples, while expensive predictive
+    # products may use the deterministic Iter008 draw subset.
+    predictive_samples = samples if predictive_samples is None else np.asarray(predictive_samples)
+    n_samples = predictive_samples.shape[0]
     case_by_site = _resolve_cases_by_site(self, sites, olmtdir)
     if baseline_output is None:
         baseline_output = {}
+    if predictive_cache is None:
+        predictive_cache = {}
     for s in sites:
         output_dict = {v: [] for v in myvars}
         for i in range(n_samples):
-            parms_model = samples[i, :n_model_parms]
+            parms_model = predictive_samples[i, :n_model_parms]
             output = run_predict_fn[s](parms_model)
             for v in myvars:
                 output_dict[v].append(np.asarray(output[v]).flatten())
@@ -172,9 +201,18 @@ def _mcmc_write_outputs(
             output_dict[v] = np.array(output_dict[v])
 
         best_out = run_predict_fn[s](best_parms)
+        predictive_cache[s] = {
+            "posterior": output_dict,
+            "best": {v: np.asarray(best_out[v]).flatten() for v in myvars},
+            "median": {v: np.percentile(output_dict[v], 50, axis=0) for v in myvars},
+        }
 
         # Plot predictions with 95% confidence intervals
-        outdir_pred = "./UQ_output/" + self.casename.replace(self.site, s) + "/" + outdir_name + "/plots/predictions"
+        if output_root is None:
+            site_root = _mcmc_product_paths(self, outdir_name, output_root=None, site=s)
+            outdir_pred = os.path.join(site_root, "plots", "predictions")
+        else:
+            outdir_pred = os.path.join(product_root, "plots", "predictions", str(s))
         os.makedirs(outdir_pred, exist_ok=True)
         case_obj = case_by_site[s]
         site_baseline = baseline_output.get(s, {})
@@ -193,7 +231,7 @@ def _mcmc_write_outputs(
 
             plt.figure(figsize=(15,3))
             plt.fill_between(x, lower, upper, color="gray", alpha=0.3, label="95% CI")
-            plt.plot(x, median, color="red", linewidth=0.5, alpha=0.5, label="Model median")
+            plt.plot(x, median, color="red", linewidth=0.5, alpha=0.3, label="Model median")
             if plot_best_fit:
                 plt.plot(
                     x,
@@ -242,16 +280,16 @@ def _mcmc_write_outputs(
             r2 = np.corrcoef(x, y)[0, 1] ** 2
             ax = axes[i, j]
             ax.annotate(f"$R^2$={r2:.2f}", xy=(0.7, 0.9), xycoords="axes fraction", fontsize=11, color="blue")
-    outdir_corner = "./UQ_output/" + self.casename + "/" + outdir_name + "/plots/corner"
+    outdir_corner = os.path.join(product_root, "plots", "corner")
     os.makedirs(outdir_corner, exist_ok=True)
     fig.savefig(f"{outdir_corner}/corner_plot.png")
     plt.close(fig)
 
     # Write best parameters to ELM netCDF parameter file and text file
-    out_nc = "./UQ_output/" + self.casename + "/" + outdir_name + "/clm_params_best.nc"
+    out_nc = os.path.join(product_root, "clm_params_best.nc")
     write_best_params_to_clm(self, best_parms, labels_model, out_nc)
     # Also save best parameters in a simple text file
-    out_txt = "./UQ_output/" + self.casename + "/" + outdir_name + "/best_params.txt"
+    out_txt = os.path.join(product_root, "best_params.txt")
     with open(out_txt, "w") as f:
         for i, pname in enumerate(labels_model):
             f.write(f"{pname} {best_parms[i]}\n")
@@ -361,4 +399,3 @@ def write_best_params_to_clm(self, best_parms, labels_model, out_nc_path):
             else:
                 print(f"Warning: Parameter {pname} not found in NetCDF file.")
     print(f"Best-fit parameters written to {out_nc_path}")
-

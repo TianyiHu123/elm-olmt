@@ -1,0 +1,3 @@
+site,pool_rule,integrity_pass,label,mean_acceptance,max_cross_seed_normalized_wasserstein,control_mean_acceptance,control_max_cross_seed_normalized_wasserstein,acceptance_improved,wasserstein_improved,decision
+JERC,rank_dominated,False,geometry_gate_failed,,,0.18664013671875002,0.5484297360956368,False,False,geometry_gate_failed
+JERC,hybrid_high_l_maximin,True,fixed_length_inconclusive,0.189787109375,0.43647775846271103,0.18664013671875002,0.5484297360956368,True,True,partial_repair

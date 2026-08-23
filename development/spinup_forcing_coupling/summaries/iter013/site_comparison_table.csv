@@ -1,0 +1,3 @@
+site,geometry_class,selection_class,max_wasserstein_walkers,overlap_tim_to_iter012_walkers,overlap_tim_to_iter012_pool,mean_pairwise_tim_walkers,mean_pairwise_iter012_walkers,pool_top640_intersection_fraction,median_logp_diff_tim_minus_iter012_walkers
+ABBY,separated,diversity_dominated,0.4902082864809758,0.0,0.0,0.05023411997485374,1.8728770632212708,0.0,2215.608791984593
+JERC,separated,diversity_dominated,0.5404911208831203,0.0,0.0,0.0686816592294884,1.8184792350100876,0.0078125,31578.012743118234

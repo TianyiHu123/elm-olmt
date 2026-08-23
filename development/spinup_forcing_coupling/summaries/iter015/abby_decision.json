@@ -1,0 +1,14 @@
+{
+  "schema": "spinup-forcing-coupling-iter015-site-decision-v1",
+  "site": "ABBY",
+  "integrity_pass": true,
+  "interpretability_pass": true,
+  "eligible_configurations": [
+    "hourly_1.00"
+  ],
+  "decision": "inconclusive_seed_instability",
+  "unique_non_dominated": [
+    "daily_0.50"
+  ],
+  "selected_configuration": null
+}

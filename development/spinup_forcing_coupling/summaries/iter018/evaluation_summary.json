@@ -1,0 +1,77 @@
+{
+  "schema": "iter018-evaluation-summary-v2",
+  "decision": "operational_release_ready",
+  "sites": [
+    {
+      "site": "ABBY",
+      "retained_tier_a": 9,
+      "status": "all_tier_a",
+      "report_status": "pass"
+    },
+    {
+      "site": "JERC",
+      "retained_tier_a": 1,
+      "status": "partial_tier_a",
+      "report_status": "pass"
+    },
+    {
+      "site": "OSBS",
+      "retained_tier_a": 4,
+      "status": "partial_tier_a",
+      "report_status": "pass"
+    },
+    {
+      "site": "SOAP",
+      "retained_tier_a": 9,
+      "status": "all_tier_a",
+      "report_status": "pass"
+    },
+    {
+      "site": "RMNP",
+      "retained_tier_a": 8,
+      "status": "partial_tier_a",
+      "report_status": "pass"
+    },
+    {
+      "site": "TALL",
+      "retained_tier_a": 9,
+      "status": "all_tier_a",
+      "report_status": "pass"
+    },
+    {
+      "site": "TEAK",
+      "retained_tier_a": 2,
+      "status": "partial_tier_a",
+      "report_status": "pass"
+    },
+    {
+      "site": "WREF",
+      "retained_tier_a": 9,
+      "status": "all_tier_a",
+      "report_status": "pass"
+    },
+    {
+      "site": "YELL",
+      "retained_tier_a": 9,
+      "status": "all_tier_a",
+      "report_status": "pass"
+    }
+  ],
+  "makeup": {
+    "reports": [
+      "23652955",
+      "23652956",
+      "23652957",
+      "23652958",
+      "23652960",
+      "23652962",
+      "23652963",
+      "23652964",
+      "23652967"
+    ],
+    "aggregate": "23653056",
+    "handoff": "23653095",
+    "contract": "tier_a_only_best_params_corner_and_sr_map_ensemble",
+    "physical_corner": "tier_a_seed_colored_post_burn_iter016_style"
+  }
+}

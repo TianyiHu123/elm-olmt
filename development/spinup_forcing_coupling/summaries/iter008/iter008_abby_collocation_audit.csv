@@ -1,0 +1,2 @@
+site,forcing_rows,obs_rows,overlap_rows,first_overlap_time,last_overlap_time,spinup_mode
+ABBY,61320,26280,26280,2019-01-01 00:00:00,2021-12-31 23:00:00,coupled

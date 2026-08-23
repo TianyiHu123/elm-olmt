@@ -1,0 +1,7 @@
+array_index	leaf_id	site	mcmc_seed	uniform_init_seed	maximin_seed	arm	coordinates	initialization	move
+1	leaf_01_abby_seed9009	ABBY	9009	19009	29009	B	physical	uniform	stretch
+2	leaf_02_abby_seed9010	ABBY	9010	19010	29010	B	physical	uniform	stretch
+3	leaf_03_abby_seed9011	ABBY	9011	19011	29011	B	physical	uniform	stretch
+4	leaf_04_jerc_seed9009	JERC	9009	19009	29009	B	physical	uniform	stretch
+5	leaf_05_jerc_seed9010	JERC	9010	19010	29010	B	physical	uniform	stretch
+6	leaf_06_jerc_seed9011	JERC	9011	19011	29011	B	physical	uniform	stretch

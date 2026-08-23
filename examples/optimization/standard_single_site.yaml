@@ -1,0 +1,33 @@
+# Copy this file to the external run root and replace every ALL_CAPS value.
+# This YAML defines the shared scientific configuration, not Slurm array seeds.
+shared:
+  iteration_id: my_campaign
+  sites: [SITE_A]
+  cases: [SITE_A_CASE]
+  variables: [SR]
+  forcing_artifact: /path/to/forcing_surrogate.pkl
+  spinup_artifact: /path/to/spinup_surrogate.pkl
+  observations:
+    SITE_A: /path/to/SITE_A_observations.nc
+
+initialization:
+  mode: fresh
+  resolution: hourly
+  pool_rule: hybrid_high_l_maximin
+  high_l_quantile: 0.90
+  pool_size: 640
+  # This initializes the candidate search. It is not an MCMC leaf seed.
+  seed: 17017
+
+optimization:
+  likelihood_resolution: hourly
+  de_move_scale: 0.75
+  sampler_coordinates: transformed
+  move_configuration: de_mixture
+  nwalkers: 64
+  nsteps: 32000
+  checkpoint_interval: 2000
+
+reporting:
+  tier_a_acceptance_range: [0.20, 0.50]
+  copy_leaf_products: true

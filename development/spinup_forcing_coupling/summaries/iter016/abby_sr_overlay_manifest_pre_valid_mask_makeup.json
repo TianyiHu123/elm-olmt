@@ -1,0 +1,43 @@
+{
+  "schema": "spinup-forcing-coupling-ensemble-sr-overlay-v1",
+  "site": "ABBY",
+  "series": [
+    {
+      "seed": 9009,
+      "rmse": 4.72967040850279
+    },
+    {
+      "seed": 9010,
+      "rmse": 4.731932360267244
+    },
+    {
+      "seed": 9011,
+      "rmse": 4.732524112558368
+    },
+    {
+      "seed": 9012,
+      "rmse": 4.729697610105899
+    },
+    {
+      "seed": 9013,
+      "rmse": 4.728569418615042
+    },
+    {
+      "seed": 9014,
+      "rmse": 4.73334134560885
+    },
+    {
+      "seed": 9015,
+      "rmse": 4.728251711837664
+    },
+    {
+      "seed": 9016,
+      "rmse": 4.732868097735962
+    },
+    {
+      "seed": 9017,
+      "rmse": 4.730483768315967
+    }
+  ],
+  "plot": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/spinup_forcing_coupling/spinup_forcing_coupling_iter016/analysis/abby/Predictions_SR_MAP_ensemble.png"
+}

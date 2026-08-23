@@ -1,0 +1,84 @@
+{
+  "schema": "spinup-forcing-coupling-iter013-aggregate-v1",
+  "sites": {
+    "ABBY": {
+      "geometry_class": "separated",
+      "selection_class": "diversity_dominated",
+      "classification": {
+        "schema": "spinup-forcing-coupling-iter013-classification-v1",
+        "site": "ABBY",
+        "geometry_class": "separated",
+        "selection_class": "diversity_dominated",
+        "geometry_inputs": {
+          "max_per_parameter_wasserstein_walkers": 0.4902082864809758,
+          "overlap_tim_walkers_to_iter012_walkers": 0.0,
+          "overlap_tim_walkers_to_iter012_pool": 0.0,
+          "mean_pairwise_distance_tim_walkers": 0.05023411997485374,
+          "mean_pairwise_distance_iter012_walkers": 1.8728770632212708
+        },
+        "selection_inputs": {
+          "pool_intersection_fraction_of_actual_640": 0.0,
+          "walker_intersection_fractions": {
+            "9009": 0.0,
+            "9010": 0.0,
+            "9011": 0.0
+          }
+        },
+        "status": "pass"
+      },
+      "geometry_summary": {
+        "max_wasserstein_walkers": 0.4902082864809758,
+        "overlap_tim_to_iter012_walkers": 0.0,
+        "overlap_tim_to_iter012_pool": 0.0
+      },
+      "topk_summary": {
+        "count_a": 640.0,
+        "count_b": 640.0,
+        "intersection_count": 0.0,
+        "intersection_fraction_of_a": 0.0
+      },
+      "common_target_median_diff": 2215.608791984593
+    },
+    "JERC": {
+      "geometry_class": "separated",
+      "selection_class": "diversity_dominated",
+      "classification": {
+        "schema": "spinup-forcing-coupling-iter013-classification-v1",
+        "site": "JERC",
+        "geometry_class": "separated",
+        "selection_class": "diversity_dominated",
+        "geometry_inputs": {
+          "max_per_parameter_wasserstein_walkers": 0.5404911208831203,
+          "overlap_tim_walkers_to_iter012_walkers": 0.0,
+          "overlap_tim_walkers_to_iter012_pool": 0.0,
+          "mean_pairwise_distance_tim_walkers": 0.0686816592294884,
+          "mean_pairwise_distance_iter012_walkers": 1.8184792350100876
+        },
+        "selection_inputs": {
+          "pool_intersection_fraction_of_actual_640": 0.0078125,
+          "walker_intersection_fractions": {
+            "9009": 0.0,
+            "9010": 0.0,
+            "9011": 0.0
+          }
+        },
+        "status": "pass"
+      },
+      "geometry_summary": {
+        "max_wasserstein_walkers": 0.5404911208831203,
+        "overlap_tim_to_iter012_walkers": 0.0,
+        "overlap_tim_to_iter012_pool": 0.0
+      },
+      "topk_summary": {
+        "count_a": 640.0,
+        "count_b": 640.0,
+        "intersection_count": 5.0,
+        "intersection_fraction_of_a": 0.0078125
+      },
+      "common_target_median_diff": 31578.012743118234
+    }
+  },
+  "accounting_path": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/spinup_forcing_coupling/spinup_forcing_coupling_iter013/accounting.csv",
+  "status": "pass",
+  "decision": "ABBY separated/diversity_dominated; JERC separated/diversity_dominated"
+}

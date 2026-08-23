@@ -1,0 +1,10 @@
+site,retained_tier_a,status,report_status
+ABBY,9,all_tier_a,pass
+JERC,1,partial_tier_a,pass
+OSBS,4,partial_tier_a,pass
+SOAP,9,all_tier_a,pass
+RMNP,8,partial_tier_a,pass
+TALL,9,all_tier_a,pass
+TEAK,2,partial_tier_a,pass
+WREF,9,all_tier_a,pass
+YELL,9,all_tier_a,pass

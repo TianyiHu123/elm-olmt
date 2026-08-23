@@ -36,12 +36,13 @@ def train_singlecase_surrogate_with_forcing(
     minimal_output: bool = False,
     stats_run_id: Optional[str] = None,
     reuse_x_memmap_path: Optional[Union[str, Path]] = None,
+    permutation_repeats: int = 8,
 ) -> Optional[Dict[str, Any]]:
     """
     Train MLP surrogates mapping [engineered forcing | parameters | spinup] to hourly outputs.
 
     Saves plots and ``surrogate_forcing_artifacts.pkl`` under
-    ``<outputdir>/UQ_output/<run_name-or-casename>/surrogate_forcing/`` unless
+    ``<outputdir>/<run_name-or-casename>/surrogate_forcing/`` unless
     ``minimal_output`` is True (then writes ``surrogate_forcing_stats_*.json`` only).
     Populates ``self.surrogate_forcing``, ``self.x_scaler_forcing``, ``self.y_scaler_forcing``,
     and ``self.forcing_surrogate_training`` when not ``minimal_output``.
@@ -123,4 +124,5 @@ def train_singlecase_surrogate_with_forcing(
         minimal_output=minimal_output,
         stats_run_id=stats_run_id,
         reuse_x_memmap_path=reuse_x_memmap_path,
+        permutation_repeats=permutation_repeats,
     )

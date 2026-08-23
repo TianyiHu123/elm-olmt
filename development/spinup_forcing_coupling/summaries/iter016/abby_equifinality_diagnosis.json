@@ -1,0 +1,279 @@
+{
+  "schema": "spinup-forcing-coupling-ensemble-equifinality-diagnostics-v1",
+  "site": "ABBY",
+  "retained_tier_a_seeds": [
+    9009,
+    9010,
+    9011,
+    9012,
+    9013,
+    9014,
+    9015,
+    9016,
+    9017
+  ],
+  "map_sr_rmse_spread": 0.005089633771186541,
+  "max_pairwise_map_wasserstein": 0.14474381934043154,
+  "max_pairwise_decomposition_wasserstein": 0.15504772962629182,
+  "map_label": "equifinal_candidate",
+  "cloud_confirmation": "equifinal_candidate",
+  "thresholds": {
+    "map_w_converged": 0.05,
+    "sr_rmse_equivalence": 0.01,
+    "decomposition_w_equifinal": 0.05
+  },
+  "cloud_pairs": [
+    {
+      "site": "ABBY",
+      "seed_left": 9009,
+      "seed_right": 9010,
+      "cloud_wasserstein_full": 0.004038499161151716,
+      "between_within_ratio": 0.05180119738842266
+    },
+    {
+      "site": "ABBY",
+      "seed_left": 9009,
+      "seed_right": 9011,
+      "cloud_wasserstein_full": 0.010065151575105758,
+      "between_within_ratio": 0.1291041257360953
+    },
+    {
+      "site": "ABBY",
+      "seed_left": 9009,
+      "seed_right": 9012,
+      "cloud_wasserstein_full": 0.008871570176009747,
+      "between_within_ratio": 0.1137942437263416
+    },
+    {
+      "site": "ABBY",
+      "seed_left": 9009,
+      "seed_right": 9013,
+      "cloud_wasserstein_full": 0.0055561791240046395,
+      "between_within_ratio": 0.0712682410081068
+    },
+    {
+      "site": "ABBY",
+      "seed_left": 9009,
+      "seed_right": 9014,
+      "cloud_wasserstein_full": 0.008014249952457721,
+      "between_within_ratio": 0.10279753124649053
+    },
+    {
+      "site": "ABBY",
+      "seed_left": 9009,
+      "seed_right": 9015,
+      "cloud_wasserstein_full": 0.006171078480326973,
+      "between_within_ratio": 0.07915545892244293
+    },
+    {
+      "site": "ABBY",
+      "seed_left": 9009,
+      "seed_right": 9016,
+      "cloud_wasserstein_full": 0.0060860880843789196,
+      "between_within_ratio": 0.07806530040044146
+    },
+    {
+      "site": "ABBY",
+      "seed_left": 9009,
+      "seed_right": 9017,
+      "cloud_wasserstein_full": 0.004145875146682742,
+      "between_within_ratio": 0.053178492368393095
+    },
+    {
+      "site": "ABBY",
+      "seed_left": 9010,
+      "seed_right": 9011,
+      "cloud_wasserstein_full": 0.010469749101177102,
+      "between_within_ratio": 0.1342938349509691
+    },
+    {
+      "site": "ABBY",
+      "seed_left": 9010,
+      "seed_right": 9012,
+      "cloud_wasserstein_full": 0.009552962653420654,
+      "between_within_ratio": 0.1225343585097956
+    },
+    {
+      "site": "ABBY",
+      "seed_left": 9010,
+      "seed_right": 9013,
+      "cloud_wasserstein_full": 0.005582849032121612,
+      "between_within_ratio": 0.07161033175012997
+    },
+    {
+      "site": "ABBY",
+      "seed_left": 9010,
+      "seed_right": 9014,
+      "cloud_wasserstein_full": 0.006486616557963192,
+      "between_within_ratio": 0.08320281651519176
+    },
+    {
+      "site": "ABBY",
+      "seed_left": 9010,
+      "seed_right": 9015,
+      "cloud_wasserstein_full": 0.007037359662120163,
+      "between_within_ratio": 0.09026711221275774
+    },
+    {
+      "site": "ABBY",
+      "seed_left": 9010,
+      "seed_right": 9016,
+      "cloud_wasserstein_full": 0.0046857391161925525,
+      "between_within_ratio": 0.060103243106610346
+    },
+    {
+      "site": "ABBY",
+      "seed_left": 9010,
+      "seed_right": 9017,
+      "cloud_wasserstein_full": 0.004207688796286474,
+      "between_within_ratio": 0.053971366388331866
+    },
+    {
+      "site": "ABBY",
+      "seed_left": 9011,
+      "seed_right": 9012,
+      "cloud_wasserstein_full": 0.007207688193221419,
+      "between_within_ratio": 0.09245188965318192
+    },
+    {
+      "site": "ABBY",
+      "seed_left": 9011,
+      "seed_right": 9013,
+      "cloud_wasserstein_full": 0.0072391187415916745,
+      "between_within_ratio": 0.09285504438348764
+    },
+    {
+      "site": "ABBY",
+      "seed_left": 9011,
+      "seed_right": 9014,
+      "cloud_wasserstein_full": 0.015650037420046788,
+      "between_within_ratio": 0.20074058336583842
+    },
+    {
+      "site": "ABBY",
+      "seed_left": 9011,
+      "seed_right": 9015,
+      "cloud_wasserstein_full": 0.008222109241559606,
+      "between_within_ratio": 0.10546370985248367
+    },
+    {
+      "site": "ABBY",
+      "seed_left": 9011,
+      "seed_right": 9016,
+      "cloud_wasserstein_full": 0.012271279083838975,
+      "between_within_ratio": 0.15740177839954855
+    },
+    {
+      "site": "ABBY",
+      "seed_left": 9011,
+      "seed_right": 9017,
+      "cloud_wasserstein_full": 0.010809345673505348,
+      "between_within_ratio": 0.1386497870939901
+    },
+    {
+      "site": "ABBY",
+      "seed_left": 9012,
+      "seed_right": 9013,
+      "cloud_wasserstein_full": 0.007523648686817171,
+      "between_within_ratio": 0.09650466550940603
+    },
+    {
+      "site": "ABBY",
+      "seed_left": 9012,
+      "seed_right": 9014,
+      "cloud_wasserstein_full": 0.012250903027845693,
+      "between_within_ratio": 0.15714041791477765
+    },
+    {
+      "site": "ABBY",
+      "seed_left": 9012,
+      "seed_right": 9015,
+      "cloud_wasserstein_full": 0.004217054339599264,
+      "between_within_ratio": 0.05409149674825927
+    },
+    {
+      "site": "ABBY",
+      "seed_left": 9012,
+      "seed_right": 9016,
+      "cloud_wasserstein_full": 0.011694865954807211,
+      "between_within_ratio": 0.15000821730599184
+    },
+    {
+      "site": "ABBY",
+      "seed_left": 9012,
+      "seed_right": 9017,
+      "cloud_wasserstein_full": 0.007651160954795422,
+      "between_within_ratio": 0.0981402454363567
+    },
+    {
+      "site": "ABBY",
+      "seed_left": 9013,
+      "seed_right": 9014,
+      "cloud_wasserstein_full": 0.010515341972246703,
+      "between_within_ratio": 0.1348786475804975
+    },
+    {
+      "site": "ABBY",
+      "seed_left": 9013,
+      "seed_right": 9015,
+      "cloud_wasserstein_full": 0.0054737423672237655,
+      "between_within_ratio": 0.07021083761648406
+    },
+    {
+      "site": "ABBY",
+      "seed_left": 9013,
+      "seed_right": 9016,
+      "cloud_wasserstein_full": 0.007568117288701267,
+      "between_within_ratio": 0.09707505731385259
+    },
+    {
+      "site": "ABBY",
+      "seed_left": 9013,
+      "seed_right": 9017,
+      "cloud_wasserstein_full": 0.006848602346666566,
+      "between_within_ratio": 0.0878459516364777
+    },
+    {
+      "site": "ABBY",
+      "seed_left": 9014,
+      "seed_right": 9015,
+      "cloud_wasserstein_full": 0.009922019479902434,
+      "between_within_ratio": 0.1272681927272269
+    },
+    {
+      "site": "ABBY",
+      "seed_left": 9014,
+      "seed_right": 9016,
+      "cloud_wasserstein_full": 0.008631249661731611,
+      "between_within_ratio": 0.11071169005978128
+    },
+    {
+      "site": "ABBY",
+      "seed_left": 9014,
+      "seed_right": 9017,
+      "cloud_wasserstein_full": 0.008043531105644123,
+      "between_within_ratio": 0.10317311602079487
+    },
+    {
+      "site": "ABBY",
+      "seed_left": 9015,
+      "seed_right": 9016,
+      "cloud_wasserstein_full": 0.010184725334155872,
+      "between_within_ratio": 0.13063787965007762
+    },
+    {
+      "site": "ABBY",
+      "seed_left": 9015,
+      "seed_right": 9017,
+      "cloud_wasserstein_full": 0.0062323103495634065,
+      "between_within_ratio": 0.07994087053656197
+    },
+    {
+      "site": "ABBY",
+      "seed_left": 9016,
+      "seed_right": 9017,
+      "cloud_wasserstein_full": 0.005715158240440648,
+      "between_within_ratio": 0.07330744128091064
+    }
+  ]
+}

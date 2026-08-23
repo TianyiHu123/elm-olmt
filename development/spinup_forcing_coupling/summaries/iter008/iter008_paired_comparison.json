@@ -1,0 +1,6742 @@
+{
+  "schema": "spinup-forcing-coupling-iter008-paired-comparison-v1",
+  "sites": {
+    "ABBY": {
+      "site": "ABBY",
+      "path": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/spinup_forcing_coupling/spinup_forcing_coupling_iter008_abby_campaign",
+      "metadata": {
+        "schema": "spinup-forcing-coupling-iter008-raw-chain-v1",
+        "chain_shape": [
+          4000,
+          64,
+          15
+        ],
+        "log_prob_shape": [
+          4000,
+          64
+        ],
+        "initial_state_shape": [
+          64,
+          15
+        ],
+        "parameter_names": [
+          "k_l1",
+          "k_l2",
+          "k_l3",
+          "k_s1",
+          "k_s2",
+          "k_s3",
+          "k_s4",
+          "k_frag",
+          "rf_l1s1",
+          "rf_l2s2",
+          "rf_l3s3",
+          "rf_s1s2",
+          "rf_s2s3",
+          "rf_s3s4",
+          "sigma_SR"
+        ],
+        "pmin": [
+          0.2,
+          0.01,
+          0.003,
+          0.01,
+          0.003,
+          0.0003,
+          2e-05,
+          0.0002,
+          0.1,
+          0.1,
+          0.1,
+          0.1,
+          0.1,
+          0.1,
+          0.0
+        ],
+        "pmax": [
+          3.6,
+          0.15,
+          0.03,
+          0.2,
+          0.03,
+          0.003,
+          0.0002,
+          0.002,
+          0.9,
+          0.9,
+          0.9,
+          0.9,
+          0.9,
+          0.9,
+          3.678561543741014
+        ],
+        "seed": 8008,
+        "sites": [
+          "ABBY"
+        ],
+        "nwalkers": 64,
+        "nsteps": 4000,
+        "provenance": {
+          "ITERATION_ID": "iter008",
+          "SITE_NAME": "ABBY",
+          "CASE_NAME": "ABBY_ppe6_I20TRCNPRDCTCBC",
+          "OBS_PATH": "/xdisk/chopinsong/chopinsong/CTSM_inputdata/lnd/clm2/neon_ncar/NEON/eval_files/v4/ABBY/ABBY_cdo_merge.nc",
+          "OBS_PATH_sha256": "e5f7b6795616e3dbb2f24ef351d84f79da29847e82729db09d8756b3d9a1fdb2",
+          "FORCING_ARTIFACT": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/spinup_forcing_coupling/spinup_forcing_coupling_iter002_release/surrogate_forcing/forcing_surrogate_iter002_sr.pkl",
+          "FORCING_ARTIFACT_sha256": "8d139b32473eebe3f75f77042e542f49ec3c80e89bc65c76b2e98a5c70f4553e",
+          "SPINUP_ARTIFACT": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/UQ_output/spinup_surrogate_iter012_drop21_corr080/surrogate_spinup/spinup_surrogate_iter012_drop21_corr080.pkl",
+          "SPINUP_ARTIFACT_sha256": "1427dc565af858e9c089a5b9545a7f127e42789ef1fe5c9af3af7f8cb12a3023",
+          "SPINUP_MODE": "coupled",
+          "COUPLED_VARIANT": "drop21_corr080",
+          "N_WALKERS": "64",
+          "N_STEPS": "4000",
+          "N_PROCESSES": "16",
+          "SEED": "8008",
+          "SOURCE_MANIFEST": "/xdisk/chopinsong/tianyihu/elm-olmt/development/spinup_forcing_coupling/slurm/iter008/iter008_source_manifest.sha256",
+          "SOURCE_MANIFEST_sha256": "bdcf27bfd70934576669beb4dbd6352e444ebc0ae40ee4ee20ba11b8d00dbb0c",
+          "CASE_HASH_MANIFEST": "/xdisk/chopinsong/tianyihu/elm-olmt/development/spinup_forcing_coupling/slurm/iter008/iter008_case_pickles.sha256",
+          "CASE_HASH_MANIFEST_sha256": "ee623509b954b3c4c9fd14757d3c22bbaca9385d2e5d2a78895f9c5e699956ef",
+          "ARTIFACT_HASH_MANIFEST": "/xdisk/chopinsong/tianyihu/elm-olmt/development/spinup_forcing_coupling/slurm/iter008/iter008_artifacts.sha256",
+          "ARTIFACT_HASH_MANIFEST_sha256": "69bd9429e3011c98288cb784eac97d3fb434575aa7928ae01df85f4ea3623110",
+          "SUBMISSION_CONFIG": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/spinup_forcing_coupling/spinup_forcing_coupling_iter008_abby_campaign/submission_config_abby.env",
+          "SUBMISSION_CONFIG_sha256": "7a1c54a14ab17ce000b199672f3b9171787863409acea3331e812344636ac9f1",
+          "MICROMAMBA_ENV": "OLMT_puma",
+          "MICROMAMBA_MODULE": "micromamba/2.0.2-2"
+        },
+        "raw_chain_sha256": "5eef997b62fadc8d41505627fdfd11fa86b409573da6192383476a0aa78b5d87"
+      },
+      "health": {
+        "nwalkers": 64,
+        "nsteps": 4000,
+        "mean_acceptance_fraction": 0.17846875,
+        "min_acceptance_fraction": 0.025,
+        "max_acceptance_fraction": 0.25225,
+        "flat_samples": 384,
+        "n_model_parms": 14,
+        "nerr_parms": 1,
+        "mean_autocorr_time": 356.7929209777713,
+        "max_autocorr_time": 508.82407114201413,
+        "approx_ess": 1.0762545370790126
+      },
+      "selection": {
+        "schema": "spinup-forcing-coupling-iter008-selection-v1",
+        "raw_chain_sha256": "5eef997b62fadc8d41505627fdfd11fa86b409573da6192383476a0aa78b5d87",
+        "discard": 2545,
+        "thin": 255,
+        "tau_available": true,
+        "tau_max": 508.82407114201413,
+        "eligible_draws": 384,
+        "predictive_draws": 384,
+        "per_walker": [
+          {
+            "walker": 0,
+            "eligible": 6,
+            "selected": 6
+          },
+          {
+            "walker": 1,
+            "eligible": 6,
+            "selected": 6
+          },
+          {
+            "walker": 2,
+            "eligible": 6,
+            "selected": 6
+          },
+          {
+            "walker": 3,
+            "eligible": 6,
+            "selected": 6
+          },
+          {
+            "walker": 4,
+            "eligible": 6,
+            "selected": 6
+          },
+          {
+            "walker": 5,
+            "eligible": 6,
+            "selected": 6
+          },
+          {
+            "walker": 6,
+            "eligible": 6,
+            "selected": 6
+          },
+          {
+            "walker": 7,
+            "eligible": 6,
+            "selected": 6
+          },
+          {
+            "walker": 8,
+            "eligible": 6,
+            "selected": 6
+          },
+          {
+            "walker": 9,
+            "eligible": 6,
+            "selected": 6
+          },
+          {
+            "walker": 10,
+            "eligible": 6,
+            "selected": 6
+          },
+          {
+            "walker": 11,
+            "eligible": 6,
+            "selected": 6
+          },
+          {
+            "walker": 12,
+            "eligible": 6,
+            "selected": 6
+          },
+          {
+            "walker": 13,
+            "eligible": 6,
+            "selected": 6
+          },
+          {
+            "walker": 14,
+            "eligible": 6,
+            "selected": 6
+          },
+          {
+            "walker": 15,
+            "eligible": 6,
+            "selected": 6
+          },
+          {
+            "walker": 16,
+            "eligible": 6,
+            "selected": 6
+          },
+          {
+            "walker": 17,
+            "eligible": 6,
+            "selected": 6
+          },
+          {
+            "walker": 18,
+            "eligible": 6,
+            "selected": 6
+          },
+          {
+            "walker": 19,
+            "eligible": 6,
+            "selected": 6
+          },
+          {
+            "walker": 20,
+            "eligible": 6,
+            "selected": 6
+          },
+          {
+            "walker": 21,
+            "eligible": 6,
+            "selected": 6
+          },
+          {
+            "walker": 22,
+            "eligible": 6,
+            "selected": 6
+          },
+          {
+            "walker": 23,
+            "eligible": 6,
+            "selected": 6
+          },
+          {
+            "walker": 24,
+            "eligible": 6,
+            "selected": 6
+          },
+          {
+            "walker": 25,
+            "eligible": 6,
+            "selected": 6
+          },
+          {
+            "walker": 26,
+            "eligible": 6,
+            "selected": 6
+          },
+          {
+            "walker": 27,
+            "eligible": 6,
+            "selected": 6
+          },
+          {
+            "walker": 28,
+            "eligible": 6,
+            "selected": 6
+          },
+          {
+            "walker": 29,
+            "eligible": 6,
+            "selected": 6
+          },
+          {
+            "walker": 30,
+            "eligible": 6,
+            "selected": 6
+          },
+          {
+            "walker": 31,
+            "eligible": 6,
+            "selected": 6
+          },
+          {
+            "walker": 32,
+            "eligible": 6,
+            "selected": 6
+          },
+          {
+            "walker": 33,
+            "eligible": 6,
+            "selected": 6
+          },
+          {
+            "walker": 34,
+            "eligible": 6,
+            "selected": 6
+          },
+          {
+            "walker": 35,
+            "eligible": 6,
+            "selected": 6
+          },
+          {
+            "walker": 36,
+            "eligible": 6,
+            "selected": 6
+          },
+          {
+            "walker": 37,
+            "eligible": 6,
+            "selected": 6
+          },
+          {
+            "walker": 38,
+            "eligible": 6,
+            "selected": 6
+          },
+          {
+            "walker": 39,
+            "eligible": 6,
+            "selected": 6
+          },
+          {
+            "walker": 40,
+            "eligible": 6,
+            "selected": 6
+          },
+          {
+            "walker": 41,
+            "eligible": 6,
+            "selected": 6
+          },
+          {
+            "walker": 42,
+            "eligible": 6,
+            "selected": 6
+          },
+          {
+            "walker": 43,
+            "eligible": 6,
+            "selected": 6
+          },
+          {
+            "walker": 44,
+            "eligible": 6,
+            "selected": 6
+          },
+          {
+            "walker": 45,
+            "eligible": 6,
+            "selected": 6
+          },
+          {
+            "walker": 46,
+            "eligible": 6,
+            "selected": 6
+          },
+          {
+            "walker": 47,
+            "eligible": 6,
+            "selected": 6
+          },
+          {
+            "walker": 48,
+            "eligible": 6,
+            "selected": 6
+          },
+          {
+            "walker": 49,
+            "eligible": 6,
+            "selected": 6
+          },
+          {
+            "walker": 50,
+            "eligible": 6,
+            "selected": 6
+          },
+          {
+            "walker": 51,
+            "eligible": 6,
+            "selected": 6
+          },
+          {
+            "walker": 52,
+            "eligible": 6,
+            "selected": 6
+          },
+          {
+            "walker": 53,
+            "eligible": 6,
+            "selected": 6
+          },
+          {
+            "walker": 54,
+            "eligible": 6,
+            "selected": 6
+          },
+          {
+            "walker": 55,
+            "eligible": 6,
+            "selected": 6
+          },
+          {
+            "walker": 56,
+            "eligible": 6,
+            "selected": 6
+          },
+          {
+            "walker": 57,
+            "eligible": 6,
+            "selected": 6
+          },
+          {
+            "walker": 58,
+            "eligible": 6,
+            "selected": 6
+          },
+          {
+            "walker": 59,
+            "eligible": 6,
+            "selected": 6
+          },
+          {
+            "walker": 60,
+            "eligible": 6,
+            "selected": 6
+          },
+          {
+            "walker": 61,
+            "eligible": 6,
+            "selected": 6
+          },
+          {
+            "walker": 62,
+            "eligible": 6,
+            "selected": 6
+          },
+          {
+            "walker": 63,
+            "eligible": 6,
+            "selected": 6
+          }
+        ],
+        "ledger": [
+          {
+            "selected_draw_rank": 0,
+            "walker": 0,
+            "raw_step": 2545,
+            "eligible_step": 0,
+            "log_probability": -87889.47751051058
+          },
+          {
+            "selected_draw_rank": 1,
+            "walker": 1,
+            "raw_step": 2545,
+            "eligible_step": 0,
+            "log_probability": -82055.37754228411
+          },
+          {
+            "selected_draw_rank": 2,
+            "walker": 2,
+            "raw_step": 2545,
+            "eligible_step": 0,
+            "log_probability": -81996.74933897879
+          },
+          {
+            "selected_draw_rank": 3,
+            "walker": 3,
+            "raw_step": 2545,
+            "eligible_step": 0,
+            "log_probability": -82017.40416403189
+          },
+          {
+            "selected_draw_rank": 4,
+            "walker": 4,
+            "raw_step": 2545,
+            "eligible_step": 0,
+            "log_probability": -82022.94359096888
+          },
+          {
+            "selected_draw_rank": 5,
+            "walker": 5,
+            "raw_step": 2545,
+            "eligible_step": 0,
+            "log_probability": -82047.29100392526
+          },
+          {
+            "selected_draw_rank": 6,
+            "walker": 6,
+            "raw_step": 2545,
+            "eligible_step": 0,
+            "log_probability": -82045.33155972768
+          },
+          {
+            "selected_draw_rank": 7,
+            "walker": 7,
+            "raw_step": 2545,
+            "eligible_step": 0,
+            "log_probability": -87899.42574895342
+          },
+          {
+            "selected_draw_rank": 8,
+            "walker": 8,
+            "raw_step": 2545,
+            "eligible_step": 0,
+            "log_probability": -87890.92855430461
+          },
+          {
+            "selected_draw_rank": 9,
+            "walker": 9,
+            "raw_step": 2545,
+            "eligible_step": 0,
+            "log_probability": -82042.8404882353
+          },
+          {
+            "selected_draw_rank": 10,
+            "walker": 10,
+            "raw_step": 2545,
+            "eligible_step": 0,
+            "log_probability": -87900.53672245059
+          },
+          {
+            "selected_draw_rank": 11,
+            "walker": 11,
+            "raw_step": 2545,
+            "eligible_step": 0,
+            "log_probability": -82045.33822709837
+          },
+          {
+            "selected_draw_rank": 12,
+            "walker": 12,
+            "raw_step": 2545,
+            "eligible_step": 0,
+            "log_probability": -92027.49351530692
+          },
+          {
+            "selected_draw_rank": 13,
+            "walker": 13,
+            "raw_step": 2545,
+            "eligible_step": 0,
+            "log_probability": -82039.09434562598
+          },
+          {
+            "selected_draw_rank": 14,
+            "walker": 14,
+            "raw_step": 2545,
+            "eligible_step": 0,
+            "log_probability": -87907.5623087862
+          },
+          {
+            "selected_draw_rank": 15,
+            "walker": 15,
+            "raw_step": 2545,
+            "eligible_step": 0,
+            "log_probability": -82029.57750739218
+          },
+          {
+            "selected_draw_rank": 16,
+            "walker": 16,
+            "raw_step": 2545,
+            "eligible_step": 0,
+            "log_probability": -82059.41424619584
+          },
+          {
+            "selected_draw_rank": 17,
+            "walker": 17,
+            "raw_step": 2545,
+            "eligible_step": 0,
+            "log_probability": -82000.41195964147
+          },
+          {
+            "selected_draw_rank": 18,
+            "walker": 18,
+            "raw_step": 2545,
+            "eligible_step": 0,
+            "log_probability": -82011.73130285418
+          },
+          {
+            "selected_draw_rank": 19,
+            "walker": 19,
+            "raw_step": 2545,
+            "eligible_step": 0,
+            "log_probability": -87905.2012049211
+          },
+          {
+            "selected_draw_rank": 20,
+            "walker": 20,
+            "raw_step": 2545,
+            "eligible_step": 0,
+            "log_probability": -82046.21878521386
+          },
+          {
+            "selected_draw_rank": 21,
+            "walker": 21,
+            "raw_step": 2545,
+            "eligible_step": 0,
+            "log_probability": -82040.92866458354
+          },
+          {
+            "selected_draw_rank": 22,
+            "walker": 22,
+            "raw_step": 2545,
+            "eligible_step": 0,
+            "log_probability": -82050.80943279296
+          },
+          {
+            "selected_draw_rank": 23,
+            "walker": 23,
+            "raw_step": 2545,
+            "eligible_step": 0,
+            "log_probability": -82036.92679482198
+          },
+          {
+            "selected_draw_rank": 24,
+            "walker": 24,
+            "raw_step": 2545,
+            "eligible_step": 0,
+            "log_probability": -92017.08323806508
+          },
+          {
+            "selected_draw_rank": 25,
+            "walker": 25,
+            "raw_step": 2545,
+            "eligible_step": 0,
+            "log_probability": -81989.80765182147
+          },
+          {
+            "selected_draw_rank": 26,
+            "walker": 26,
+            "raw_step": 2545,
+            "eligible_step": 0,
+            "log_probability": -87898.10083814243
+          },
+          {
+            "selected_draw_rank": 27,
+            "walker": 27,
+            "raw_step": 2545,
+            "eligible_step": 0,
+            "log_probability": -87910.19204685616
+          },
+          {
+            "selected_draw_rank": 28,
+            "walker": 28,
+            "raw_step": 2545,
+            "eligible_step": 0,
+            "log_probability": -82030.57622295231
+          },
+          {
+            "selected_draw_rank": 29,
+            "walker": 29,
+            "raw_step": 2545,
+            "eligible_step": 0,
+            "log_probability": -82029.7937353714
+          },
+          {
+            "selected_draw_rank": 30,
+            "walker": 30,
+            "raw_step": 2545,
+            "eligible_step": 0,
+            "log_probability": -82022.86397019018
+          },
+          {
+            "selected_draw_rank": 31,
+            "walker": 31,
+            "raw_step": 2545,
+            "eligible_step": 0,
+            "log_probability": -82018.71870051466
+          },
+          {
+            "selected_draw_rank": 32,
+            "walker": 32,
+            "raw_step": 2545,
+            "eligible_step": 0,
+            "log_probability": -82004.9451399401
+          },
+          {
+            "selected_draw_rank": 33,
+            "walker": 33,
+            "raw_step": 2545,
+            "eligible_step": 0,
+            "log_probability": -82049.02493833934
+          },
+          {
+            "selected_draw_rank": 34,
+            "walker": 34,
+            "raw_step": 2545,
+            "eligible_step": 0,
+            "log_probability": -92026.52652868337
+          },
+          {
+            "selected_draw_rank": 35,
+            "walker": 35,
+            "raw_step": 2545,
+            "eligible_step": 0,
+            "log_probability": -82053.89162900596
+          },
+          {
+            "selected_draw_rank": 36,
+            "walker": 36,
+            "raw_step": 2545,
+            "eligible_step": 0,
+            "log_probability": -87897.71419020386
+          },
+          {
+            "selected_draw_rank": 37,
+            "walker": 37,
+            "raw_step": 2545,
+            "eligible_step": 0,
+            "log_probability": -87894.37793524153
+          },
+          {
+            "selected_draw_rank": 38,
+            "walker": 38,
+            "raw_step": 2545,
+            "eligible_step": 0,
+            "log_probability": -81972.03311170627
+          },
+          {
+            "selected_draw_rank": 39,
+            "walker": 39,
+            "raw_step": 2545,
+            "eligible_step": 0,
+            "log_probability": -82044.85798845551
+          },
+          {
+            "selected_draw_rank": 40,
+            "walker": 40,
+            "raw_step": 2545,
+            "eligible_step": 0,
+            "log_probability": -82023.60680978866
+          },
+          {
+            "selected_draw_rank": 41,
+            "walker": 41,
+            "raw_step": 2545,
+            "eligible_step": 0,
+            "log_probability": -87896.04574317695
+          },
+          {
+            "selected_draw_rank": 42,
+            "walker": 42,
+            "raw_step": 2545,
+            "eligible_step": 0,
+            "log_probability": -82004.69817091132
+          },
+          {
+            "selected_draw_rank": 43,
+            "walker": 43,
+            "raw_step": 2545,
+            "eligible_step": 0,
+            "log_probability": -81954.52756639596
+          },
+          {
+            "selected_draw_rank": 44,
+            "walker": 44,
+            "raw_step": 2545,
+            "eligible_step": 0,
+            "log_probability": -82037.92103051227
+          },
+          {
+            "selected_draw_rank": 45,
+            "walker": 45,
+            "raw_step": 2545,
+            "eligible_step": 0,
+            "log_probability": -81970.6849503452
+          },
+          {
+            "selected_draw_rank": 46,
+            "walker": 46,
+            "raw_step": 2545,
+            "eligible_step": 0,
+            "log_probability": -82010.62860877096
+          },
+          {
+            "selected_draw_rank": 47,
+            "walker": 47,
+            "raw_step": 2545,
+            "eligible_step": 0,
+            "log_probability": -81957.72865875546
+          },
+          {
+            "selected_draw_rank": 48,
+            "walker": 48,
+            "raw_step": 2545,
+            "eligible_step": 0,
+            "log_probability": -82051.00177805868
+          },
+          {
+            "selected_draw_rank": 49,
+            "walker": 49,
+            "raw_step": 2545,
+            "eligible_step": 0,
+            "log_probability": -82042.01812658043
+          },
+          {
+            "selected_draw_rank": 50,
+            "walker": 50,
+            "raw_step": 2545,
+            "eligible_step": 0,
+            "log_probability": -87896.51927404899
+          },
+          {
+            "selected_draw_rank": 51,
+            "walker": 51,
+            "raw_step": 2545,
+            "eligible_step": 0,
+            "log_probability": -92031.61488037974
+          },
+          {
+            "selected_draw_rank": 52,
+            "walker": 52,
+            "raw_step": 2545,
+            "eligible_step": 0,
+            "log_probability": -87884.16180803468
+          },
+          {
+            "selected_draw_rank": 53,
+            "walker": 53,
+            "raw_step": 2545,
+            "eligible_step": 0,
+            "log_probability": -87895.7724412768
+          },
+          {
+            "selected_draw_rank": 54,
+            "walker": 54,
+            "raw_step": 2545,
+            "eligible_step": 0,
+            "log_probability": -82035.70219341341
+          },
+          {
+            "selected_draw_rank": 55,
+            "walker": 55,
+            "raw_step": 2545,
+            "eligible_step": 0,
+            "log_probability": -87885.26574757096
+          },
+          {
+            "selected_draw_rank": 56,
+            "walker": 56,
+            "raw_step": 2545,
+            "eligible_step": 0,
+            "log_probability": -82039.47413897121
+          },
+          {
+            "selected_draw_rank": 57,
+            "walker": 57,
+            "raw_step": 2545,
+            "eligible_step": 0,
+            "log_probability": -82040.08030813272
+          },
+          {
+            "selected_draw_rank": 58,
+            "walker": 58,
+            "raw_step": 2545,
+            "eligible_step": 0,
+            "log_probability": -82023.74139452253
+          },
+          {
+            "selected_draw_rank": 59,
+            "walker": 59,
+            "raw_step": 2545,
+            "eligible_step": 0,
+            "log_probability": -82014.03673853088
+          },
+          {
+            "selected_draw_rank": 60,
+            "walker": 60,
+            "raw_step": 2545,
+            "eligible_step": 0,
+            "log_probability": -82029.45267711836
+          },
+          {
+            "selected_draw_rank": 61,
+            "walker": 61,
+            "raw_step": 2545,
+            "eligible_step": 0,
+            "log_probability": -82003.67694967765
+          },
+          {
+            "selected_draw_rank": 62,
+            "walker": 62,
+            "raw_step": 2545,
+            "eligible_step": 0,
+            "log_probability": -92028.68491702208
+          },
+          {
+            "selected_draw_rank": 63,
+            "walker": 63,
+            "raw_step": 2545,
+            "eligible_step": 0,
+            "log_probability": -82056.60056946031
+          },
+          {
+            "selected_draw_rank": 64,
+            "walker": 0,
+            "raw_step": 2800,
+            "eligible_step": 1,
+            "log_probability": -87872.93239010383
+          },
+          {
+            "selected_draw_rank": 65,
+            "walker": 1,
+            "raw_step": 2800,
+            "eligible_step": 1,
+            "log_probability": -81652.98154045938
+          },
+          {
+            "selected_draw_rank": 66,
+            "walker": 2,
+            "raw_step": 2800,
+            "eligible_step": 1,
+            "log_probability": -81661.40199613992
+          },
+          {
+            "selected_draw_rank": 67,
+            "walker": 3,
+            "raw_step": 2800,
+            "eligible_step": 1,
+            "log_probability": -81697.71394876375
+          },
+          {
+            "selected_draw_rank": 68,
+            "walker": 4,
+            "raw_step": 2800,
+            "eligible_step": 1,
+            "log_probability": -81592.27700791783
+          },
+          {
+            "selected_draw_rank": 69,
+            "walker": 5,
+            "raw_step": 2800,
+            "eligible_step": 1,
+            "log_probability": -81582.20728529646
+          },
+          {
+            "selected_draw_rank": 70,
+            "walker": 6,
+            "raw_step": 2800,
+            "eligible_step": 1,
+            "log_probability": -81680.42032552673
+          },
+          {
+            "selected_draw_rank": 71,
+            "walker": 7,
+            "raw_step": 2800,
+            "eligible_step": 1,
+            "log_probability": -87868.09699058176
+          },
+          {
+            "selected_draw_rank": 72,
+            "walker": 8,
+            "raw_step": 2800,
+            "eligible_step": 1,
+            "log_probability": -87865.10740189985
+          },
+          {
+            "selected_draw_rank": 73,
+            "walker": 9,
+            "raw_step": 2800,
+            "eligible_step": 1,
+            "log_probability": -81664.46699862409
+          },
+          {
+            "selected_draw_rank": 74,
+            "walker": 10,
+            "raw_step": 2800,
+            "eligible_step": 1,
+            "log_probability": -87881.52316667812
+          },
+          {
+            "selected_draw_rank": 75,
+            "walker": 11,
+            "raw_step": 2800,
+            "eligible_step": 1,
+            "log_probability": -81679.56895448353
+          },
+          {
+            "selected_draw_rank": 76,
+            "walker": 12,
+            "raw_step": 2800,
+            "eligible_step": 1,
+            "log_probability": -92010.60228025637
+          },
+          {
+            "selected_draw_rank": 77,
+            "walker": 13,
+            "raw_step": 2800,
+            "eligible_step": 1,
+            "log_probability": -81662.8473377465
+          },
+          {
+            "selected_draw_rank": 78,
+            "walker": 14,
+            "raw_step": 2800,
+            "eligible_step": 1,
+            "log_probability": -87888.35704604448
+          },
+          {
+            "selected_draw_rank": 79,
+            "walker": 15,
+            "raw_step": 2800,
+            "eligible_step": 1,
+            "log_probability": -81657.2706349278
+          },
+          {
+            "selected_draw_rank": 80,
+            "walker": 16,
+            "raw_step": 2800,
+            "eligible_step": 1,
+            "log_probability": -81622.16865829911
+          },
+          {
+            "selected_draw_rank": 81,
+            "walker": 17,
+            "raw_step": 2800,
+            "eligible_step": 1,
+            "log_probability": -81672.78462068173
+          },
+          {
+            "selected_draw_rank": 82,
+            "walker": 18,
+            "raw_step": 2800,
+            "eligible_step": 1,
+            "log_probability": -81659.48270808416
+          },
+          {
+            "selected_draw_rank": 83,
+            "walker": 19,
+            "raw_step": 2800,
+            "eligible_step": 1,
+            "log_probability": -87874.41721468563
+          },
+          {
+            "selected_draw_rank": 84,
+            "walker": 20,
+            "raw_step": 2800,
+            "eligible_step": 1,
+            "log_probability": -81680.431537314
+          },
+          {
+            "selected_draw_rank": 85,
+            "walker": 21,
+            "raw_step": 2800,
+            "eligible_step": 1,
+            "log_probability": -81644.87460356891
+          },
+          {
+            "selected_draw_rank": 86,
+            "walker": 22,
+            "raw_step": 2800,
+            "eligible_step": 1,
+            "log_probability": -81647.1537624616
+          },
+          {
+            "selected_draw_rank": 87,
+            "walker": 23,
+            "raw_step": 2800,
+            "eligible_step": 1,
+            "log_probability": -81650.22526569493
+          },
+          {
+            "selected_draw_rank": 88,
+            "walker": 24,
+            "raw_step": 2800,
+            "eligible_step": 1,
+            "log_probability": -91988.94240903048
+          },
+          {
+            "selected_draw_rank": 89,
+            "walker": 25,
+            "raw_step": 2800,
+            "eligible_step": 1,
+            "log_probability": -81640.84521414172
+          },
+          {
+            "selected_draw_rank": 90,
+            "walker": 26,
+            "raw_step": 2800,
+            "eligible_step": 1,
+            "log_probability": -87876.2794913666
+          },
+          {
+            "selected_draw_rank": 91,
+            "walker": 27,
+            "raw_step": 2800,
+            "eligible_step": 1,
+            "log_probability": -87873.34299886491
+          },
+          {
+            "selected_draw_rank": 92,
+            "walker": 28,
+            "raw_step": 2800,
+            "eligible_step": 1,
+            "log_probability": -81653.59324035485
+          },
+          {
+            "selected_draw_rank": 93,
+            "walker": 29,
+            "raw_step": 2800,
+            "eligible_step": 1,
+            "log_probability": -81703.01330842964
+          },
+          {
+            "selected_draw_rank": 94,
+            "walker": 30,
+            "raw_step": 2800,
+            "eligible_step": 1,
+            "log_probability": -81650.36408951494
+          },
+          {
+            "selected_draw_rank": 95,
+            "walker": 31,
+            "raw_step": 2800,
+            "eligible_step": 1,
+            "log_probability": -81602.55557275862
+          },
+          {
+            "selected_draw_rank": 96,
+            "walker": 32,
+            "raw_step": 2800,
+            "eligible_step": 1,
+            "log_probability": -81621.6047665255
+          },
+          {
+            "selected_draw_rank": 97,
+            "walker": 33,
+            "raw_step": 2800,
+            "eligible_step": 1,
+            "log_probability": -81684.39328376051
+          },
+          {
+            "selected_draw_rank": 98,
+            "walker": 34,
+            "raw_step": 2800,
+            "eligible_step": 1,
+            "log_probability": -92011.93143514001
+          },
+          {
+            "selected_draw_rank": 99,
+            "walker": 35,
+            "raw_step": 2800,
+            "eligible_step": 1,
+            "log_probability": -81651.7241046907
+          },
+          {
+            "selected_draw_rank": 100,
+            "walker": 36,
+            "raw_step": 2800,
+            "eligible_step": 1,
+            "log_probability": -87864.73754224916
+          },
+          {
+            "selected_draw_rank": 101,
+            "walker": 37,
+            "raw_step": 2800,
+            "eligible_step": 1,
+            "log_probability": -87872.93641513558
+          },
+          {
+            "selected_draw_rank": 102,
+            "walker": 38,
+            "raw_step": 2800,
+            "eligible_step": 1,
+            "log_probability": -81671.1716170691
+          },
+          {
+            "selected_draw_rank": 103,
+            "walker": 39,
+            "raw_step": 2800,
+            "eligible_step": 1,
+            "log_probability": -81680.63324482947
+          },
+          {
+            "selected_draw_rank": 104,
+            "walker": 40,
+            "raw_step": 2800,
+            "eligible_step": 1,
+            "log_probability": -81608.14068171405
+          },
+          {
+            "selected_draw_rank": 105,
+            "walker": 41,
+            "raw_step": 2800,
+            "eligible_step": 1,
+            "log_probability": -87878.98964356433
+          },
+          {
+            "selected_draw_rank": 106,
+            "walker": 42,
+            "raw_step": 2800,
+            "eligible_step": 1,
+            "log_probability": -81658.03665792104
+          },
+          {
+            "selected_draw_rank": 107,
+            "walker": 43,
+            "raw_step": 2800,
+            "eligible_step": 1,
+            "log_probability": -81672.01991884576
+          },
+          {
+            "selected_draw_rank": 108,
+            "walker": 44,
+            "raw_step": 2800,
+            "eligible_step": 1,
+            "log_probability": -81682.44302933472
+          },
+          {
+            "selected_draw_rank": 109,
+            "walker": 45,
+            "raw_step": 2800,
+            "eligible_step": 1,
+            "log_probability": -81678.83541220767
+          },
+          {
+            "selected_draw_rank": 110,
+            "walker": 46,
+            "raw_step": 2800,
+            "eligible_step": 1,
+            "log_probability": -81686.53699598504
+          },
+          {
+            "selected_draw_rank": 111,
+            "walker": 47,
+            "raw_step": 2800,
+            "eligible_step": 1,
+            "log_probability": -81630.50468638903
+          },
+          {
+            "selected_draw_rank": 112,
+            "walker": 48,
+            "raw_step": 2800,
+            "eligible_step": 1,
+            "log_probability": -81648.28865252262
+          },
+          {
+            "selected_draw_rank": 113,
+            "walker": 49,
+            "raw_step": 2800,
+            "eligible_step": 1,
+            "log_probability": -81608.38637738263
+          },
+          {
+            "selected_draw_rank": 114,
+            "walker": 50,
+            "raw_step": 2800,
+            "eligible_step": 1,
+            "log_probability": -87870.80176346272
+          },
+          {
+            "selected_draw_rank": 115,
+            "walker": 51,
+            "raw_step": 2800,
+            "eligible_step": 1,
+            "log_probability": -92022.04358362722
+          },
+          {
+            "selected_draw_rank": 116,
+            "walker": 52,
+            "raw_step": 2800,
+            "eligible_step": 1,
+            "log_probability": -87886.44828499651
+          },
+          {
+            "selected_draw_rank": 117,
+            "walker": 53,
+            "raw_step": 2800,
+            "eligible_step": 1,
+            "log_probability": -87881.78948606685
+          },
+          {
+            "selected_draw_rank": 118,
+            "walker": 54,
+            "raw_step": 2800,
+            "eligible_step": 1,
+            "log_probability": -81643.44182867007
+          },
+          {
+            "selected_draw_rank": 119,
+            "walker": 55,
+            "raw_step": 2800,
+            "eligible_step": 1,
+            "log_probability": -87867.2675747018
+          },
+          {
+            "selected_draw_rank": 120,
+            "walker": 56,
+            "raw_step": 2800,
+            "eligible_step": 1,
+            "log_probability": -81666.25493719548
+          },
+          {
+            "selected_draw_rank": 121,
+            "walker": 57,
+            "raw_step": 2800,
+            "eligible_step": 1,
+            "log_probability": -81688.03665175209
+          },
+          {
+            "selected_draw_rank": 122,
+            "walker": 58,
+            "raw_step": 2800,
+            "eligible_step": 1,
+            "log_probability": -81680.24059673991
+          },
+          {
+            "selected_draw_rank": 123,
+            "walker": 59,
+            "raw_step": 2800,
+            "eligible_step": 1,
+            "log_probability": -81634.07871647719
+          },
+          {
+            "selected_draw_rank": 124,
+            "walker": 60,
+            "raw_step": 2800,
+            "eligible_step": 1,
+            "log_probability": -81669.88190690175
+          },
+          {
+            "selected_draw_rank": 125,
+            "walker": 61,
+            "raw_step": 2800,
+            "eligible_step": 1,
+            "log_probability": -81660.88383193164
+          },
+          {
+            "selected_draw_rank": 126,
+            "walker": 62,
+            "raw_step": 2800,
+            "eligible_step": 1,
+            "log_probability": -92002.66798329583
+          },
+          {
+            "selected_draw_rank": 127,
+            "walker": 63,
+            "raw_step": 2800,
+            "eligible_step": 1,
+            "log_probability": -81720.16226910274
+          },
+          {
+            "selected_draw_rank": 128,
+            "walker": 0,
+            "raw_step": 3055,
+            "eligible_step": 2,
+            "log_probability": -87862.28149285028
+          },
+          {
+            "selected_draw_rank": 129,
+            "walker": 1,
+            "raw_step": 3055,
+            "eligible_step": 2,
+            "log_probability": -81430.63286970009
+          },
+          {
+            "selected_draw_rank": 130,
+            "walker": 2,
+            "raw_step": 3055,
+            "eligible_step": 2,
+            "log_probability": -81410.10962166636
+          },
+          {
+            "selected_draw_rank": 131,
+            "walker": 3,
+            "raw_step": 3055,
+            "eligible_step": 2,
+            "log_probability": -81437.85844829617
+          },
+          {
+            "selected_draw_rank": 132,
+            "walker": 4,
+            "raw_step": 3055,
+            "eligible_step": 2,
+            "log_probability": -81432.18492727069
+          },
+          {
+            "selected_draw_rank": 133,
+            "walker": 5,
+            "raw_step": 3055,
+            "eligible_step": 2,
+            "log_probability": -81437.33734152943
+          },
+          {
+            "selected_draw_rank": 134,
+            "walker": 6,
+            "raw_step": 3055,
+            "eligible_step": 2,
+            "log_probability": -81424.69672322576
+          },
+          {
+            "selected_draw_rank": 135,
+            "walker": 7,
+            "raw_step": 3055,
+            "eligible_step": 2,
+            "log_probability": -87857.19935883464
+          },
+          {
+            "selected_draw_rank": 136,
+            "walker": 8,
+            "raw_step": 3055,
+            "eligible_step": 2,
+            "log_probability": -87855.0931140876
+          },
+          {
+            "selected_draw_rank": 137,
+            "walker": 9,
+            "raw_step": 3055,
+            "eligible_step": 2,
+            "log_probability": -81427.62206589025
+          },
+          {
+            "selected_draw_rank": 138,
+            "walker": 10,
+            "raw_step": 3055,
+            "eligible_step": 2,
+            "log_probability": -87861.44447594573
+          },
+          {
+            "selected_draw_rank": 139,
+            "walker": 11,
+            "raw_step": 3055,
+            "eligible_step": 2,
+            "log_probability": -81433.94079906374
+          },
+          {
+            "selected_draw_rank": 140,
+            "walker": 12,
+            "raw_step": 3055,
+            "eligible_step": 2,
+            "log_probability": -91965.76851193655
+          },
+          {
+            "selected_draw_rank": 141,
+            "walker": 13,
+            "raw_step": 3055,
+            "eligible_step": 2,
+            "log_probability": -81431.2884627187
+          },
+          {
+            "selected_draw_rank": 142,
+            "walker": 14,
+            "raw_step": 3055,
+            "eligible_step": 2,
+            "log_probability": -87860.69737860751
+          },
+          {
+            "selected_draw_rank": 143,
+            "walker": 15,
+            "raw_step": 3055,
+            "eligible_step": 2,
+            "log_probability": -81422.24246290959
+          },
+          {
+            "selected_draw_rank": 144,
+            "walker": 16,
+            "raw_step": 3055,
+            "eligible_step": 2,
+            "log_probability": -81435.33806487267
+          },
+          {
+            "selected_draw_rank": 145,
+            "walker": 17,
+            "raw_step": 3055,
+            "eligible_step": 2,
+            "log_probability": -81427.55221197393
+          },
+          {
+            "selected_draw_rank": 146,
+            "walker": 18,
+            "raw_step": 3055,
+            "eligible_step": 2,
+            "log_probability": -81438.53735216537
+          },
+          {
+            "selected_draw_rank": 147,
+            "walker": 19,
+            "raw_step": 3055,
+            "eligible_step": 2,
+            "log_probability": -87865.62953261731
+          },
+          {
+            "selected_draw_rank": 148,
+            "walker": 20,
+            "raw_step": 3055,
+            "eligible_step": 2,
+            "log_probability": -81449.28515314765
+          },
+          {
+            "selected_draw_rank": 149,
+            "walker": 21,
+            "raw_step": 3055,
+            "eligible_step": 2,
+            "log_probability": -81425.10849701162
+          },
+          {
+            "selected_draw_rank": 150,
+            "walker": 22,
+            "raw_step": 3055,
+            "eligible_step": 2,
+            "log_probability": -81432.49890719037
+          },
+          {
+            "selected_draw_rank": 151,
+            "walker": 23,
+            "raw_step": 3055,
+            "eligible_step": 2,
+            "log_probability": -81431.58015929202
+          },
+          {
+            "selected_draw_rank": 152,
+            "walker": 24,
+            "raw_step": 3055,
+            "eligible_step": 2,
+            "log_probability": -91982.39862077452
+          },
+          {
+            "selected_draw_rank": 153,
+            "walker": 25,
+            "raw_step": 3055,
+            "eligible_step": 2,
+            "log_probability": -81414.04246700318
+          },
+          {
+            "selected_draw_rank": 154,
+            "walker": 26,
+            "raw_step": 3055,
+            "eligible_step": 2,
+            "log_probability": -87858.2055119735
+          },
+          {
+            "selected_draw_rank": 155,
+            "walker": 27,
+            "raw_step": 3055,
+            "eligible_step": 2,
+            "log_probability": -87859.37076084563
+          },
+          {
+            "selected_draw_rank": 156,
+            "walker": 28,
+            "raw_step": 3055,
+            "eligible_step": 2,
+            "log_probability": -81430.65382514324
+          },
+          {
+            "selected_draw_rank": 157,
+            "walker": 29,
+            "raw_step": 3055,
+            "eligible_step": 2,
+            "log_probability": -81436.21654857637
+          },
+          {
+            "selected_draw_rank": 158,
+            "walker": 30,
+            "raw_step": 3055,
+            "eligible_step": 2,
+            "log_probability": -81435.76416619465
+          },
+          {
+            "selected_draw_rank": 159,
+            "walker": 31,
+            "raw_step": 3055,
+            "eligible_step": 2,
+            "log_probability": -81431.8624931946
+          },
+          {
+            "selected_draw_rank": 160,
+            "walker": 32,
+            "raw_step": 3055,
+            "eligible_step": 2,
+            "log_probability": -81412.70744542783
+          },
+          {
+            "selected_draw_rank": 161,
+            "walker": 33,
+            "raw_step": 3055,
+            "eligible_step": 2,
+            "log_probability": -81434.09918970508
+          },
+          {
+            "selected_draw_rank": 162,
+            "walker": 34,
+            "raw_step": 3055,
+            "eligible_step": 2,
+            "log_probability": -92001.55865122113
+          },
+          {
+            "selected_draw_rank": 163,
+            "walker": 35,
+            "raw_step": 3055,
+            "eligible_step": 2,
+            "log_probability": -81429.84842765405
+          },
+          {
+            "selected_draw_rank": 164,
+            "walker": 36,
+            "raw_step": 3055,
+            "eligible_step": 2,
+            "log_probability": -87852.8570637822
+          },
+          {
+            "selected_draw_rank": 165,
+            "walker": 37,
+            "raw_step": 3055,
+            "eligible_step": 2,
+            "log_probability": -87847.25089173367
+          },
+          {
+            "selected_draw_rank": 166,
+            "walker": 38,
+            "raw_step": 3055,
+            "eligible_step": 2,
+            "log_probability": -81431.10720480014
+          },
+          {
+            "selected_draw_rank": 167,
+            "walker": 39,
+            "raw_step": 3055,
+            "eligible_step": 2,
+            "log_probability": -81421.81812367763
+          },
+          {
+            "selected_draw_rank": 168,
+            "walker": 40,
+            "raw_step": 3055,
+            "eligible_step": 2,
+            "log_probability": -81418.57679065844
+          },
+          {
+            "selected_draw_rank": 169,
+            "walker": 41,
+            "raw_step": 3055,
+            "eligible_step": 2,
+            "log_probability": -87855.78338735453
+          },
+          {
+            "selected_draw_rank": 170,
+            "walker": 42,
+            "raw_step": 3055,
+            "eligible_step": 2,
+            "log_probability": -81404.88636498155
+          },
+          {
+            "selected_draw_rank": 171,
+            "walker": 43,
+            "raw_step": 3055,
+            "eligible_step": 2,
+            "log_probability": -81440.76642221326
+          },
+          {
+            "selected_draw_rank": 172,
+            "walker": 44,
+            "raw_step": 3055,
+            "eligible_step": 2,
+            "log_probability": -81438.9330830095
+          },
+          {
+            "selected_draw_rank": 173,
+            "walker": 45,
+            "raw_step": 3055,
+            "eligible_step": 2,
+            "log_probability": -81427.79614896425
+          },
+          {
+            "selected_draw_rank": 174,
+            "walker": 46,
+            "raw_step": 3055,
+            "eligible_step": 2,
+            "log_probability": -81441.15344505452
+          },
+          {
+            "selected_draw_rank": 175,
+            "walker": 47,
+            "raw_step": 3055,
+            "eligible_step": 2,
+            "log_probability": -81427.20286449004
+          },
+          {
+            "selected_draw_rank": 176,
+            "walker": 48,
+            "raw_step": 3055,
+            "eligible_step": 2,
+            "log_probability": -81441.39592425028
+          },
+          {
+            "selected_draw_rank": 177,
+            "walker": 49,
+            "raw_step": 3055,
+            "eligible_step": 2,
+            "log_probability": -81428.98120587945
+          },
+          {
+            "selected_draw_rank": 178,
+            "walker": 50,
+            "raw_step": 3055,
+            "eligible_step": 2,
+            "log_probability": -87854.74293998262
+          },
+          {
+            "selected_draw_rank": 179,
+            "walker": 51,
+            "raw_step": 3055,
+            "eligible_step": 2,
+            "log_probability": -91979.64003380941
+          },
+          {
+            "selected_draw_rank": 180,
+            "walker": 52,
+            "raw_step": 3055,
+            "eligible_step": 2,
+            "log_probability": -87854.31578683616
+          },
+          {
+            "selected_draw_rank": 181,
+            "walker": 53,
+            "raw_step": 3055,
+            "eligible_step": 2,
+            "log_probability": -87851.60772460925
+          },
+          {
+            "selected_draw_rank": 182,
+            "walker": 54,
+            "raw_step": 3055,
+            "eligible_step": 2,
+            "log_probability": -81412.41453030042
+          },
+          {
+            "selected_draw_rank": 183,
+            "walker": 55,
+            "raw_step": 3055,
+            "eligible_step": 2,
+            "log_probability": -87850.41792978869
+          },
+          {
+            "selected_draw_rank": 184,
+            "walker": 56,
+            "raw_step": 3055,
+            "eligible_step": 2,
+            "log_probability": -81420.46918333703
+          },
+          {
+            "selected_draw_rank": 185,
+            "walker": 57,
+            "raw_step": 3055,
+            "eligible_step": 2,
+            "log_probability": -81437.48208911603
+          },
+          {
+            "selected_draw_rank": 186,
+            "walker": 58,
+            "raw_step": 3055,
+            "eligible_step": 2,
+            "log_probability": -81444.17942522868
+          },
+          {
+            "selected_draw_rank": 187,
+            "walker": 59,
+            "raw_step": 3055,
+            "eligible_step": 2,
+            "log_probability": -81437.61231412493
+          },
+          {
+            "selected_draw_rank": 188,
+            "walker": 60,
+            "raw_step": 3055,
+            "eligible_step": 2,
+            "log_probability": -81437.17256027291
+          },
+          {
+            "selected_draw_rank": 189,
+            "walker": 61,
+            "raw_step": 3055,
+            "eligible_step": 2,
+            "log_probability": -81440.30428782775
+          },
+          {
+            "selected_draw_rank": 190,
+            "walker": 62,
+            "raw_step": 3055,
+            "eligible_step": 2,
+            "log_probability": -91990.15264087653
+          },
+          {
+            "selected_draw_rank": 191,
+            "walker": 63,
+            "raw_step": 3055,
+            "eligible_step": 2,
+            "log_probability": -81436.62331499228
+          },
+          {
+            "selected_draw_rank": 192,
+            "walker": 0,
+            "raw_step": 3310,
+            "eligible_step": 3,
+            "log_probability": -87840.90730055851
+          },
+          {
+            "selected_draw_rank": 193,
+            "walker": 1,
+            "raw_step": 3310,
+            "eligible_step": 3,
+            "log_probability": -81348.97947327119
+          },
+          {
+            "selected_draw_rank": 194,
+            "walker": 2,
+            "raw_step": 3310,
+            "eligible_step": 3,
+            "log_probability": -81358.5851486955
+          },
+          {
+            "selected_draw_rank": 195,
+            "walker": 3,
+            "raw_step": 3310,
+            "eligible_step": 3,
+            "log_probability": -81354.15005151821
+          },
+          {
+            "selected_draw_rank": 196,
+            "walker": 4,
+            "raw_step": 3310,
+            "eligible_step": 3,
+            "log_probability": -81350.28593724905
+          },
+          {
+            "selected_draw_rank": 197,
+            "walker": 5,
+            "raw_step": 3310,
+            "eligible_step": 3,
+            "log_probability": -81361.36462730235
+          },
+          {
+            "selected_draw_rank": 198,
+            "walker": 6,
+            "raw_step": 3310,
+            "eligible_step": 3,
+            "log_probability": -81358.27338671376
+          },
+          {
+            "selected_draw_rank": 199,
+            "walker": 7,
+            "raw_step": 3310,
+            "eligible_step": 3,
+            "log_probability": -87839.78314178802
+          },
+          {
+            "selected_draw_rank": 200,
+            "walker": 8,
+            "raw_step": 3310,
+            "eligible_step": 3,
+            "log_probability": -87841.28292899473
+          },
+          {
+            "selected_draw_rank": 201,
+            "walker": 9,
+            "raw_step": 3310,
+            "eligible_step": 3,
+            "log_probability": -81361.89377059317
+          },
+          {
+            "selected_draw_rank": 202,
+            "walker": 10,
+            "raw_step": 3310,
+            "eligible_step": 3,
+            "log_probability": -87845.19707153956
+          },
+          {
+            "selected_draw_rank": 203,
+            "walker": 11,
+            "raw_step": 3310,
+            "eligible_step": 3,
+            "log_probability": -81361.82653482331
+          },
+          {
+            "selected_draw_rank": 204,
+            "walker": 12,
+            "raw_step": 3310,
+            "eligible_step": 3,
+            "log_probability": -91912.92443961298
+          },
+          {
+            "selected_draw_rank": 205,
+            "walker": 13,
+            "raw_step": 3310,
+            "eligible_step": 3,
+            "log_probability": -81360.26446348366
+          },
+          {
+            "selected_draw_rank": 206,
+            "walker": 14,
+            "raw_step": 3310,
+            "eligible_step": 3,
+            "log_probability": -87848.65783519865
+          },
+          {
+            "selected_draw_rank": 207,
+            "walker": 15,
+            "raw_step": 3310,
+            "eligible_step": 3,
+            "log_probability": -81347.91570060037
+          },
+          {
+            "selected_draw_rank": 208,
+            "walker": 16,
+            "raw_step": 3310,
+            "eligible_step": 3,
+            "log_probability": -81258.75804779961
+          },
+          {
+            "selected_draw_rank": 209,
+            "walker": 17,
+            "raw_step": 3310,
+            "eligible_step": 3,
+            "log_probability": -81360.50950809654
+          },
+          {
+            "selected_draw_rank": 210,
+            "walker": 18,
+            "raw_step": 3310,
+            "eligible_step": 3,
+            "log_probability": -81354.97963971911
+          },
+          {
+            "selected_draw_rank": 211,
+            "walker": 19,
+            "raw_step": 3310,
+            "eligible_step": 3,
+            "log_probability": -87842.70605110422
+          },
+          {
+            "selected_draw_rank": 212,
+            "walker": 20,
+            "raw_step": 3310,
+            "eligible_step": 3,
+            "log_probability": -81340.98165350966
+          },
+          {
+            "selected_draw_rank": 213,
+            "walker": 21,
+            "raw_step": 3310,
+            "eligible_step": 3,
+            "log_probability": -81361.41094088827
+          },
+          {
+            "selected_draw_rank": 214,
+            "walker": 22,
+            "raw_step": 3310,
+            "eligible_step": 3,
+            "log_probability": -81359.14006280707
+          },
+          {
+            "selected_draw_rank": 215,
+            "walker": 23,
+            "raw_step": 3310,
+            "eligible_step": 3,
+            "log_probability": -81358.59639724865
+          },
+          {
+            "selected_draw_rank": 216,
+            "walker": 24,
+            "raw_step": 3310,
+            "eligible_step": 3,
+            "log_probability": -91931.00252112496
+          },
+          {
+            "selected_draw_rank": 217,
+            "walker": 25,
+            "raw_step": 3310,
+            "eligible_step": 3,
+            "log_probability": -81365.44592627086
+          },
+          {
+            "selected_draw_rank": 218,
+            "walker": 26,
+            "raw_step": 3310,
+            "eligible_step": 3,
+            "log_probability": -87843.4530650901
+          },
+          {
+            "selected_draw_rank": 219,
+            "walker": 27,
+            "raw_step": 3310,
+            "eligible_step": 3,
+            "log_probability": -87832.21592357552
+          },
+          {
+            "selected_draw_rank": 220,
+            "walker": 28,
+            "raw_step": 3310,
+            "eligible_step": 3,
+            "log_probability": -81357.36567326792
+          },
+          {
+            "selected_draw_rank": 221,
+            "walker": 29,
+            "raw_step": 3310,
+            "eligible_step": 3,
+            "log_probability": -81360.53943449388
+          },
+          {
+            "selected_draw_rank": 222,
+            "walker": 30,
+            "raw_step": 3310,
+            "eligible_step": 3,
+            "log_probability": -81361.17488485029
+          },
+          {
+            "selected_draw_rank": 223,
+            "walker": 31,
+            "raw_step": 3310,
+            "eligible_step": 3,
+            "log_probability": -81357.89282687093
+          },
+          {
+            "selected_draw_rank": 224,
+            "walker": 32,
+            "raw_step": 3310,
+            "eligible_step": 3,
+            "log_probability": -81373.28684894167
+          },
+          {
+            "selected_draw_rank": 225,
+            "walker": 33,
+            "raw_step": 3310,
+            "eligible_step": 3,
+            "log_probability": -81355.90177299234
+          },
+          {
+            "selected_draw_rank": 226,
+            "walker": 34,
+            "raw_step": 3310,
+            "eligible_step": 3,
+            "log_probability": -91905.26976002743
+          },
+          {
+            "selected_draw_rank": 227,
+            "walker": 35,
+            "raw_step": 3310,
+            "eligible_step": 3,
+            "log_probability": -81368.98273612214
+          },
+          {
+            "selected_draw_rank": 228,
+            "walker": 36,
+            "raw_step": 3310,
+            "eligible_step": 3,
+            "log_probability": -87840.01116648689
+          },
+          {
+            "selected_draw_rank": 229,
+            "walker": 37,
+            "raw_step": 3310,
+            "eligible_step": 3,
+            "log_probability": -87838.50054968215
+          },
+          {
+            "selected_draw_rank": 230,
+            "walker": 38,
+            "raw_step": 3310,
+            "eligible_step": 3,
+            "log_probability": -81344.91747681763
+          },
+          {
+            "selected_draw_rank": 231,
+            "walker": 39,
+            "raw_step": 3310,
+            "eligible_step": 3,
+            "log_probability": -81367.15940657025
+          },
+          {
+            "selected_draw_rank": 232,
+            "walker": 40,
+            "raw_step": 3310,
+            "eligible_step": 3,
+            "log_probability": -81357.01846164293
+          },
+          {
+            "selected_draw_rank": 233,
+            "walker": 41,
+            "raw_step": 3310,
+            "eligible_step": 3,
+            "log_probability": -87846.90464730652
+          },
+          {
+            "selected_draw_rank": 234,
+            "walker": 42,
+            "raw_step": 3310,
+            "eligible_step": 3,
+            "log_probability": -81354.5868022491
+          },
+          {
+            "selected_draw_rank": 235,
+            "walker": 43,
+            "raw_step": 3310,
+            "eligible_step": 3,
+            "log_probability": -81362.89637989215
+          },
+          {
+            "selected_draw_rank": 236,
+            "walker": 44,
+            "raw_step": 3310,
+            "eligible_step": 3,
+            "log_probability": -81361.88940184962
+          },
+          {
+            "selected_draw_rank": 237,
+            "walker": 45,
+            "raw_step": 3310,
+            "eligible_step": 3,
+            "log_probability": -81357.28569945077
+          },
+          {
+            "selected_draw_rank": 238,
+            "walker": 46,
+            "raw_step": 3310,
+            "eligible_step": 3,
+            "log_probability": -81367.76031051793
+          },
+          {
+            "selected_draw_rank": 239,
+            "walker": 47,
+            "raw_step": 3310,
+            "eligible_step": 3,
+            "log_probability": -81349.75982258825
+          },
+          {
+            "selected_draw_rank": 240,
+            "walker": 48,
+            "raw_step": 3310,
+            "eligible_step": 3,
+            "log_probability": -81349.34192869741
+          },
+          {
+            "selected_draw_rank": 241,
+            "walker": 49,
+            "raw_step": 3310,
+            "eligible_step": 3,
+            "log_probability": -81349.61261423434
+          },
+          {
+            "selected_draw_rank": 242,
+            "walker": 50,
+            "raw_step": 3310,
+            "eligible_step": 3,
+            "log_probability": -87843.76176424621
+          },
+          {
+            "selected_draw_rank": 243,
+            "walker": 51,
+            "raw_step": 3310,
+            "eligible_step": 3,
+            "log_probability": -91935.4058864113
+          },
+          {
+            "selected_draw_rank": 244,
+            "walker": 52,
+            "raw_step": 3310,
+            "eligible_step": 3,
+            "log_probability": -87839.66806985764
+          },
+          {
+            "selected_draw_rank": 245,
+            "walker": 53,
+            "raw_step": 3310,
+            "eligible_step": 3,
+            "log_probability": -87845.30779871729
+          },
+          {
+            "selected_draw_rank": 246,
+            "walker": 54,
+            "raw_step": 3310,
+            "eligible_step": 3,
+            "log_probability": -81357.80102831652
+          },
+          {
+            "selected_draw_rank": 247,
+            "walker": 55,
+            "raw_step": 3310,
+            "eligible_step": 3,
+            "log_probability": -87840.41752119096
+          },
+          {
+            "selected_draw_rank": 248,
+            "walker": 56,
+            "raw_step": 3310,
+            "eligible_step": 3,
+            "log_probability": -81354.25378773126
+          },
+          {
+            "selected_draw_rank": 249,
+            "walker": 57,
+            "raw_step": 3310,
+            "eligible_step": 3,
+            "log_probability": -81354.39445800881
+          },
+          {
+            "selected_draw_rank": 250,
+            "walker": 58,
+            "raw_step": 3310,
+            "eligible_step": 3,
+            "log_probability": -81360.45761788258
+          },
+          {
+            "selected_draw_rank": 251,
+            "walker": 59,
+            "raw_step": 3310,
+            "eligible_step": 3,
+            "log_probability": -81366.59524870611
+          },
+          {
+            "selected_draw_rank": 252,
+            "walker": 60,
+            "raw_step": 3310,
+            "eligible_step": 3,
+            "log_probability": -81352.90335406546
+          },
+          {
+            "selected_draw_rank": 253,
+            "walker": 61,
+            "raw_step": 3310,
+            "eligible_step": 3,
+            "log_probability": -81345.2595309488
+          },
+          {
+            "selected_draw_rank": 254,
+            "walker": 62,
+            "raw_step": 3310,
+            "eligible_step": 3,
+            "log_probability": -91942.1379987797
+          },
+          {
+            "selected_draw_rank": 255,
+            "walker": 63,
+            "raw_step": 3310,
+            "eligible_step": 3,
+            "log_probability": -81371.90887555986
+          },
+          {
+            "selected_draw_rank": 256,
+            "walker": 0,
+            "raw_step": 3565,
+            "eligible_step": 4,
+            "log_probability": -87827.29125621571
+          },
+          {
+            "selected_draw_rank": 257,
+            "walker": 1,
+            "raw_step": 3565,
+            "eligible_step": 4,
+            "log_probability": -81209.5386809094
+          },
+          {
+            "selected_draw_rank": 258,
+            "walker": 2,
+            "raw_step": 3565,
+            "eligible_step": 4,
+            "log_probability": -81218.3079789855
+          },
+          {
+            "selected_draw_rank": 259,
+            "walker": 3,
+            "raw_step": 3565,
+            "eligible_step": 4,
+            "log_probability": -81202.79400227321
+          },
+          {
+            "selected_draw_rank": 260,
+            "walker": 4,
+            "raw_step": 3565,
+            "eligible_step": 4,
+            "log_probability": -81219.60538754
+          },
+          {
+            "selected_draw_rank": 261,
+            "walker": 5,
+            "raw_step": 3565,
+            "eligible_step": 4,
+            "log_probability": -81220.02152344199
+          },
+          {
+            "selected_draw_rank": 262,
+            "walker": 6,
+            "raw_step": 3565,
+            "eligible_step": 4,
+            "log_probability": -81221.51053054268
+          },
+          {
+            "selected_draw_rank": 263,
+            "walker": 7,
+            "raw_step": 3565,
+            "eligible_step": 4,
+            "log_probability": -87823.84789370828
+          },
+          {
+            "selected_draw_rank": 264,
+            "walker": 8,
+            "raw_step": 3565,
+            "eligible_step": 4,
+            "log_probability": -87828.78524643008
+          },
+          {
+            "selected_draw_rank": 265,
+            "walker": 9,
+            "raw_step": 3565,
+            "eligible_step": 4,
+            "log_probability": -81234.79982006771
+          },
+          {
+            "selected_draw_rank": 266,
+            "walker": 10,
+            "raw_step": 3565,
+            "eligible_step": 4,
+            "log_probability": -87822.00552065721
+          },
+          {
+            "selected_draw_rank": 267,
+            "walker": 11,
+            "raw_step": 3565,
+            "eligible_step": 4,
+            "log_probability": -81226.4814367758
+          },
+          {
+            "selected_draw_rank": 268,
+            "walker": 12,
+            "raw_step": 3565,
+            "eligible_step": 4,
+            "log_probability": -91906.89821109507
+          },
+          {
+            "selected_draw_rank": 269,
+            "walker": 13,
+            "raw_step": 3565,
+            "eligible_step": 4,
+            "log_probability": -81226.13833563167
+          },
+          {
+            "selected_draw_rank": 270,
+            "walker": 14,
+            "raw_step": 3565,
+            "eligible_step": 4,
+            "log_probability": -87834.4750767653
+          },
+          {
+            "selected_draw_rank": 271,
+            "walker": 15,
+            "raw_step": 3565,
+            "eligible_step": 4,
+            "log_probability": -81230.17149983843
+          },
+          {
+            "selected_draw_rank": 272,
+            "walker": 16,
+            "raw_step": 3565,
+            "eligible_step": 4,
+            "log_probability": -81210.1259074698
+          },
+          {
+            "selected_draw_rank": 273,
+            "walker": 17,
+            "raw_step": 3565,
+            "eligible_step": 4,
+            "log_probability": -81218.43320909998
+          },
+          {
+            "selected_draw_rank": 274,
+            "walker": 18,
+            "raw_step": 3565,
+            "eligible_step": 4,
+            "log_probability": -81228.63658435975
+          },
+          {
+            "selected_draw_rank": 275,
+            "walker": 19,
+            "raw_step": 3565,
+            "eligible_step": 4,
+            "log_probability": -87820.55619591688
+          },
+          {
+            "selected_draw_rank": 276,
+            "walker": 20,
+            "raw_step": 3565,
+            "eligible_step": 4,
+            "log_probability": -81164.25241069403
+          },
+          {
+            "selected_draw_rank": 277,
+            "walker": 21,
+            "raw_step": 3565,
+            "eligible_step": 4,
+            "log_probability": -81213.99440704372
+          },
+          {
+            "selected_draw_rank": 278,
+            "walker": 22,
+            "raw_step": 3565,
+            "eligible_step": 4,
+            "log_probability": -81220.8458456632
+          },
+          {
+            "selected_draw_rank": 279,
+            "walker": 23,
+            "raw_step": 3565,
+            "eligible_step": 4,
+            "log_probability": -81220.41935087362
+          },
+          {
+            "selected_draw_rank": 280,
+            "walker": 24,
+            "raw_step": 3565,
+            "eligible_step": 4,
+            "log_probability": -91930.62064443185
+          },
+          {
+            "selected_draw_rank": 281,
+            "walker": 25,
+            "raw_step": 3565,
+            "eligible_step": 4,
+            "log_probability": -81219.0982840487
+          },
+          {
+            "selected_draw_rank": 282,
+            "walker": 26,
+            "raw_step": 3565,
+            "eligible_step": 4,
+            "log_probability": -87819.60002188038
+          },
+          {
+            "selected_draw_rank": 283,
+            "walker": 27,
+            "raw_step": 3565,
+            "eligible_step": 4,
+            "log_probability": -87825.01197504767
+          },
+          {
+            "selected_draw_rank": 284,
+            "walker": 28,
+            "raw_step": 3565,
+            "eligible_step": 4,
+            "log_probability": -81227.10693999667
+          },
+          {
+            "selected_draw_rank": 285,
+            "walker": 29,
+            "raw_step": 3565,
+            "eligible_step": 4,
+            "log_probability": -81223.55329800543
+          },
+          {
+            "selected_draw_rank": 286,
+            "walker": 30,
+            "raw_step": 3565,
+            "eligible_step": 4,
+            "log_probability": -81221.51813046381
+          },
+          {
+            "selected_draw_rank": 287,
+            "walker": 31,
+            "raw_step": 3565,
+            "eligible_step": 4,
+            "log_probability": -81219.17022100664
+          },
+          {
+            "selected_draw_rank": 288,
+            "walker": 32,
+            "raw_step": 3565,
+            "eligible_step": 4,
+            "log_probability": -81233.23502437735
+          },
+          {
+            "selected_draw_rank": 289,
+            "walker": 33,
+            "raw_step": 3565,
+            "eligible_step": 4,
+            "log_probability": -81224.51651614335
+          },
+          {
+            "selected_draw_rank": 290,
+            "walker": 34,
+            "raw_step": 3565,
+            "eligible_step": 4,
+            "log_probability": -91904.27567760804
+          },
+          {
+            "selected_draw_rank": 291,
+            "walker": 35,
+            "raw_step": 3565,
+            "eligible_step": 4,
+            "log_probability": -81227.60217514989
+          },
+          {
+            "selected_draw_rank": 292,
+            "walker": 36,
+            "raw_step": 3565,
+            "eligible_step": 4,
+            "log_probability": -87827.4629824078
+          },
+          {
+            "selected_draw_rank": 293,
+            "walker": 37,
+            "raw_step": 3565,
+            "eligible_step": 4,
+            "log_probability": -87834.74292759065
+          },
+          {
+            "selected_draw_rank": 294,
+            "walker": 38,
+            "raw_step": 3565,
+            "eligible_step": 4,
+            "log_probability": -81210.9122600742
+          },
+          {
+            "selected_draw_rank": 295,
+            "walker": 39,
+            "raw_step": 3565,
+            "eligible_step": 4,
+            "log_probability": -81219.22424592556
+          },
+          {
+            "selected_draw_rank": 296,
+            "walker": 40,
+            "raw_step": 3565,
+            "eligible_step": 4,
+            "log_probability": -81228.45215857941
+          },
+          {
+            "selected_draw_rank": 297,
+            "walker": 41,
+            "raw_step": 3565,
+            "eligible_step": 4,
+            "log_probability": -87837.72127446526
+          },
+          {
+            "selected_draw_rank": 298,
+            "walker": 42,
+            "raw_step": 3565,
+            "eligible_step": 4,
+            "log_probability": -81206.34189033596
+          },
+          {
+            "selected_draw_rank": 299,
+            "walker": 43,
+            "raw_step": 3565,
+            "eligible_step": 4,
+            "log_probability": -81210.18507712874
+          },
+          {
+            "selected_draw_rank": 300,
+            "walker": 44,
+            "raw_step": 3565,
+            "eligible_step": 4,
+            "log_probability": -81220.39950423915
+          },
+          {
+            "selected_draw_rank": 301,
+            "walker": 45,
+            "raw_step": 3565,
+            "eligible_step": 4,
+            "log_probability": -81226.96714096451
+          },
+          {
+            "selected_draw_rank": 302,
+            "walker": 46,
+            "raw_step": 3565,
+            "eligible_step": 4,
+            "log_probability": -81224.18546919324
+          },
+          {
+            "selected_draw_rank": 303,
+            "walker": 47,
+            "raw_step": 3565,
+            "eligible_step": 4,
+            "log_probability": -81211.26231098177
+          },
+          {
+            "selected_draw_rank": 304,
+            "walker": 48,
+            "raw_step": 3565,
+            "eligible_step": 4,
+            "log_probability": -81218.53602227752
+          },
+          {
+            "selected_draw_rank": 305,
+            "walker": 49,
+            "raw_step": 3565,
+            "eligible_step": 4,
+            "log_probability": -81203.33728985908
+          },
+          {
+            "selected_draw_rank": 306,
+            "walker": 50,
+            "raw_step": 3565,
+            "eligible_step": 4,
+            "log_probability": -87834.0270428708
+          },
+          {
+            "selected_draw_rank": 307,
+            "walker": 51,
+            "raw_step": 3565,
+            "eligible_step": 4,
+            "log_probability": -91925.29779310405
+          },
+          {
+            "selected_draw_rank": 308,
+            "walker": 52,
+            "raw_step": 3565,
+            "eligible_step": 4,
+            "log_probability": -87823.41329670948
+          },
+          {
+            "selected_draw_rank": 309,
+            "walker": 53,
+            "raw_step": 3565,
+            "eligible_step": 4,
+            "log_probability": -87837.2850331961
+          },
+          {
+            "selected_draw_rank": 310,
+            "walker": 54,
+            "raw_step": 3565,
+            "eligible_step": 4,
+            "log_probability": -81233.95438529408
+          },
+          {
+            "selected_draw_rank": 311,
+            "walker": 55,
+            "raw_step": 3565,
+            "eligible_step": 4,
+            "log_probability": -87828.19528255376
+          },
+          {
+            "selected_draw_rank": 312,
+            "walker": 56,
+            "raw_step": 3565,
+            "eligible_step": 4,
+            "log_probability": -81223.90358426383
+          },
+          {
+            "selected_draw_rank": 313,
+            "walker": 57,
+            "raw_step": 3565,
+            "eligible_step": 4,
+            "log_probability": -81221.47993087063
+          },
+          {
+            "selected_draw_rank": 314,
+            "walker": 58,
+            "raw_step": 3565,
+            "eligible_step": 4,
+            "log_probability": -81229.54051177006
+          },
+          {
+            "selected_draw_rank": 315,
+            "walker": 59,
+            "raw_step": 3565,
+            "eligible_step": 4,
+            "log_probability": -81216.36690099591
+          },
+          {
+            "selected_draw_rank": 316,
+            "walker": 60,
+            "raw_step": 3565,
+            "eligible_step": 4,
+            "log_probability": -81213.38430318359
+          },
+          {
+            "selected_draw_rank": 317,
+            "walker": 61,
+            "raw_step": 3565,
+            "eligible_step": 4,
+            "log_probability": -81221.84086242756
+          },
+          {
+            "selected_draw_rank": 318,
+            "walker": 62,
+            "raw_step": 3565,
+            "eligible_step": 4,
+            "log_probability": -91932.91670890618
+          },
+          {
+            "selected_draw_rank": 319,
+            "walker": 63,
+            "raw_step": 3565,
+            "eligible_step": 4,
+            "log_probability": -81218.17220248238
+          },
+          {
+            "selected_draw_rank": 320,
+            "walker": 0,
+            "raw_step": 3820,
+            "eligible_step": 5,
+            "log_probability": -87812.09297998004
+          },
+          {
+            "selected_draw_rank": 321,
+            "walker": 1,
+            "raw_step": 3820,
+            "eligible_step": 5,
+            "log_probability": -81136.39107996959
+          },
+          {
+            "selected_draw_rank": 322,
+            "walker": 2,
+            "raw_step": 3820,
+            "eligible_step": 5,
+            "log_probability": -81146.6091465368
+          },
+          {
+            "selected_draw_rank": 323,
+            "walker": 3,
+            "raw_step": 3820,
+            "eligible_step": 5,
+            "log_probability": -81139.09701930883
+          },
+          {
+            "selected_draw_rank": 324,
+            "walker": 4,
+            "raw_step": 3820,
+            "eligible_step": 5,
+            "log_probability": -81153.8021233197
+          },
+          {
+            "selected_draw_rank": 325,
+            "walker": 5,
+            "raw_step": 3820,
+            "eligible_step": 5,
+            "log_probability": -81135.93657618677
+          },
+          {
+            "selected_draw_rank": 326,
+            "walker": 6,
+            "raw_step": 3820,
+            "eligible_step": 5,
+            "log_probability": -81142.50153375822
+          },
+          {
+            "selected_draw_rank": 327,
+            "walker": 7,
+            "raw_step": 3820,
+            "eligible_step": 5,
+            "log_probability": -87784.30665949263
+          },
+          {
+            "selected_draw_rank": 328,
+            "walker": 8,
+            "raw_step": 3820,
+            "eligible_step": 5,
+            "log_probability": -87804.54250738237
+          },
+          {
+            "selected_draw_rank": 329,
+            "walker": 9,
+            "raw_step": 3820,
+            "eligible_step": 5,
+            "log_probability": -81134.0512658071
+          },
+          {
+            "selected_draw_rank": 330,
+            "walker": 10,
+            "raw_step": 3820,
+            "eligible_step": 5,
+            "log_probability": -87787.37498496167
+          },
+          {
+            "selected_draw_rank": 331,
+            "walker": 11,
+            "raw_step": 3820,
+            "eligible_step": 5,
+            "log_probability": -81142.70467342563
+          },
+          {
+            "selected_draw_rank": 332,
+            "walker": 12,
+            "raw_step": 3820,
+            "eligible_step": 5,
+            "log_probability": -91903.37852762031
+          },
+          {
+            "selected_draw_rank": 333,
+            "walker": 13,
+            "raw_step": 3820,
+            "eligible_step": 5,
+            "log_probability": -81145.64151246054
+          },
+          {
+            "selected_draw_rank": 334,
+            "walker": 14,
+            "raw_step": 3820,
+            "eligible_step": 5,
+            "log_probability": -87794.14523600625
+          },
+          {
+            "selected_draw_rank": 335,
+            "walker": 15,
+            "raw_step": 3820,
+            "eligible_step": 5,
+            "log_probability": -81147.34974421779
+          },
+          {
+            "selected_draw_rank": 336,
+            "walker": 16,
+            "raw_step": 3820,
+            "eligible_step": 5,
+            "log_probability": -81139.2864948795
+          },
+          {
+            "selected_draw_rank": 337,
+            "walker": 17,
+            "raw_step": 3820,
+            "eligible_step": 5,
+            "log_probability": -81145.609904559
+          },
+          {
+            "selected_draw_rank": 338,
+            "walker": 18,
+            "raw_step": 3820,
+            "eligible_step": 5,
+            "log_probability": -81134.54887608485
+          },
+          {
+            "selected_draw_rank": 339,
+            "walker": 19,
+            "raw_step": 3820,
+            "eligible_step": 5,
+            "log_probability": -87799.79069106997
+          },
+          {
+            "selected_draw_rank": 340,
+            "walker": 20,
+            "raw_step": 3820,
+            "eligible_step": 5,
+            "log_probability": -81140.91620846021
+          },
+          {
+            "selected_draw_rank": 341,
+            "walker": 21,
+            "raw_step": 3820,
+            "eligible_step": 5,
+            "log_probability": -81138.7549216951
+          },
+          {
+            "selected_draw_rank": 342,
+            "walker": 22,
+            "raw_step": 3820,
+            "eligible_step": 5,
+            "log_probability": -81137.75412837681
+          },
+          {
+            "selected_draw_rank": 343,
+            "walker": 23,
+            "raw_step": 3820,
+            "eligible_step": 5,
+            "log_probability": -81142.19764771307
+          },
+          {
+            "selected_draw_rank": 344,
+            "walker": 24,
+            "raw_step": 3820,
+            "eligible_step": 5,
+            "log_probability": -91901.55643676987
+          },
+          {
+            "selected_draw_rank": 345,
+            "walker": 25,
+            "raw_step": 3820,
+            "eligible_step": 5,
+            "log_probability": -81143.44403879534
+          },
+          {
+            "selected_draw_rank": 346,
+            "walker": 26,
+            "raw_step": 3820,
+            "eligible_step": 5,
+            "log_probability": -87796.48081234214
+          },
+          {
+            "selected_draw_rank": 347,
+            "walker": 27,
+            "raw_step": 3820,
+            "eligible_step": 5,
+            "log_probability": -87794.06594170975
+          },
+          {
+            "selected_draw_rank": 348,
+            "walker": 28,
+            "raw_step": 3820,
+            "eligible_step": 5,
+            "log_probability": -81149.6615099583
+          },
+          {
+            "selected_draw_rank": 349,
+            "walker": 29,
+            "raw_step": 3820,
+            "eligible_step": 5,
+            "log_probability": -81140.13298273843
+          },
+          {
+            "selected_draw_rank": 350,
+            "walker": 30,
+            "raw_step": 3820,
+            "eligible_step": 5,
+            "log_probability": -81144.36819895604
+          },
+          {
+            "selected_draw_rank": 351,
+            "walker": 31,
+            "raw_step": 3820,
+            "eligible_step": 5,
+            "log_probability": -81134.65734212218
+          },
+          {
+            "selected_draw_rank": 352,
+            "walker": 32,
+            "raw_step": 3820,
+            "eligible_step": 5,
+            "log_probability": -81136.00620008784
+          },
+          {
+            "selected_draw_rank": 353,
+            "walker": 33,
+            "raw_step": 3820,
+            "eligible_step": 5,
+            "log_probability": -81147.79540742547
+          },
+          {
+            "selected_draw_rank": 354,
+            "walker": 34,
+            "raw_step": 3820,
+            "eligible_step": 5,
+            "log_probability": -91897.1902747008
+          },
+          {
+            "selected_draw_rank": 355,
+            "walker": 35,
+            "raw_step": 3820,
+            "eligible_step": 5,
+            "log_probability": -81145.08551850256
+          },
+          {
+            "selected_draw_rank": 356,
+            "walker": 36,
+            "raw_step": 3820,
+            "eligible_step": 5,
+            "log_probability": -87793.36028904142
+          },
+          {
+            "selected_draw_rank": 357,
+            "walker": 37,
+            "raw_step": 3820,
+            "eligible_step": 5,
+            "log_probability": -87807.59563656623
+          },
+          {
+            "selected_draw_rank": 358,
+            "walker": 38,
+            "raw_step": 3820,
+            "eligible_step": 5,
+            "log_probability": -81138.50172897107
+          },
+          {
+            "selected_draw_rank": 359,
+            "walker": 39,
+            "raw_step": 3820,
+            "eligible_step": 5,
+            "log_probability": -81100.00213477048
+          },
+          {
+            "selected_draw_rank": 360,
+            "walker": 40,
+            "raw_step": 3820,
+            "eligible_step": 5,
+            "log_probability": -81151.01508695188
+          },
+          {
+            "selected_draw_rank": 361,
+            "walker": 41,
+            "raw_step": 3820,
+            "eligible_step": 5,
+            "log_probability": -87805.79991300646
+          },
+          {
+            "selected_draw_rank": 362,
+            "walker": 42,
+            "raw_step": 3820,
+            "eligible_step": 5,
+            "log_probability": -81145.26471621427
+          },
+          {
+            "selected_draw_rank": 363,
+            "walker": 43,
+            "raw_step": 3820,
+            "eligible_step": 5,
+            "log_probability": -81144.84598361637
+          },
+          {
+            "selected_draw_rank": 364,
+            "walker": 44,
+            "raw_step": 3820,
+            "eligible_step": 5,
+            "log_probability": -81141.48829508756
+          },
+          {
+            "selected_draw_rank": 365,
+            "walker": 45,
+            "raw_step": 3820,
+            "eligible_step": 5,
+            "log_probability": -81140.11485320512
+          },
+          {
+            "selected_draw_rank": 366,
+            "walker": 46,
+            "raw_step": 3820,
+            "eligible_step": 5,
+            "log_probability": -81150.46999413583
+          },
+          {
+            "selected_draw_rank": 367,
+            "walker": 47,
+            "raw_step": 3820,
+            "eligible_step": 5,
+            "log_probability": -81143.43372368398
+          },
+          {
+            "selected_draw_rank": 368,
+            "walker": 48,
+            "raw_step": 3820,
+            "eligible_step": 5,
+            "log_probability": -81147.48843414955
+          },
+          {
+            "selected_draw_rank": 369,
+            "walker": 49,
+            "raw_step": 3820,
+            "eligible_step": 5,
+            "log_probability": -81150.13481368037
+          },
+          {
+            "selected_draw_rank": 370,
+            "walker": 50,
+            "raw_step": 3820,
+            "eligible_step": 5,
+            "log_probability": -87798.59171151747
+          },
+          {
+            "selected_draw_rank": 371,
+            "walker": 51,
+            "raw_step": 3820,
+            "eligible_step": 5,
+            "log_probability": -91916.57811074259
+          },
+          {
+            "selected_draw_rank": 372,
+            "walker": 52,
+            "raw_step": 3820,
+            "eligible_step": 5,
+            "log_probability": -87800.46231057774
+          },
+          {
+            "selected_draw_rank": 373,
+            "walker": 53,
+            "raw_step": 3820,
+            "eligible_step": 5,
+            "log_probability": -87798.48799263843
+          },
+          {
+            "selected_draw_rank": 374,
+            "walker": 54,
+            "raw_step": 3820,
+            "eligible_step": 5,
+            "log_probability": -81138.45598592635
+          },
+          {
+            "selected_draw_rank": 375,
+            "walker": 55,
+            "raw_step": 3820,
+            "eligible_step": 5,
+            "log_probability": -87789.33326177907
+          },
+          {
+            "selected_draw_rank": 376,
+            "walker": 56,
+            "raw_step": 3820,
+            "eligible_step": 5,
+            "log_probability": -81141.73905326426
+          },
+          {
+            "selected_draw_rank": 377,
+            "walker": 57,
+            "raw_step": 3820,
+            "eligible_step": 5,
+            "log_probability": -81137.11358865343
+          },
+          {
+            "selected_draw_rank": 378,
+            "walker": 58,
+            "raw_step": 3820,
+            "eligible_step": 5,
+            "log_probability": -81148.97963033523
+          },
+          {
+            "selected_draw_rank": 379,
+            "walker": 59,
+            "raw_step": 3820,
+            "eligible_step": 5,
+            "log_probability": -81145.86824946245
+          },
+          {
+            "selected_draw_rank": 380,
+            "walker": 60,
+            "raw_step": 3820,
+            "eligible_step": 5,
+            "log_probability": -81147.91459864507
+          },
+          {
+            "selected_draw_rank": 381,
+            "walker": 61,
+            "raw_step": 3820,
+            "eligible_step": 5,
+            "log_probability": -81144.5181554756
+          },
+          {
+            "selected_draw_rank": 382,
+            "walker": 62,
+            "raw_step": 3820,
+            "eligible_step": 5,
+            "log_probability": -91892.85975879012
+          },
+          {
+            "selected_draw_rank": 383,
+            "walker": 63,
+            "raw_step": 3820,
+            "eligible_step": 5,
+            "log_probability": -81135.55049871052
+          }
+        ]
+      }
+    },
+    "JERC": {
+      "site": "JERC",
+      "path": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/spinup_forcing_coupling/spinup_forcing_coupling_iter008_jerc_campaign",
+      "metadata": {
+        "schema": "spinup-forcing-coupling-iter008-raw-chain-v1",
+        "chain_shape": [
+          4000,
+          64,
+          15
+        ],
+        "log_prob_shape": [
+          4000,
+          64
+        ],
+        "initial_state_shape": [
+          64,
+          15
+        ],
+        "parameter_names": [
+          "k_l1",
+          "k_l2",
+          "k_l3",
+          "k_s1",
+          "k_s2",
+          "k_s3",
+          "k_s4",
+          "k_frag",
+          "rf_l1s1",
+          "rf_l2s2",
+          "rf_l3s3",
+          "rf_s1s2",
+          "rf_s2s3",
+          "rf_s3s4",
+          "sigma_SR"
+        ],
+        "pmin": [
+          0.2,
+          0.01,
+          0.003,
+          0.01,
+          0.003,
+          0.0003,
+          2e-05,
+          0.0002,
+          0.1,
+          0.1,
+          0.1,
+          0.1,
+          0.1,
+          0.1,
+          0.0
+        ],
+        "pmax": [
+          3.6,
+          0.15,
+          0.03,
+          0.2,
+          0.03,
+          0.003,
+          0.0002,
+          0.002,
+          0.9,
+          0.9,
+          0.9,
+          0.9,
+          0.9,
+          0.9,
+          1.2585830572660597
+        ],
+        "seed": 8008,
+        "sites": [
+          "JERC"
+        ],
+        "nwalkers": 64,
+        "nsteps": 4000,
+        "provenance": {
+          "ITERATION_ID": "iter008",
+          "SITE_NAME": "JERC",
+          "CASE_NAME": "JERC_ppe6_I20TRCNPRDCTCBC",
+          "OBS_PATH": "/xdisk/chopinsong/chopinsong/CTSM_inputdata/lnd/clm2/neon_ncar/NEON/eval_files/v4/JERC/JERC_cdo_merge.nc",
+          "OBS_PATH_sha256": "a5507878801b83c14a1583a4b9f69a039bee748d8a2da2c50073e5fb94ab2c1f",
+          "FORCING_ARTIFACT": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/spinup_forcing_coupling/spinup_forcing_coupling_iter002_release/surrogate_forcing/forcing_surrogate_iter002_sr.pkl",
+          "FORCING_ARTIFACT_sha256": "8d139b32473eebe3f75f77042e542f49ec3c80e89bc65c76b2e98a5c70f4553e",
+          "SPINUP_ARTIFACT": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/UQ_output/spinup_surrogate_iter012_drop21_corr080/surrogate_spinup/spinup_surrogate_iter012_drop21_corr080.pkl",
+          "SPINUP_ARTIFACT_sha256": "1427dc565af858e9c089a5b9545a7f127e42789ef1fe5c9af3af7f8cb12a3023",
+          "SPINUP_MODE": "coupled",
+          "COUPLED_VARIANT": "drop21_corr080",
+          "N_WALKERS": "64",
+          "N_STEPS": "4000",
+          "N_PROCESSES": "16",
+          "SEED": "8008",
+          "SOURCE_MANIFEST": "/xdisk/chopinsong/tianyihu/elm-olmt/development/spinup_forcing_coupling/slurm/iter008/iter008_source_manifest.sha256",
+          "SOURCE_MANIFEST_sha256": "bdcf27bfd70934576669beb4dbd6352e444ebc0ae40ee4ee20ba11b8d00dbb0c",
+          "CASE_HASH_MANIFEST": "/xdisk/chopinsong/tianyihu/elm-olmt/development/spinup_forcing_coupling/slurm/iter008/iter008_case_pickles.sha256",
+          "CASE_HASH_MANIFEST_sha256": "ee623509b954b3c4c9fd14757d3c22bbaca9385d2e5d2a78895f9c5e699956ef",
+          "ARTIFACT_HASH_MANIFEST": "/xdisk/chopinsong/tianyihu/elm-olmt/development/spinup_forcing_coupling/slurm/iter008/iter008_artifacts.sha256",
+          "ARTIFACT_HASH_MANIFEST_sha256": "69bd9429e3011c98288cb784eac97d3fb434575aa7928ae01df85f4ea3623110",
+          "SUBMISSION_CONFIG": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/spinup_forcing_coupling/spinup_forcing_coupling_iter008_jerc_campaign/submission_config_jerc.env",
+          "SUBMISSION_CONFIG_sha256": "4f06fe34d35b46418d0c48cbb82951be3c0f8aa27c882bc65a8119b00e13aec2",
+          "MICROMAMBA_ENV": "OLMT_puma",
+          "MICROMAMBA_MODULE": "micromamba/2.0.2-2"
+        },
+        "raw_chain_sha256": "34a70beadf021acbc8ddeca160c80cb2c3bbf9b4926a3665402b0cefeb08c080"
+      },
+      "health": {
+        "nwalkers": 64,
+        "nsteps": 4000,
+        "mean_acceptance_fraction": 0.10165625,
+        "min_acceptance_fraction": 0.00675,
+        "max_acceptance_fraction": 0.18,
+        "flat_samples": 448,
+        "n_model_parms": 14,
+        "nerr_parms": 1,
+        "mean_autocorr_time": 353.82287020534903,
+        "max_autocorr_time": 482.6513952341954,
+        "approx_ess": 1.2661702725434145
+      },
+      "selection": {
+        "schema": "spinup-forcing-coupling-iter008-selection-v1",
+        "raw_chain_sha256": "34a70beadf021acbc8ddeca160c80cb2c3bbf9b4926a3665402b0cefeb08c080",
+        "discard": 2414,
+        "thin": 242,
+        "tau_available": true,
+        "tau_max": 482.6513952341954,
+        "eligible_draws": 448,
+        "predictive_draws": 448,
+        "per_walker": [
+          {
+            "walker": 0,
+            "eligible": 7,
+            "selected": 7
+          },
+          {
+            "walker": 1,
+            "eligible": 7,
+            "selected": 7
+          },
+          {
+            "walker": 2,
+            "eligible": 7,
+            "selected": 7
+          },
+          {
+            "walker": 3,
+            "eligible": 7,
+            "selected": 7
+          },
+          {
+            "walker": 4,
+            "eligible": 7,
+            "selected": 7
+          },
+          {
+            "walker": 5,
+            "eligible": 7,
+            "selected": 7
+          },
+          {
+            "walker": 6,
+            "eligible": 7,
+            "selected": 7
+          },
+          {
+            "walker": 7,
+            "eligible": 7,
+            "selected": 7
+          },
+          {
+            "walker": 8,
+            "eligible": 7,
+            "selected": 7
+          },
+          {
+            "walker": 9,
+            "eligible": 7,
+            "selected": 7
+          },
+          {
+            "walker": 10,
+            "eligible": 7,
+            "selected": 7
+          },
+          {
+            "walker": 11,
+            "eligible": 7,
+            "selected": 7
+          },
+          {
+            "walker": 12,
+            "eligible": 7,
+            "selected": 7
+          },
+          {
+            "walker": 13,
+            "eligible": 7,
+            "selected": 7
+          },
+          {
+            "walker": 14,
+            "eligible": 7,
+            "selected": 7
+          },
+          {
+            "walker": 15,
+            "eligible": 7,
+            "selected": 7
+          },
+          {
+            "walker": 16,
+            "eligible": 7,
+            "selected": 7
+          },
+          {
+            "walker": 17,
+            "eligible": 7,
+            "selected": 7
+          },
+          {
+            "walker": 18,
+            "eligible": 7,
+            "selected": 7
+          },
+          {
+            "walker": 19,
+            "eligible": 7,
+            "selected": 7
+          },
+          {
+            "walker": 20,
+            "eligible": 7,
+            "selected": 7
+          },
+          {
+            "walker": 21,
+            "eligible": 7,
+            "selected": 7
+          },
+          {
+            "walker": 22,
+            "eligible": 7,
+            "selected": 7
+          },
+          {
+            "walker": 23,
+            "eligible": 7,
+            "selected": 7
+          },
+          {
+            "walker": 24,
+            "eligible": 7,
+            "selected": 7
+          },
+          {
+            "walker": 25,
+            "eligible": 7,
+            "selected": 7
+          },
+          {
+            "walker": 26,
+            "eligible": 7,
+            "selected": 7
+          },
+          {
+            "walker": 27,
+            "eligible": 7,
+            "selected": 7
+          },
+          {
+            "walker": 28,
+            "eligible": 7,
+            "selected": 7
+          },
+          {
+            "walker": 29,
+            "eligible": 7,
+            "selected": 7
+          },
+          {
+            "walker": 30,
+            "eligible": 7,
+            "selected": 7
+          },
+          {
+            "walker": 31,
+            "eligible": 7,
+            "selected": 7
+          },
+          {
+            "walker": 32,
+            "eligible": 7,
+            "selected": 7
+          },
+          {
+            "walker": 33,
+            "eligible": 7,
+            "selected": 7
+          },
+          {
+            "walker": 34,
+            "eligible": 7,
+            "selected": 7
+          },
+          {
+            "walker": 35,
+            "eligible": 7,
+            "selected": 7
+          },
+          {
+            "walker": 36,
+            "eligible": 7,
+            "selected": 7
+          },
+          {
+            "walker": 37,
+            "eligible": 7,
+            "selected": 7
+          },
+          {
+            "walker": 38,
+            "eligible": 7,
+            "selected": 7
+          },
+          {
+            "walker": 39,
+            "eligible": 7,
+            "selected": 7
+          },
+          {
+            "walker": 40,
+            "eligible": 7,
+            "selected": 7
+          },
+          {
+            "walker": 41,
+            "eligible": 7,
+            "selected": 7
+          },
+          {
+            "walker": 42,
+            "eligible": 7,
+            "selected": 7
+          },
+          {
+            "walker": 43,
+            "eligible": 7,
+            "selected": 7
+          },
+          {
+            "walker": 44,
+            "eligible": 7,
+            "selected": 7
+          },
+          {
+            "walker": 45,
+            "eligible": 7,
+            "selected": 7
+          },
+          {
+            "walker": 46,
+            "eligible": 7,
+            "selected": 7
+          },
+          {
+            "walker": 47,
+            "eligible": 7,
+            "selected": 7
+          },
+          {
+            "walker": 48,
+            "eligible": 7,
+            "selected": 7
+          },
+          {
+            "walker": 49,
+            "eligible": 7,
+            "selected": 7
+          },
+          {
+            "walker": 50,
+            "eligible": 7,
+            "selected": 7
+          },
+          {
+            "walker": 51,
+            "eligible": 7,
+            "selected": 7
+          },
+          {
+            "walker": 52,
+            "eligible": 7,
+            "selected": 7
+          },
+          {
+            "walker": 53,
+            "eligible": 7,
+            "selected": 7
+          },
+          {
+            "walker": 54,
+            "eligible": 7,
+            "selected": 7
+          },
+          {
+            "walker": 55,
+            "eligible": 7,
+            "selected": 7
+          },
+          {
+            "walker": 56,
+            "eligible": 7,
+            "selected": 7
+          },
+          {
+            "walker": 57,
+            "eligible": 7,
+            "selected": 7
+          },
+          {
+            "walker": 58,
+            "eligible": 7,
+            "selected": 7
+          },
+          {
+            "walker": 59,
+            "eligible": 7,
+            "selected": 7
+          },
+          {
+            "walker": 60,
+            "eligible": 7,
+            "selected": 7
+          },
+          {
+            "walker": 61,
+            "eligible": 7,
+            "selected": 7
+          },
+          {
+            "walker": 62,
+            "eligible": 7,
+            "selected": 7
+          },
+          {
+            "walker": 63,
+            "eligible": 7,
+            "selected": 7
+          }
+        ],
+        "ledger": [
+          {
+            "selected_draw_rank": 0,
+            "walker": 0,
+            "raw_step": 2414,
+            "eligible_step": 0,
+            "log_probability": -53645.088923520874
+          },
+          {
+            "selected_draw_rank": 1,
+            "walker": 1,
+            "raw_step": 2414,
+            "eligible_step": 0,
+            "log_probability": -52728.620210990994
+          },
+          {
+            "selected_draw_rank": 2,
+            "walker": 2,
+            "raw_step": 2414,
+            "eligible_step": 0,
+            "log_probability": -53231.74927735394
+          },
+          {
+            "selected_draw_rank": 3,
+            "walker": 3,
+            "raw_step": 2414,
+            "eligible_step": 0,
+            "log_probability": -52728.286653120216
+          },
+          {
+            "selected_draw_rank": 4,
+            "walker": 4,
+            "raw_step": 2414,
+            "eligible_step": 0,
+            "log_probability": -52728.73041689525
+          },
+          {
+            "selected_draw_rank": 5,
+            "walker": 5,
+            "raw_step": 2414,
+            "eligible_step": 0,
+            "log_probability": -52920.003292705755
+          },
+          {
+            "selected_draw_rank": 6,
+            "walker": 6,
+            "raw_step": 2414,
+            "eligible_step": 0,
+            "log_probability": -53077.50560380378
+          },
+          {
+            "selected_draw_rank": 7,
+            "walker": 7,
+            "raw_step": 2414,
+            "eligible_step": 0,
+            "log_probability": -52927.97824833186
+          },
+          {
+            "selected_draw_rank": 8,
+            "walker": 8,
+            "raw_step": 2414,
+            "eligible_step": 0,
+            "log_probability": -52726.510298337525
+          },
+          {
+            "selected_draw_rank": 9,
+            "walker": 9,
+            "raw_step": 2414,
+            "eligible_step": 0,
+            "log_probability": -52918.8400374173
+          },
+          {
+            "selected_draw_rank": 10,
+            "walker": 10,
+            "raw_step": 2414,
+            "eligible_step": 0,
+            "log_probability": -53099.98546142727
+          },
+          {
+            "selected_draw_rank": 11,
+            "walker": 11,
+            "raw_step": 2414,
+            "eligible_step": 0,
+            "log_probability": -52925.31268700148
+          },
+          {
+            "selected_draw_rank": 12,
+            "walker": 12,
+            "raw_step": 2414,
+            "eligible_step": 0,
+            "log_probability": -52725.28486340938
+          },
+          {
+            "selected_draw_rank": 13,
+            "walker": 13,
+            "raw_step": 2414,
+            "eligible_step": 0,
+            "log_probability": -53089.00738809441
+          },
+          {
+            "selected_draw_rank": 14,
+            "walker": 14,
+            "raw_step": 2414,
+            "eligible_step": 0,
+            "log_probability": -52926.51075185676
+          },
+          {
+            "selected_draw_rank": 15,
+            "walker": 15,
+            "raw_step": 2414,
+            "eligible_step": 0,
+            "log_probability": -52729.97180906923
+          },
+          {
+            "selected_draw_rank": 16,
+            "walker": 16,
+            "raw_step": 2414,
+            "eligible_step": 0,
+            "log_probability": -52726.489050921475
+          },
+          {
+            "selected_draw_rank": 17,
+            "walker": 17,
+            "raw_step": 2414,
+            "eligible_step": 0,
+            "log_probability": -52726.02254319979
+          },
+          {
+            "selected_draw_rank": 18,
+            "walker": 18,
+            "raw_step": 2414,
+            "eligible_step": 0,
+            "log_probability": -52732.26101505648
+          },
+          {
+            "selected_draw_rank": 19,
+            "walker": 19,
+            "raw_step": 2414,
+            "eligible_step": 0,
+            "log_probability": -52732.32501737112
+          },
+          {
+            "selected_draw_rank": 20,
+            "walker": 20,
+            "raw_step": 2414,
+            "eligible_step": 0,
+            "log_probability": -53204.08753895319
+          },
+          {
+            "selected_draw_rank": 21,
+            "walker": 21,
+            "raw_step": 2414,
+            "eligible_step": 0,
+            "log_probability": -52727.69041987269
+          },
+          {
+            "selected_draw_rank": 22,
+            "walker": 22,
+            "raw_step": 2414,
+            "eligible_step": 0,
+            "log_probability": -53102.18486604894
+          },
+          {
+            "selected_draw_rank": 23,
+            "walker": 23,
+            "raw_step": 2414,
+            "eligible_step": 0,
+            "log_probability": -53110.6159893997
+          },
+          {
+            "selected_draw_rank": 24,
+            "walker": 24,
+            "raw_step": 2414,
+            "eligible_step": 0,
+            "log_probability": -52725.02734321962
+          },
+          {
+            "selected_draw_rank": 25,
+            "walker": 25,
+            "raw_step": 2414,
+            "eligible_step": 0,
+            "log_probability": -52725.98208459589
+          },
+          {
+            "selected_draw_rank": 26,
+            "walker": 26,
+            "raw_step": 2414,
+            "eligible_step": 0,
+            "log_probability": -52728.022503884444
+          },
+          {
+            "selected_draw_rank": 27,
+            "walker": 27,
+            "raw_step": 2414,
+            "eligible_step": 0,
+            "log_probability": -52725.318527399824
+          },
+          {
+            "selected_draw_rank": 28,
+            "walker": 28,
+            "raw_step": 2414,
+            "eligible_step": 0,
+            "log_probability": -53726.913691769885
+          },
+          {
+            "selected_draw_rank": 29,
+            "walker": 29,
+            "raw_step": 2414,
+            "eligible_step": 0,
+            "log_probability": -53099.30682730739
+          },
+          {
+            "selected_draw_rank": 30,
+            "walker": 30,
+            "raw_step": 2414,
+            "eligible_step": 0,
+            "log_probability": -52720.610921048275
+          },
+          {
+            "selected_draw_rank": 31,
+            "walker": 31,
+            "raw_step": 2414,
+            "eligible_step": 0,
+            "log_probability": -53102.0845009088
+          },
+          {
+            "selected_draw_rank": 32,
+            "walker": 32,
+            "raw_step": 2414,
+            "eligible_step": 0,
+            "log_probability": -53340.257936953
+          },
+          {
+            "selected_draw_rank": 33,
+            "walker": 33,
+            "raw_step": 2414,
+            "eligible_step": 0,
+            "log_probability": -53210.107720790395
+          },
+          {
+            "selected_draw_rank": 34,
+            "walker": 34,
+            "raw_step": 2414,
+            "eligible_step": 0,
+            "log_probability": -52726.701594686994
+          },
+          {
+            "selected_draw_rank": 35,
+            "walker": 35,
+            "raw_step": 2414,
+            "eligible_step": 0,
+            "log_probability": -52728.997968398995
+          },
+          {
+            "selected_draw_rank": 36,
+            "walker": 36,
+            "raw_step": 2414,
+            "eligible_step": 0,
+            "log_probability": -52726.18911885389
+          },
+          {
+            "selected_draw_rank": 37,
+            "walker": 37,
+            "raw_step": 2414,
+            "eligible_step": 0,
+            "log_probability": -53073.75317089391
+          },
+          {
+            "selected_draw_rank": 38,
+            "walker": 38,
+            "raw_step": 2414,
+            "eligible_step": 0,
+            "log_probability": -52726.68458720123
+          },
+          {
+            "selected_draw_rank": 39,
+            "walker": 39,
+            "raw_step": 2414,
+            "eligible_step": 0,
+            "log_probability": -52728.07689825271
+          },
+          {
+            "selected_draw_rank": 40,
+            "walker": 40,
+            "raw_step": 2414,
+            "eligible_step": 0,
+            "log_probability": -53393.922750799764
+          },
+          {
+            "selected_draw_rank": 41,
+            "walker": 41,
+            "raw_step": 2414,
+            "eligible_step": 0,
+            "log_probability": -53107.97523736161
+          },
+          {
+            "selected_draw_rank": 42,
+            "walker": 42,
+            "raw_step": 2414,
+            "eligible_step": 0,
+            "log_probability": -53077.15707320729
+          },
+          {
+            "selected_draw_rank": 43,
+            "walker": 43,
+            "raw_step": 2414,
+            "eligible_step": 0,
+            "log_probability": -52733.77038639454
+          },
+          {
+            "selected_draw_rank": 44,
+            "walker": 44,
+            "raw_step": 2414,
+            "eligible_step": 0,
+            "log_probability": -53336.54554773526
+          },
+          {
+            "selected_draw_rank": 45,
+            "walker": 45,
+            "raw_step": 2414,
+            "eligible_step": 0,
+            "log_probability": -52729.40963785464
+          },
+          {
+            "selected_draw_rank": 46,
+            "walker": 46,
+            "raw_step": 2414,
+            "eligible_step": 0,
+            "log_probability": -53094.21610410032
+          },
+          {
+            "selected_draw_rank": 47,
+            "walker": 47,
+            "raw_step": 2414,
+            "eligible_step": 0,
+            "log_probability": -52733.28734943973
+          },
+          {
+            "selected_draw_rank": 48,
+            "walker": 48,
+            "raw_step": 2414,
+            "eligible_step": 0,
+            "log_probability": -53116.31898156153
+          },
+          {
+            "selected_draw_rank": 49,
+            "walker": 49,
+            "raw_step": 2414,
+            "eligible_step": 0,
+            "log_probability": -52724.307638861945
+          },
+          {
+            "selected_draw_rank": 50,
+            "walker": 50,
+            "raw_step": 2414,
+            "eligible_step": 0,
+            "log_probability": -53099.097167687796
+          },
+          {
+            "selected_draw_rank": 51,
+            "walker": 51,
+            "raw_step": 2414,
+            "eligible_step": 0,
+            "log_probability": -52724.97448661638
+          },
+          {
+            "selected_draw_rank": 52,
+            "walker": 52,
+            "raw_step": 2414,
+            "eligible_step": 0,
+            "log_probability": -57336.94168207576
+          },
+          {
+            "selected_draw_rank": 53,
+            "walker": 53,
+            "raw_step": 2414,
+            "eligible_step": 0,
+            "log_probability": -52725.51601275091
+          },
+          {
+            "selected_draw_rank": 54,
+            "walker": 54,
+            "raw_step": 2414,
+            "eligible_step": 0,
+            "log_probability": -53094.170238281346
+          },
+          {
+            "selected_draw_rank": 55,
+            "walker": 55,
+            "raw_step": 2414,
+            "eligible_step": 0,
+            "log_probability": -52727.87781048619
+          },
+          {
+            "selected_draw_rank": 56,
+            "walker": 56,
+            "raw_step": 2414,
+            "eligible_step": 0,
+            "log_probability": -52727.158080535846
+          },
+          {
+            "selected_draw_rank": 57,
+            "walker": 57,
+            "raw_step": 2414,
+            "eligible_step": 0,
+            "log_probability": -52921.795320086494
+          },
+          {
+            "selected_draw_rank": 58,
+            "walker": 58,
+            "raw_step": 2414,
+            "eligible_step": 0,
+            "log_probability": -52724.86320104505
+          },
+          {
+            "selected_draw_rank": 59,
+            "walker": 59,
+            "raw_step": 2414,
+            "eligible_step": 0,
+            "log_probability": -53086.13913227199
+          },
+          {
+            "selected_draw_rank": 60,
+            "walker": 60,
+            "raw_step": 2414,
+            "eligible_step": 0,
+            "log_probability": -52726.9329512669
+          },
+          {
+            "selected_draw_rank": 61,
+            "walker": 61,
+            "raw_step": 2414,
+            "eligible_step": 0,
+            "log_probability": -52732.06873242683
+          },
+          {
+            "selected_draw_rank": 62,
+            "walker": 62,
+            "raw_step": 2414,
+            "eligible_step": 0,
+            "log_probability": -53106.37504813012
+          },
+          {
+            "selected_draw_rank": 63,
+            "walker": 63,
+            "raw_step": 2414,
+            "eligible_step": 0,
+            "log_probability": -52726.758162972175
+          },
+          {
+            "selected_draw_rank": 64,
+            "walker": 0,
+            "raw_step": 2656,
+            "eligible_step": 1,
+            "log_probability": -53646.16105724669
+          },
+          {
+            "selected_draw_rank": 65,
+            "walker": 1,
+            "raw_step": 2656,
+            "eligible_step": 1,
+            "log_probability": -52719.11024149489
+          },
+          {
+            "selected_draw_rank": 66,
+            "walker": 2,
+            "raw_step": 2656,
+            "eligible_step": 1,
+            "log_probability": -53231.063687380316
+          },
+          {
+            "selected_draw_rank": 67,
+            "walker": 3,
+            "raw_step": 2656,
+            "eligible_step": 1,
+            "log_probability": -52722.14922538928
+          },
+          {
+            "selected_draw_rank": 68,
+            "walker": 4,
+            "raw_step": 2656,
+            "eligible_step": 1,
+            "log_probability": -52719.67394397358
+          },
+          {
+            "selected_draw_rank": 69,
+            "walker": 5,
+            "raw_step": 2656,
+            "eligible_step": 1,
+            "log_probability": -52916.707545192534
+          },
+          {
+            "selected_draw_rank": 70,
+            "walker": 6,
+            "raw_step": 2656,
+            "eligible_step": 1,
+            "log_probability": -53067.4471510082
+          },
+          {
+            "selected_draw_rank": 71,
+            "walker": 7,
+            "raw_step": 2656,
+            "eligible_step": 1,
+            "log_probability": -52923.03028429103
+          },
+          {
+            "selected_draw_rank": 72,
+            "walker": 8,
+            "raw_step": 2656,
+            "eligible_step": 1,
+            "log_probability": -52722.24149479916
+          },
+          {
+            "selected_draw_rank": 73,
+            "walker": 9,
+            "raw_step": 2656,
+            "eligible_step": 1,
+            "log_probability": -52903.86241388109
+          },
+          {
+            "selected_draw_rank": 74,
+            "walker": 10,
+            "raw_step": 2656,
+            "eligible_step": 1,
+            "log_probability": -53105.673574534936
+          },
+          {
+            "selected_draw_rank": 75,
+            "walker": 11,
+            "raw_step": 2656,
+            "eligible_step": 1,
+            "log_probability": -52910.01705162147
+          },
+          {
+            "selected_draw_rank": 76,
+            "walker": 12,
+            "raw_step": 2656,
+            "eligible_step": 1,
+            "log_probability": -52721.86891386684
+          },
+          {
+            "selected_draw_rank": 77,
+            "walker": 13,
+            "raw_step": 2656,
+            "eligible_step": 1,
+            "log_probability": -53074.44011284836
+          },
+          {
+            "selected_draw_rank": 78,
+            "walker": 14,
+            "raw_step": 2656,
+            "eligible_step": 1,
+            "log_probability": -52920.39424516705
+          },
+          {
+            "selected_draw_rank": 79,
+            "walker": 15,
+            "raw_step": 2656,
+            "eligible_step": 1,
+            "log_probability": -52729.95571245266
+          },
+          {
+            "selected_draw_rank": 80,
+            "walker": 16,
+            "raw_step": 2656,
+            "eligible_step": 1,
+            "log_probability": -52722.34928443114
+          },
+          {
+            "selected_draw_rank": 81,
+            "walker": 17,
+            "raw_step": 2656,
+            "eligible_step": 1,
+            "log_probability": -52722.86606970228
+          },
+          {
+            "selected_draw_rank": 82,
+            "walker": 18,
+            "raw_step": 2656,
+            "eligible_step": 1,
+            "log_probability": -52721.31819774902
+          },
+          {
+            "selected_draw_rank": 83,
+            "walker": 19,
+            "raw_step": 2656,
+            "eligible_step": 1,
+            "log_probability": -52718.90795813024
+          },
+          {
+            "selected_draw_rank": 84,
+            "walker": 20,
+            "raw_step": 2656,
+            "eligible_step": 1,
+            "log_probability": -53203.20591296953
+          },
+          {
+            "selected_draw_rank": 85,
+            "walker": 21,
+            "raw_step": 2656,
+            "eligible_step": 1,
+            "log_probability": -52724.22772228123
+          },
+          {
+            "selected_draw_rank": 86,
+            "walker": 22,
+            "raw_step": 2656,
+            "eligible_step": 1,
+            "log_probability": -53074.80578906948
+          },
+          {
+            "selected_draw_rank": 87,
+            "walker": 23,
+            "raw_step": 2656,
+            "eligible_step": 1,
+            "log_probability": -53076.14997980809
+          },
+          {
+            "selected_draw_rank": 88,
+            "walker": 24,
+            "raw_step": 2656,
+            "eligible_step": 1,
+            "log_probability": -52721.38902219314
+          },
+          {
+            "selected_draw_rank": 89,
+            "walker": 25,
+            "raw_step": 2656,
+            "eligible_step": 1,
+            "log_probability": -52727.67042105265
+          },
+          {
+            "selected_draw_rank": 90,
+            "walker": 26,
+            "raw_step": 2656,
+            "eligible_step": 1,
+            "log_probability": -52725.58168232501
+          },
+          {
+            "selected_draw_rank": 91,
+            "walker": 27,
+            "raw_step": 2656,
+            "eligible_step": 1,
+            "log_probability": -52720.99266635575
+          },
+          {
+            "selected_draw_rank": 92,
+            "walker": 28,
+            "raw_step": 2656,
+            "eligible_step": 1,
+            "log_probability": -53727.6482216302
+          },
+          {
+            "selected_draw_rank": 93,
+            "walker": 29,
+            "raw_step": 2656,
+            "eligible_step": 1,
+            "log_probability": -53071.74130215065
+          },
+          {
+            "selected_draw_rank": 94,
+            "walker": 30,
+            "raw_step": 2656,
+            "eligible_step": 1,
+            "log_probability": -52722.35890658215
+          },
+          {
+            "selected_draw_rank": 95,
+            "walker": 31,
+            "raw_step": 2656,
+            "eligible_step": 1,
+            "log_probability": -53081.198217844445
+          },
+          {
+            "selected_draw_rank": 96,
+            "walker": 32,
+            "raw_step": 2656,
+            "eligible_step": 1,
+            "log_probability": -53341.182251488484
+          },
+          {
+            "selected_draw_rank": 97,
+            "walker": 33,
+            "raw_step": 2656,
+            "eligible_step": 1,
+            "log_probability": -53207.84843649078
+          },
+          {
+            "selected_draw_rank": 98,
+            "walker": 34,
+            "raw_step": 2656,
+            "eligible_step": 1,
+            "log_probability": -52723.6059978939
+          },
+          {
+            "selected_draw_rank": 99,
+            "walker": 35,
+            "raw_step": 2656,
+            "eligible_step": 1,
+            "log_probability": -52720.847223168326
+          },
+          {
+            "selected_draw_rank": 100,
+            "walker": 36,
+            "raw_step": 2656,
+            "eligible_step": 1,
+            "log_probability": -52723.432575151106
+          },
+          {
+            "selected_draw_rank": 101,
+            "walker": 37,
+            "raw_step": 2656,
+            "eligible_step": 1,
+            "log_probability": -53065.83097919471
+          },
+          {
+            "selected_draw_rank": 102,
+            "walker": 38,
+            "raw_step": 2656,
+            "eligible_step": 1,
+            "log_probability": -52718.07561407805
+          },
+          {
+            "selected_draw_rank": 103,
+            "walker": 39,
+            "raw_step": 2656,
+            "eligible_step": 1,
+            "log_probability": -52725.38437113304
+          },
+          {
+            "selected_draw_rank": 104,
+            "walker": 40,
+            "raw_step": 2656,
+            "eligible_step": 1,
+            "log_probability": -53392.46790477835
+          },
+          {
+            "selected_draw_rank": 105,
+            "walker": 41,
+            "raw_step": 2656,
+            "eligible_step": 1,
+            "log_probability": -53060.38793875928
+          },
+          {
+            "selected_draw_rank": 106,
+            "walker": 42,
+            "raw_step": 2656,
+            "eligible_step": 1,
+            "log_probability": -53066.533990839496
+          },
+          {
+            "selected_draw_rank": 107,
+            "walker": 43,
+            "raw_step": 2656,
+            "eligible_step": 1,
+            "log_probability": -52723.15915655037
+          },
+          {
+            "selected_draw_rank": 108,
+            "walker": 44,
+            "raw_step": 2656,
+            "eligible_step": 1,
+            "log_probability": -53338.402977326565
+          },
+          {
+            "selected_draw_rank": 109,
+            "walker": 45,
+            "raw_step": 2656,
+            "eligible_step": 1,
+            "log_probability": -52723.69000614139
+          },
+          {
+            "selected_draw_rank": 110,
+            "walker": 46,
+            "raw_step": 2656,
+            "eligible_step": 1,
+            "log_probability": -53081.30436878947
+          },
+          {
+            "selected_draw_rank": 111,
+            "walker": 47,
+            "raw_step": 2656,
+            "eligible_step": 1,
+            "log_probability": -52721.97616632651
+          },
+          {
+            "selected_draw_rank": 112,
+            "walker": 48,
+            "raw_step": 2656,
+            "eligible_step": 1,
+            "log_probability": -53086.402457976714
+          },
+          {
+            "selected_draw_rank": 113,
+            "walker": 49,
+            "raw_step": 2656,
+            "eligible_step": 1,
+            "log_probability": -52724.88459065787
+          },
+          {
+            "selected_draw_rank": 114,
+            "walker": 50,
+            "raw_step": 2656,
+            "eligible_step": 1,
+            "log_probability": -53077.615406419485
+          },
+          {
+            "selected_draw_rank": 115,
+            "walker": 51,
+            "raw_step": 2656,
+            "eligible_step": 1,
+            "log_probability": -52723.616011708764
+          },
+          {
+            "selected_draw_rank": 116,
+            "walker": 52,
+            "raw_step": 2656,
+            "eligible_step": 1,
+            "log_probability": -57336.94168207576
+          },
+          {
+            "selected_draw_rank": 117,
+            "walker": 53,
+            "raw_step": 2656,
+            "eligible_step": 1,
+            "log_probability": -52723.156895836095
+          },
+          {
+            "selected_draw_rank": 118,
+            "walker": 54,
+            "raw_step": 2656,
+            "eligible_step": 1,
+            "log_probability": -53089.86960131113
+          },
+          {
+            "selected_draw_rank": 119,
+            "walker": 55,
+            "raw_step": 2656,
+            "eligible_step": 1,
+            "log_probability": -52722.67202822472
+          },
+          {
+            "selected_draw_rank": 120,
+            "walker": 56,
+            "raw_step": 2656,
+            "eligible_step": 1,
+            "log_probability": -52721.22586924082
+          },
+          {
+            "selected_draw_rank": 121,
+            "walker": 57,
+            "raw_step": 2656,
+            "eligible_step": 1,
+            "log_probability": -52923.51694126349
+          },
+          {
+            "selected_draw_rank": 122,
+            "walker": 58,
+            "raw_step": 2656,
+            "eligible_step": 1,
+            "log_probability": -52721.26123874843
+          },
+          {
+            "selected_draw_rank": 123,
+            "walker": 59,
+            "raw_step": 2656,
+            "eligible_step": 1,
+            "log_probability": -53070.28345830404
+          },
+          {
+            "selected_draw_rank": 124,
+            "walker": 60,
+            "raw_step": 2656,
+            "eligible_step": 1,
+            "log_probability": -52722.205079862106
+          },
+          {
+            "selected_draw_rank": 125,
+            "walker": 61,
+            "raw_step": 2656,
+            "eligible_step": 1,
+            "log_probability": -52722.92935430751
+          },
+          {
+            "selected_draw_rank": 126,
+            "walker": 62,
+            "raw_step": 2656,
+            "eligible_step": 1,
+            "log_probability": -53065.3528744044
+          },
+          {
+            "selected_draw_rank": 127,
+            "walker": 63,
+            "raw_step": 2656,
+            "eligible_step": 1,
+            "log_probability": -52721.82769165285
+          },
+          {
+            "selected_draw_rank": 128,
+            "walker": 0,
+            "raw_step": 2898,
+            "eligible_step": 2,
+            "log_probability": -53642.98157163453
+          },
+          {
+            "selected_draw_rank": 129,
+            "walker": 1,
+            "raw_step": 2898,
+            "eligible_step": 2,
+            "log_probability": -52721.598593145485
+          },
+          {
+            "selected_draw_rank": 130,
+            "walker": 2,
+            "raw_step": 2898,
+            "eligible_step": 2,
+            "log_probability": -53230.98305946603
+          },
+          {
+            "selected_draw_rank": 131,
+            "walker": 3,
+            "raw_step": 2898,
+            "eligible_step": 2,
+            "log_probability": -52720.22206878585
+          },
+          {
+            "selected_draw_rank": 132,
+            "walker": 4,
+            "raw_step": 2898,
+            "eligible_step": 2,
+            "log_probability": -52722.02680643502
+          },
+          {
+            "selected_draw_rank": 133,
+            "walker": 5,
+            "raw_step": 2898,
+            "eligible_step": 2,
+            "log_probability": -52847.402858775764
+          },
+          {
+            "selected_draw_rank": 134,
+            "walker": 6,
+            "raw_step": 2898,
+            "eligible_step": 2,
+            "log_probability": -53053.76631800604
+          },
+          {
+            "selected_draw_rank": 135,
+            "walker": 7,
+            "raw_step": 2898,
+            "eligible_step": 2,
+            "log_probability": -52882.193147814
+          },
+          {
+            "selected_draw_rank": 136,
+            "walker": 8,
+            "raw_step": 2898,
+            "eligible_step": 2,
+            "log_probability": -52720.98676469619
+          },
+          {
+            "selected_draw_rank": 137,
+            "walker": 9,
+            "raw_step": 2898,
+            "eligible_step": 2,
+            "log_probability": -52871.83367770298
+          },
+          {
+            "selected_draw_rank": 138,
+            "walker": 10,
+            "raw_step": 2898,
+            "eligible_step": 2,
+            "log_probability": -53080.71310775755
+          },
+          {
+            "selected_draw_rank": 139,
+            "walker": 11,
+            "raw_step": 2898,
+            "eligible_step": 2,
+            "log_probability": -52847.55009742822
+          },
+          {
+            "selected_draw_rank": 140,
+            "walker": 12,
+            "raw_step": 2898,
+            "eligible_step": 2,
+            "log_probability": -52722.91924029151
+          },
+          {
+            "selected_draw_rank": 141,
+            "walker": 13,
+            "raw_step": 2898,
+            "eligible_step": 2,
+            "log_probability": -53063.74293629713
+          },
+          {
+            "selected_draw_rank": 142,
+            "walker": 14,
+            "raw_step": 2898,
+            "eligible_step": 2,
+            "log_probability": -52873.41712361202
+          },
+          {
+            "selected_draw_rank": 143,
+            "walker": 15,
+            "raw_step": 2898,
+            "eligible_step": 2,
+            "log_probability": -52722.725490493984
+          },
+          {
+            "selected_draw_rank": 144,
+            "walker": 16,
+            "raw_step": 2898,
+            "eligible_step": 2,
+            "log_probability": -52722.002981121186
+          },
+          {
+            "selected_draw_rank": 145,
+            "walker": 17,
+            "raw_step": 2898,
+            "eligible_step": 2,
+            "log_probability": -52722.6290525358
+          },
+          {
+            "selected_draw_rank": 146,
+            "walker": 18,
+            "raw_step": 2898,
+            "eligible_step": 2,
+            "log_probability": -52719.585376591895
+          },
+          {
+            "selected_draw_rank": 147,
+            "walker": 19,
+            "raw_step": 2898,
+            "eligible_step": 2,
+            "log_probability": -52722.5069534867
+          },
+          {
+            "selected_draw_rank": 148,
+            "walker": 20,
+            "raw_step": 2898,
+            "eligible_step": 2,
+            "log_probability": -53204.16078870258
+          },
+          {
+            "selected_draw_rank": 149,
+            "walker": 21,
+            "raw_step": 2898,
+            "eligible_step": 2,
+            "log_probability": -52721.39561773781
+          },
+          {
+            "selected_draw_rank": 150,
+            "walker": 22,
+            "raw_step": 2898,
+            "eligible_step": 2,
+            "log_probability": -53056.43742719454
+          },
+          {
+            "selected_draw_rank": 151,
+            "walker": 23,
+            "raw_step": 2898,
+            "eligible_step": 2,
+            "log_probability": -53054.48653975495
+          },
+          {
+            "selected_draw_rank": 152,
+            "walker": 24,
+            "raw_step": 2898,
+            "eligible_step": 2,
+            "log_probability": -52723.3747251342
+          },
+          {
+            "selected_draw_rank": 153,
+            "walker": 25,
+            "raw_step": 2898,
+            "eligible_step": 2,
+            "log_probability": -52725.8508027818
+          },
+          {
+            "selected_draw_rank": 154,
+            "walker": 26,
+            "raw_step": 2898,
+            "eligible_step": 2,
+            "log_probability": -52728.4122746534
+          },
+          {
+            "selected_draw_rank": 155,
+            "walker": 27,
+            "raw_step": 2898,
+            "eligible_step": 2,
+            "log_probability": -52717.30504670346
+          },
+          {
+            "selected_draw_rank": 156,
+            "walker": 28,
+            "raw_step": 2898,
+            "eligible_step": 2,
+            "log_probability": -53722.15654015265
+          },
+          {
+            "selected_draw_rank": 157,
+            "walker": 29,
+            "raw_step": 2898,
+            "eligible_step": 2,
+            "log_probability": -53067.702195265345
+          },
+          {
+            "selected_draw_rank": 158,
+            "walker": 30,
+            "raw_step": 2898,
+            "eligible_step": 2,
+            "log_probability": -52719.85859309619
+          },
+          {
+            "selected_draw_rank": 159,
+            "walker": 31,
+            "raw_step": 2898,
+            "eligible_step": 2,
+            "log_probability": -53078.94623983063
+          },
+          {
+            "selected_draw_rank": 160,
+            "walker": 32,
+            "raw_step": 2898,
+            "eligible_step": 2,
+            "log_probability": -53337.218665476474
+          },
+          {
+            "selected_draw_rank": 161,
+            "walker": 33,
+            "raw_step": 2898,
+            "eligible_step": 2,
+            "log_probability": -53208.034474416556
+          },
+          {
+            "selected_draw_rank": 162,
+            "walker": 34,
+            "raw_step": 2898,
+            "eligible_step": 2,
+            "log_probability": -52721.85227557262
+          },
+          {
+            "selected_draw_rank": 163,
+            "walker": 35,
+            "raw_step": 2898,
+            "eligible_step": 2,
+            "log_probability": -52728.882694707296
+          },
+          {
+            "selected_draw_rank": 164,
+            "walker": 36,
+            "raw_step": 2898,
+            "eligible_step": 2,
+            "log_probability": -52724.4893562809
+          },
+          {
+            "selected_draw_rank": 165,
+            "walker": 37,
+            "raw_step": 2898,
+            "eligible_step": 2,
+            "log_probability": -53050.16279074936
+          },
+          {
+            "selected_draw_rank": 166,
+            "walker": 38,
+            "raw_step": 2898,
+            "eligible_step": 2,
+            "log_probability": -52721.873491523766
+          },
+          {
+            "selected_draw_rank": 167,
+            "walker": 39,
+            "raw_step": 2898,
+            "eligible_step": 2,
+            "log_probability": -52723.01955238244
+          },
+          {
+            "selected_draw_rank": 168,
+            "walker": 40,
+            "raw_step": 2898,
+            "eligible_step": 2,
+            "log_probability": -53386.86005782337
+          },
+          {
+            "selected_draw_rank": 169,
+            "walker": 41,
+            "raw_step": 2898,
+            "eligible_step": 2,
+            "log_probability": -53060.94266843151
+          },
+          {
+            "selected_draw_rank": 170,
+            "walker": 42,
+            "raw_step": 2898,
+            "eligible_step": 2,
+            "log_probability": -53041.819462837455
+          },
+          {
+            "selected_draw_rank": 171,
+            "walker": 43,
+            "raw_step": 2898,
+            "eligible_step": 2,
+            "log_probability": -52720.0659565778
+          },
+          {
+            "selected_draw_rank": 172,
+            "walker": 44,
+            "raw_step": 2898,
+            "eligible_step": 2,
+            "log_probability": -53337.69521434751
+          },
+          {
+            "selected_draw_rank": 173,
+            "walker": 45,
+            "raw_step": 2898,
+            "eligible_step": 2,
+            "log_probability": -52720.37960122517
+          },
+          {
+            "selected_draw_rank": 174,
+            "walker": 46,
+            "raw_step": 2898,
+            "eligible_step": 2,
+            "log_probability": -53060.811228123894
+          },
+          {
+            "selected_draw_rank": 175,
+            "walker": 47,
+            "raw_step": 2898,
+            "eligible_step": 2,
+            "log_probability": -52722.87160416825
+          },
+          {
+            "selected_draw_rank": 176,
+            "walker": 48,
+            "raw_step": 2898,
+            "eligible_step": 2,
+            "log_probability": -53055.82755155817
+          },
+          {
+            "selected_draw_rank": 177,
+            "walker": 49,
+            "raw_step": 2898,
+            "eligible_step": 2,
+            "log_probability": -52727.83543355809
+          },
+          {
+            "selected_draw_rank": 178,
+            "walker": 50,
+            "raw_step": 2898,
+            "eligible_step": 2,
+            "log_probability": -53078.87510193599
+          },
+          {
+            "selected_draw_rank": 179,
+            "walker": 51,
+            "raw_step": 2898,
+            "eligible_step": 2,
+            "log_probability": -52720.34999871827
+          },
+          {
+            "selected_draw_rank": 180,
+            "walker": 52,
+            "raw_step": 2898,
+            "eligible_step": 2,
+            "log_probability": -57336.94168207576
+          },
+          {
+            "selected_draw_rank": 181,
+            "walker": 53,
+            "raw_step": 2898,
+            "eligible_step": 2,
+            "log_probability": -52725.89222345521
+          },
+          {
+            "selected_draw_rank": 182,
+            "walker": 54,
+            "raw_step": 2898,
+            "eligible_step": 2,
+            "log_probability": -53072.36453432815
+          },
+          {
+            "selected_draw_rank": 183,
+            "walker": 55,
+            "raw_step": 2898,
+            "eligible_step": 2,
+            "log_probability": -52718.64509098318
+          },
+          {
+            "selected_draw_rank": 184,
+            "walker": 56,
+            "raw_step": 2898,
+            "eligible_step": 2,
+            "log_probability": -52721.96443243244
+          },
+          {
+            "selected_draw_rank": 185,
+            "walker": 57,
+            "raw_step": 2898,
+            "eligible_step": 2,
+            "log_probability": -52871.558119728135
+          },
+          {
+            "selected_draw_rank": 186,
+            "walker": 58,
+            "raw_step": 2898,
+            "eligible_step": 2,
+            "log_probability": -52720.88458680163
+          },
+          {
+            "selected_draw_rank": 187,
+            "walker": 59,
+            "raw_step": 2898,
+            "eligible_step": 2,
+            "log_probability": -53061.67951073459
+          },
+          {
+            "selected_draw_rank": 188,
+            "walker": 60,
+            "raw_step": 2898,
+            "eligible_step": 2,
+            "log_probability": -52723.66631698743
+          },
+          {
+            "selected_draw_rank": 189,
+            "walker": 61,
+            "raw_step": 2898,
+            "eligible_step": 2,
+            "log_probability": -52719.790721678575
+          },
+          {
+            "selected_draw_rank": 190,
+            "walker": 62,
+            "raw_step": 2898,
+            "eligible_step": 2,
+            "log_probability": -53060.384017602075
+          },
+          {
+            "selected_draw_rank": 191,
+            "walker": 63,
+            "raw_step": 2898,
+            "eligible_step": 2,
+            "log_probability": -52722.44391435899
+          },
+          {
+            "selected_draw_rank": 192,
+            "walker": 0,
+            "raw_step": 3140,
+            "eligible_step": 3,
+            "log_probability": -53644.2945643944
+          },
+          {
+            "selected_draw_rank": 193,
+            "walker": 1,
+            "raw_step": 3140,
+            "eligible_step": 3,
+            "log_probability": -52719.71789795501
+          },
+          {
+            "selected_draw_rank": 194,
+            "walker": 2,
+            "raw_step": 3140,
+            "eligible_step": 3,
+            "log_probability": -53230.98305946603
+          },
+          {
+            "selected_draw_rank": 195,
+            "walker": 3,
+            "raw_step": 3140,
+            "eligible_step": 3,
+            "log_probability": -52720.051828911906
+          },
+          {
+            "selected_draw_rank": 196,
+            "walker": 4,
+            "raw_step": 3140,
+            "eligible_step": 3,
+            "log_probability": -52720.06349259582
+          },
+          {
+            "selected_draw_rank": 197,
+            "walker": 5,
+            "raw_step": 3140,
+            "eligible_step": 3,
+            "log_probability": -52851.83665814938
+          },
+          {
+            "selected_draw_rank": 198,
+            "walker": 6,
+            "raw_step": 3140,
+            "eligible_step": 3,
+            "log_probability": -53044.26725287372
+          },
+          {
+            "selected_draw_rank": 199,
+            "walker": 7,
+            "raw_step": 3140,
+            "eligible_step": 3,
+            "log_probability": -52841.09236781074
+          },
+          {
+            "selected_draw_rank": 200,
+            "walker": 8,
+            "raw_step": 3140,
+            "eligible_step": 3,
+            "log_probability": -52724.845194705165
+          },
+          {
+            "selected_draw_rank": 201,
+            "walker": 9,
+            "raw_step": 3140,
+            "eligible_step": 3,
+            "log_probability": -52846.797956572475
+          },
+          {
+            "selected_draw_rank": 202,
+            "walker": 10,
+            "raw_step": 3140,
+            "eligible_step": 3,
+            "log_probability": -53077.38653507879
+          },
+          {
+            "selected_draw_rank": 203,
+            "walker": 11,
+            "raw_step": 3140,
+            "eligible_step": 3,
+            "log_probability": -52847.83468646735
+          },
+          {
+            "selected_draw_rank": 204,
+            "walker": 12,
+            "raw_step": 3140,
+            "eligible_step": 3,
+            "log_probability": -52722.21108103706
+          },
+          {
+            "selected_draw_rank": 205,
+            "walker": 13,
+            "raw_step": 3140,
+            "eligible_step": 3,
+            "log_probability": -53070.709539567695
+          },
+          {
+            "selected_draw_rank": 206,
+            "walker": 14,
+            "raw_step": 3140,
+            "eligible_step": 3,
+            "log_probability": -52837.43887796003
+          },
+          {
+            "selected_draw_rank": 207,
+            "walker": 15,
+            "raw_step": 3140,
+            "eligible_step": 3,
+            "log_probability": -52719.077904566
+          },
+          {
+            "selected_draw_rank": 208,
+            "walker": 16,
+            "raw_step": 3140,
+            "eligible_step": 3,
+            "log_probability": -52724.07388954581
+          },
+          {
+            "selected_draw_rank": 209,
+            "walker": 17,
+            "raw_step": 3140,
+            "eligible_step": 3,
+            "log_probability": -52723.09570368052
+          },
+          {
+            "selected_draw_rank": 210,
+            "walker": 18,
+            "raw_step": 3140,
+            "eligible_step": 3,
+            "log_probability": -52721.59630678256
+          },
+          {
+            "selected_draw_rank": 211,
+            "walker": 19,
+            "raw_step": 3140,
+            "eligible_step": 3,
+            "log_probability": -52725.03435287114
+          },
+          {
+            "selected_draw_rank": 212,
+            "walker": 20,
+            "raw_step": 3140,
+            "eligible_step": 3,
+            "log_probability": -53203.17607505393
+          },
+          {
+            "selected_draw_rank": 213,
+            "walker": 21,
+            "raw_step": 3140,
+            "eligible_step": 3,
+            "log_probability": -52722.44791204993
+          },
+          {
+            "selected_draw_rank": 214,
+            "walker": 22,
+            "raw_step": 3140,
+            "eligible_step": 3,
+            "log_probability": -53056.808298141405
+          },
+          {
+            "selected_draw_rank": 215,
+            "walker": 23,
+            "raw_step": 3140,
+            "eligible_step": 3,
+            "log_probability": -53054.846452122016
+          },
+          {
+            "selected_draw_rank": 216,
+            "walker": 24,
+            "raw_step": 3140,
+            "eligible_step": 3,
+            "log_probability": -52722.54696333236
+          },
+          {
+            "selected_draw_rank": 217,
+            "walker": 25,
+            "raw_step": 3140,
+            "eligible_step": 3,
+            "log_probability": -52720.29816617048
+          },
+          {
+            "selected_draw_rank": 218,
+            "walker": 26,
+            "raw_step": 3140,
+            "eligible_step": 3,
+            "log_probability": -52719.951518216374
+          },
+          {
+            "selected_draw_rank": 219,
+            "walker": 27,
+            "raw_step": 3140,
+            "eligible_step": 3,
+            "log_probability": -52719.7835557167
+          },
+          {
+            "selected_draw_rank": 220,
+            "walker": 28,
+            "raw_step": 3140,
+            "eligible_step": 3,
+            "log_probability": -53722.35602448101
+          },
+          {
+            "selected_draw_rank": 221,
+            "walker": 29,
+            "raw_step": 3140,
+            "eligible_step": 3,
+            "log_probability": -53068.09498932837
+          },
+          {
+            "selected_draw_rank": 222,
+            "walker": 30,
+            "raw_step": 3140,
+            "eligible_step": 3,
+            "log_probability": -52717.093641128784
+          },
+          {
+            "selected_draw_rank": 223,
+            "walker": 31,
+            "raw_step": 3140,
+            "eligible_step": 3,
+            "log_probability": -53072.53800841517
+          },
+          {
+            "selected_draw_rank": 224,
+            "walker": 32,
+            "raw_step": 3140,
+            "eligible_step": 3,
+            "log_probability": -53337.218665476474
+          },
+          {
+            "selected_draw_rank": 225,
+            "walker": 33,
+            "raw_step": 3140,
+            "eligible_step": 3,
+            "log_probability": -53208.08797714292
+          },
+          {
+            "selected_draw_rank": 226,
+            "walker": 34,
+            "raw_step": 3140,
+            "eligible_step": 3,
+            "log_probability": -52724.14517037977
+          },
+          {
+            "selected_draw_rank": 227,
+            "walker": 35,
+            "raw_step": 3140,
+            "eligible_step": 3,
+            "log_probability": -52724.9298214049
+          },
+          {
+            "selected_draw_rank": 228,
+            "walker": 36,
+            "raw_step": 3140,
+            "eligible_step": 3,
+            "log_probability": -52724.376707362506
+          },
+          {
+            "selected_draw_rank": 229,
+            "walker": 37,
+            "raw_step": 3140,
+            "eligible_step": 3,
+            "log_probability": -53036.85194664318
+          },
+          {
+            "selected_draw_rank": 230,
+            "walker": 38,
+            "raw_step": 3140,
+            "eligible_step": 3,
+            "log_probability": -52718.78615833596
+          },
+          {
+            "selected_draw_rank": 231,
+            "walker": 39,
+            "raw_step": 3140,
+            "eligible_step": 3,
+            "log_probability": -52722.65368750133
+          },
+          {
+            "selected_draw_rank": 232,
+            "walker": 40,
+            "raw_step": 3140,
+            "eligible_step": 3,
+            "log_probability": -53386.86005782337
+          },
+          {
+            "selected_draw_rank": 233,
+            "walker": 41,
+            "raw_step": 3140,
+            "eligible_step": 3,
+            "log_probability": -53056.63788001522
+          },
+          {
+            "selected_draw_rank": 234,
+            "walker": 42,
+            "raw_step": 3140,
+            "eligible_step": 3,
+            "log_probability": -53047.28141771259
+          },
+          {
+            "selected_draw_rank": 235,
+            "walker": 43,
+            "raw_step": 3140,
+            "eligible_step": 3,
+            "log_probability": -52719.39411139535
+          },
+          {
+            "selected_draw_rank": 236,
+            "walker": 44,
+            "raw_step": 3140,
+            "eligible_step": 3,
+            "log_probability": -53338.31591342979
+          },
+          {
+            "selected_draw_rank": 237,
+            "walker": 45,
+            "raw_step": 3140,
+            "eligible_step": 3,
+            "log_probability": -52723.90047158664
+          },
+          {
+            "selected_draw_rank": 238,
+            "walker": 46,
+            "raw_step": 3140,
+            "eligible_step": 3,
+            "log_probability": -53051.492998783455
+          },
+          {
+            "selected_draw_rank": 239,
+            "walker": 47,
+            "raw_step": 3140,
+            "eligible_step": 3,
+            "log_probability": -52719.45340557976
+          },
+          {
+            "selected_draw_rank": 240,
+            "walker": 48,
+            "raw_step": 3140,
+            "eligible_step": 3,
+            "log_probability": -53056.32205266926
+          },
+          {
+            "selected_draw_rank": 241,
+            "walker": 49,
+            "raw_step": 3140,
+            "eligible_step": 3,
+            "log_probability": -52725.140889475515
+          },
+          {
+            "selected_draw_rank": 242,
+            "walker": 50,
+            "raw_step": 3140,
+            "eligible_step": 3,
+            "log_probability": -53078.48234752257
+          },
+          {
+            "selected_draw_rank": 243,
+            "walker": 51,
+            "raw_step": 3140,
+            "eligible_step": 3,
+            "log_probability": -52721.23458746824
+          },
+          {
+            "selected_draw_rank": 244,
+            "walker": 52,
+            "raw_step": 3140,
+            "eligible_step": 3,
+            "log_probability": -57336.94168207576
+          },
+          {
+            "selected_draw_rank": 245,
+            "walker": 53,
+            "raw_step": 3140,
+            "eligible_step": 3,
+            "log_probability": -52725.35106775034
+          },
+          {
+            "selected_draw_rank": 246,
+            "walker": 54,
+            "raw_step": 3140,
+            "eligible_step": 3,
+            "log_probability": -53070.27633162458
+          },
+          {
+            "selected_draw_rank": 247,
+            "walker": 55,
+            "raw_step": 3140,
+            "eligible_step": 3,
+            "log_probability": -52717.858262600756
+          },
+          {
+            "selected_draw_rank": 248,
+            "walker": 56,
+            "raw_step": 3140,
+            "eligible_step": 3,
+            "log_probability": -52725.835408296414
+          },
+          {
+            "selected_draw_rank": 249,
+            "walker": 57,
+            "raw_step": 3140,
+            "eligible_step": 3,
+            "log_probability": -52847.21557559974
+          },
+          {
+            "selected_draw_rank": 250,
+            "walker": 58,
+            "raw_step": 3140,
+            "eligible_step": 3,
+            "log_probability": -52716.82605115902
+          },
+          {
+            "selected_draw_rank": 251,
+            "walker": 59,
+            "raw_step": 3140,
+            "eligible_step": 3,
+            "log_probability": -53045.09910413654
+          },
+          {
+            "selected_draw_rank": 252,
+            "walker": 60,
+            "raw_step": 3140,
+            "eligible_step": 3,
+            "log_probability": -52724.826129298344
+          },
+          {
+            "selected_draw_rank": 253,
+            "walker": 61,
+            "raw_step": 3140,
+            "eligible_step": 3,
+            "log_probability": -52717.66208464937
+          },
+          {
+            "selected_draw_rank": 254,
+            "walker": 62,
+            "raw_step": 3140,
+            "eligible_step": 3,
+            "log_probability": -53054.334139708364
+          },
+          {
+            "selected_draw_rank": 255,
+            "walker": 63,
+            "raw_step": 3140,
+            "eligible_step": 3,
+            "log_probability": -52717.77744309885
+          },
+          {
+            "selected_draw_rank": 256,
+            "walker": 0,
+            "raw_step": 3382,
+            "eligible_step": 4,
+            "log_probability": -53642.75439489288
+          },
+          {
+            "selected_draw_rank": 257,
+            "walker": 1,
+            "raw_step": 3382,
+            "eligible_step": 4,
+            "log_probability": -52719.08779854391
+          },
+          {
+            "selected_draw_rank": 258,
+            "walker": 2,
+            "raw_step": 3382,
+            "eligible_step": 4,
+            "log_probability": -53230.473146404845
+          },
+          {
+            "selected_draw_rank": 259,
+            "walker": 3,
+            "raw_step": 3382,
+            "eligible_step": 4,
+            "log_probability": -52720.70760761112
+          },
+          {
+            "selected_draw_rank": 260,
+            "walker": 4,
+            "raw_step": 3382,
+            "eligible_step": 4,
+            "log_probability": -52723.31273643615
+          },
+          {
+            "selected_draw_rank": 261,
+            "walker": 5,
+            "raw_step": 3382,
+            "eligible_step": 4,
+            "log_probability": -52838.05530835741
+          },
+          {
+            "selected_draw_rank": 262,
+            "walker": 6,
+            "raw_step": 3382,
+            "eligible_step": 4,
+            "log_probability": -53043.40725232545
+          },
+          {
+            "selected_draw_rank": 263,
+            "walker": 7,
+            "raw_step": 3382,
+            "eligible_step": 4,
+            "log_probability": -52835.39472494378
+          },
+          {
+            "selected_draw_rank": 264,
+            "walker": 8,
+            "raw_step": 3382,
+            "eligible_step": 4,
+            "log_probability": -52724.70389269305
+          },
+          {
+            "selected_draw_rank": 265,
+            "walker": 9,
+            "raw_step": 3382,
+            "eligible_step": 4,
+            "log_probability": -52839.407222046124
+          },
+          {
+            "selected_draw_rank": 266,
+            "walker": 10,
+            "raw_step": 3382,
+            "eligible_step": 4,
+            "log_probability": -53075.08835521365
+          },
+          {
+            "selected_draw_rank": 267,
+            "walker": 11,
+            "raw_step": 3382,
+            "eligible_step": 4,
+            "log_probability": -52850.69726940713
+          },
+          {
+            "selected_draw_rank": 268,
+            "walker": 12,
+            "raw_step": 3382,
+            "eligible_step": 4,
+            "log_probability": -52715.8973974158
+          },
+          {
+            "selected_draw_rank": 269,
+            "walker": 13,
+            "raw_step": 3382,
+            "eligible_step": 4,
+            "log_probability": -53067.830734898365
+          },
+          {
+            "selected_draw_rank": 270,
+            "walker": 14,
+            "raw_step": 3382,
+            "eligible_step": 4,
+            "log_probability": -52833.311908060845
+          },
+          {
+            "selected_draw_rank": 271,
+            "walker": 15,
+            "raw_step": 3382,
+            "eligible_step": 4,
+            "log_probability": -52724.22980910076
+          },
+          {
+            "selected_draw_rank": 272,
+            "walker": 16,
+            "raw_step": 3382,
+            "eligible_step": 4,
+            "log_probability": -52719.166824494445
+          },
+          {
+            "selected_draw_rank": 273,
+            "walker": 17,
+            "raw_step": 3382,
+            "eligible_step": 4,
+            "log_probability": -52725.9077079929
+          },
+          {
+            "selected_draw_rank": 274,
+            "walker": 18,
+            "raw_step": 3382,
+            "eligible_step": 4,
+            "log_probability": -52717.82083396172
+          },
+          {
+            "selected_draw_rank": 275,
+            "walker": 19,
+            "raw_step": 3382,
+            "eligible_step": 4,
+            "log_probability": -52722.3395499127
+          },
+          {
+            "selected_draw_rank": 276,
+            "walker": 20,
+            "raw_step": 3382,
+            "eligible_step": 4,
+            "log_probability": -53202.982200869345
+          },
+          {
+            "selected_draw_rank": 277,
+            "walker": 21,
+            "raw_step": 3382,
+            "eligible_step": 4,
+            "log_probability": -52725.19529737102
+          },
+          {
+            "selected_draw_rank": 278,
+            "walker": 22,
+            "raw_step": 3382,
+            "eligible_step": 4,
+            "log_probability": -53050.62210939019
+          },
+          {
+            "selected_draw_rank": 279,
+            "walker": 23,
+            "raw_step": 3382,
+            "eligible_step": 4,
+            "log_probability": -53057.99606908834
+          },
+          {
+            "selected_draw_rank": 280,
+            "walker": 24,
+            "raw_step": 3382,
+            "eligible_step": 4,
+            "log_probability": -52723.432558915454
+          },
+          {
+            "selected_draw_rank": 281,
+            "walker": 25,
+            "raw_step": 3382,
+            "eligible_step": 4,
+            "log_probability": -52721.603882257055
+          },
+          {
+            "selected_draw_rank": 282,
+            "walker": 26,
+            "raw_step": 3382,
+            "eligible_step": 4,
+            "log_probability": -52719.33489736844
+          },
+          {
+            "selected_draw_rank": 283,
+            "walker": 27,
+            "raw_step": 3382,
+            "eligible_step": 4,
+            "log_probability": -52719.74471550083
+          },
+          {
+            "selected_draw_rank": 284,
+            "walker": 28,
+            "raw_step": 3382,
+            "eligible_step": 4,
+            "log_probability": -53722.02817758148
+          },
+          {
+            "selected_draw_rank": 285,
+            "walker": 29,
+            "raw_step": 3382,
+            "eligible_step": 4,
+            "log_probability": -53069.49747585386
+          },
+          {
+            "selected_draw_rank": 286,
+            "walker": 30,
+            "raw_step": 3382,
+            "eligible_step": 4,
+            "log_probability": -52715.738501946835
+          },
+          {
+            "selected_draw_rank": 287,
+            "walker": 31,
+            "raw_step": 3382,
+            "eligible_step": 4,
+            "log_probability": -53076.26307870191
+          },
+          {
+            "selected_draw_rank": 288,
+            "walker": 32,
+            "raw_step": 3382,
+            "eligible_step": 4,
+            "log_probability": -53337.33955892212
+          },
+          {
+            "selected_draw_rank": 289,
+            "walker": 33,
+            "raw_step": 3382,
+            "eligible_step": 4,
+            "log_probability": -53206.48190540248
+          },
+          {
+            "selected_draw_rank": 290,
+            "walker": 34,
+            "raw_step": 3382,
+            "eligible_step": 4,
+            "log_probability": -52725.13910877117
+          },
+          {
+            "selected_draw_rank": 291,
+            "walker": 35,
+            "raw_step": 3382,
+            "eligible_step": 4,
+            "log_probability": -52720.339135456525
+          },
+          {
+            "selected_draw_rank": 292,
+            "walker": 36,
+            "raw_step": 3382,
+            "eligible_step": 4,
+            "log_probability": -52723.20453191339
+          },
+          {
+            "selected_draw_rank": 293,
+            "walker": 37,
+            "raw_step": 3382,
+            "eligible_step": 4,
+            "log_probability": -53036.85194664318
+          },
+          {
+            "selected_draw_rank": 294,
+            "walker": 38,
+            "raw_step": 3382,
+            "eligible_step": 4,
+            "log_probability": -52718.7184469349
+          },
+          {
+            "selected_draw_rank": 295,
+            "walker": 39,
+            "raw_step": 3382,
+            "eligible_step": 4,
+            "log_probability": -52721.44180875833
+          },
+          {
+            "selected_draw_rank": 296,
+            "walker": 40,
+            "raw_step": 3382,
+            "eligible_step": 4,
+            "log_probability": -53386.86005782337
+          },
+          {
+            "selected_draw_rank": 297,
+            "walker": 41,
+            "raw_step": 3382,
+            "eligible_step": 4,
+            "log_probability": -53056.63788001522
+          },
+          {
+            "selected_draw_rank": 298,
+            "walker": 42,
+            "raw_step": 3382,
+            "eligible_step": 4,
+            "log_probability": -53043.53270951939
+          },
+          {
+            "selected_draw_rank": 299,
+            "walker": 43,
+            "raw_step": 3382,
+            "eligible_step": 4,
+            "log_probability": -52733.294086458285
+          },
+          {
+            "selected_draw_rank": 300,
+            "walker": 44,
+            "raw_step": 3382,
+            "eligible_step": 4,
+            "log_probability": -53333.47373220902
+          },
+          {
+            "selected_draw_rank": 301,
+            "walker": 45,
+            "raw_step": 3382,
+            "eligible_step": 4,
+            "log_probability": -52722.19643335597
+          },
+          {
+            "selected_draw_rank": 302,
+            "walker": 46,
+            "raw_step": 3382,
+            "eligible_step": 4,
+            "log_probability": -53052.321869565305
+          },
+          {
+            "selected_draw_rank": 303,
+            "walker": 47,
+            "raw_step": 3382,
+            "eligible_step": 4,
+            "log_probability": -52721.60657307424
+          },
+          {
+            "selected_draw_rank": 304,
+            "walker": 48,
+            "raw_step": 3382,
+            "eligible_step": 4,
+            "log_probability": -53053.826237759204
+          },
+          {
+            "selected_draw_rank": 305,
+            "walker": 49,
+            "raw_step": 3382,
+            "eligible_step": 4,
+            "log_probability": -52716.46465590886
+          },
+          {
+            "selected_draw_rank": 306,
+            "walker": 50,
+            "raw_step": 3382,
+            "eligible_step": 4,
+            "log_probability": -53070.38854713063
+          },
+          {
+            "selected_draw_rank": 307,
+            "walker": 51,
+            "raw_step": 3382,
+            "eligible_step": 4,
+            "log_probability": -52720.25185396269
+          },
+          {
+            "selected_draw_rank": 308,
+            "walker": 52,
+            "raw_step": 3382,
+            "eligible_step": 4,
+            "log_probability": -57336.94168207576
+          },
+          {
+            "selected_draw_rank": 309,
+            "walker": 53,
+            "raw_step": 3382,
+            "eligible_step": 4,
+            "log_probability": -52727.58820926088
+          },
+          {
+            "selected_draw_rank": 310,
+            "walker": 54,
+            "raw_step": 3382,
+            "eligible_step": 4,
+            "log_probability": -53073.01722850683
+          },
+          {
+            "selected_draw_rank": 311,
+            "walker": 55,
+            "raw_step": 3382,
+            "eligible_step": 4,
+            "log_probability": -52723.9101310501
+          },
+          {
+            "selected_draw_rank": 312,
+            "walker": 56,
+            "raw_step": 3382,
+            "eligible_step": 4,
+            "log_probability": -52716.42966898803
+          },
+          {
+            "selected_draw_rank": 313,
+            "walker": 57,
+            "raw_step": 3382,
+            "eligible_step": 4,
+            "log_probability": -52839.31887564027
+          },
+          {
+            "selected_draw_rank": 314,
+            "walker": 58,
+            "raw_step": 3382,
+            "eligible_step": 4,
+            "log_probability": -52718.20330535339
+          },
+          {
+            "selected_draw_rank": 315,
+            "walker": 59,
+            "raw_step": 3382,
+            "eligible_step": 4,
+            "log_probability": -53043.76096209449
+          },
+          {
+            "selected_draw_rank": 316,
+            "walker": 60,
+            "raw_step": 3382,
+            "eligible_step": 4,
+            "log_probability": -52729.21566286559
+          },
+          {
+            "selected_draw_rank": 317,
+            "walker": 61,
+            "raw_step": 3382,
+            "eligible_step": 4,
+            "log_probability": -52721.54900860169
+          },
+          {
+            "selected_draw_rank": 318,
+            "walker": 62,
+            "raw_step": 3382,
+            "eligible_step": 4,
+            "log_probability": -53051.395879124524
+          },
+          {
+            "selected_draw_rank": 319,
+            "walker": 63,
+            "raw_step": 3382,
+            "eligible_step": 4,
+            "log_probability": -52718.674805899995
+          },
+          {
+            "selected_draw_rank": 320,
+            "walker": 0,
+            "raw_step": 3624,
+            "eligible_step": 5,
+            "log_probability": -53642.17779225937
+          },
+          {
+            "selected_draw_rank": 321,
+            "walker": 1,
+            "raw_step": 3624,
+            "eligible_step": 5,
+            "log_probability": -52719.44308860193
+          },
+          {
+            "selected_draw_rank": 322,
+            "walker": 2,
+            "raw_step": 3624,
+            "eligible_step": 5,
+            "log_probability": -53231.265852044904
+          },
+          {
+            "selected_draw_rank": 323,
+            "walker": 3,
+            "raw_step": 3624,
+            "eligible_step": 5,
+            "log_probability": -52722.56628348139
+          },
+          {
+            "selected_draw_rank": 324,
+            "walker": 4,
+            "raw_step": 3624,
+            "eligible_step": 5,
+            "log_probability": -52725.313746085914
+          },
+          {
+            "selected_draw_rank": 325,
+            "walker": 5,
+            "raw_step": 3624,
+            "eligible_step": 5,
+            "log_probability": -52831.036132137306
+          },
+          {
+            "selected_draw_rank": 326,
+            "walker": 6,
+            "raw_step": 3624,
+            "eligible_step": 5,
+            "log_probability": -53045.99033713958
+          },
+          {
+            "selected_draw_rank": 327,
+            "walker": 7,
+            "raw_step": 3624,
+            "eligible_step": 5,
+            "log_probability": -52825.86805474381
+          },
+          {
+            "selected_draw_rank": 328,
+            "walker": 8,
+            "raw_step": 3624,
+            "eligible_step": 5,
+            "log_probability": -52721.83404452485
+          },
+          {
+            "selected_draw_rank": 329,
+            "walker": 9,
+            "raw_step": 3624,
+            "eligible_step": 5,
+            "log_probability": -52843.99522245589
+          },
+          {
+            "selected_draw_rank": 330,
+            "walker": 10,
+            "raw_step": 3624,
+            "eligible_step": 5,
+            "log_probability": -53076.28929205834
+          },
+          {
+            "selected_draw_rank": 331,
+            "walker": 11,
+            "raw_step": 3624,
+            "eligible_step": 5,
+            "log_probability": -52845.95635655397
+          },
+          {
+            "selected_draw_rank": 332,
+            "walker": 12,
+            "raw_step": 3624,
+            "eligible_step": 5,
+            "log_probability": -52725.273367993475
+          },
+          {
+            "selected_draw_rank": 333,
+            "walker": 13,
+            "raw_step": 3624,
+            "eligible_step": 5,
+            "log_probability": -53048.32377948182
+          },
+          {
+            "selected_draw_rank": 334,
+            "walker": 14,
+            "raw_step": 3624,
+            "eligible_step": 5,
+            "log_probability": -52829.14772879023
+          },
+          {
+            "selected_draw_rank": 335,
+            "walker": 15,
+            "raw_step": 3624,
+            "eligible_step": 5,
+            "log_probability": -52725.06376178934
+          },
+          {
+            "selected_draw_rank": 336,
+            "walker": 16,
+            "raw_step": 3624,
+            "eligible_step": 5,
+            "log_probability": -52721.38837381137
+          },
+          {
+            "selected_draw_rank": 337,
+            "walker": 17,
+            "raw_step": 3624,
+            "eligible_step": 5,
+            "log_probability": -52720.54642513268
+          },
+          {
+            "selected_draw_rank": 338,
+            "walker": 18,
+            "raw_step": 3624,
+            "eligible_step": 5,
+            "log_probability": -52721.54297900376
+          },
+          {
+            "selected_draw_rank": 339,
+            "walker": 19,
+            "raw_step": 3624,
+            "eligible_step": 5,
+            "log_probability": -52719.13194431725
+          },
+          {
+            "selected_draw_rank": 340,
+            "walker": 20,
+            "raw_step": 3624,
+            "eligible_step": 5,
+            "log_probability": -53204.053578575404
+          },
+          {
+            "selected_draw_rank": 341,
+            "walker": 21,
+            "raw_step": 3624,
+            "eligible_step": 5,
+            "log_probability": -52717.64958263808
+          },
+          {
+            "selected_draw_rank": 342,
+            "walker": 22,
+            "raw_step": 3624,
+            "eligible_step": 5,
+            "log_probability": -53050.32591355302
+          },
+          {
+            "selected_draw_rank": 343,
+            "walker": 23,
+            "raw_step": 3624,
+            "eligible_step": 5,
+            "log_probability": -53053.73361526896
+          },
+          {
+            "selected_draw_rank": 344,
+            "walker": 24,
+            "raw_step": 3624,
+            "eligible_step": 5,
+            "log_probability": -52717.894972087204
+          },
+          {
+            "selected_draw_rank": 345,
+            "walker": 25,
+            "raw_step": 3624,
+            "eligible_step": 5,
+            "log_probability": -52719.73872413098
+          },
+          {
+            "selected_draw_rank": 346,
+            "walker": 26,
+            "raw_step": 3624,
+            "eligible_step": 5,
+            "log_probability": -52719.91064026011
+          },
+          {
+            "selected_draw_rank": 347,
+            "walker": 27,
+            "raw_step": 3624,
+            "eligible_step": 5,
+            "log_probability": -52727.3614339811
+          },
+          {
+            "selected_draw_rank": 348,
+            "walker": 28,
+            "raw_step": 3624,
+            "eligible_step": 5,
+            "log_probability": -53719.92417303311
+          },
+          {
+            "selected_draw_rank": 349,
+            "walker": 29,
+            "raw_step": 3624,
+            "eligible_step": 5,
+            "log_probability": -53067.084276628135
+          },
+          {
+            "selected_draw_rank": 350,
+            "walker": 30,
+            "raw_step": 3624,
+            "eligible_step": 5,
+            "log_probability": -52720.11401035923
+          },
+          {
+            "selected_draw_rank": 351,
+            "walker": 31,
+            "raw_step": 3624,
+            "eligible_step": 5,
+            "log_probability": -53041.27929004199
+          },
+          {
+            "selected_draw_rank": 352,
+            "walker": 32,
+            "raw_step": 3624,
+            "eligible_step": 5,
+            "log_probability": -53334.70788424045
+          },
+          {
+            "selected_draw_rank": 353,
+            "walker": 33,
+            "raw_step": 3624,
+            "eligible_step": 5,
+            "log_probability": -53205.88792844637
+          },
+          {
+            "selected_draw_rank": 354,
+            "walker": 34,
+            "raw_step": 3624,
+            "eligible_step": 5,
+            "log_probability": -52726.650381486215
+          },
+          {
+            "selected_draw_rank": 355,
+            "walker": 35,
+            "raw_step": 3624,
+            "eligible_step": 5,
+            "log_probability": -52723.22477307419
+          },
+          {
+            "selected_draw_rank": 356,
+            "walker": 36,
+            "raw_step": 3624,
+            "eligible_step": 5,
+            "log_probability": -52720.54275152284
+          },
+          {
+            "selected_draw_rank": 357,
+            "walker": 37,
+            "raw_step": 3624,
+            "eligible_step": 5,
+            "log_probability": -53037.036947136716
+          },
+          {
+            "selected_draw_rank": 358,
+            "walker": 38,
+            "raw_step": 3624,
+            "eligible_step": 5,
+            "log_probability": -52723.19279423039
+          },
+          {
+            "selected_draw_rank": 359,
+            "walker": 39,
+            "raw_step": 3624,
+            "eligible_step": 5,
+            "log_probability": -52717.87444347466
+          },
+          {
+            "selected_draw_rank": 360,
+            "walker": 40,
+            "raw_step": 3624,
+            "eligible_step": 5,
+            "log_probability": -53386.62517305183
+          },
+          {
+            "selected_draw_rank": 361,
+            "walker": 41,
+            "raw_step": 3624,
+            "eligible_step": 5,
+            "log_probability": -53055.50974487881
+          },
+          {
+            "selected_draw_rank": 362,
+            "walker": 42,
+            "raw_step": 3624,
+            "eligible_step": 5,
+            "log_probability": -53043.70828744875
+          },
+          {
+            "selected_draw_rank": 363,
+            "walker": 43,
+            "raw_step": 3624,
+            "eligible_step": 5,
+            "log_probability": -52720.24773173359
+          },
+          {
+            "selected_draw_rank": 364,
+            "walker": 44,
+            "raw_step": 3624,
+            "eligible_step": 5,
+            "log_probability": -53332.49975394532
+          },
+          {
+            "selected_draw_rank": 365,
+            "walker": 45,
+            "raw_step": 3624,
+            "eligible_step": 5,
+            "log_probability": -52720.29827638273
+          },
+          {
+            "selected_draw_rank": 366,
+            "walker": 46,
+            "raw_step": 3624,
+            "eligible_step": 5,
+            "log_probability": -53052.75431326116
+          },
+          {
+            "selected_draw_rank": 367,
+            "walker": 47,
+            "raw_step": 3624,
+            "eligible_step": 5,
+            "log_probability": -52733.02294356471
+          },
+          {
+            "selected_draw_rank": 368,
+            "walker": 48,
+            "raw_step": 3624,
+            "eligible_step": 5,
+            "log_probability": -53052.254681108854
+          },
+          {
+            "selected_draw_rank": 369,
+            "walker": 49,
+            "raw_step": 3624,
+            "eligible_step": 5,
+            "log_probability": -52721.03090268535
+          },
+          {
+            "selected_draw_rank": 370,
+            "walker": 50,
+            "raw_step": 3624,
+            "eligible_step": 5,
+            "log_probability": -53077.86270875476
+          },
+          {
+            "selected_draw_rank": 371,
+            "walker": 51,
+            "raw_step": 3624,
+            "eligible_step": 5,
+            "log_probability": -52721.9688121943
+          },
+          {
+            "selected_draw_rank": 372,
+            "walker": 52,
+            "raw_step": 3624,
+            "eligible_step": 5,
+            "log_probability": -57336.88954964475
+          },
+          {
+            "selected_draw_rank": 373,
+            "walker": 53,
+            "raw_step": 3624,
+            "eligible_step": 5,
+            "log_probability": -52724.62729440629
+          },
+          {
+            "selected_draw_rank": 374,
+            "walker": 54,
+            "raw_step": 3624,
+            "eligible_step": 5,
+            "log_probability": -53072.740782410656
+          },
+          {
+            "selected_draw_rank": 375,
+            "walker": 55,
+            "raw_step": 3624,
+            "eligible_step": 5,
+            "log_probability": -52720.70662267879
+          },
+          {
+            "selected_draw_rank": 376,
+            "walker": 56,
+            "raw_step": 3624,
+            "eligible_step": 5,
+            "log_probability": -52718.91000613571
+          },
+          {
+            "selected_draw_rank": 377,
+            "walker": 57,
+            "raw_step": 3624,
+            "eligible_step": 5,
+            "log_probability": -52840.3252313241
+          },
+          {
+            "selected_draw_rank": 378,
+            "walker": 58,
+            "raw_step": 3624,
+            "eligible_step": 5,
+            "log_probability": -52716.13601297503
+          },
+          {
+            "selected_draw_rank": 379,
+            "walker": 59,
+            "raw_step": 3624,
+            "eligible_step": 5,
+            "log_probability": -53042.29371411995
+          },
+          {
+            "selected_draw_rank": 380,
+            "walker": 60,
+            "raw_step": 3624,
+            "eligible_step": 5,
+            "log_probability": -52726.34240036113
+          },
+          {
+            "selected_draw_rank": 381,
+            "walker": 61,
+            "raw_step": 3624,
+            "eligible_step": 5,
+            "log_probability": -52720.01697808442
+          },
+          {
+            "selected_draw_rank": 382,
+            "walker": 62,
+            "raw_step": 3624,
+            "eligible_step": 5,
+            "log_probability": -53051.56480183775
+          },
+          {
+            "selected_draw_rank": 383,
+            "walker": 63,
+            "raw_step": 3624,
+            "eligible_step": 5,
+            "log_probability": -52726.0681985612
+          },
+          {
+            "selected_draw_rank": 384,
+            "walker": 0,
+            "raw_step": 3866,
+            "eligible_step": 6,
+            "log_probability": -53640.10667210573
+          },
+          {
+            "selected_draw_rank": 385,
+            "walker": 1,
+            "raw_step": 3866,
+            "eligible_step": 6,
+            "log_probability": -52719.59978338743
+          },
+          {
+            "selected_draw_rank": 386,
+            "walker": 2,
+            "raw_step": 3866,
+            "eligible_step": 6,
+            "log_probability": -53231.265852044904
+          },
+          {
+            "selected_draw_rank": 387,
+            "walker": 3,
+            "raw_step": 3866,
+            "eligible_step": 6,
+            "log_probability": -52720.89306389208
+          },
+          {
+            "selected_draw_rank": 388,
+            "walker": 4,
+            "raw_step": 3866,
+            "eligible_step": 6,
+            "log_probability": -52718.71929434119
+          },
+          {
+            "selected_draw_rank": 389,
+            "walker": 5,
+            "raw_step": 3866,
+            "eligible_step": 6,
+            "log_probability": -52827.32817894802
+          },
+          {
+            "selected_draw_rank": 390,
+            "walker": 6,
+            "raw_step": 3866,
+            "eligible_step": 6,
+            "log_probability": -53046.14812673314
+          },
+          {
+            "selected_draw_rank": 391,
+            "walker": 7,
+            "raw_step": 3866,
+            "eligible_step": 6,
+            "log_probability": -52825.054127483425
+          },
+          {
+            "selected_draw_rank": 392,
+            "walker": 8,
+            "raw_step": 3866,
+            "eligible_step": 6,
+            "log_probability": -52723.35298692719
+          },
+          {
+            "selected_draw_rank": 393,
+            "walker": 9,
+            "raw_step": 3866,
+            "eligible_step": 6,
+            "log_probability": -52829.760752836766
+          },
+          {
+            "selected_draw_rank": 394,
+            "walker": 10,
+            "raw_step": 3866,
+            "eligible_step": 6,
+            "log_probability": -53076.12213623908
+          },
+          {
+            "selected_draw_rank": 395,
+            "walker": 11,
+            "raw_step": 3866,
+            "eligible_step": 6,
+            "log_probability": -52840.15475484936
+          },
+          {
+            "selected_draw_rank": 396,
+            "walker": 12,
+            "raw_step": 3866,
+            "eligible_step": 6,
+            "log_probability": -52726.12971619852
+          },
+          {
+            "selected_draw_rank": 397,
+            "walker": 13,
+            "raw_step": 3866,
+            "eligible_step": 6,
+            "log_probability": -53038.763552384895
+          },
+          {
+            "selected_draw_rank": 398,
+            "walker": 14,
+            "raw_step": 3866,
+            "eligible_step": 6,
+            "log_probability": -52823.825225110595
+          },
+          {
+            "selected_draw_rank": 399,
+            "walker": 15,
+            "raw_step": 3866,
+            "eligible_step": 6,
+            "log_probability": -52720.9851822199
+          },
+          {
+            "selected_draw_rank": 400,
+            "walker": 16,
+            "raw_step": 3866,
+            "eligible_step": 6,
+            "log_probability": -52721.41262058824
+          },
+          {
+            "selected_draw_rank": 401,
+            "walker": 17,
+            "raw_step": 3866,
+            "eligible_step": 6,
+            "log_probability": -52717.05787498722
+          },
+          {
+            "selected_draw_rank": 402,
+            "walker": 18,
+            "raw_step": 3866,
+            "eligible_step": 6,
+            "log_probability": -52718.20996382832
+          },
+          {
+            "selected_draw_rank": 403,
+            "walker": 19,
+            "raw_step": 3866,
+            "eligible_step": 6,
+            "log_probability": -52719.23550679162
+          },
+          {
+            "selected_draw_rank": 404,
+            "walker": 20,
+            "raw_step": 3866,
+            "eligible_step": 6,
+            "log_probability": -53200.56333896782
+          },
+          {
+            "selected_draw_rank": 405,
+            "walker": 21,
+            "raw_step": 3866,
+            "eligible_step": 6,
+            "log_probability": -52719.05004958329
+          },
+          {
+            "selected_draw_rank": 406,
+            "walker": 22,
+            "raw_step": 3866,
+            "eligible_step": 6,
+            "log_probability": -53024.5870670438
+          },
+          {
+            "selected_draw_rank": 407,
+            "walker": 23,
+            "raw_step": 3866,
+            "eligible_step": 6,
+            "log_probability": -53051.503425917865
+          },
+          {
+            "selected_draw_rank": 408,
+            "walker": 24,
+            "raw_step": 3866,
+            "eligible_step": 6,
+            "log_probability": -52717.32602982152
+          },
+          {
+            "selected_draw_rank": 409,
+            "walker": 25,
+            "raw_step": 3866,
+            "eligible_step": 6,
+            "log_probability": -52720.09181697085
+          },
+          {
+            "selected_draw_rank": 410,
+            "walker": 26,
+            "raw_step": 3866,
+            "eligible_step": 6,
+            "log_probability": -52722.391052055
+          },
+          {
+            "selected_draw_rank": 411,
+            "walker": 27,
+            "raw_step": 3866,
+            "eligible_step": 6,
+            "log_probability": -52723.07399068609
+          },
+          {
+            "selected_draw_rank": 412,
+            "walker": 28,
+            "raw_step": 3866,
+            "eligible_step": 6,
+            "log_probability": -53718.709843081764
+          },
+          {
+            "selected_draw_rank": 413,
+            "walker": 29,
+            "raw_step": 3866,
+            "eligible_step": 6,
+            "log_probability": -53068.09017831473
+          },
+          {
+            "selected_draw_rank": 414,
+            "walker": 30,
+            "raw_step": 3866,
+            "eligible_step": 6,
+            "log_probability": -52718.31911642411
+          },
+          {
+            "selected_draw_rank": 415,
+            "walker": 31,
+            "raw_step": 3866,
+            "eligible_step": 6,
+            "log_probability": -53007.562728847326
+          },
+          {
+            "selected_draw_rank": 416,
+            "walker": 32,
+            "raw_step": 3866,
+            "eligible_step": 6,
+            "log_probability": -53334.50348089383
+          },
+          {
+            "selected_draw_rank": 417,
+            "walker": 33,
+            "raw_step": 3866,
+            "eligible_step": 6,
+            "log_probability": -53208.15460525343
+          },
+          {
+            "selected_draw_rank": 418,
+            "walker": 34,
+            "raw_step": 3866,
+            "eligible_step": 6,
+            "log_probability": -52727.81470108728
+          },
+          {
+            "selected_draw_rank": 419,
+            "walker": 35,
+            "raw_step": 3866,
+            "eligible_step": 6,
+            "log_probability": -52717.81185199501
+          },
+          {
+            "selected_draw_rank": 420,
+            "walker": 36,
+            "raw_step": 3866,
+            "eligible_step": 6,
+            "log_probability": -52722.73881237662
+          },
+          {
+            "selected_draw_rank": 421,
+            "walker": 37,
+            "raw_step": 3866,
+            "eligible_step": 6,
+            "log_probability": -53036.75955036211
+          },
+          {
+            "selected_draw_rank": 422,
+            "walker": 38,
+            "raw_step": 3866,
+            "eligible_step": 6,
+            "log_probability": -52725.96637892671
+          },
+          {
+            "selected_draw_rank": 423,
+            "walker": 39,
+            "raw_step": 3866,
+            "eligible_step": 6,
+            "log_probability": -52719.81797712142
+          },
+          {
+            "selected_draw_rank": 424,
+            "walker": 40,
+            "raw_step": 3866,
+            "eligible_step": 6,
+            "log_probability": -53387.50225842088
+          },
+          {
+            "selected_draw_rank": 425,
+            "walker": 41,
+            "raw_step": 3866,
+            "eligible_step": 6,
+            "log_probability": -53047.83341163389
+          },
+          {
+            "selected_draw_rank": 426,
+            "walker": 42,
+            "raw_step": 3866,
+            "eligible_step": 6,
+            "log_probability": -53044.28397207133
+          },
+          {
+            "selected_draw_rank": 427,
+            "walker": 43,
+            "raw_step": 3866,
+            "eligible_step": 6,
+            "log_probability": -52724.34757557652
+          },
+          {
+            "selected_draw_rank": 428,
+            "walker": 44,
+            "raw_step": 3866,
+            "eligible_step": 6,
+            "log_probability": -53334.33541471347
+          },
+          {
+            "selected_draw_rank": 429,
+            "walker": 45,
+            "raw_step": 3866,
+            "eligible_step": 6,
+            "log_probability": -52723.62097494781
+          },
+          {
+            "selected_draw_rank": 430,
+            "walker": 46,
+            "raw_step": 3866,
+            "eligible_step": 6,
+            "log_probability": -53034.812776251274
+          },
+          {
+            "selected_draw_rank": 431,
+            "walker": 47,
+            "raw_step": 3866,
+            "eligible_step": 6,
+            "log_probability": -52716.93937534219
+          },
+          {
+            "selected_draw_rank": 432,
+            "walker": 48,
+            "raw_step": 3866,
+            "eligible_step": 6,
+            "log_probability": -53048.146305804694
+          },
+          {
+            "selected_draw_rank": 433,
+            "walker": 49,
+            "raw_step": 3866,
+            "eligible_step": 6,
+            "log_probability": -52720.627036549304
+          },
+          {
+            "selected_draw_rank": 434,
+            "walker": 50,
+            "raw_step": 3866,
+            "eligible_step": 6,
+            "log_probability": -53065.22527062412
+          },
+          {
+            "selected_draw_rank": 435,
+            "walker": 51,
+            "raw_step": 3866,
+            "eligible_step": 6,
+            "log_probability": -52718.73122123844
+          },
+          {
+            "selected_draw_rank": 436,
+            "walker": 52,
+            "raw_step": 3866,
+            "eligible_step": 6,
+            "log_probability": -57336.88954964475
+          },
+          {
+            "selected_draw_rank": 437,
+            "walker": 53,
+            "raw_step": 3866,
+            "eligible_step": 6,
+            "log_probability": -52725.76979241929
+          },
+          {
+            "selected_draw_rank": 438,
+            "walker": 54,
+            "raw_step": 3866,
+            "eligible_step": 6,
+            "log_probability": -53072.217761740794
+          },
+          {
+            "selected_draw_rank": 439,
+            "walker": 55,
+            "raw_step": 3866,
+            "eligible_step": 6,
+            "log_probability": -52721.30540494752
+          },
+          {
+            "selected_draw_rank": 440,
+            "walker": 56,
+            "raw_step": 3866,
+            "eligible_step": 6,
+            "log_probability": -52720.251506867724
+          },
+          {
+            "selected_draw_rank": 441,
+            "walker": 57,
+            "raw_step": 3866,
+            "eligible_step": 6,
+            "log_probability": -52831.62622995077
+          },
+          {
+            "selected_draw_rank": 442,
+            "walker": 58,
+            "raw_step": 3866,
+            "eligible_step": 6,
+            "log_probability": -52720.978227376596
+          },
+          {
+            "selected_draw_rank": 443,
+            "walker": 59,
+            "raw_step": 3866,
+            "eligible_step": 6,
+            "log_probability": -53040.11377482018
+          },
+          {
+            "selected_draw_rank": 444,
+            "walker": 60,
+            "raw_step": 3866,
+            "eligible_step": 6,
+            "log_probability": -52720.60221751082
+          },
+          {
+            "selected_draw_rank": 445,
+            "walker": 61,
+            "raw_step": 3866,
+            "eligible_step": 6,
+            "log_probability": -52725.280741633906
+          },
+          {
+            "selected_draw_rank": 446,
+            "walker": 62,
+            "raw_step": 3866,
+            "eligible_step": 6,
+            "log_probability": -53038.410194736396
+          },
+          {
+            "selected_draw_rank": 447,
+            "walker": 63,
+            "raw_step": 3866,
+            "eligible_step": 6,
+            "log_probability": -52719.28638213502
+          }
+        ]
+      }
+    }
+  },
+  "same_seed": true,
+  "route": "sampler-limited",
+  "scientific_quality_gate": false,
+  "evidence": {
+    "residual_lag1_values": [
+      0.9989901502781576,
+      0.9939464570265917
+    ]
+  }
+}

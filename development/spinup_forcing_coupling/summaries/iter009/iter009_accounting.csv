@@ -1,0 +1,9 @@
+work_unit,job_ids,final_state,exit_code,notes
+preflight,23538732;23538737;23538751,COMPLETED,0:0,Two launcher-only failures classified; approved third attempt passed
+initialize,23538764,COMPLETED,0:0,Initialization pools and all twelve bundles passed
+B_campaign,23538767_[1-6];23538796_[1-6];23538844_[1-6],COMPLETED,0:0,Two all-leaf pre-sampling defects classified; HDF-creation recovery passed
+T_campaign,23538909_[1-6],COMPLETED,0:0,All six final leaves complete
+I_campaign,23538920_[1-6],COMPLETED,0:0,All six final leaves complete
+M_campaign,23538931_[1-6],COMPLETED,0:0,All six final leaves complete
+TIM_campaign,23538937_[1-6],COMPLETED,0:0,All six final leaves complete
+validation,23540890;23540912,COMPLETED,0:0,First attempt failed before evaluation on import context; reviewed retry passed

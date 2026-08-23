@@ -57,6 +57,7 @@ def train_multicase_surrogate_with_forcing(
     minimal_output: bool = False,
     stats_run_id: Optional[str] = None,
     reuse_x_memmap_path: Optional[Union[str, Path]] = None,
+    permutation_repeats: int = 8,
 ) -> Optional[Dict[str, Any]]:
     """
     Load multiple pickled ELM cases, merge their training rows, and fit a single
@@ -158,4 +159,5 @@ def train_multicase_surrogate_with_forcing(
         minimal_output=minimal_output,
         stats_run_id=stats_run_id,
         reuse_x_memmap_path=reuse_x_memmap_path,
+        permutation_repeats=permutation_repeats,
     )

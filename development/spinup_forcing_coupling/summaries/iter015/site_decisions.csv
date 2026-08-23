@@ -1,0 +1,3 @@
+schema,site,integrity_pass,interpretability_pass,eligible_configurations,decision,unique_non_dominated,selected_configuration
+spinup-forcing-coupling-iter015-site-decision-v1,ABBY,True,True,['hourly_1.00'],inconclusive_seed_instability,['daily_0.50'],
+spinup-forcing-coupling-iter015-site-decision-v1,JERC,True,False,[],inconclusive_seed_instability,"['hourly_0.50', 'hourly_0.75', 'hourly_1.00']",

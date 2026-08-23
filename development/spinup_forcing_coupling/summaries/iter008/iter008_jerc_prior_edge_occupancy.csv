@@ -1,0 +1,16 @@
+parameter,frac_near_lower,frac_near_upper
+k_l1,0.0,0.0
+k_l2,0.0,0.0
+k_l3,0.0,0.0
+k_s1,0.0,0.0
+k_s2,0.0,0.0
+k_s3,0.0,0.0
+k_s4,0.0,0.0
+k_frag,0.0,0.0
+rf_l1s1,0.0,0.0
+rf_l2s2,0.0,0.0
+rf_l3s3,0.0,0.0
+rf_s1s2,0.0,0.0
+rf_s2s3,0.0,0.0
+rf_s3s4,0.0,0.0
+sigma_SR,0.0,0.0

@@ -1,0 +1,13 @@
+{
+  "nwalkers": 64,
+  "nsteps": 4000,
+  "mean_acceptance_fraction": 0.17846875,
+  "min_acceptance_fraction": 0.025,
+  "max_acceptance_fraction": 0.25225,
+  "flat_samples": 384,
+  "n_model_parms": 14,
+  "nerr_parms": 1,
+  "mean_autocorr_time": 356.7929209777713,
+  "max_autocorr_time": 508.82407114201413,
+  "approx_ess": 1.0762545370790126
+}

@@ -31,7 +31,7 @@ OUTPUTDIR="/pscratch/sd/t/tianyihu/E3SM_out/SOIL_project"
 
 # Artifact produced by train_surrogate_forcing.py (or multi-case training).
 # Keep artifact metadata (training_layout) available; model/scaler-only payloads are not sufficient.
-ARTIFACT="${OUTPUTDIR}/UQ_output/ABBY_ens3_I20TRCNPRDCTCBC/surrogate_forcing/surrogate_forcing_artifacts.pkl"
+ARTIFACT="${OUTPUTDIR}/ABBY_ens3_I20TRCNPRDCTCBC/surrogate_forcing/surrogate_forcing_artifacts.pkl"
 
 # Observation NetCDF:
 # - Single file for all cases/sites: OBS_NC="/path/to/all_sites_obs.nc"
@@ -82,4 +82,3 @@ python optimize_surrogate_forcing.py \
   --n-processes "${N_PROCS}" \
   --spinup-member "${SPINUP_MEMBER}" \
   ${DRY_RUN_FLAG}
-
