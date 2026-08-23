@@ -747,18 +747,29 @@ array task writes its raw chain, checkpoint, diagnostics, default corner plot, p
 time-series plots, `best_params.txt`, and `clm_params_best.nc` under its own
 `optimization/seed_<seed>/` leaf.
 
-Reporting discovers completed validated leaves rather than assuming a fixed seed count. It writes:
+Reporting discovers completed validated leaves rather than assuming a fixed seed count. Tier-A
+retention uses the descriptive `tier_a_acceptance_range` only; it is not a convergence proof and
+does not promote a posterior.
 
-- `reports/plots/physical_corner.png` for the aggregate physical-parameter distribution;
-- `reports/per_seed/seed_<seed>/` for copied per-seed corner, diagnostics, and posterior
-  time-series products;
-- `reports/best_parameters/parameter_sets.{csv,txt}` for all discovered seed MAP rows; and
-- one exact model-ready `reports/best_parameters/clm_params/clm_params_seed_<seed>.nc` per seed.
+It writes:
+
+- `reports/best_parameters/parameter_sets.{csv,txt}` and
+  `reports/best_parameters/clm_params/clm_params_seed_<seed>.nc` for **Tier-A seeds only**;
+- `reports/best_parameters/all_seed_parameter_sets.csv` as the full-seed MAP audit table;
+- `reports/plots/physical_corner.png` from **Tier-A** physical posteriors only;
+- `reports/plots/predictions/<site>/Predictions_SR_MAP_ensemble.png` overlaying every Tier-A MAP
+  SR series against observations (valid-mask) and ELM precal, with a companion
+  `sr_overlay_manifest.json`; and
+- `reports/per_seed/seed_<seed>/` copies of per-seed corner, diagnostics, and posterior
+  time-series products for **every** discovered seed (audit/diagnostics, not best-parameter
+  export).
 
 NetCDF parameter files are never merged because ELM consumes one exact parameter vector at a
-time. `reports/report_manifest.json` records `discovered_seeds`, each seed's retention evidence,
-and the aggregate decision. A report with no descriptively retained seed is still valid and is
-written as `status: insufficient_retained`; it must not be treated as a promoted posterior.
+time. `reports/report_manifest.json` records `discovered_seeds`, `retained_tier_a_seeds`, each
+seed's retention evidence, and the aggregate decision. A report with no descriptively retained
+seed is still valid and is written as `status: insufficient_retained`; it must not be treated as
+a promoted posterior, and it omits Tier-A-only products (best-parameter NetCDFs, physical corner,
+and SR MAP ensemble overlay).
 
 ### Observation NetCDF units
 

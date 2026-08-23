@@ -12,7 +12,7 @@
 - Overall acceptance result: `pass`
 - Decision: `operational_release_ready`; descriptive site statuses below; no posterior promotion;
   coupling-development line terminal; merge is a separate user decision
-- Closed at: `2026-08-22T19:12:00-07:00`
+- Closed at: `2026-08-22T19:51:19-07:00` (includes approved reporting-contract makeup)
 - Output root:
   `/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/spinup_forcing_coupling/spinup_forcing_coupling_iter018_operational_nine_site`
 - Summary path: `development/spinup_forcing_coupling/summaries/iter018`
@@ -52,8 +52,14 @@ runtime packages):
 - Site profile: `development/hpc/puma.md`
 - Lifecycle policy: `development/spinup_forcing_coupling/WORKFLOW.md`
 
-Iter018 late correction: `report_optimization.py` scaffold-aware overwrite guard so materializer
-`reports/` directories (submit script + config) do not block reporting.
+Iter018 late corrections:
+
+- `report_optimization.py` scaffold-aware overwrite guard so materializer `reports/` directories
+  (submit script + config) do not block reporting.
+- Reporting-contract makeup (`coupled-optimization-report-v4`): Tier-A-only
+  `parameter_sets.{csv,txt}` / `clm_params_seed_*.nc` / physical corner; full-seed audit table;
+  Tier-A MAP SR ensemble overlay vs obs + ELM precal; README optimization section updated;
+  handoff validator expects NetCDF count = retained Tier-A count.
 
 ## 3. Site and cross-site operational evidence
 
@@ -81,13 +87,13 @@ candidates only.
 - Dependency manifest digest: `99cf0a1569ee9d8dd74b0b9506cd79a91f5bea455bf3338d4834e7445ad4d4eb`
 - Pool-locked source-manifest digest at initialization/optimization:
   `12d25e63fd33126c73f2d6cd9a3390243b10ee305ed04a2e2d9af3dc78da7524`
-- Final source-manifest file digest after report-guard repair:
-  `edbff8f03fb098caf4ca05b96e01488165268f6157dd3b2ee7a819c01a57ebec`
+- Final source-manifest file digest after reporting-contract makeup:
+  `9a9eb3d0caec98e8fe043e7188578a8e829c43beaf3a296fda9bb96d7b21d2db`
 - Repository commit pinned in site submission configs: `eeec519de0dc400fab499fe6fa676caee27b931c`
 - Optimization arrays: JERC `23619996`, WREF `23620021`; remaining sites
   `23643144`–`23643150` (submitted `--array=0-8`)
-- Reports: `23651289`–`23651293`, `23651296`, `23651297`, `23651306`, `23651309`
-- Aggregate `23651422`; handoff `23651475` (`ITER018_HANDOFF_PASS sites=9 leaves=81`)
+- Makeup reports: `23651925`–`23651929`, `23651932`–`23651935`
+- Makeup aggregate `23652320`; makeup handoff `23652321` (`ITER018_HANDOFF_PASS sites=9 leaves=81`)
 
 ## 5. Limitations and storage-retention risk
 

@@ -1,11 +1,4 @@
-PASS iteration_id
-PASS status_completed
-PASS work_type
-PASS acceptance_pass
-PASS decision_operational_release_ready
-PASS phase_closed
-PASS summary_path
-PASS output_root
-PASS terminal_next_plan
-PASS no_active_jobs
-FOUR_RECORD_VALIDATION_PASS
+ITER018_FOUR_RECORD_VALIDATION_PASS
+records=iterations/iter018.md,ITERATION_SUMMARY.md,registry.csv,handoff/CURRENT.md
+makeup=tier_a_reporting_contract; README optimization section; handoff v2
+aggregate=23652320 handoff=23652321

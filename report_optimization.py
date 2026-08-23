@@ -4,6 +4,10 @@
 The optimizer owns its leaf products. This stage reads those products and writes a
 portable report package below ``<path-root>/reports``; it never alters a chain,
 backend, or leaf-level plot.
+
+Best-parameter tables, CLM NetCDF exports, the aggregate physical corner, and the
+SR MAP ensemble overlay include Tier-A seeds only. Full-seed inventory remains in
+``all_seed_parameter_sets.csv`` and ``reports/per_seed/``.
 """
 from __future__ import annotations
 
@@ -20,10 +24,13 @@ import numpy as np
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
+from model_ELM.MCMC_forcing import run_forcing_surrogate_site
+from model_ELM.coupling_pipeline import build_coupling_target
+from model_ELM.mcmc_diagnostics import _valid_mask
 from model_ELM.optimization_config import load_campaign, write_stage_manifest
 
 
-SCHEMA = "coupled-optimization-report-v3"
+SCHEMA = "coupled-optimization-report-v4"
 TIER_A_MIN = 0.20
 TIER_A_MAX = 0.50
 
@@ -108,7 +115,9 @@ def _leaf_records(
     return records
 
 
-def _write_parameter_tables(report_dir: Path, records: list[dict[str, Any]]) -> list[dict[str, Any]]:
+def _parameter_rows(records: list[dict[str, Any]]) -> tuple[list[str], list[dict[str, Any]]]:
+    if not records:
+        return ["seed", "tier_a", "tier_a_reason", "mean_acceptance_fraction", "map_log_posterior"], []
     fields = ["seed", "tier_a", "tier_a_reason", "mean_acceptance_fraction", "map_log_posterior"]
     fields += list(records[0]["parameter_names"])
     rows: list[dict[str, Any]] = []
@@ -116,16 +125,34 @@ def _write_parameter_tables(report_dir: Path, records: list[dict[str, Any]]) -> 
         row = {key: record[key] for key in fields[:5]}
         row.update(zip(record["parameter_names"], np.asarray(record["map_state"], float).tolist()))
         rows.append(row)
-    csv_path = report_dir / "parameter_sets.csv"
-    with csv_path.open("w", newline="", encoding="utf-8") as handle:
+    return fields, rows
+
+
+def _write_csv(path: Path, fields: list[str], rows: list[dict[str, Any]]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("w", newline="", encoding="utf-8") as handle:
         writer = csv.DictWriter(handle, fieldnames=fields)
         writer.writeheader()
         writer.writerows(rows)
-    shutil.copy2(csv_path, report_dir / "parameter_sets.txt")
-    return rows
 
 
-def _write_corner(report_dir: Path, records: list[dict[str, Any]]) -> str:
+def _write_parameter_tables(
+    report_dir: Path, records: list[dict[str, Any]], retained: list[dict[str, Any]],
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    all_fields, all_rows = _parameter_rows(records)
+    if retained:
+        tier_fields, tier_rows = _parameter_rows(retained)
+    else:
+        tier_fields, tier_rows = all_fields, []
+    _write_csv(report_dir / "all_seed_parameter_sets.csv", all_fields, all_rows)
+    _write_csv(report_dir / "parameter_sets.csv", tier_fields, tier_rows)
+    shutil.copy2(report_dir / "parameter_sets.csv", report_dir / "parameter_sets.txt")
+    return all_rows, tier_rows
+
+
+def _write_corner(report_dir: Path, records: list[dict[str, Any]]) -> str | None:
+    if not records:
+        return None
     names = list(records[0]["parameter_names"])
     physical = [index for index, name in enumerate(names) if not name.startswith("sigma_")]
     samples = np.concatenate([record["chain"][:, :, physical].reshape(-1, len(physical)) for record in records])
@@ -151,7 +178,8 @@ def _write_corner(report_dir: Path, records: list[dict[str, Any]]) -> str:
                 axis.set_ylabel(names[physical[row]], fontsize=7)
             else:
                 axis.set_yticklabels([])
-    figure.suptitle("Physical posterior parameter distribution (all seeds)", fontsize=12)
+    seed_label = ",".join(record["seed"] for record in records)
+    figure.suptitle(f"Physical posterior parameter distribution (Tier-A seeds: {seed_label})", fontsize=11)
     figure.tight_layout()
     path = report_dir.parent / "plots" / "physical_corner.png"
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -160,12 +188,127 @@ def _write_corner(report_dir: Path, records: list[dict[str, Any]]) -> str:
     return str(path)
 
 
-def _copy_leaf_products(root: Path, records: list[dict[str, Any]]) -> list[dict[str, Any]]:
+def _mask_to_nan(values: np.ndarray, valid: np.ndarray) -> np.ndarray:
+    masked = np.asarray(values, dtype=float).copy().ravel()
+    masked[~valid] = np.nan
+    return masked
+
+
+def _elm_baseline(target: dict[str, Any], site: str) -> np.ndarray:
+    case = target["context"][site]["case"]
+    raw = np.asarray(case.output["SR"], dtype=float)
+    if raw.ndim == 2:
+        series = raw.mean(axis=1)
+    elif raw.ndim == 1:
+        series = raw.ravel()
+    else:
+        raise ValueError(f"{site}: unexpected ELM output shape {raw.shape}")
+    indices = np.asarray(target["context"][site]["overlap_indices"], dtype=int)
+    aligned = series[indices].copy()
+    aligned[aligned < -9000] = np.nan
+    return aligned
+
+
+def _write_sr_map_ensemble(
+    report_dir: Path,
+    contract: dict[str, Any],
+    retained: list[dict[str, Any]],
+    *,
+    resolution: str,
+) -> dict[str, Any] | None:
+    if not retained:
+        return None
+    shared = contract["shared"]
+    variables = [str(value) for value in shared["variables"]]
+    if variables != ["SR"]:
+        raise ValueError(f"SR MAP ensemble overlay currently supports variables=['SR']; got {variables}")
+    if resolution not in {"hourly", "daily"}:
+        raise ValueError(f"unsupported likelihood resolution for SR overlay: {resolution}")
+    names = list(retained[0]["parameter_names"])
+    n_physical = sum(1 for name in names if not name.startswith("sigma_"))
+    observation_paths = {
+        str(site).upper(): Path(path)
+        for site, path in dict(shared.get("observations") or {}).items()
+    }
+    target = build_coupling_target(
+        cases=[str(case) for case in shared["cases"]],
+        resolution=resolution,
+        forcing_artifact=Path(shared["forcing_artifact"]),
+        spinup_artifact=Path(shared["spinup_artifact"]),
+        observation_paths=observation_paths or None,
+        expected_physical_parameter_count=n_physical,
+    )
+    sites = [str(site).upper() for site in shared["sites"]]
+    plots: dict[str, Any] = {"schema": "coupled-sr-map-ensemble-overlay-v1", "sites": {}}
+    for site in sites:
+        context = target["context"][site]
+        obs = np.asarray(target["obs"][site]["SR"], float).ravel()
+        err = np.asarray(target["obs_err"][site]["SR"], float).ravel()
+        valid = _valid_mask(obs, err)
+        x = np.arange(len(obs))
+        obs_plot = _mask_to_nan(obs, valid)
+        err_plot = _mask_to_nan(err, valid)
+        elm_plot = _mask_to_nan(_elm_baseline(target, site), valid)
+        destination = report_dir / "plots" / "predictions" / site
+        destination.mkdir(parents=True, exist_ok=True)
+        plot_path = destination / "Predictions_SR_MAP_ensemble.png"
+        plt.figure(figsize=(12, 4))
+        series: list[dict[str, Any]] = []
+        for record in retained:
+            parms = np.asarray(record["map_state"], float).ravel()[:n_physical]
+            pred = np.asarray(
+                run_forcing_surrogate_site(context, parms, ["SR"])["SR"], float
+            ).ravel()
+            if pred.shape != obs.shape:
+                raise ValueError(
+                    f"{site} seed {record['seed']}: MAP prediction length {pred.shape} "
+                    f"!= observation length {obs.shape}"
+                )
+            plt.plot(x, _mask_to_nan(pred, valid), linewidth=0.8, alpha=0.7, label=f"MAP seed {record['seed']}")
+            series.append({
+                "seed": record["seed"],
+                "mean_acceptance_fraction": record["mean_acceptance_fraction"],
+                "map_log_posterior": record["map_log_posterior"],
+            })
+        plt.plot(x, elm_plot, color="darkgreen", linewidth=0.8, linestyle="--", label="ELM precal", alpha=0.8)
+        plt.plot(x, obs_plot, color="blue", linewidth=0.8, label="Observations", alpha=0.8)
+        plt.fill_between(x, obs_plot - err_plot, obs_plot + err_plot, color="blue", alpha=0.2)
+        plt.xlabel("Overlap index")
+        plt.ylabel("SR")
+        plt.title(f"{site} Tier-A MAP ensemble SR overlay")
+        plt.legend(fontsize=8, ncol=2)
+        plt.tight_layout()
+        plt.savefig(plot_path, dpi=150)
+        plt.close()
+        site_manifest = {
+            "site": site,
+            "valid_mask": "(obs > -9000) & (err > 0) & finite",
+            "n_total": int(len(obs)),
+            "n_valid": int(np.count_nonzero(valid)),
+            "series": series,
+            "plot": str(plot_path),
+        }
+        (destination / "sr_overlay_manifest.json").write_text(
+            json.dumps(site_manifest, indent=2) + "\n", encoding="utf-8",
+        )
+        plots["sites"][site] = site_manifest
+    return plots
+
+
+def _copy_leaf_products(
+    root: Path, records: list[dict[str, Any]], retained: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    retained_seeds = {record["seed"] for record in retained}
     copied: list[dict[str, Any]] = []
     for record in records:
         seed, leaf = record["seed"], Path(record["leaf"])
         destination = root / "reports" / "per_seed" / f"seed_{seed}"
-        entry = {"seed": seed, "clm_params": _copy_file(leaf / "clm_params_best.nc", root / "reports" / "best_parameters" / "clm_params" / f"clm_params_seed_{seed}.nc")}
+        entry: dict[str, Any] = {"seed": seed, "tier_a": seed in retained_seeds, "clm_params": None}
+        if seed in retained_seeds:
+            entry["clm_params"] = _copy_file(
+                leaf / "clm_params_best.nc",
+                root / "reports" / "best_parameters" / "clm_params" / f"clm_params_seed_{seed}.nc",
+            )
         for relative in (
             "best_params.txt", "plots/corner/corner_plot.png", "diagnostics/skill_table.csv",
             "diagnostics/walker_acceptance.csv", "diagnostics/collocation_audit.csv",
@@ -186,6 +329,8 @@ def main() -> int:
     parser.add_argument("--path-root", required=True, type=Path)
     args = parser.parse_args()
     contract = load_campaign(args.campaign, "reporting")
+    optimization = load_campaign(args.campaign, "optimization")["optimization"]
+    resolution = str(optimization["likelihood_resolution"])
     root = args.path_root.resolve()
     reports = root / "reports"
     # Allow a materializer scaffold (submit script + config + scheduler logs). Refuse only
@@ -202,25 +347,51 @@ def main() -> int:
         raise ValueError("reporting.tier_a_acceptance_range must contain two values")
     tier_min, tier_max = (float(value) for value in tier_range)
     records = _leaf_records(root, tier_min, tier_max, str(contract["campaign_sha256"]))
+    retained = [record for record in records if record["tier_a"]]
     parameter_dir = reports / "best_parameters"
     parameter_dir.mkdir(parents=True)
-    rows = _write_parameter_tables(parameter_dir, records)
-    copied = _copy_leaf_products(root, records) if bool(reporting.get("copy_leaf_products", True)) else []
-    corner = _write_corner(parameter_dir, records)
-    retained = [record["seed"] for record in records if record["tier_a"]]
+    all_rows, tier_rows = _write_parameter_tables(parameter_dir, records, retained)
+    copied = (
+        _copy_leaf_products(root, records, retained)
+        if bool(reporting.get("copy_leaf_products", True))
+        else []
+    )
+    corner = _write_corner(parameter_dir, retained)
+    overlay = _write_sr_map_ensemble(reports, contract, retained, resolution=resolution)
     status = "pass" if retained else "insufficient_retained"
     evidence = [{"seed": record["seed"], "mean_acceptance_fraction": record["mean_acceptance_fraction"],
                  "chain_health": record["chain_health"], "parameter_health": record["parameter_health"],
                  "skills": record["skills"], "delta_log_likelihood": record["delta_log_likelihood"]}
                 for record in records]
-    manifest = {"schema": SCHEMA, "status": status, "sites": contract["shared"]["sites"],
-                "discovered_seeds": [record["seed"] for record in records],
-                "retained_tier_a_seeds": retained, "all_seed_rows": rows,
-                "tier_a_acceptance_range": [tier_min, tier_max], "copied_leaf_products": copied, "physical_corner": corner,
-                "per_seed_diagnostic_evidence": evidence}
+    manifest = {
+        "schema": SCHEMA,
+        "status": status,
+        "sites": contract["shared"]["sites"],
+        "discovered_seeds": [record["seed"] for record in records],
+        "retained_tier_a_seeds": [record["seed"] for record in retained],
+        "all_seed_rows": all_rows,
+        "tier_a_parameter_rows": tier_rows,
+        "tier_a_acceptance_range": [tier_min, tier_max],
+        "copied_leaf_products": copied,
+        "physical_corner": corner,
+        "sr_map_ensemble_overlay": overlay,
+        "per_seed_diagnostic_evidence": evidence,
+    }
     (reports / "report_manifest.json").write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
-    write_stage_manifest(root / "postprocess", {**contract, "path_root": str(root), "leaf_count": len(records), "status": status})
-    print(f"REPORT_PASS status={status} leaves={len(records)} root={root}")
+    write_stage_manifest(
+        root / "postprocess",
+        {
+            **contract,
+            "path_root": str(root),
+            "leaf_count": len(records),
+            "retained_tier_a_count": len(retained),
+            "status": status,
+        },
+    )
+    print(
+        f"REPORT_PASS status={status} leaves={len(records)} "
+        f"tier_a={len(retained)} root={root}"
+    )
     return 0
 
 
