@@ -5,100 +5,78 @@
 - Iteration ID: `iter018`
 - Work type: `implementation`
 - Run slug: `spinup_forcing_coupling_iter018_operational_nine_site`
-- Status: `planned`
-- Phase: `review`
+- Status: `completed`
+- Phase: `closed`
 - Site profile: `development/hpc/puma.md`
 - Started: `2026-08-21T19:17:05-07:00`
-- Closed: `pending`
+- Closed: `2026-08-22T19:12:00-07:00`
 
 ## Finalized Plan
 
-The complete `ITER018_PLAN_BEGIN/END` proposal in `iterations/iter017.md`, recorded by commit
-`e670efb`, was byte-identical to the handoff plan at approval. User response `approved full
-kickoff package` at `2026-08-21T19:17:05-07:00` approves that package unchanged.
+The complete `ITER018_PLAN_BEGIN/END` proposal in `iterations/iter017.md` was approved at
+`2026-08-21T19:17:05-07:00`, with later approved concurrency, provenance, and report-guard
+recoveries that did not change science, seeds, or acceptance gates.
 
-- Objective: execute the finalized three-stage pipeline separately at nine NEON sites, publish
-  site-local MAP-candidate products and cross-site evidence, then complete terminal
-  coupling-development closeout and merge-readiness assessment.
-- Daily/`0.50`: ABBY, SOAP, YELL, WREF. Hourly/`0.75`: JERC, OSBS, RMNP, TALL, TEAK. All are
-  single-site SR campaigns with a fresh `hybrid_high_l_maximin` pool (`q=0.90`, size 640, search
-  seed 17017), 64 walkers, 8,000 steps, checkpoints every 2,000, transformed coordinates, the
-  standard DE mixture, fitted site-local `sigma_SR`, and 16 processes.
-- Each copied array owns exactly seeds `9009` through `9017`. Reporting has Tier-A acceptance
-  range `[0.20, 0.50]` and copies leaf products; Tier-A is descriptive only.
-- Nominal scope: 1 preflight, 9 initializations, 9 arrays/81 leaves, 9 reports, 1 aggregate, and
-  1 handoff validator (102 compute work units/21 submissions). The only approved expansion is a
-  hard cap of 205 work-unit executions through one reviewed preflight correction/rerun and one
-  unchanged scheduler/resource retry per job or leaf.
-- Exclusions: joint runs, historical-ledger reuse, TIM, alternate seeds, retraining, scientific
-  control changes, environment/artifact repair, posterior promotion, push, PR, merge, and deletion.
+- Objective: nine-site operational coupled-optimization release, then comprehensive
+  coupling-development closeout and merge-readiness declaration (no merge).
+- Daily/`0.50`: ABBY, SOAP, YELL, WREF. Hourly/`0.75`: JERC, OSBS, RMNP, TALL, TEAK.
+- Fresh `q=0.90` hybrid pools; seeds `9009--9017`; 64 walkers × 8,000 steps.
 
 ## Consolidated Kickoff Package and Runtime Contract
 
 | Field | Value |
 | --- | --- |
-| User response and approval timestamp | `approved full kickoff package`; `2026-08-21T19:17:05-07:00` |
-| Goal and stop condition | Complete the approved final nine-site operational run through accounting, evaluation, four-record validation, comprehensive closeout, and merge-readiness declaration; no merge. |
-| HPC site | UArizona Puma; `chopinsong` / `standard`; `OLMT_puma`; `development/hpc/puma.md`. |
-| Output root and storage | `/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/spinup_forcing_coupling/spinup_forcing_coupling_iter018_operational_nine_site/`; only approved stage directories; `/xdisk` is temporary/unbacked. |
-| Dependencies | Released forcing SR and `drop21_corr080` spinup artifacts; nine approved case/observation pairs; environment and source/dependency manifests locked in preparation. |
-| Resources and concurrency | Preflight 4 CPU/30m; init 8 CPU/4h; leaf 16 CPU/4h; report/aggregate 4 CPU/2h; handoff 2 CPU/30m; arrays `%2`, at most two arrays (four leaves/64 CPU/320 GB). |
-| Authority | Prepare, review, preflight, staged submission/monitoring/accounting, evaluation, records, validation, and closeout; `sbatch`, job-scoped accounting/monitoring, and bounded `scancel` are approved. |
-| Commit authority | One scoped preparation/source-lock commit before preflight and at most one scoped closeout commit; no push, PR, or merge. |
-
-## Upstream Dependencies and Source Lock
-
-- Bootstrap verified both released artifacts, `conda_envs/OLMT_puma.yml`, all nine expected case
-  pickles and NEON v4 observations, and optimization/report entry points. Preparation must lock
-  exact hashes and source snapshots before preflight.
-- Repository parent at initialization: `34d70393ae2fddaaf0f16d522a1fd2f3fac6bcfc`; clean tree.
+| Approvals | Kickoff `2026-08-21T19:17:05-07:00`; concurrency `2026-08-22T15:37:00-07:00`; source-manifest recovery `2026-08-22T15:54:00-07:00`; provenance realignment `2026-08-22T16:15:00-07:00`; report-guard recovery `2026-08-22T18:49:00-07:00` |
+| Goal and stop condition | Complete nine-site operational run through accounting, evaluation, four-record validation, comprehensive closeout, and merge-readiness declaration; no merge |
+| HPC site | UArizona Puma; `chopinsong` / `standard`; `OLMT_puma`; `development/hpc/puma.md` |
+| Output root | `/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/spinup_forcing_coupling/spinup_forcing_coupling_iter018_operational_nine_site/` |
+| Resources | Preflight 4 CPU/30m; init 8 CPU/4h; leaf 16 CPU/4h; report/aggregate 4 CPU/2h; handoff 2 CPU/30m. Historical JERC/WREF `0-8%2`; remaining arrays submitted `0-8` |
+| Commit authority | One preparation/source-lock commit before preflight and at most one closeout commit; no push, PR, or merge |
 
 ## Acceptance Gates and Decision Rule
 
-- Integrity requires terminal accounting, immutable package identities/pools, 81 complete
-  finite/bounded leaves, nine standard nine-export reports, aggregate evidence, and final
-  agreement across this report, summary, registry, handoff, and artifacts.
-- Decision `operational_release_ready` requires every integrity gate. Per-site status is
-  `all_tier_a`, `partial_tier_a`, or `insufficient_retained`; it is descriptive, never posterior
-  promotion or a universal recommendation.
-- Application/code/interface/schema/data/dependency/numerical/gate failures outside the one
-  preflight exception stop pending fresh approval.
+Integrity requires terminal accounting, immutable pools, 81 complete leaves, nine standard
+reports with nine CLM exports each, aggregate evidence, handoff agreement, and four-record
+agreement. Decision `operational_release_ready` requires every integrity gate. Per-site
+`all_tier_a` / `partial_tier_a` / `insufficient_retained` is descriptive only.
 
 ## Provenance and Job Ledger
 
 | Work unit | Job IDs | State | Notes |
 | --- | --- | --- | --- |
-| initialization records | none | complete | approved contract recorded; no compute or external root action |
-| preparation/source lock | `a3542f3`, corrections through `eeec519` | materialized root and manifests | complete | source/package corrections preserved as diagnostic siblings |
-
-## Independent Read-Only Review
-
-- Reviewer: `/root/iter018_review`; read-only.
-- Outcome: initial review and two re-reviews blocked package integrity; final re-review after
-  `eeec519` resolved all execution-material findings but required this record reconciliation.
-- Findings: source locking, submitted-copy guards, exact seed membership, Puma context guards,
-  and durable state evidence were corrected without altering science, seeds, resources, or scope.
+| preflight | `23619814` | `COMPLETED 0:0` | `ITER018_PREFLIGHT_PASS campaigns=9` |
+| initialization | `23619841`–`23619849`, `23619868` | all `COMPLETED 0:0` | nine fresh pools validated |
+| optimization (historical `%2`) | JERC `23619996`; WREF `23620021` | 18/18 `COMPLETED 0:0` | leaf products pass |
+| failed attempts | `23642777`–`23642783`; `23643001`–`23643007` | failed/cancelled | classified source-manifest then pool-provenance defects; recovered |
+| optimization (remaining `0-8`) | OSBS `23643144` … YELL `23643150` | 63/63 `COMPLETED 0:0` | after provenance realignment |
+| reports | ABBY `23651289`; JERC `23651290`; OSBS `23651291`; SOAP `23651292`; RMNP `23651293`; TALL `23651296`; TEAK `23651297`; WREF `23651306`; YELL `23651309` | all `COMPLETED 0:0` | after report-guard fix |
+| aggregate | `23651422` | `COMPLETED 0:0` | `ITER018_AGGREGATE_PASS` |
+| handoff | `23651475` | `COMPLETED 0:0` | `ITER018_HANDOFF_PASS sites=9 leaves=81` |
 
 ## Execution and Diagnostics
 
-- Static validation: `git diff --check` and `bash -n` passed through `eeec519`; final
-  materialization completed at the approved output root.
-- Preflight, submissions, accounting, and diagnostics: pending record reconciliation and
-  authorized preflight.
+- Report-guard defect: materializer scaffold `reports/` conflicted with overwrite check; fixed in
+  `report_optimization.py` to refuse only prior reporting products.
+- All 81 leaves have `production_result.json` status `pass`. All nine reports emit nine
+  `clm_params_seed_*.nc` exports and `report_manifest.json`.
 
 ## Validation, Evaluation, and Decision
 
-- Overall acceptance result: pending.
-- Overall decision and closeout conclusion: pending.
-- Next action: submit the approved, reviewed preflight from its materialized copy.
+- Overall acceptance result: `pass`
+- Overall decision and closeout conclusion: `operational_release_ready`
+- Descriptive site statuses: ABBY/SOAP/YELL/WREF/TALL `all_tier_a`; JERC/OSBS/RMNP/TEAK
+  `partial_tier_a`; none `insufficient_retained`
+- Summary evidence: `development/spinup_forcing_coupling/summaries/iter018/`
+- Next state: terminal declaration — coupling-framework development ends; no next iteration;
+  merge is a separate user decision
 
 ## Proposed Next-Iteration Plan (Planning Only)
 
-Terminal declaration planned: coupling-framework development ends after Iter018 closeout. No next
-iteration is proposed; any merge is a separate user decision.
+Terminal declaration: the spinup-forcing coupling-development line ends after this closeout. No
+next iteration is proposed. Any merge is a separate user decision.
 
 ## Closeout Checklist
 
-- [ ] Iteration report, summary, registry, and handoff finalized and cross-validated
-- [ ] Required external products and accounting verified
-- [ ] Authorized closeout commit verified
+- [x] Iteration report, summary, registry, and handoff finalized and cross-validated
+- [x] Required external products and accounting verified
+- [x] Authorized closeout commit verified

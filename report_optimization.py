@@ -188,7 +188,13 @@ def main() -> int:
     contract = load_campaign(args.campaign, "reporting")
     root = args.path_root.resolve()
     reports = root / "reports"
-    if reports.exists() or (root / "postprocess" / "stage_manifest.json").exists():
+    # Allow a materializer scaffold (submit script + config + scheduler logs). Refuse only
+    # when prior reporting products already exist under this path-root.
+    if (
+        (reports / "report_manifest.json").exists()
+        or (reports / "best_parameters").exists()
+        or (root / "postprocess" / "stage_manifest.json").exists()
+    ):
         raise FileExistsError(f"refusing to overwrite reporting outputs under {root}")
     reporting = contract["reporting"]
     tier_range = reporting.get("tier_a_acceptance_range", [TIER_A_MIN, TIER_A_MAX])

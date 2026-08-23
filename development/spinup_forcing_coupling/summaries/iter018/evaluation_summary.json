@@ -1,0 +1,119 @@
+{
+  "schema": "iter018-evaluation-v1",
+  "overall_acceptance": "pass",
+  "overall_decision": "operational_release_ready",
+  "integrity_gates": {
+    "terminal_accounting": true,
+    "leaves_81": true,
+    "reports_9": true,
+    "aggregate": true,
+    "handoff": true
+  },
+  "sites": [
+    {
+      "site": "ABBY",
+      "resolution": "daily",
+      "de_move_scale": "0.50",
+      "report_status": "pass",
+      "descriptive_status": "all_tier_a",
+      "tier_a_count": 9,
+      "tier_a_seeds": "9009;9010;9011;9012;9013;9014;9015;9016;9017",
+      "discovered_seeds": "9009;9010;9011;9012;9013;9014;9015;9016;9017",
+      "nc_exports": 9
+    },
+    {
+      "site": "SOAP",
+      "resolution": "daily",
+      "de_move_scale": "0.50",
+      "report_status": "pass",
+      "descriptive_status": "all_tier_a",
+      "tier_a_count": 9,
+      "tier_a_seeds": "9009;9010;9011;9012;9013;9014;9015;9016;9017",
+      "discovered_seeds": "9009;9010;9011;9012;9013;9014;9015;9016;9017",
+      "nc_exports": 9
+    },
+    {
+      "site": "YELL",
+      "resolution": "daily",
+      "de_move_scale": "0.50",
+      "report_status": "pass",
+      "descriptive_status": "all_tier_a",
+      "tier_a_count": 9,
+      "tier_a_seeds": "9009;9010;9011;9012;9013;9014;9015;9016;9017",
+      "discovered_seeds": "9009;9010;9011;9012;9013;9014;9015;9016;9017",
+      "nc_exports": 9
+    },
+    {
+      "site": "WREF",
+      "resolution": "daily",
+      "de_move_scale": "0.50",
+      "report_status": "pass",
+      "descriptive_status": "all_tier_a",
+      "tier_a_count": 9,
+      "tier_a_seeds": "9009;9010;9011;9012;9013;9014;9015;9016;9017",
+      "discovered_seeds": "9009;9010;9011;9012;9013;9014;9015;9016;9017",
+      "nc_exports": 9
+    },
+    {
+      "site": "JERC",
+      "resolution": "hourly",
+      "de_move_scale": "0.75",
+      "report_status": "pass",
+      "descriptive_status": "partial_tier_a",
+      "tier_a_count": 1,
+      "tier_a_seeds": "9017",
+      "discovered_seeds": "9009;9010;9011;9012;9013;9014;9015;9016;9017",
+      "nc_exports": 9
+    },
+    {
+      "site": "OSBS",
+      "resolution": "hourly",
+      "de_move_scale": "0.75",
+      "report_status": "pass",
+      "descriptive_status": "partial_tier_a",
+      "tier_a_count": 4,
+      "tier_a_seeds": "9009;9010;9013;9017",
+      "discovered_seeds": "9009;9010;9011;9012;9013;9014;9015;9016;9017",
+      "nc_exports": 9
+    },
+    {
+      "site": "RMNP",
+      "resolution": "hourly",
+      "de_move_scale": "0.75",
+      "report_status": "pass",
+      "descriptive_status": "partial_tier_a",
+      "tier_a_count": 8,
+      "tier_a_seeds": "9009;9010;9011;9012;9013;9015;9016;9017",
+      "discovered_seeds": "9009;9010;9011;9012;9013;9014;9015;9016;9017",
+      "nc_exports": 9
+    },
+    {
+      "site": "TALL",
+      "resolution": "hourly",
+      "de_move_scale": "0.75",
+      "report_status": "pass",
+      "descriptive_status": "all_tier_a",
+      "tier_a_count": 9,
+      "tier_a_seeds": "9009;9010;9011;9012;9013;9014;9015;9016;9017",
+      "discovered_seeds": "9009;9010;9011;9012;9013;9014;9015;9016;9017",
+      "nc_exports": 9
+    },
+    {
+      "site": "TEAK",
+      "resolution": "hourly",
+      "de_move_scale": "0.75",
+      "report_status": "pass",
+      "descriptive_status": "partial_tier_a",
+      "tier_a_count": 2,
+      "tier_a_seeds": "9009;9016",
+      "discovered_seeds": "9009;9010;9011;9012;9013;9014;9015;9016;9017",
+      "nc_exports": 9
+    }
+  ],
+  "limitations": [
+    "Tier-A retention and skill metrics are descriptive only; no posterior promotion",
+    "Retained seeds are operational MAP candidates, not validated posteriors or universal recommendations",
+    "/xdisk outputs are temporary/unbacked",
+    "Concurrent micromamba lock warnings observed under 0-8 concurrency; did not cause terminal failure after provenance repair"
+  ]
+}

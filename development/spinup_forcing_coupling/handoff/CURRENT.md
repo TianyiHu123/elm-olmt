@@ -3,60 +3,40 @@
 ## Live State
 
 - Active iteration: `iter018`
-- Status: `planned`
-- Phase: `review`
+- Status: `completed`
+- Phase: `closed`
 - Active job IDs: `none`
 - Site profile: `development/hpc/puma.md`
-- Last updated: `2026-08-21T19:17:05-07:00`
+- Last updated: `2026-08-22T19:12:00-07:00`
 
 ## Active Kickoff Package and Runtime Authority
 
-- Package state: `approved`
-- User response and approval timestamp: `approved full kickoff package`;
-  `2026-08-21T19:17:05-07:00`.
-- Goal and stop boundary: complete final nine-site operational release through accounting,
-  evaluation, four-record validation, comprehensive coupling-development closeout, and a
-  merge-readiness declaration; no merge.
-- Site and output authority: UArizona Puma `chopinsong` / `standard`, `OLMT_puma`, and only
-  `/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/spinup_forcing_coupling/spinup_forcing_coupling_iter018_operational_nine_site/` plus its approved stage layout; `/xdisk` is unbacked.
-- Locked scope: nine independent SR sites: daily/0.50 ABBY, SOAP, YELL, WREF; hourly/0.75 JERC,
-  OSBS, RMNP, TALL, TEAK; fresh q=0.90 hybrid pools, 64x8000 leaves, seeds 9009--9017, 102 work
-  units, and the exact gates/exclusions in `iterations/iter018.md`.
-- Lifecycle authority: preparation, source lock, independent review, preflight, staged
-  submission, monitoring/accounting, evaluation, records, validation, and closeout.
-- Outside-sandbox authority: `sbatch`; job-scoped `squeue`, `scontrol show job`, `sacct`, `seff`,
-  `job-history`, and `job-limits`; `scancel` only for recorded Iter018 IDs under the approved
-  universal-pre-execution-defect or user-emergency condition.
-- Resources/retries: preflight 4 CPU/30m; initialization 8 CPU/4h; leaf 16 CPU/4h;
-  report/aggregate 4 CPU/2h; handoff 2 CPU/30m; at most two `%2` arrays. One reviewed preflight
-  correction/rerun and one unchanged scheduler/resource retry per job or leaf; all other failures
-  need fresh approval.
-- Closeout branch: one preparation/source-lock commit and at most one closeout commit; no push,
-  PR, or merge.
+- Package state: `closed`
+- Final decision: `operational_release_ready`
+- Closeout branch: authorized closeout commit executed with this closure; no push, PR, or merge.
 
 ## Current Objective
 
-Complete the approved correction and independent re-review of the materialized source-locked
-package before preflight.
+None. The coupling-development line is terminal after Iter018 closeout.
 
 ## Best Evidence So Far
 
-- Iter017 validator job `23610344` is terminal `COMPLETED 0:0`; the corrected Iter018 root is
-  materialized with nine campaigns and submitted-copy/source/dependency manifests; no Iter018 job exists.
-- All nine case/observation pairs, released artifacts, environment, and entry points were present
-  at bootstrap; Puma capacity supports the approved resource cap.
-- The complete planning block was synchronized before approval and is preserved in the Iter017
-  closure; approved contract restatement is in `iterations/iter018.md`.
+- Integrity passed: 81/81 leaves, 9/9 reports, aggregate `23651422`, handoff `23651475`
+  (`ITER018_HANDOFF_PASS sites=9 leaves=81`).
+- Descriptive statuses: ABBY/SOAP/YELL/WREF/TALL `all_tier_a`; JERC/OSBS/RMNP/TEAK
+  `partial_tier_a`.
+- Comprehensive closeout narrative:
+  `development/spinup_forcing_coupling/summaries/iter018/ITER018_REPORT.md`.
 
 ## Current Risks or Blockers
 
-- Re-review blocked until complete Puma guards and current preparation/review evidence are
-  corrected; no scheduler work is authorized.
+- `/xdisk` products remain temporary/unbacked.
+- Merge remains an explicit separate user decision.
 
 ## Next Action
 
-1. Submit the reviewed materialized preflight, then account for its terminal result before any
-   initialization or optimization work.
+1. No further coupling-development iteration is proposed. User may separately decide whether to
+   merge `feature/surrogate_coupling`.
 
 ## Next Iteration Plan (Planning Only)
 
@@ -65,13 +45,13 @@ spinup-forcing coupling-development line ends. Any merge is a separate user deci
 
 ## Next Session Start Protocol
 
-1. Read this handoff, `WORKFLOW.md`, `iterations/iter018.md`, then Iter017 closure.
-2. Reconcile Git, current artifacts, and job-scoped scheduler evidence before acting.
-3. Continue from the recorded phase while this approved package remains unchanged and unexhausted.
+1. Read this handoff and `summaries/iter018/ITER018_REPORT.md` if assessing merge readiness.
+2. Do not initialize a new coupling iteration unless the user explicitly starts a new line of work.
 
 ## Artifact References
 
 - Current report: `development/spinup_forcing_coupling/iterations/iter018.md`
-- Canonical scripts: `development/spinup_forcing_coupling/slurm/iter018/`
-- Submitted package and scratch output: approved Iter018 root (materialized; no runtime output yet)
-- Cumulative records: `ITERATION_SUMMARY.md`, `registry.csv`, `summaries/iter018/` (pending)
+- Summary: `development/spinup_forcing_coupling/summaries/iter018/`
+- Cumulative records: `ITERATION_SUMMARY.md`, `registry.csv`
+- External root:
+  `/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/spinup_forcing_coupling/spinup_forcing_coupling_iter018_operational_nine_site`

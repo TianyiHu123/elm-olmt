@@ -757,3 +757,26 @@ Closeout identity: Iteration ID `iter017`; Status `completed`; Work type `implem
 ### Gate outcome and conclusion
 
 The end-to-end integrity regression passed across all four configurations. The 2,000-step runs are deliberately insufficient to establish posterior validity, and their retention result is descriptive only. No Iter018 plan is authorized; the next action is a separate discussion of an operational nine-site design.
+
+## iter018 - final nine-site operational coupled-optimization release
+
+Closeout identity: Iteration ID `iter018`; Status `completed`; Work type `implementation`; Objective `final nine-site operational coupled-optimization release with comprehensive coupling-development closeout and merge-readiness declaration`; Bounded scope `1 preflight; 9 initializations; 9 arrays/81 leaves; 9 reports; 1 aggregate; 1 handoff validation`; Overall acceptance result `pass`; Decision `operational_release_ready; ABBY/SOAP/YELL/WREF/TALL=all_tier_a; JERC/OSBS/RMNP/TEAK=partial_tier_a; no posterior promotion; coupling-development line terminal; merge separate`.
+
+- Closed at: `2026-08-22T19:12:00-07:00`
+- Output root: `/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/spinup_forcing_coupling/spinup_forcing_coupling_iter018_operational_nine_site`
+- Summary path: `development/spinup_forcing_coupling/summaries/iter018`
+
+### Locked settings
+
+- Nine independent SR campaigns; daily/0.50 ABBY,SOAP,YELL,WREF; hourly/0.75 JERC,OSBS,RMNP,TALL,TEAK.
+- Fresh hybrid_high_l_maximin pools (`q=0.90`, size 640, search seed 17017); seeds 9009--9017; 64×8000; DE mixture; fitted site-local sigma_SR.
+- Remaining optimization arrays used submitted `--array=0-8` after approved concurrency revision; JERC/WREF historical `%2`.
+
+### Quantitative evidence
+
+- 81/81 leaves `COMPLETED 0:0` with `production_result` pass; 9/9 reports with nine CLM exports each; aggregate `23651422`; handoff `23651475` emitted `ITER018_HANDOFF_PASS sites=9 leaves=81`.
+- Tier-A retention: ABBY 9, SOAP 9, YELL 9, WREF 9, TALL 9, RMNP 8, OSBS 4, TEAK 2, JERC 1.
+
+### Gate outcome and conclusion
+
+Integrity passed (`operational_release_ready`). Descriptive Tier-A statuses do not promote posteriors. Comprehensive Iter001--Iter018 narrative and merge-readiness declaration are in `summaries/iter018/ITER018_REPORT.md`. The coupling-development line ends; merge is a separate user decision.

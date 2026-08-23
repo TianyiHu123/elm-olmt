@@ -1,0 +1,11 @@
+PASS iteration_id
+PASS status_completed
+PASS work_type
+PASS acceptance_pass
+PASS decision_operational_release_ready
+PASS phase_closed
+PASS summary_path
+PASS output_root
+PASS terminal_next_plan
+PASS no_active_jobs
+FOUR_RECORD_VALIDATION_PASS
