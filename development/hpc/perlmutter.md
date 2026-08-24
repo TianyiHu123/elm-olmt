@@ -42,6 +42,61 @@ and QOS availability before use.
   canonical scripts in the repository.
 - Check available capacity and account policy before requesting resource increases.
 
+### Repository Python environment (Python 3.11)
+
+For new Perlmutter Python workloads, use `OLMT_pm_TianyiPY311` (not the legacy py39
+`OLMT_pm_Tianyi` env). Spec file: `conda_envs/OLMT_pm_py311.yml`.
+
+Install prefix (primary provenance path):
+
+```text
+/global/common/software/m4803/conda/envs/OLMT_pm_TianyiPY311
+```
+
+Create the environment with NERSC conda after loading the module. Prefer `mamba` when it
+is on `PATH` after `module load conda`. Creating this environment on a login node is
+acceptable; use a compute-node session only if the solver is unusually long. Do not treat
+env creation as part of a science workload without separate execution authority.
+
+```bash
+module load conda
+# Prefer mamba when available:
+mamba env create -f conda_envs/OLMT_pm_py311.yml \
+  --prefix /global/common/software/m4803/conda/envs/OLMT_pm_TianyiPY311
+# Fallback:
+# conda env create -f conda_envs/OLMT_pm_py311.yml \
+#   --prefix /global/common/software/m4803/conda/envs/OLMT_pm_TianyiPY311
+```
+
+Activate and verify:
+
+```bash
+module load conda
+conda activate /global/common/software/m4803/conda/envs/OLMT_pm_TianyiPY311
+python --version   # expect 3.11.x
+```
+
+Optional: keep `/global/common/software/m4803/conda/envs` in conda `envs_dirs` (see
+`~/.condarc`) so short-name activation works:
+
+```bash
+module load conda
+conda activate OLMT_pm_TianyiPY311
+```
+
+Job scripts may still record the full `--prefix` path for provenance.
+
+Smoke check after create or repair:
+
+```bash
+python -c "import numpy, scipy, pandas, netCDF4, xarray, sklearn, SALib, emcee, pathos, matplotlib, cartopy, geopy; print('ok')"
+ncks --version
+```
+
+Historical scripts that activate `OLMT_pm_Tianyi` (Python 3.9) remain provenance; do not
+rewrite them solely to adopt this environment. Do not use Puma micromamba conventions on
+Perlmutter.
+
 ## Launch Convention
 
 The existing single-task canonical spinup scripts launch Python directly inside the Slurm

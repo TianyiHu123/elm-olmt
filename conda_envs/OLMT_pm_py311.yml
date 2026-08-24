@@ -1,0 +1,51 @@
+# Portable conda environment for NERSC Perlmutter (Python 3.11).
+#
+# Create with NERSC conda (not Puma micromamba). Do not add a prefix here;
+# supply --prefix at create time, for example:
+#
+#   module load conda
+#   mamba env create -f conda_envs/OLMT_pm_py311.yml \
+#     --prefix /global/common/software/m4803/conda/envs/OLMT_pm_TianyiPY311
+#
+# Or: conda env create -f conda_envs/OLMT_pm_py311.yml --prefix <same path>
+#
+# Activate:
+#   conda activate /global/common/software/m4803/conda/envs/OLMT_pm_TianyiPY311
+name: OLMT_pm_TianyiPY311
+
+channels:
+  # Prefer conda-forge; avoid Anaconda defaults mixing on NERSC.
+  - conda-forge
+  - nodefaults
+
+dependencies:
+  # Python 3.11 matches OLMT's newer baseline. Keep NumPy 1.x for legacy
+  # OLMT/pickle safety.
+  - python=3.11
+  - pip
+  - numpy>=1.26,<2
+
+  # Scientific data and NetCDF I/O
+  - scipy>=1.11,<2
+  - pandas>=2,<3
+  - netcdf4>=1.6,<2
+  - cftime>=1.6,<2
+  - h5py>=3.10,<4
+  - xarray>=2024.7
+
+  # Analysis, surrogate modeling, sensitivity analysis, and MCMC
+  - scikit-learn>=1.2,<2
+  - salib>=1.4.7,<2
+  - emcee>=3.1,<4
+  - corner>=2.2,<3
+  - pathos>=0.3,<1
+  - dask>=2024.1
+
+  # Plotting, mapping, and site lookup.  Tk supports OLMT's optional GUI.
+  - matplotlib-base>=3.8,<4
+  - cartopy>=0.22,<1
+  - geopy>=2.4,<3
+  - tk>=8.6
+
+  # OLMT invokes ncks, ncrcat, ncap2, nccopy, and ncpdq as subprocesses.
+  - nco>=5,<6
