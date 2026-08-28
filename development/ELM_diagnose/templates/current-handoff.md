@@ -18,7 +18,7 @@
 - Approved output root, layout, creation authority, and retention policy:
 - Locked diagnostic inputs, dependencies, scope, exclusions, gates, and decision rule:
 - Lifecycle and outside-sandbox authority:
-- Resources, retry boundaries, and cancellation scope:
+- Resources, monitoring cadence, retry boundaries, and cancellation scope:
 - Closeout branch: `<one commit authorized | validated_uncommitted | none>`
 
 ## Current Objective

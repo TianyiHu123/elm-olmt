@@ -72,7 +72,7 @@ After read-only bootstrap and clarification, present one package that contains t
 3. exact user-approved output root, work-unit layout, directory-creation authority, and retention or backup assumptions;
 4. locked diagnostic inputs, dependencies, scope, exclusions, acceptance gates, and decision rule;
 5. preparation, review, preflight, submission, continuous monitoring, terminal accounting, evaluation, records, and closeout authority;
-6. exact resources and separate preflight and scheduler/resource retry boundaries;
+6. exact resources, monitoring cadence and permitted exceptions, and separate preflight and scheduler/resource retry boundaries;
 7. bounded cancellation conditions and exact current-iteration job scope;
 8. outside-sandbox authority for locked submission, job-scoped read-only monitoring and accounting, and bounded cancellation; and
 9. whether one closeout commit is authorized.
@@ -135,6 +135,8 @@ Every scheduler submission, including preflight and any validator submitted thro
 3. atomically record work unit, job ID, submitted script, run directory, configuration hash, dependencies, resources, and submission time;
 4. set status `in_progress`, record the active phase and job in `CURRENT.md`, and perform an immediate `squeue` or `scontrol` identity check; and
 5. monitor with authoritative job-scoped commands and record terminal state, exit code, elapsed time, resources, and failure reason.
+
+The contract must record a monitoring cadence. Do not query an active job more frequently than that cadence except for the immediate post-submission identity check, a user request, terminal accounting, or reconciliation of a recorded unknown state or observed failure. Follow the selected profile for its default cadence, command shapes, and bounded-backoff behavior.
 
 Run a bounded compute-node preflight before substantive work. It may validate imports, environment, paths, manifests, schemas, dependency identity, launch behavior, and lightweight fixtures; it must not perform substantive model execution, data generation, optimization, or iteration evaluation. One contract-authorized minimal preflight-only correction and rerun is separate from scheduler/resource retry authority.
 

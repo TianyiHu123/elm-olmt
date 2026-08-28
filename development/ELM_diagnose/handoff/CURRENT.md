@@ -18,7 +18,7 @@
 - Approved output root, layout, creation authority, and retention policy: none
 - Locked diagnostic inputs, dependencies, scope, exclusions, gates, and decision rule: none
 - Lifecycle and outside-sandbox authority: none
-- Resources, retry boundaries, and cancellation scope: none
+- Resources, monitoring cadence, retry boundaries, and cancellation scope: none
 - Closeout branch: `none`
 
 ## Current Objective

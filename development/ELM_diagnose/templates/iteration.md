@@ -32,7 +32,7 @@
 | Approved output and storage policy | `<exact root; work-unit layout; creation authority; retention/backup assumptions>` |
 | Locked diagnostic inputs, dependencies, scope, exclusions, gates, and decision rule | `<identities and immutable terms>` |
 | Lifecycle authority | `<preparation through records and closeout>` |
-| Resources and retry boundaries | `<exact resources; separate preflight and scheduler/resource retry limits>` |
+| Resources, monitoring cadence, and retry boundaries | `<exact resources; cadence and permitted exceptions; separate preflight and scheduler/resource retry limits>` |
 | Cancellation scope | `<conditions; exact current-iteration job scope>` |
 | Outside-sandbox authority | `<locked sbatch; job-scoped read-only monitoring/accounting; bounded scancel>` |
 | Closeout branch | `<one commit authorized | validated_uncommitted>` |
