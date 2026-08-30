@@ -62,6 +62,22 @@
 - Results: full seed-resolved rows are retained in `.../elm_diagnose_iter002/results/metrics.csv`; diagnostics are descriptive only, with no cross-site ranking or threshold decision. Optimized RMSE ranges / control-mean RMSE by site are ABBY 6.658–6.673 / 6.690, JERC 1.659 / 1.575, OSBS 1.100–1.197 / 1.236, RMNP 0.920–0.934 / 0.937, SOAP 7.446–7.454 / 7.635, TALL 1.333–1.337 / 1.332, TEAK 0.748–0.751 / 0.759, WREF 8.023–8.053 / 7.936, and YELL 3.211–3.222 / 3.233 gC m-2 day-1.
 - Next action: none; any analysis/interpretation beyond the descriptive package requires a new request.
 
+### Seed-versus-control hourly metrics
+
+Each optimized entry is `seed median [minimum, maximum]` across the available seeds for that site; the value after `/` is the `ppe6` control ensemble-mean metric. Bold marks the better of the seed median and control mean: lower RMSE/MAE and absolute bias, higher `R2`, Pearson `r`, and KGE. All metrics use the same intersected, finite hourly observations for a site. RMSE, bias, and MAE are in `gC m-2 day-1`; `R2`, Pearson `r`, and KGE are unitless. These are descriptive comparisons, not a cross-site ranking or selection rule.
+
+| Site | Seeds | Hourly n | RMSE: seed / control | Bias: seed / control | MAE: seed / control | R2: seed / control | Pearson r: seed / control | KGE: seed / control |
+| --- | ---: | ---: | --- | --- | --- | --- | --- | --- |
+| ABBY | 9 | 26,264 | **6.663 [6.658, 6.673]** / 6.690 | **-6.180 [-6.191, -6.175]** / -6.213 | **6.180 [6.175, 6.191]** / 6.213 | **-5.429 [-5.450, -5.420]** / -5.481 | 0.631 [0.629, 0.635] / **0.699** | -0.284 [-0.285, -0.284] / **-0.271** |
+| JERC | 1 | 51,882 | 1.659 [1.659, 1.659] / **1.575** | 1.514 [1.514, 1.514] / **1.427** | 1.530 [1.530, 1.530] / **1.449** | -2.798 [-2.798, -2.798] / **-2.423** | 0.636 [0.636, 0.636] / **0.638** | -0.209 [-0.209, -0.209] / **-0.156** |
+| OSBS | 4 | 26,051 | **1.119 [1.100, 1.197]** / 1.236 | **1.044 [1.024, 1.127]** / 1.163 | **1.045 [1.026, 1.128]** / 1.164 | **-5.412 [-6.344, -5.202]** / -6.821 | **0.530 [0.524, 0.531]** / 0.529 | **-0.177 [-0.258, -0.161]** / -0.284 |
+| RMNP | 8 | 35,001 | **0.928 [0.920, 0.934]** / 0.937 | **-0.527 [-0.536, -0.522]** / -0.542 | **0.570 [0.566, 0.572]** / 0.576 | **0.225 [0.215, 0.238]** / 0.210 | 0.838 [0.827, 0.853] / **0.841** | **0.193 [0.188, 0.202]** / 0.184 |
+| SOAP | 9 | 26,191 | **7.450 [7.446, 7.454]** / 7.635 | **-5.090 [-5.094, -5.086]** / -5.257 | **5.094 [5.090, 5.098]** / 5.260 | **-0.621 [-0.623, -0.619]** / -0.703 | **0.685 [0.683, 0.685]** / 0.656 | **-0.176 [-0.177, -0.175]** / -0.215 |
+| TALL | 9 | 51,051 | 1.337 [1.333, 1.337] / **1.332** | **0.029 [-0.017, 0.032]** / -0.104 | 1.033 [1.020, 1.033] / **0.999** | 0.117 [0.117, 0.122] / **0.123** | 0.343 [0.342, 0.350] / **0.360** | **0.073 [0.066, 0.074]** / 0.066 |
+| TEAK | 2 | 35,023 | **0.750 [0.748, 0.751]** / 0.759 | **-0.072 [-0.081, -0.062]** / -0.080 | **0.582 [0.580, 0.584]** / 0.585 | **0.246 [0.243, 0.250]** / 0.227 | **0.509 [0.504, 0.514]** / 0.487 | **0.251 [0.243, 0.259]** / 0.240 |
+| WREF | 9 | 26,267 | 8.035 [8.023, 8.053] / **7.936** | -6.785 [-6.806, -6.772] / **-6.679** | 6.785 [6.772, 6.806] / **6.679** | -2.250 [-2.265, -2.240] / **-2.170** | 0.704 [0.699, 0.715] / **0.717** | -0.317 [-0.319, -0.317] / **-0.302** |
+| YELL | 9 | 35,011 | **3.217 [3.211, 3.222]** / 3.233 | **-2.630 [-2.633, -2.626]** / -2.648 | **2.630 [2.626, 2.633]** / 2.648 | **-1.222 [-1.228, -1.214]** / -1.243 | 0.709 [0.700, 0.717] / **0.719** | **-0.141 [-0.144, -0.138]** / -0.146 |
+
 ## Proposed Next-Iteration Plan (Planning Only)
 
 No next iteration is proposed until Iter002 evidence is evaluated.
