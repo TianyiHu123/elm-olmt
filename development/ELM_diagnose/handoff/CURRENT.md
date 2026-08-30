@@ -8,7 +8,7 @@
 - Phase: `closed`
 - Active job IDs: `none`
 - Site profile: `development/hpc/puma.md`
-- Last updated: `2026-08-29T17:27:04-07:00`
+- Last updated: `2026-08-29T18:15:00-07:00`
 
 ## Completed Iter002
 
@@ -27,8 +27,12 @@
 - Figures/metrics/manifest: `/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/diagnostic/elm_diagnose_iter002/results/`
 - Canonical retry material: `development/ELM_diagnose/tools/iter002_sr_diagnostics.py` and `development/ELM_diagnose/slurm/iter002/`
 
+## Proposed Iter003 Plan (Planning Only)
+
+The complete Iter003 plan is copied unchanged from `iterations/iter002.md` under **“Iter003 — generalized carbon-flux diagnostic tool and SR package.”** That section is the authoritative full plan, including its direct YAML contract, exact retained input inventory, locked behavior, proposed resources/gates, and fresh approval boundary. It is intentionally planning-only: no Iter003 artifacts, configuration, directory, scheduler activity, or implementation exists or is authorized.
+
 ## Next Session Start Protocol
 
-1. Read this handoff, `WORKFLOW.md`, and `iterations/iter002.md`.
+1. Read this handoff, `WORKFLOW.md`, and the complete Iter003 planning-only proposal in `iterations/iter002.md`.
 2. Treat Iter002 artifacts as retained provenance; do not overwrite them without new scope and runtime authority.
-3. Obtain a new approved package before any additional diagnostic, rerun, interpretation, or model execution.
+3. Present the Iter003 consolidated kickoff package and obtain fresh approval before any initialization, implementation, runtime execution, scheduler operation, or further commit.
