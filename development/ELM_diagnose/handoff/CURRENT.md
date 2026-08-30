@@ -3,12 +3,18 @@
 ## Live State
 
 - Active iteration: `none`
-- Most recent iteration: `iter002`
+- Most recent iteration: `iter003`
 - Status: `completed`
 - Phase: `closed`
 - Active job IDs: `none`
 - Site profile: `development/hpc/puma.md`
-- Last updated: `2026-08-29T18:15:00-07:00`
+- Last updated: `2026-08-30T00:00:00-07:00`
+
+## Completed Iter003
+
+- Retry two `23729042` completed `0:0` in 02:29 after vectorizing complete-day aggregation; 21.6 GB/30 GB peak memory.
+- Accepted package: 45 figures, 69 series rows, 960 member rows, passing receipt, and nine-site manifest at `.../elm_diagnose_iter003/results_retry2/`.
+- The package is descriptive only. Monitoring-wrapper and agent-continuity evidence remains recorded for a separate workflow-improvement scope.
 
 ## Completed Iter002
 
@@ -27,12 +33,22 @@
 - Figures/metrics/manifest: `/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/diagnostic/elm_diagnose_iter002/results/`
 - Canonical retry material: `development/ELM_diagnose/tools/iter002_sr_diagnostics.py` and `development/ELM_diagnose/slurm/iter002/`
 
-## Proposed Iter003 Plan (Planning Only)
+## Current Objective
 
-The complete Iter003 plan is copied unchanged from `iterations/iter002.md` under **“Iter003 — generalized carbon-flux diagnostic tool and SR package.”** That section is the authoritative full plan, including its direct YAML contract, exact retained input inventory, locked behavior, proposed resources/gates, and fresh approval boundary. It is intentionally planning-only: no Iter003 artifacts, configuration, directory, scheduler activity, or implementation exists or is authorized.
+Iter003 is closed by user authorization; await a separately approved next scope.
+
+## Monitoring Limitation to Carry Forward
+
+- Codex’s foreground terminal wrapper ended the documented `POLL_SECONDS=300` Puma loop after its first snapshot, before another sleep/poll cycle; repeated launches behaved the same. The Slurm workload itself was unaffected and remained visible to later `squeue`/`sacct` checks.
+- A detached Puma tmux loop can log scheduler state but cannot send an autonomous update back into this chat. Until the workflow is improved under a separate approved scope, use discrete job-scoped checks and do not claim persistent agent-side polling across turns.
+- Consider Slurm `END,FAIL,TIME_LIMIT` notifications or an explicitly approved external notification service in a future workflow revision.
+
+## Agent-Continuity Failure to Carry Forward
+
+- The agent repeatedly ended turns while Iter003 still had an approved next action (review retrieval, materialization, submission, or cadence observation), requiring the user to issue `continue`. Record this as a control-flow failure to diagnose in a future workflow-improvement scope; it is not an HPC failure and does not change current runtime authority.
 
 ## Next Session Start Protocol
 
-1. Read this handoff, `WORKFLOW.md`, and the complete Iter003 planning-only proposal in `iterations/iter002.md`.
-2. Treat Iter002 artifacts as retained provenance; do not overwrite them without new scope and runtime authority.
-3. Present the Iter003 consolidated kickoff package and obtain fresh approval before any initialization, implementation, runtime execution, scheduler operation, or further commit.
+1. Read this handoff, `WORKFLOW.md`, and `iterations/iter003.md`.
+2. Treat Iter003 outputs and failed/cancelled attempts as retained provenance.
+3. Obtain fresh approval before a new iteration or workflow-improvement work.
