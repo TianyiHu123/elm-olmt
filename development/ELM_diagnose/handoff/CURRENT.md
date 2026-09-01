@@ -8,7 +8,7 @@
 - Phase: `closed`
 - Active job IDs: `none`
 - Site profile: `development/hpc/puma.md`
-- Last updated: `2026-08-30T00:00:00-07:00`
+- Last updated: `2026-08-31T19:03:50-07:00`
 
 ## Completed Iter003
 
@@ -40,8 +40,12 @@ Iter003 is closed by user authorization; await a separately approved next scope.
 ## Monitoring Limitation to Carry Forward
 
 - Codex’s foreground terminal wrapper ended the documented `POLL_SECONDS=300` Puma loop after its first snapshot, before another sleep/poll cycle; repeated launches behaved the same. The Slurm workload itself was unaffected and remained visible to later `squeue`/`sacct` checks.
-- A detached Puma tmux loop can log scheduler state but cannot send an autonomous update back into this chat. Until the workflow is improved under a separate approved scope, use discrete job-scoped checks and do not claim persistent agent-side polling across turns.
-- Consider Slurm `END,FAIL,TIME_LIMIT` notifications or an explicitly approved external notification service in a future workflow revision.
+- A detached Puma tmux loop can log scheduler state but cannot send an autonomous update back into
+  this chat, so it is not a valid agent-continuity mechanism.
+- The workflow revision now permits one agent-owned ongoing terminal monitor only after the active
+  runtime proves that it can preserve and wait on the same process handle. Otherwise use a
+  runtime-native scheduled wake or recurring monitor, an explicitly authorized external
+  notification bridge, or an honest checkpoint; do not claim continuous autonomous monitoring.
 
 ## Agent-Continuity Failure to Carry Forward
 

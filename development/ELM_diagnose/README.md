@@ -30,9 +30,10 @@ Start with `handoff/CURRENT.md`, then follow `WORKFLOW.md`.
 Use the following prompt to start or resume this workflow. For `iter001`, include the diagnostic plan with the prompt or provide it when asked. For later iterations, the planning-only proposal comes from the preceding closed report and `handoff/CURRENT.md`.
 
 ```text
-/goal Start or resume the next ELM diagnostic iteration by following
+/goal Start or resume the active or next ELM diagnostic iteration by following
 development/ELM_diagnose/WORKFLOW.md. Begin at Section 4A and continue until the
-workflow-defined stop condition is reached.
+workflow-defined stop condition is reached. Apply the Section 4D monitoring
+continuity gate before any turn-ending response.
 ```
 
 The `/goal` statement names the lifecycle objective and stop boundary. It does not itself grant initialization, execution, scheduler, cancellation, or commit authority; those come only from the user-approved consolidated kickoff package.

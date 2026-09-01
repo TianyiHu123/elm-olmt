@@ -71,8 +71,8 @@ After read-only bootstrap and clarification, present one package that contains t
 2. confirmed HPC system and selected `development/hpc/` profile;
 3. exact user-approved output root, work-unit layout, directory-creation authority, and retention or backup assumptions;
 4. locked diagnostic inputs, dependencies, scope, exclusions, acceptance gates, and decision rule;
-5. preparation, review, preflight, submission, continuous monitoring, terminal accounting, evaluation, records, and closeout authority;
-6. exact resources, monitoring cadence and permitted exceptions, and separate preflight and scheduler/resource retry boundaries;
+5. preparation, review, preflight, submission, agent-owned monitoring, terminal accounting, evaluation, records, and closeout authority;
+6. exact resources, supported monitoring and wait mechanism, and separate preflight and scheduler/resource retry boundaries;
 7. bounded cancellation conditions and exact current-iteration job scope;
 8. outside-sandbox authority for locked submission, job-scoped read-only monitoring and accounting, and bounded cancellation; and
 9. whether one closeout commit is authorized.
@@ -121,30 +121,112 @@ After kickoff-package approval:
 2. Create canonical scripts, configurations, manifests, and validators under `slurm/iterXXX/` when execution is required.
 3. Create each approved run directory. Materialize its self-describing submitted script and immutable configuration there before submission.
 4. Verify and record canonical/submitted byte identity, configuration/manifest equality, hashes, logs, dependencies, resources, repository/source identity, and exact submission command.
-5. Obtain review by a different read-only agent. The reviewer checks the locked plan and contract, diagnostic inputs, interfaces, paths, static validation, submitted-copy equality, and configuration/manifest equality.
+5. Obtain review by a different read-only agent. After starting the review, the primary agent must
+   wait for and retrieve its result rather than ending the turn while review remains pending. The
+   reviewer checks the locked plan and contract, diagnostic inputs, interfaces, paths, static
+   validation, submitted-copy equality, and configuration/manifest equality.
 6. Record reviewed source hash, findings, and `pass`, `pass_with_concerns`, or `block`. A `block` requires correction, repeated static checks, and passing re-review. Proceed past concerns only with recorded rationale.
 
 Keep raw and large outputs outside Git. Write human-readable Slurm scripts following the selected site profile. Keep one-off validators under the iteration; promote only reusable utilities.
 
-### D. Submit preflight and execution work
+### D. Submit, monitor, and account for preflight and execution work
 
-Every scheduler submission, including preflight and any validator submitted through Slurm, follows the same ledger:
+1. Before substantive execution, run the approved bounded compute-node preflight. It may validate
+   imports, environment, paths, manifests, schemas, dependency identity, launch behavior, and
+   lightweight fixtures; it must not perform substantive model execution, data generation,
+   optimization, or iteration evaluation. One contract-authorized minimal preflight-only
+   correction and rerun is separate from scheduler/resource retry authority.
 
-1. submit only the locked local copy from its approved run directory;
-2. capture the job ID directly from `sbatch --parsable`;
-3. atomically record work unit, job ID, submitted script, run directory, configuration hash, dependencies, resources, and submission time;
-4. set status `in_progress`, record the active phase and job in `CURRENT.md`, and perform an immediate `squeue` or `scontrol` identity check; and
-5. monitor with authoritative job-scoped commands and record terminal state, exit code, elapsed time, resources, and failure reason.
+2. For every scheduler submission, including preflight and validators submitted through Slurm:
 
-The contract must record a monitoring cadence. Do not query an active job more frequently than that cadence except for the immediate post-submission identity check, a user request, terminal accounting, or reconciliation of a recorded unknown state or observed failure. Follow the selected profile for its default cadence, command shapes, and bounded-backoff behavior.
+   a. submit only the locked local copy from its approved run directory;
 
-Run a bounded compute-node preflight before substantive work. It may validate imports, environment, paths, manifests, schemas, dependency identity, launch behavior, and lightweight fixtures; it must not perform substantive model execution, data generation, optimization, or iteration evaluation. One contract-authorized minimal preflight-only correction and rerun is separate from scheduler/resource retry authority.
+   b. capture the job ID directly from `sbatch --parsable`;
 
-After preflight passes, submit only locked substantive work. Verify one job before submitting the next independent work unit. An identity mismatch stops further submissions. Apply the selected profile's execution-context gate to all scheduler evidence. Query, transport, sandbox, authentication, controller, or connection failure leaves state unknown; it is not a workload failure and authorizes no retry, resubmission, cancellation, or completion claim.
+   c. atomically record the work unit, job ID, submitted script, run directory, configuration
+      hash, dependencies, resources, and submission time;
+
+   d. set status `in_progress`, record the active phase and job in `CURRENT.md`, and perform an
+      immediate `squeue` or `scontrol` identity check; and
+
+   e. begin agent-owned monitoring using the selected site profile's command shapes, supported
+      wait mechanism, output-suppression rules, and bounded-backoff behavior.
+
+3. After monitoring begins, continue it until every expected job or array element has an
+   authoritative terminal state in `sacct`, including `COMPLETED`, `FAILED`, `TIMEOUT`,
+   `CANCELLED`, `OUT_OF_MEMORY`, or another Slurm terminal state. A job remaining `PENDING` or
+   `RUNNING`, an unchanged scheduler snapshot, a completed subset, or an empty `squeue` response is
+   not a monitoring stop condition.
+
+4. While work remains active, use one runtime-supported wait or terminal-monitoring operation.
+   Verify that the active runtime can preserve that operation across the required wait. Do not use
+   goal continuation as a polling timer, issue back-to-back scheduler queries, or generate
+   user-facing updates solely to report unchanged state. Report only material state transitions,
+   query failures, terminal accounting, or a user-requested snapshot.
+
+5. When a job leaves `squeue`, reconcile the complete expected job set through job-scoped `sacct`.
+   If accounting is absent or incomplete, preserve state as pending or unknown and repeat the
+   accounting query with bounded backoff. Monitoring ends only after every expected workload
+   element is terminal and its state, exit code, elapsed time, resources, and failure reason have
+   been recorded.
+
+6. Apply the monitoring continuity gate before voluntarily ending a turn or sending a final
+   response. Re-read `CURRENT.md` and the iteration job ledger. The monitoring stage remains active
+   if any of the following is true:
+
+   - `CURRENT.md` has status `in_progress` and phase `preflight` or `execution`;
+   - `CURRENT.md` records one or more active job IDs; or
+   - any submitted job or expected array element lacks authoritative terminal `sacct` accounting.
+
+   If the monitoring stage remains active, the primary agent must not voluntarily end the turn,
+   send a completion-style response, or treat an unchanged scheduler snapshot as a stopping
+   condition. It must remain in the supported wait or monitoring operation.
+
+   The gate may release control only when:
+
+   - every expected job is terminal and accounted, after which the agent records the transition
+     and proceeds immediately to classification or evaluation;
+   - a fresh material user decision is required;
+   - no supported wait or wake mechanism is available, requiring an honest checkpoint; or
+   - the platform forcibly interrupts the session.
+
+   Before a permitted checkpoint, record the active phase, job scope, last authoritative evidence,
+   reason for yielding, and exact resume action in `CURRENT.md`. A checkpoint does not complete the
+   monitoring stage or exhaust the runtime contract.
+
+7. If the supported monitoring operation is unavailable or lost, follow the selected site
+   profile's scheduled-wake, recurring-monitor, authorized external-notification, or checkpoint
+   route. A query, transport, sandbox, authentication, controller, connection, or
+   monitoring-context failure leaves workload state unknown; it is not a workload failure and
+   authorizes no retry, resubmission, cancellation, or completion claim.
+
+8. Submit substantive work only after preflight passes. Submit only locked material, and verify
+   each independent work unit's scheduler identity before submitting the next one. An identity
+   mismatch stops further submissions.
+
+9. After terminal accounting is complete, proceed immediately to the failure-classification or
+   evaluation action authorized by the runtime contract. Submission, monitoring output, or
+   terminal accounting alone is not iteration completion.
 
 ### E. Maintain continuity and handle failures
 
-Once `in_progress`, remain active through terminal accounting, classification, authorized next steps, evaluation, records, validation, and closeout. Submission, pending state, a status message, or partial completion is not a stop condition. A platform-forced interruption must be recorded in `CURRENT.md` and resumed from authoritative scheduler state.
+Once `in_progress`, remain active through terminal accounting, classification, authorized next
+steps, evaluation, records, validation, and closeout. Submission, pending state, an unchanged
+scheduler snapshot, a status message, or partial completion is not a stop condition.
+
+The workflow goal owns lifecycle continuity but is not a clock. When progress depends on elapsed
+time, the primary agent must enter the applicable agent wait or ongoing terminal-monitoring
+operation. It must not repeatedly start new goal turns merely to discover that no scheduler state
+has changed.
+
+When the next authorized action is immediately available—including review-result retrieval,
+correction, repeated static checks, re-review, submitted-copy materialization, submission,
+terminal accounting, evaluation, or record validation—the primary agent must perform that action
+instead of yielding control.
+
+A platform-forced interruption must be recorded in `CURRENT.md` and resumed from authoritative
+scheduler state. Loss of an agent monitoring session is an observation-context interruption, not
+a workload failure and not authority for retry, cancellation, or resubmission.
 
 Classify before acting:
 
@@ -172,7 +254,20 @@ Emergency cancellation is allowed only when the contract covers recorded job IDs
 5. Follow the approved branch: with commit authority, create at most one closeout commit and verify its controlled changes; without it, preserve a validated bounded diff/source manifest and label the handoff `validated_uncommitted`.
 6. Mark phase `closed` only when no job is active or unaccounted, every failure is classified, evaluation and records are complete, the validator passes, and the selected commit branch is satisfied.
 
-Before any completion-style response, confirm all conditions in step 6. Until then, report only that the iteration remains active and identify the next workflow action.
+Except for the checkpoint cases in the next paragraph, before voluntarily yielding control or
+sending a completion-style response, confirm all conditions in step 6. If an authorized action is
+immediately available, perform it. If an authorized job or reviewer is still active and a
+supported wait mechanism is available, remain in that operation.
+
+When a fresh material user decision is required, or no supported wake mechanism is available for
+an active external wait, first preserve the current phase, active job or reviewer scope, last
+authoritative evidence, and exact resume action in `CURRENT.md`; then ask the narrow required
+question. This checkpoint is not a completion claim and does not exhaust the approved package.
+
+Until step 6 is satisfied, a user-facing message may be an intermediate status update or the
+narrow checkpoint question permitted above; neither is a completion claim. Emit a status update
+only for a material state transition, a failure, or a user-requested snapshot, and do not emit
+repeated unchanged-state messages.
 
 ## 5. Portability
 

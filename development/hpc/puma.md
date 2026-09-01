@@ -364,27 +364,51 @@ diagnosing partial failure. Use `squeue` while active and `sacct` after terminal
 parent ID, array range, per-element terminal states, exit codes, allocation, elapsed time, memory,
 and retry evidence.
 
-For a long-running authorized job, a human-managed Puma login-shell session may poll at a modest
-cadence rather than repeatedly querying the scheduler. This loop treats a failed query as unknown
-instead of mistaking it for terminal state, expands an array by parent ID, and defers the terminal
-result to `sacct`:
+For a long-running authorized job, the primary agent may use the following monitoring loop through
+one ongoing terminal-tool session only after verifying that the active agent runtime can preserve
+the same process handle and wait on it beyond the loop's sleep interval. This is an agent
+operation, not an instruction for the user to hold open a Puma login shell. When the terminal tool
+yields a verified ongoing-session handle, the agent must wait on that same handle rather than
+relaunching the loop or issuing back-to-back `squeue` queries from repeated goal turns.
+
+The loop treats a failed query as unknown, expands an array by parent ID, reports only compact
+scheduler-state changes, and defers the terminal result to `sacct`:
 
 ```bash
 readonly JOB_ID="<PARENT_JOB_ID>"
 readonly POLL_SECONDS=300
+readonly QUERY_RETRY_LIMIT=3
+previous_snapshot=""
+query_failures=0
 
 while true; do
-  if ! snapshot="$(squeue --job="${JOB_ID}" -r -h -o '%i|%T|%r|%M' 2>&1)"; then
+  if ! raw_snapshot="$(squeue --job="${JOB_ID}" -r -h -o '%i|%T|%r' 2>&1)"; then
+    query_failures=$((query_failures + 1))
     printf '%s squeue query failed for %s: %s\n' \
-      "$(date -Iseconds)" "${JOB_ID}" "${snapshot}" >&2
-    exit 2
+      "$(date -Iseconds)" "${JOB_ID}" "${raw_snapshot}" >&2
+    if (( query_failures >= QUERY_RETRY_LIMIT )); then
+      exit 2
+    fi
+    sleep "$((query_failures * 20))"
+    continue
   fi
+  query_failures=0
 
-  if [[ -z "${snapshot}" ]]; then
+  if [[ -z "${raw_snapshot}" ]]; then
     break
   fi
 
-  printf '%s %s\n' "$(date -Iseconds)" "${snapshot}"
+  snapshot="$({
+    printf '%s\n' "${raw_snapshot}" |
+      awk -F'|' '{ key = $2 "|" $3; count[key] += 1 } END { for (key in count) print key "|" count[key] }' |
+      LC_ALL=C sort
+  })"
+
+  if [[ "${snapshot}" != "${previous_snapshot}" ]]; then
+    printf '%s %s\n' "$(date -Iseconds)" "${snapshot}"
+    previous_snapshot="${snapshot}"
+  fi
+
   sleep "${POLL_SECONDS}"
 done
 
@@ -394,12 +418,30 @@ sacct --jobs="${JOB_ID}" \
   --format=JobID,JobName,State,ExitCode,Elapsed,TotalCPU,AllocCPUS,MaxRSS,AllocTRES
 ```
 
-The loop runs no project Python and is suitable only for a human/session-managed login shell. For
-agent-operated work, use discrete outside-sandbox job-scoped checks at the same or a recorded
-contract-specific cadence; do not represent a background shell loop as persistent across agent
-turns. An empty successful `squeue` response only means that the job left the queue. If `sacct`
-has not yet returned accounting, record state as pending or unknown and repeat the same
-job-scoped accounting query with bounded backoff before classifying the workload.
+The loop runs no project Python. `POLL_SECONDS=300` is an example/default scheduler-friendly
+throttle for this Puma command, not an iteration acceptance gate, the only valid wait interval, or
+a cadence that must be added to every workflow runtime contract. Routine output is grouped as
+`STATE|REASON|COUNT`; inspect full per-element state only for terminal accounting or targeted
+failure diagnosis.
+
+The agent must not use a goal's automatic continuation as a polling timer. While the loop remains
+active, wait on its ongoing terminal session and suppress user-facing updates for unchanged
+scheduler state. Report state transitions, query failures, terminal accounting, or a snapshot
+explicitly requested by the user.
+
+If the loop exits nonzero, including after `QUERY_RETRY_LIMIT`, if the active runtime cannot
+preserve and wait on the ongoing command, or if the verified process exits unexpectedly, use a
+runtime-native scheduled wake or recurring monitor when one is available. An external notification
+bridge may be used only when the governing workflow and user explicitly authorize it. If none of
+these mechanisms is available, record an observation-context interruption, preserve the active job
+set and last authoritative state, and request the narrow user checkpoint needed to resume later.
+Do not claim continuous autonomous monitoring or compensate by launching a rapid sequence of goal
+turns or unthrottled scheduler queries.
+
+An empty successful `squeue` response only means that the job left the queue. If `sacct` has not
+yet returned complete accounting for the expected parent and workload elements, record state as
+pending or unknown and repeat the same job-scoped accounting query with bounded backoff. Do not
+classify the workload until every expected element has an authoritative terminal state.
 
 ### 3.4 Failure classification
 
