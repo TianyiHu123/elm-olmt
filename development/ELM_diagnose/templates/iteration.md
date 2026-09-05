@@ -55,9 +55,12 @@
 
 ## Provenance and Job Ledger
 
-| Work unit | Canonical script/hash | Submitted script/config/hash | Run directory and logs | Dependencies | Commit/source manifest | Job IDs | State | Retry notes |
+| Work unit | Canonical script/hash | Submitted script/config/hash | Run directory and logs | Dependencies | Commit/source manifest | Job scope | State | Monitoring/retry notes |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| `<name>` | `<path/hash>` | `<paths/hashes>` | `<paths>` | `<identities>` | `<identity>` | `<IDs>` | `<state>` | `<notes>` |
+| `<name>` | `<path/hash>` | `<paths/hashes>` | `<paths>` | `<identities>` | `<identity>` | `<parent ID; approved job or array scope>` | `<workload state/accounting>` | `<mechanism or command shape; active handle if any; outcome; reason>` |
+
+Monitoring outcomes are `active`, `handoff`, `failed`, `unsupported`, or `finished`. Keep workload
+state in the `State` column so it cannot be confused with monitor outcome.
 
 ## Independent Read-Only Review
 

@@ -5,7 +5,8 @@
 - Active iteration: `iterXXX` or `none`
 - Status: `planned | in_progress | completed | failed | blocked | not_initialized`
 - Phase: `pre_kickoff | ready_for_kickoff_approval | initializing | preparing | review | preflight | execution | evaluation | closeout | closed`
-- Active job IDs: `<IDs or none>`
+- Active job scope: `<parent ID and approved job or array scope, or none>`
+- Active monitoring: `<job scope; mechanism or command shape; handle; outcome, or none>`
 - Site profile: `development/hpc/<site>.md` or `not selected`
 - Last updated: `<timestamp and timezone>`
 

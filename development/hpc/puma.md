@@ -17,10 +17,7 @@ lifecycle policy for that workload. This profile defines site mechanics and repo
 constraints only; it does not define or broaden workload scope, scheduler authority, retry policy,
 completion criteria, aggregation rules, selection rules, or closeout authority.
 
-Before scheduler or compute-node work begins, follow the authorization and runtime-contract
-requirements of the governing workflow and repository guidance. A runtime contract must identify
-the active site, finite scope, resource cap, retry boundary, monitoring authority, and closeout
-authority.
+Obtain the governing workflow's required runtime approval before scheduler or compute-node work.
 
 ## 1. Puma site mechanics
 
@@ -128,15 +125,12 @@ Use the following command shapes:
 | Submit an authorized batch job | `sbatch --export=ALL,<KEY=VALUE,...> <script>` |
 | Active or pending job, including an array | `squeue --job=<PARENT_JOB_ID> -r` |
 | Detailed active-job configuration | `scontrol show job <PARENT_JOB_ID>` |
-| Completed-job accounting, whole array | `sacct --jobs=<PARENT_JOB_ID> --format=JobID,JobName,State,ExitCode,Elapsed,TotalCPU,AllocCPUS,MaxRSS,AllocTRES` |
-| Completed-job accounting, one leaf | `sacct --jobs=<JOB_ID>_<ARRAY_INDEX> --format=JobID,JobName,State,ExitCode,Elapsed,TotalCPU,AllocCPUS,MaxRSS,AllocTRES` |
+| Job accounting, whole array | `sacct --jobs=<PARENT_JOB_ID> --format=JobID,JobName,State,ExitCode,Elapsed,TotalCPU,AllocCPUS,MaxRSS,AllocTRES` |
+| Job accounting, one leaf | `sacct --jobs=<JOB_ID>_<ARRAY_INDEX> --format=JobID,JobName,State,ExitCode,Elapsed,TotalCPU,AllocCPUS,MaxRSS,AllocTRES` |
 | CPU and memory efficiency for one leaf | `seff <JOB_ID>_<ARRAY_INDEX>` |
 | Readable terminal history | `job-history <JOB_ID_OR_ARRAY_ELEMENT>` |
 | Group limits and usage | `job-limits <ACCOUNT>` |
 | Cancel, only when authorized | `scancel <JOB_ID_OR_IDS>` |
-
-Use the parent ID to reconcile every array element and overall terminal completeness. Use a
-concrete element ID only for leaf-specific diagnosis or efficiency reporting.
 
 `squeue` and `scontrol` reporting `Invalid job id specified` for a completed job is expected; use
 `sacct`, `seff`, or `job-history` for terminal evidence. A successful query with a valid empty
@@ -147,21 +141,13 @@ If an outside-sandbox query fails, preserve job state as unknown and retry the s
 query with bounded backoff. A query or transport failure is not a workload failure and must not
 consume a workload retry, authorize cancellation or resubmission, or support a completion claim.
 
-Record submitted job IDs and the exact monitoring command, scope, timestamp, exit status,
-response, and terminal accounting in the active workload record.
-
 ## 2. Repository-wide Puma integration
 
 ### 2.1 Fixed repository root and generic early validation
 
-The repository root is fixed at:
-
-```bash
-readonly REPO_ROOT=/xdisk/chopinsong/tianyihu/elm-olmt
-```
-
-Canonical and submitted scripts must use this literal path. Do not derive it from `$0`, a copied
-script location, `SLURM_SUBMIT_DIR`, the current directory, or an environment override.
+The repository root is fixed at `/xdisk/chopinsong/tianyihu/elm-olmt`. Canonical and submitted
+scripts must use this literal path. Do not derive it from `$0`, a copied script location,
+`SLURM_SUBMIT_DIR`, the current directory, or an environment override.
 
 Before loading the environment or touching outputs, validate the selected workload's governing
 files:
@@ -279,24 +265,7 @@ echo "submitted job_id=${job_id} run_dir=${RUN_DIR}"
 Use `</dev/null` when submission occurs inside a manifest-reading loop so `sbatch` cannot inherit
 the manifest's stdin.
 
-Record the canonical and submitted paths and hashes, configuration path and hash, run directory,
-exact submission command, returned job ID, and log paths immediately.
-
-### 2.6 Workflow authority
-
-The governing workflow document that references this profile owns:
-
-- workload scope and scientific controls;
-- authorization and runtime-contract boundaries;
-- preflight requirements;
-- retry and cancellation policy;
-- monitoring completion criteria;
-- failure handling;
-- aggregation and selection;
-- record updates and closeout.
-
-This profile supplies Puma mechanics only. Read the governing workflow and its active workload
-record before execution. Do not infer lifecycle authority from a resource example in this file.
+Preserve the submission evidence listed in Section 2.3.
 
 ## 3. Generic job operation
 
@@ -334,9 +303,8 @@ test -n "${job_id}"
 echo "submitted preflight job_id=${job_id} run_dir=${PREFLIGHT_DIR}"
 ```
 
-The copied preflight must contain explicit output and error directives. It must establish the
-fixed repository root before importing repository modules. The governing workflow defines whether
-a validation-only correction or retry is permitted.
+The copied preflight must contain explicit output and error directives and establish the fixed
+repository root before importing repository modules.
 
 ### 3.2 Submission reconciliation
 
@@ -345,57 +313,34 @@ unknown. Before resubmitting, use approved outside-sandbox `squeue` and `sacct` 
 that the attempted submission did not create a matching job. Reconcile by job name, user,
 submission window, script, and run directory to prevent duplicate jobs.
 
-### 3.3 Array monitoring and terminal accounting
+### 3.3 Array monitoring and accounting handoff
 
-UArizona's array-job convention returns one parent ID from `sbatch`. Use the parent ID for queue
-expansion and terminal accounting:
+UArizona's array-job convention returns one parent ID from `sbatch`. Use that parent ID as the
+`squeue` and `sacct` query selector. The governing workflow's recorded parent and approved array
+scope remain the completeness criterion; a parent-ID query does not make the parent alone
+sufficient evidence for an array.
 
-```bash
-readonly JOB_ID="<PARENT_JOB_ID>"
-
-squeue --job="${JOB_ID}" -r
-
-sacct --jobs="${JOB_ID}" \
-  --format=JobID,JobName,State,ExitCode,Elapsed,AllocTRES,MaxRSS
-```
-
-Monitor the complete job set, not only a representative leaf. Inspect individual elements when
-diagnosing partial failure. Use `squeue` while active and `sacct` after terminal state. Record the
-parent ID, array range, per-element terminal states, exit codes, allocation, elapsed time, memory,
-and retry evidence.
-
-For a long-running authorized job, the primary agent may use the following monitoring loop through
-one ongoing terminal-tool session only after verifying that the active agent runtime can preserve
-the same process handle and wait on it beyond the loop's sleep interval. This is an agent
-operation, not an instruction for the user to hold open a Puma login shell. When the terminal tool
-yields a verified ongoing-session handle, the agent must wait on that same handle rather than
-relaunching the loop or issuing back-to-back `squeue` queries from repeated goal turns.
-
-The loop treats a failed query as unknown, expands an array by parent ID, reports only compact
-scheduler-state changes, and defers the terminal result to `sacct`:
+For a long-running authorized job, the primary agent may use the following state-change detector
+through one ongoing terminal-tool session. The detector observes only `squeue`: it reports compact
+state changes and tells the agent when to inspect accounting. It does not determine workload
+completion.
 
 ```bash
 readonly JOB_ID="<PARENT_JOB_ID>"
 readonly POLL_SECONDS=300
-readonly QUERY_RETRY_LIMIT=3
 previous_snapshot=""
-query_failures=0
 
 while true; do
   if ! raw_snapshot="$(squeue --job="${JOB_ID}" -r -h -o '%i|%T|%r' 2>&1)"; then
-    query_failures=$((query_failures + 1))
-    printf '%s squeue query failed for %s: %s\n' \
+    printf '%s ACCOUNTING_CHECK_REQUIRED squeue_query_failed job_id=%s detail=%s\n' \
       "$(date -Iseconds)" "${JOB_ID}" "${raw_snapshot}" >&2
-    if (( query_failures >= QUERY_RETRY_LIMIT )); then
-      exit 2
-    fi
-    sleep "$((query_failures * 20))"
-    continue
+    exit 2
   fi
-  query_failures=0
 
   if [[ -z "${raw_snapshot}" ]]; then
-    break
+    printf '%s ACCOUNTING_CHECK_REQUIRED queue_empty job_id=%s\n' \
+      "$(date -Iseconds)" "${JOB_ID}"
+    exit 0
   fi
 
   snapshot="$({
@@ -411,70 +356,15 @@ while true; do
 
   sleep "${POLL_SECONDS}"
 done
-
-sacct --jobs="${JOB_ID}" \
-  --parsable2 \
-  --noheader \
-  --format=JobID,JobName,State,ExitCode,Elapsed,TotalCPU,AllocCPUS,MaxRSS,AllocTRES
 ```
 
-The loop runs no project Python. `POLL_SECONDS=300` is an example/default scheduler-friendly
-throttle for this Puma command, not an iteration acceptance gate, the only valid wait interval, or
-a cadence that must be added to every workflow runtime contract. Routine output is grouped as
-`STATE|REASON|COUNT`; inspect full per-element state only for terminal accounting or targeted
-failure diagnosis.
+`POLL_SECONDS=300` is an example scheduler-friendly throttle for this Puma command. Routine output
+is grouped as `STATE|REASON|COUNT`. `ACCOUNTING_CHECK_REQUIRED` is an
+observation-to-accounting handoff signal and never evidence of workload completion.
 
-The agent must not use a goal's automatic continuation as a polling timer. While the loop remains
-active, wait on its ongoing terminal session and suppress user-facing updates for unchanged
-scheduler state. Report state transitions, query failures, terminal accounting, or a snapshot
-explicitly requested by the user.
-
-If the loop exits nonzero, including after `QUERY_RETRY_LIMIT`, if the active runtime cannot
-preserve and wait on the ongoing command, or if the verified process exits unexpectedly, use a
-runtime-native scheduled wake or recurring monitor when one is available. An external notification
-bridge may be used only when the governing workflow and user explicitly authorize it. If none of
-these mechanisms is available, record an observation-context interruption, preserve the active job
-set and last authoritative state, and request the narrow user checkpoint needed to resume later.
-Do not claim continuous autonomous monitoring or compensate by launching a rapid sequence of goal
-turns or unthrottled scheduler queries.
-
-An empty successful `squeue` response only means that the job left the queue. If `sacct` has not
-yet returned complete accounting for the expected parent and workload elements, record state as
-pending or unknown and repeat the same job-scoped accounting query with bounded backoff. Do not
-classify the workload until every expected element has an authoritative terminal state.
-
-### 3.4 Failure classification
-
-Capture authoritative accounting evidence and distinguish:
-
-- account, partition, or scheduler-policy errors;
-- resource exhaustion or timeouts;
-- environment or module-activation failures;
-- repository-root or launch-layout mismatches;
-- storage, quota, or expiration failures;
-- application, code, or configuration failures;
-- workflow-defined validation or acceptance rejections.
-
-Retry, cancellation, code changes, configuration changes, and scientific-control changes are
-governed by the active workflow and runtime contract. A scheduler-query or transport failure
-leaves state unknown and is not itself a workload failure.
-
-### 3.5 Pre-submit and monitoring checklist
-
-Apply the relevant portions after the runtime contract is active:
-
-1. Confirm the session is on Puma and select this profile.
-2. Read the governing workflow and active workload record.
-3. Confirm account, partition, CPU and memory shape, walltime, array scope, and retry boundary.
-4. Verify the fixed repository root, `OLMT_puma`, and workload-specific paths.
-5. Run static checks and the authorized preflight, if required.
-6. Verify submitted copies, configuration manifests, log paths, and hashes.
-7. Show and record the exact `sbatch` command before submission.
-8. Record returned job IDs immediately.
-9. Monitor with `squeue` while active and `sacct` after terminal state.
-10. Use `seff` when diagnosing CPU efficiency or memory headroom.
-11. Preserve logs, accounting evidence, failure classification, and workload results.
-12. Continue through aggregation and closeout when the governing workflow requires it.
+On that handoff, use the job-scoped accounting command from Section 1.4 and choose the next action
+under the governing workflow. If the response is too large for the agent session, preserve it in
+the authorized run or evidence directory and report its path, identity, and compact summary.
 
 ## 4. Historical Puma site observations
 
