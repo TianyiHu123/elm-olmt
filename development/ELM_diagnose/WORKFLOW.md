@@ -182,7 +182,10 @@ Keep raw and large outputs outside Git. Write human-readable Slurm scripts follo
 
    c. If a foreground monitor was terminated because the agent runtime or terminal wrapper did not
       preserve its process handle, mark that mechanism `unsupported` in the ledger and clear the
-      active-monitor entry in `CURRENT.md`.
+      active-monitor entry in `CURRENT.md`. Scope `unsupported` to the monitoring implementation and
+      failure mode demonstrated by the recorded evidence. Do not extend that outcome to other
+      command structures, process models, terminal mechanisms, or runtime-supported wait operations
+      unless the evidence supports the same broader failure.
 
    d. Internal bounded retries for a transient `squeue` or `sacct` query failure are not strategy
       restarts. After those retries are exhausted, classify the strategy outcome before taking
