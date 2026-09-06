@@ -162,11 +162,12 @@ Keep raw and large outputs outside Git. Write human-readable Slurm scripts follo
       wait mechanism, output-suppression rules, and bounded-backoff behavior.
 
 3. After monitoring begins, continue it until every expected job or array element has an
-   authoritative terminal state in `sacct` and its state, exit code, elapsed time, available
-   resources, and failure reason have been recorded. Terminal states include `COMPLETED`, `FAILED`,
-   `TIMEOUT`, `CANCELLED`, `OUT_OF_MEMORY`, and other Slurm terminal states. A job remaining
-   `PENDING` or `RUNNING`, an unchanged scheduler snapshot, a completed subset, an empty `squeue`
-   response, or partial accounting does not satisfy this criterion.
+   authoritative terminal state in `sacct`. Record its state, exit code, elapsed time, available
+   resource evidence, and failure reason when applicable; record `none`, `not applicable`, or
+   `unavailable` explicitly for any field Slurm cannot supply. Terminal states include `COMPLETED`,
+   `FAILED`, `TIMEOUT`, `CANCELLED`, `OUT_OF_MEMORY`, and other Slurm terminal states. A job
+   remaining `PENDING` or `RUNNING`, an unchanged scheduler snapshot, a completed subset, an empty
+   `squeue` response, or partial accounting does not satisfy this criterion.
 
 4. Before starting or restarting a wait or monitoring operation, apply the monitor-strategy retry
    gate:
@@ -181,16 +182,17 @@ Keep raw and large outputs outside Git. Write human-readable Slurm scripts follo
 
    c. If a foreground monitor was terminated because the agent runtime or terminal wrapper did not
       preserve its process handle, mark that mechanism `unsupported` in the ledger and clear the
-      active-monitor entry in `CURRENT.md`. Do not relaunch the same or materially equivalent
-      foreground command.
+      active-monitor entry in `CURRENT.md`.
 
    d. Internal bounded retries for a transient `squeue` or `sacct` query failure are not strategy
       restarts. After those retries are exhausted, classify the strategy outcome before taking
       another action.
 
-   e. Retry a failed strategy only when recorded evidence shows that the failure condition changed,
-      such as a corrected command defect or a materially different runtime capability. Record the
-      revised mechanism or command shape separately and permit only one new capability attempt.
+   e. Do not repeatedly relaunch a failed monitoring strategy without a meaningful change intended
+      to address the observed failure. The primary agent may try a different command structure,
+      process model, terminal mechanism, or runtime-supported wait operation as a separate bounded
+      strategy when it records why the alternative may behave differently and the site profile and
+      runtime contract permit it.
 
    Do not run a separate capability-verification operation. For this section, an available strategy
    is one exposed by the active agent runtime and not already retired by recorded evidence. Treat

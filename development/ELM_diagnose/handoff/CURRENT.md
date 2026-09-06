@@ -40,9 +40,9 @@ Iter003 is closed by user authorization; await a separately approved next scope.
 
 ## Current Risks or Blockers
 
-- Historical monitoring-context limitations are recorded in `iterations/iter003.md`. Future
-  monitoring strategy selection and behavior are governed by `WORKFLOW.md` Section D and the active
-  runtime contract.
+- Historical evidence: the Iter003 foreground terminal sleep-loop was lost by the Codex wrapper.
+  This is not a permanent prohibition; future monitoring strategy selection is governed by
+  `WORKFLOW.md` Section D and the active runtime contract. See `iterations/iter003.md`.
 
 ## Agent-Continuity Failure to Carry Forward
 
