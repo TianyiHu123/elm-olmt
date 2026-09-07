@@ -61,3 +61,5 @@ else:
                 dailytomonthly=dailytomonthly, annualmean=annualmean,  \
                 meanseasonalcycle=meanseasonalcycle, xindex=0,yindex=0, plot=True)
 
+    # Save mycase.output after all variables were processed successfully
+    mycase.create_pkl(outdir=mycase.OLMTdir + '/pklfiles/')
