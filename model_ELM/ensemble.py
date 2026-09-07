@@ -394,7 +394,7 @@ def ensemble_copy(self, ens_num):
         print('Creting netcdf variable for '+p)
         param = self.getncvar(myfile,'flnr')
         param[:] = parm_values[pnum]
-      elif (p == 'psi50'):
+      elif (p == 'psi50' or p == 'kmax'):
         param[:,parm_indices[pnum]] = parm_values[pnum]
       elif (parm_indices[pnum] > 0):
          param[parm_indices[pnum]] = parm_values[pnum]
