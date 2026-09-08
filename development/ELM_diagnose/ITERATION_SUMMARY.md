@@ -22,3 +22,15 @@
 - Recovery: first job timed out; retry one was user-cancelled for efficiency revision; vectorized retry two `23729042` completed `0:0` in 02:29 using 21.6 GB/30 GB.
 - Outputs: 45 variable-named figures, 69 series metrics, 960 member metrics, receipt, and manifest at `.../elm_diagnose_iter003/results_retry2`.
 - Decision: accepted descriptive package only; no ranking or scientific conclusion. Monitoring-wrapper and agent-continuity limitations are retained in the Iter003 report for separate workflow improvement.
+
+## Iter004 — completed ABBY OAT response diagnostic
+
+- Work type: `implementation`; status: `completed`.
+- Objective: Rank ABBY range-wide OAT responses for 13 carbon targets across 14 separately perturbed parameters.
+- Bounded scope: 14 exact historical pickles; 1,400 members; 2018-2024 hourly means and population standard deviations; descriptive OAT only.
+- Locked method: baseline-conditioned one-at-a-time response spread, `100 * (P95 - P05) / abs(median)`, ranked separately for member means and population temporal standard deviations; no PAWN, Sobol, joint/global sensitivity, interaction, causal, tuning, or parameter-value claim.
+- Execution: preflight `23830156` and diagnostic `23830259` both completed `0:0` on attempt one; no retry was consumed. Preflight validated all 14 cases, 1,400 members, exact common 61,320-hour axes, variables, metadata, and calculation fixture.
+- Outputs: 14 parameter rows, 1,400 member rows, 364 finite score rows, 40,040 curve rows, and 35 PNGs in `.../elm_diagnose_iter004_abby_oat/results`; output manifest SHA-256 `9d4308d04b68e49a816ebb23e6162703165a3dca9d810e4cc958f714ea86eca2`.
+- Quantitative result: `leaf_long` leads GPP and ER for both statistics and mean SR/HR_TOTAL/LITFALL; `act25` leads temporal variability for SR/HR_TOTAL/LITFALL. Matched decomposition rates lead corresponding litter/soil mean-pool responses, except total litter-plus-soil C is led by `k_s4`. Full 26-group leaders and all 364 ranks are recorded in `summaries/iter004/` and the external score table.
+- Overall acceptance result: `pass`.
+- Decision: Accepted range-conditional descriptive OAT package; no global sensitivity, interaction, causal, tuning, or parameter-value claim.
