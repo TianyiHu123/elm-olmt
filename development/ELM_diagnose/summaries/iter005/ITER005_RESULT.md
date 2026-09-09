@@ -18,6 +18,22 @@
 - Accumulated total potential HR spans `1,912.427`--`13,685.020` gC m-2; N-limited totals span `1,710.962`--`11,512.151` gC m-2. P-limited and potential totals are exactly equal for every parameter/member pair.
 - Hourly litter-ratio support is 100 members everywhere. Flux-weighted values are constant across the declared cases: leaf C:N `70`, leaf C:P `1050`, fine-root C:N `42`, and fine-root C:P `1000`.
 
+### Mean HR and SR flux comparison
+
+The model values are pooled ensemble means across 1,400 members, with equal representation from the 14 separate 100-member OAT ensembles. Potential and limited HR means divide each member's 2018--2024 accumulation by the full 2,555-day model window. Model SR is the arithmetic mean of the daily-equivalent hourly rates over the same 61,320 model timesteps. Observed SR is the arithmetic mean over its 26,264 valid, unique hourly timesteps after unit conversion; missing observation hours are not filled or extrapolated.
+
+The percentage column uses model SR as the reference: `100 * (mean flux / model SR mean - 1)`.
+
+| Flux | Timesteps used | Mean flux (gC m⁻² day⁻¹) | Difference from model SR |
+| --- | ---: | ---: | ---: |
+| Potential HR | 61,320 model hours per member | 2.130507 | +48.70% |
+| P-limited HR | 61,320 model hours per member | 2.130507 | +48.70% |
+| N-limited HR | 61,320 model hours per member | 1.827990 | +27.58% |
+| Model SR | 61,320 model hours per member | 1.432799 | 0.00% (reference) |
+| Observed SR | 26,264 valid observation hours | 7.501337 | +423.54% |
+
+N limitation reduces the ensemble-mean potential HR by `14.20%` when potential HR is the denominator. The observation comparison is not exactly time-support matched because its valid hours cover only `42.83%` of the model window and may be seasonally or diurnally nonrepresentative.
+
 ## Descriptive interpretation
 
 The observation comparison exposes a large ABBY SR level and variability mismatch without changing any OAT score. The accumulated-pathway atlas shows strong range-conditional responses for `act25` and `leaf_long`, lower N-limited totals, and coincident potential/P-limited totals. The litter-ratio outputs verify complete support but show fixed stoichiometry rather than a response across these parameter sweeps. Standard target rankings are unchanged from Iter004 by the byte-identical regression gate.
