@@ -7,7 +7,7 @@ Keep reusable validation, analysis, and release utilities here. Keep one-off uti
 | Tool | Purpose | Invocation / contract |
 | --- | --- | --- |
 | `iter002_sr_diagnostics.py` | Produces the Iter002 integrated nine-site `SR` diagnostic package from a passing preflight receipt: hourly, complete-day daily, monthly-climatology, UTC-diurnal, and hourly-distribution figures plus seed-level and `ppe6` control-mean hourly metrics. | Called by `slurm/iter002/diagnostic_iter002.slurm` with `--receipt` and `--output`. It verifies the receipt status and hashes of all control, optimized, and observation inputs before analysis; expected successful output is 45 PNGs, `metrics.csv` with 69 rows, and `manifest.json`. This is currently Iter002-specific (`SR`, nine sites, and the locked Puma repository root), not a general command-line diagnostic interface. |
-| `oat_sensitivity.py` | Validates and analyzes explicit one-parameter-at-a-time ELM ensemble pickles without inferring directory membership. It computes 2018--2024 hourly member means and population standard deviations, range-dependent response-spread scores, response atlases, heatmaps, and decomposition-compensation plots. | Supply one `--parameter-pickle PARAMETER:EXACT_BASENAME` for every member of the tool's exact 14-parameter interface, the exact log-parameter set, an absolute pickle directory, control parameter NetCDF, and absolute output. `--validate-only` writes a passing receipt and immutable input manifest; `--manifest` requires and revalidates that manifest before atomically publishing results. |
+| `oat_sensitivity.py` | Validates and analyzes explicit one-parameter-at-a-time ELM ensemble pickles without inferring directory membership. Independent interfaces select standard targets, observation references, compensation mappings, accumulated potential/N/P-limited HR pathways, and litter-flux stoichiometry. | Supply exact parameter mappings plus repeated `--target`, `--observation`, `--compensation`, `--hr-pool`, and `--litter-ratio` arguments as needed. HR pathways require both limiter arguments. `--regression-results` locks core tables to a reference package. `--validate-only` writes a passing receipt and immutable manifest; `--manifest` revalidates it before atomic publication. |
 
 ## OAT sensitivity interpretation and validation
 
@@ -20,9 +20,18 @@ standard deviations (`ddof=0`). Spearman direction is intentionally not required
 
 Flux values are already hourly sampled daily-equivalent rates in `gC m-2 day-1`; the tool does not
 accumulate them. `HR_TOTAL` and `LITTER_SOIL_C_TOTAL` are summed hourly before temporal statistics.
-The latter excludes `CWDC` and is labeled `Total SOC`. Compensation figures express each pool C,
+The latter excludes `CWDC` and is labeled `Total SOC`. Standard targets are selected only by
+repeated `--target` arguments. Observation mappings add horizontal context to their selected
+target atlases and never alter the model statistics or score. Compensation figures express each pool C,
 regulated `K_*`, and pool HR bin median as percentage departure from that response's ensemble
 median: `100 * (response - median) / abs(median)`.
+
+Accumulated HR diagnostics multiply each configured pool C by its regulated per-second `K_*`,
+apply `FPI` and `FPI_P` separately, sum the configured pools, and integrate hourly fluxes with a
+3600-second factor. Litter-ratio time series use only finite values with positive nutrient-flux
+denominators and report member support; member response ratios are flux-weighted totals formed
+after converting daily-equivalent flux samples to hourly mass. These specialized diagnostics do
+not enter the core OAT rankings.
 
 Validation rejects inferred or duplicate mappings, path components, globs, missing parameters,
 non-ABBY or multi-parameter cases, member counts other than 100, invalid bounds/samples, ambiguous
@@ -32,7 +41,7 @@ embedded runtime paths. Native parameter markers are plotted only when the exact
 or slice in the control NetCDF resolves to one finite value inside the sampled range.
 
 Production reads only a passing manifest with matching hashes, loads one pickle at a time, retains
-compact member statistics, writes into hidden staging, and renames staging to the final output only
-after all expected tables and 35 figures pass internal checks. The manifest records hashes for
+compact summaries, writes into hidden staging, and renames staging to the final output only
+after all dynamically selected tables and figures pass internal checks. The manifest records hashes for
 every published artifact. Incomplete staging is retained as failure evidence and is never treated
 as a result package.

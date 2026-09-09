@@ -34,3 +34,14 @@
 - Quantitative result: `leaf_long` leads GPP and ER for both statistics and mean SR/HR_TOTAL/LITFALL; `act25` leads temporal variability for SR/HR_TOTAL/LITFALL. Matched decomposition rates lead corresponding litter/soil mean-pool responses, except total litter-plus-soil C is led by `k_s4`. Full 26-group leaders and all 364 ranks are recorded in `summaries/iter004/` and the external score table.
 - Overall acceptance result: `pass`.
 - Decision: Accepted range-conditional descriptive OAT package; no global sensitivity, interaction, causal, tuning, or parameter-value claim.
+
+## Iter005 — completed ABBY extended OAT pathway and stoichiometry diagnostic
+
+- Work type: `implementation`; status: `completed`.
+- Objective: Extend the reusable ABBY OAT diagnostic with explicit targets, SR observation context, decomposition pathways, and litter-flux stoichiometry.
+- Bounded scope: 14 exact historical pickles; 1,400 members; 13 standard targets; one SR observation; seven compensation mappings; eight-pool potential/N/P-limited HR; four litter ratios; descriptive OAT only.
+- Execution: preflight `23834413` passed on authorized attempt three after two classified fixture-expectation corrections; diagnostic `23834468` passed on attempt one. All four jobs are terminally accounted, and passing peak memory was 31.90/40 GB and 32.85/40 GB.
+- Outputs: 3,520,119 data rows and 44 PNGs in `.../elm_diagnose_iter005_abby_oat_extended/results`; input manifest `7581cafa`; output manifest `99d3f377`; Iter004 core table hashes reproduce exactly.
+- Quantitative result: observed SR mean/std are `7.501337`/`2.627639` versus model-member ranges `0.622847`--`3.076300`/`0.134623`--`0.586511` gC m-2 day-1. Potential and P-limited accumulated total HR are identical across all 1,400 pairs and span `1,912.427`--`13,685.020` gC m-2; N-limited totals span `1,710.962`--`11,512.151`. All litter-ratio hours have 100-member support, with fixed flux-weighted leaf C:N/C:P `70`/`1050` and fine-root C:N/C:P `42`/`1000`.
+- Overall acceptance result: `pass`.
+- Decision: Accepted validated range-conditional descriptive OAT and pathway/stoichiometry package; no global sensitivity, interaction, causal, optimization, tuning, or parameter-value claim.
