@@ -11,9 +11,10 @@ import json
 import os
 import pickle
 import sys
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import datetime, timezone
 from pathlib import Path
+from types import SimpleNamespace
 from typing import Any, Iterable
 
 import matplotlib
@@ -92,6 +93,9 @@ UNITS = {
     "SOIL3C": "gC m-2",
     "SOIL4C": "gC m-2",
 }
+INPUT_MANIFEST_SCHEMA = "elm_oat_input_manifest_v4"
+OUTPUT_MANIFEST_SCHEMA = "elm_oat_output_manifest_v4"
+VALIDATION_RECEIPT_SCHEMA = "elm_oat_validation_receipt_v3"
 
 
 @dataclass
@@ -110,6 +114,7 @@ class CaseSummary:
     compensation_statistics: dict[str, dict[str, np.ndarray]]
     hr_pathway_totals: dict[str, dict[str, np.ndarray]]
     litter_ratio_members: dict[str, np.ndarray]
+    litter_ratio_support: dict[str, dict[str, np.ndarray]]
     litter_ratio_timeseries: dict[str, dict[str, np.ndarray]]
     metadata: dict[str, Any]
 
@@ -131,6 +136,12 @@ def atomic_json(path: Path, payload: dict[str, Any]) -> None:
     temporary = path.with_name(f".{path.name}.tmp.{os.getpid()}")
     temporary.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n")
     os.replace(temporary, path)
+
+
+def validate_declared_site(site: str) -> str:
+    if not site or site != site.upper() or not site.isalnum():
+        raise ValueError("--site must be a nonempty uppercase alphanumeric site identifier")
+    return site
 
 
 def write_csv(path: Path, fieldnames: list[str], rows: Iterable[dict[str, Any]]) -> None:
@@ -360,6 +371,21 @@ def temporal_statistics(matrix: np.ndarray) -> dict[str, np.ndarray]:
     }
 
 
+def flux_weighted_ratio_support(carbon: np.ndarray, nutrient: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """Return member ratios, support flags, and explicit reasons without dropping members."""
+    carbon_total = np.sum(carbon / 24.0, axis=0)
+    nutrient_total = np.sum(nutrient / 24.0, axis=0)
+    supported = np.isfinite(carbon_total) & np.isfinite(nutrient_total) & (nutrient_total > 0.0)
+    ratios = np.full(carbon_total.shape, np.nan, dtype=np.float64)
+    np.divide(carbon_total, nutrient_total, out=ratios, where=supported)
+    reasons = np.full(carbon_total.shape, "", dtype=object)
+    reasons[~np.isfinite(carbon_total) & np.isfinite(nutrient_total)] = "nonfinite_carbon_total"
+    reasons[np.isfinite(carbon_total) & ~np.isfinite(nutrient_total)] = "nonfinite_nutrient_total"
+    reasons[~np.isfinite(carbon_total) & ~np.isfinite(nutrient_total)] = "nonfinite_carbon_and_nutrient_totals"
+    reasons[np.isfinite(carbon_total) & np.isfinite(nutrient_total) & (nutrient_total <= 0.0)] = "nonpositive_nutrient_total"
+    return ratios, supported, reasons
+
+
 def load_case_summary(
     parameter: str,
     path: Path,
@@ -368,11 +394,12 @@ def load_case_summary(
     control_dataset: xr.Dataset,
     reference_taxis: np.ndarray | None,
     interfaces: dict[str, Any],
+    expected_site: str,
 ) -> tuple[CaseSummary, np.ndarray]:
     with path.open("rb") as handle:
         case = pickle.load(handle)
-    if str(getattr(case, "site", "")) != "ABBY":
-        raise ValueError(f"{path.name}: site must be ABBY")
+    if str(getattr(case, "site", "")) != expected_site:
+        raise ValueError(f"{path.name}: site must be {expected_site}")
     samples, pmin, pmax, selector = parameter_values(case, parameter)
     taxis = validate_time(case, reference_taxis)
     postproc_vars = set(str(item) for item in getattr(case, "postproc_vars", []))
@@ -427,6 +454,7 @@ def load_case_summary(
                 "TOTAL": np.sum(total * 3600.0, axis=0),
             }
     litter_ratio_members: dict[str, np.ndarray] = {}
+    litter_ratio_support: dict[str, dict[str, np.ndarray]] = {}
     litter_ratio_timeseries: dict[str, dict[str, np.ndarray]] = {}
     for label, carbon_flux, nutrient_flux in interfaces["litter_ratios"]:
         carbon = raw[carbon_flux]
@@ -445,12 +473,9 @@ def load_case_summary(
             out=np.full(EXPECTED_HOURS, np.nan), where=counts > 0,
         )
         litter_ratio_timeseries[label] = {"mean": means, "std": np.sqrt(variances), "valid_members": counts}
-        carbon_total = np.sum(carbon / 24.0, axis=0)
-        nutrient_total = np.sum(nutrient / 24.0, axis=0)
-        ratios = carbon_total / nutrient_total
-        if not np.all(np.isfinite(ratios)) or np.any(nutrient_total <= 0.0):
-            raise ValueError(f"{label}: every member requires finite totals and a positive accumulated denominator")
+        ratios, supported, reasons = flux_weighted_ratio_support(carbon, nutrient)
         litter_ratio_members[label] = ratios
+        litter_ratio_support[label] = {"supported": supported, "rejection_reason": reasons}
     native, native_status = control_native_value(control_dataset, parameter, selector)
     normalized = normalize_parameter(samples, pmin, pmax, coordinate)
     if native is not None and (native < pmin or native > pmax or (coordinate == "log10" and native <= 0)):
@@ -467,6 +492,13 @@ def load_case_summary(
         "taxis_length": int(taxis.size),
         "taxis_first": float(taxis[0]),
         "taxis_last": float(taxis[-1]),
+        "litter_ratio_support": {
+            label: {
+                "supported_members": int(np.sum(details["supported"])),
+                "rejected_members": int(details["supported"].size - np.sum(details["supported"])),
+            }
+            for label, details in litter_ratio_support.items()
+        },
     }
     summary = CaseSummary(
         parameter=parameter,
@@ -483,6 +515,7 @@ def load_case_summary(
         compensation_statistics=compensation_statistics,
         hr_pathway_totals=hr_pathway_totals,
         litter_ratio_members=litter_ratio_members,
+        litter_ratio_support=litter_ratio_support,
         litter_ratio_timeseries=litter_ratio_timeseries,
         metadata=metadata,
     )
@@ -504,6 +537,29 @@ def equal_count_bins(x: np.ndarray, y: np.ndarray) -> list[dict[str, float | int
                 "x_min": float(np.min(x[indices])),
                 "x_max": float(np.max(x[indices])),
                 "response_median": float(np.median(y[indices])),
+            }
+        )
+    return result
+
+
+def equal_count_bins_with_gaps(x: np.ndarray, y: np.ndarray) -> list[dict[str, float | int | str]]:
+    """Keep ten declared bins while excluding unsupported responses from summaries."""
+    order = np.lexsort((np.arange(x.size), x))
+    groups = np.array_split(order, 10)
+    result: list[dict[str, float | int | str]] = []
+    for bin_index, indices in enumerate(groups, start=1):
+        finite = np.isfinite(y[indices])
+        valid_count = int(np.sum(finite))
+        result.append(
+            {
+                "bin": bin_index,
+                "count": int(indices.size),
+                "valid_count": valid_count,
+                "rejected_count": int(indices.size - valid_count),
+                "x_median": float(np.median(x[indices])),
+                "x_min": float(np.min(x[indices])),
+                "x_max": float(np.max(x[indices])),
+                "response_median": float(np.median(y[indices][finite])) if valid_count else "",
             }
         )
     return result
@@ -627,6 +683,7 @@ def plot_response_atlases(
     summaries: list[CaseSummary],
     targets: tuple[str, ...],
     observation_rows: list[dict[str, Any]],
+    site: str,
 ) -> list[Path]:
     paths: list[Path] = []
     observation_lookup = {row["variable"]: row for row in observation_rows}
@@ -651,16 +708,16 @@ def plot_response_atlases(
                 axis.set_ylabel(UNITS[target])
             for axis in axes.flat[len(summaries) :]:
                 axis.set_visible(False)
-            figure.suptitle(f"ABBY {DISPLAY_NAMES.get(target, target)} member {statistic.replace('_', ' ')} OAT responses")
+            figure.suptitle(f"{site} {DISPLAY_NAMES.get(target, target)} member {statistic.replace('_', ' ')} OAT responses")
             figure.tight_layout(rect=(0, 0, 1, 0.97))
-            path = output / f"ABBY_{target}_{statistic}_response_atlas.png"
+            path = output / f"{site}_{target}_{statistic}_response_atlas.png"
             figure.savefig(path, dpi=150)
             plt.close(figure)
             paths.append(path)
     return paths
 
 
-def plot_heatmaps(output: Path, score_rows: list[dict[str, Any]], targets: tuple[str, ...]) -> list[Path]:
+def plot_heatmaps(output: Path, score_rows: list[dict[str, Any]], targets: tuple[str, ...], site: str) -> list[Path]:
     paths: list[Path] = []
     for statistic in STATISTICS:
         lookup = {(row["parameter"], row["target"]): row for row in score_rows if row["statistic"] == statistic}
@@ -674,17 +731,17 @@ def plot_heatmaps(output: Path, score_rows: list[dict[str, Any]], targets: tuple
                 row = lookup[(parameter, target)]
                 color = "white" if matrix[row_index, column_index] > np.nanmedian(matrix) else "black"
                 axis.text(column_index, row_index, f"{row['score_percent']:.1f}\n#{row['rank']}", ha="center", va="center", fontsize=6, color=color)
-        axis.set_title(f"ABBY OAT response spread: {statistic.replace('_', ' ')}")
+        axis.set_title(f"{site} OAT response spread: {statistic.replace('_', ' ')}")
         figure.colorbar(image, ax=axis, label="response spread (%)")
         figure.tight_layout()
-        path = output / f"ABBY_{statistic}_sensitivity_heatmap.png"
+        path = output / f"{site}_{statistic}_sensitivity_heatmap.png"
         figure.savefig(path, dpi=150)
         plt.close(figure)
         paths.append(path)
     return paths
 
 
-def plot_compensation(output: Path, summaries: list[CaseSummary], mappings: list[tuple[str, ...]]) -> list[Path]:
+def plot_compensation(output: Path, summaries: list[CaseSummary], mappings: list[tuple[str, ...]], site: str) -> list[Path]:
     paths: list[Path] = []
     by_parameter = {summary.parameter: summary for summary in summaries}
     for parameter, pool, rate, respiration in mappings:
@@ -699,9 +756,9 @@ def plot_compensation(output: Path, summaries: list[CaseSummary], mappings: list
             axis.axhline(0.0, color="black", lw=0.6)
             axis.set(xlabel=f"normalized {summary.coordinate} {parameter}", ylabel="departure from ensemble median (%)", title=statistic.replace("_", " "))
             axis.legend(fontsize=8)
-        figure.suptitle(f"ABBY {parameter} / {label} decomposition compensation")
+        figure.suptitle(f"{site} {parameter} / {label} decomposition compensation")
         figure.tight_layout(rect=(0, 0, 1, 0.94))
-        path = output / f"ABBY_{parameter}_{label}_compensation.png"
+        path = output / f"{site}_{parameter}_{label}_compensation.png"
         figure.savefig(path, dpi=150)
         plt.close(figure)
         paths.append(path)
@@ -756,9 +813,18 @@ def build_specialized_rows(
             for item in equal_count_bins(summary.normalized_parameter, pools["TOTAL"]):
                 hr_curves.append({"parameter": summary.parameter, "pathway": pathway, **item})
         for label, values in summary.litter_ratio_members.items():
+            support = summary.litter_ratio_support[label]
             for member, value in enumerate(values, start=1):
-                litter_members.append({"parameter": summary.parameter, "ratio": label, "member": member, "ratio_value": float(value)})
-            for item in equal_count_bins(summary.normalized_parameter, values):
+                supported = bool(support["supported"][member - 1])
+                litter_members.append({
+                    "parameter": summary.parameter,
+                    "ratio": label,
+                    "member": member,
+                    "ratio_value": float(value) if supported else "",
+                    "supported": supported,
+                    "rejection_reason": str(support["rejection_reason"][member - 1]),
+                })
+            for item in equal_count_bins_with_gaps(summary.normalized_parameter, values):
                 litter_curves.append({"parameter": summary.parameter, "ratio": label, **item})
         for label, statistics in summary.litter_ratio_timeseries.items():
             for hour in range(EXPECTED_HOURS):
@@ -794,7 +860,7 @@ def expected_artifact_counts(interfaces: dict[str, Any]) -> dict[str, int]:
     return counts
 
 
-def plot_hr_pathways(output: Path, summaries: list[CaseSummary]) -> list[Path]:
+def plot_hr_pathways(output: Path, summaries: list[CaseSummary], site: str) -> list[Path]:
     if not summaries or not summaries[0].hr_pathway_totals:
         return []
     figure, axes = plt.subplots(4, 4, figsize=(15, 13), squeeze=False)
@@ -803,21 +869,21 @@ def plot_hr_pathways(output: Path, summaries: list[CaseSummary]) -> list[Path]:
         for pathway, pools in summary.hr_pathway_totals.items():
             values = pools["TOTAL"]
             axis.scatter(summary.normalized_parameter, values, s=6, alpha=0.10, color=colors[pathway])
-            bins = equal_count_bins(summary.normalized_parameter, values)
+            bins = equal_count_bins_with_gaps(summary.normalized_parameter, values)
             axis.plot([item["x_median"] for item in bins], [item["response_median"] for item in bins], "o-", ms=3, lw=1.0, color=colors[pathway], label=pathway)
         axis.set(title=summary.parameter, xlabel=f"normalized {summary.coordinate}", ylabel="accumulated gC m-2")
     for axis in axes.flat[len(summaries):]:
         axis.set_visible(False)
     axes.flat[0].legend(fontsize=7)
-    figure.suptitle("ABBY accumulated potential and N/P-limited heterotrophic respiration")
+    figure.suptitle(f"{site} accumulated potential and N/P-limited heterotrophic respiration")
     figure.tight_layout(rect=(0, 0, 1, 0.97))
-    path = output / "ABBY_accumulated_hr_pathways.png"
+    path = output / f"{site}_accumulated_hr_pathways.png"
     figure.savefig(path, dpi=150)
     plt.close(figure)
     return [path]
 
 
-def plot_litter_ratios(output: Path, summaries: list[CaseSummary], taxis: np.ndarray) -> list[Path]:
+def plot_litter_ratios(output: Path, summaries: list[CaseSummary], taxis: np.ndarray, site: str) -> list[Path]:
     if not summaries or not summaries[0].litter_ratio_members:
         return []
     paths: list[Path] = []
@@ -830,9 +896,9 @@ def plot_litter_ratios(output: Path, summaries: list[CaseSummary], taxis: np.nda
             axis.set(title=summary.parameter, xlabel="model year", ylabel=label)
         for axis in axes.flat[len(summaries):]:
             axis.set_visible(False)
-        figure.suptitle(f"ABBY hourly litter ratio {label}: ensemble mean +/- population SD")
+        figure.suptitle(f"{site} hourly litter ratio {label}: ensemble mean +/- population SD")
         figure.tight_layout(rect=(0, 0, 1, 0.97))
-        path = output / f"ABBY_{label}_hourly_ratio_atlas.png"
+        path = output / f"{site}_{label}_hourly_ratio_atlas.png"
         figure.savefig(path, dpi=150)
         plt.close(figure)
         paths.append(path)
@@ -840,14 +906,15 @@ def plot_litter_ratios(output: Path, summaries: list[CaseSummary], taxis: np.nda
         for axis, summary in zip(axes.flat, summaries):
             values = summary.litter_ratio_members[label]
             axis.scatter(summary.normalized_parameter, values, s=9, alpha=0.25)
-            bins = equal_count_bins(summary.normalized_parameter, values)
-            axis.plot([item["x_median"] for item in bins], [item["response_median"] for item in bins], "o-", color="black", ms=3, lw=1.0)
+            bins = equal_count_bins_with_gaps(summary.normalized_parameter, values)
+            supported_bins = [item for item in bins if item["response_median"] != ""]
+            axis.plot([item["x_median"] for item in supported_bins], [item["response_median"] for item in supported_bins], "o-", color="black", ms=3, lw=1.0)
             axis.set(title=summary.parameter, xlabel=f"normalized {summary.coordinate}", ylabel=label)
         for axis in axes.flat[len(summaries):]:
             axis.set_visible(False)
-        figure.suptitle(f"ABBY flux-weighted litter ratio response {label}")
+        figure.suptitle(f"{site} flux-weighted litter ratio response {label}")
         figure.tight_layout(rect=(0, 0, 1, 0.97))
-        path = output / f"ABBY_{label}_flux_weighted_response_atlas.png"
+        path = output / f"{site}_{label}_flux_weighted_response_atlas.png"
         figure.savefig(path, dpi=150)
         plt.close(figure)
         paths.append(path)
@@ -917,6 +984,18 @@ def fixture_checks() -> dict[str, Any]:
     flux_weighted = np.sum(carbon / 24.0, axis=0) / np.sum(np.where(nutrient > 0, nutrient, 0.0) / 24.0, axis=0)
     if not np.allclose(flux_weighted, (2.0, 3.0)):
         raise AssertionError("flux-weighted litter-ratio fixture failed")
+    gap_carbon = np.asarray([[24.0, np.nan, 24.0], [48.0, 48.0, 48.0]])
+    gap_nutrient = np.asarray([[12.0, 12.0, 0.0], [24.0, 24.0, 0.0]])
+    gap_values, gap_support, gap_reasons = flux_weighted_ratio_support(gap_carbon, gap_nutrient)
+    if not np.array_equal(gap_support, (True, False, False)):
+        raise AssertionError("flux-weighted litter-ratio member support fixture failed")
+    if not np.isclose(gap_values[0], 2.0) or not np.all(np.isnan(gap_values[1:])):
+        raise AssertionError("flux-weighted litter-ratio explicit gap fixture failed")
+    if tuple(gap_reasons) != ("", "nonfinite_carbon_total", "nonpositive_nutrient_total"):
+        raise AssertionError("flux-weighted litter-ratio rejection-reason fixture failed")
+    gap_bins = equal_count_bins_with_gaps(np.arange(100, dtype=float), np.r_[np.nan, np.arange(99, dtype=float)])
+    if len(gap_bins) != 10 or gap_bins[0]["valid_count"] != 9 or gap_bins[0]["rejected_count"] != 1:
+        raise AssertionError("flux-weighted litter-ratio gap-support fixture failed")
     minimal = argparse.Namespace(
         target=["GPP"], observation=[], compensation=[], hr_pool=[],
         hr_n_limiter=None, hr_p_limiter=None, litter_ratio=[],
@@ -943,9 +1022,177 @@ def fixture_checks() -> dict[str, Any]:
         "hr_pathways": "pool_times_rate_then_3600_second_integration",
         "hr_limiters": "N_and_P_applied_before_pool_and_time_summation",
         "exact_hr_pool_count": 8,
-        "litter_ratios": "hourly_mask_population_spread_and_flux_weighted_totals",
+        "litter_ratios": "hourly_mask_population_spread_and_flux_weighted_totals_with_explicit_member_gaps",
         "optional_families": "independently_disableable",
     }
+
+
+def paired_site_contract_fixture(output_root: Path) -> dict[str, Any]:
+    """Exercise the complete numeric and presentation paths with paired synthetic sites."""
+    global EXPECTED_HOURS
+    original_expected_hours = EXPECTED_HOURS
+    EXPECTED_HOURS = 4
+    try:
+        interfaces = parse_interfaces(argparse.Namespace(
+            target=list(TARGETS),
+            observation=[],
+            compensation=[
+                "k_l1:LITR1C:K_LITR1:LITR1_HR",
+                "k_l2:LITR2C:K_LITR2:LITR2_HR",
+                "k_l3:LITR3C:K_LITR3:LITR3_HR",
+                "k_s1:SOIL1C:K_SOIL1:SOIL1_HR",
+                "k_s2:SOIL2C:K_SOIL2:SOIL2_HR",
+                "k_s3:SOIL3C:K_SOIL3:SOIL3_HR",
+                "k_s4:SOIL4C:K_SOIL4:SOIL4_HR",
+            ],
+            hr_pool=[
+                "CWDC:K_CWD", "LITR1C:K_LITR1", "LITR2C:K_LITR2", "LITR3C:K_LITR3",
+                "SOIL1C:K_SOIL1", "SOIL2C:K_SOIL2", "SOIL3C:K_SOIL3", "SOIL4C:K_SOIL4",
+            ],
+            hr_n_limiter="FPI",
+            hr_p_limiter="FPI_P",
+            litter_ratio=[
+                "leaf_cn:LEAFC_TO_LITTER:LEAFN_TO_LITTER",
+                "leaf_cp:LEAFC_TO_LITTER:LEAFP_TO_LITTER",
+                "froot_cn:FROOTC_TO_LITTER:FROOTN_TO_LITTER",
+                "froot_cp:FROOTC_TO_LITTER:FROOTP_TO_LITTER",
+            ],
+        ))
+        hours = np.arange(EXPECTED_HOURS, dtype=np.float64)[:, None]
+        members = np.arange(100, dtype=np.float64)[None, :]
+        base = 1.0 + 0.1 * hours + 0.01 * members
+        raw: dict[str, np.ndarray] = {}
+        for variable in required_raw_variables(interfaces):
+            if variable == "FPI":
+                raw[variable] = np.full(base.shape, 0.5)
+            elif variable == "FPI_P":
+                raw[variable] = np.full(base.shape, 0.25)
+            elif variable.startswith("K_"):
+                raw[variable] = base * 1.0e-6
+            elif variable in {"LEAFN_TO_LITTER", "FROOTN_TO_LITTER"}:
+                raw[variable] = base / 10.0
+            elif variable in {"LEAFP_TO_LITTER", "FROOTP_TO_LITTER"}:
+                raw[variable] = base / 100.0
+            else:
+                raw[variable] = base.copy()
+        for _, carbon_flux, nutrient_flux in interfaces["litter_ratios"]:
+            raw[nutrient_flux][:, 0] = 0.0
+            raw[carbon_flux][:, 1] = np.nan
+            raw[nutrient_flux][:, 2] = np.nan
+            raw[carbon_flux][:, 3] = np.nan
+            raw[nutrient_flux][:, 3] = np.nan
+        raw["taxis"] = 2018.0 + np.arange(EXPECTED_HOURS, dtype=np.float64) / 8760.0
+        samples = np.geomspace(0.01, 1.0, 100)
+        output_root.mkdir(parents=True, exist_ok=False)
+        loaded: dict[str, CaseSummary] = {}
+        manifests: dict[str, dict[str, Any]] = {}
+        figure_names: dict[str, list[str]] = {}
+        numeric_rows: dict[str, Any] = {}
+        with xr.Dataset() as control_dataset:
+            for site in ("ABBY", "JERC"):
+                site = validate_declared_site(site)
+                case = SimpleNamespace(
+                    site=site,
+                    casename="synthetic_site_parity",
+                    ensemble_parms=["k_l1"],
+                    ensemble_pfts=[-1],
+                    ensemble_pmin=[0.01],
+                    ensemble_pmax=[1.0],
+                    nsamples=100,
+                    samples=samples.reshape(1, -1),
+                    postproc_startyear=2018,
+                    postproc_endyear=2024,
+                    postproc_vars=list(required_raw_variables(interfaces)),
+                    output=raw,
+                )
+                pickle_path = output_root / f"{site}_synthetic.pkl"
+                with pickle_path.open("wb") as handle:
+                    pickle.dump(case, handle)
+                summary, taxis = load_case_summary(
+                    "k_l1", pickle_path, digest(pickle_path), "log10", control_dataset,
+                    None, interfaces, site,
+                )
+                summary.compensation_statistics = {
+                    variable: temporal_statistics(raw[variable])
+                    for _, pool, rate, respiration in interfaces["compensation"]
+                    for variable in (pool, rate, respiration)
+                }
+                summaries = [
+                    replace(
+                        summary,
+                        parameter=parameter,
+                        coordinate="log10" if parameter in LOG_PARAMETERS else "linear",
+                        metadata={**summary.metadata, "site": site},
+                    )
+                    for parameter in EXPECTED_PARAMETERS
+                ]
+                loaded[site] = summary
+                parameter_rows, member_rows, score_rows, curve_rows = build_rows(summaries, interfaces["targets"])
+                for row in parameter_rows:
+                    row.pop("pickle_path")
+                    row.pop("pickle_sha256")
+                specialized = build_specialized_rows(summaries, taxis)
+                litter_member_rows = specialized[2]
+                litter_curve_rows = specialized[4]
+                if len(litter_member_rows) != 5600 or len(litter_curve_rows) != 560:
+                    raise AssertionError("paired-site gap fixture did not preserve litter row cardinality")
+                rejected_rows = [row for row in litter_member_rows if not row["supported"]]
+                if len(rejected_rows) != 224 or any(row["ratio_value"] != "" for row in rejected_rows):
+                    raise AssertionError("paired-site gap fixture did not retain explicit member gaps")
+                approved_reasons = {
+                    "nonfinite_carbon_total", "nonfinite_nutrient_total",
+                    "nonfinite_carbon_and_nutrient_totals", "nonpositive_nutrient_total",
+                }
+                if {row["rejection_reason"] for row in rejected_rows} != approved_reasons:
+                    raise AssertionError("paired-site gap fixture rejection reasons differ")
+                for row in litter_curve_rows:
+                    if row["valid_count"] + row["rejected_count"] != row["count"]:
+                        raise AssertionError("paired-site gap fixture curve support totals differ")
+                numeric_rows[site] = (parameter_rows, member_rows, score_rows, curve_rows, *specialized)
+                mappings = {parameter: f"synthetic_{parameter}.pkl" for parameter in EXPECTED_PARAMETERS}
+                manifest_args = argparse.Namespace(
+                    site=site,
+                    pickle_dir=output_root,
+                    control_paramfile=output_root / "synthetic_control.nc",
+                    regression_results=None,
+                )
+                manifests[site] = manifest_contract(manifest_args, mappings, LOG_PARAMETERS, interfaces, [])
+                site_output = output_root / site
+                site_output.mkdir()
+                figures = [
+                    *plot_response_atlases(site_output, summaries, interfaces["targets"], [], site),
+                    *plot_heatmaps(site_output, score_rows, interfaces["targets"], site),
+                    *plot_compensation(site_output, summaries, interfaces["compensation"], site),
+                    *plot_hr_pathways(site_output, summaries, site),
+                    *plot_litter_ratios(site_output, summaries, taxis, site),
+                ]
+                figure_names[site] = sorted(path.name.removeprefix(f"{site}_") for path in figures)
+                if len(figures) != 44:
+                    raise AssertionError(f"{site}: paired-site fixture expected 44 figures, got {len(figures)}")
+        if numeric_rows["ABBY"] != numeric_rows["JERC"]:
+            raise AssertionError("paired-site complete numerical rows differ")
+        abby_manifest = {key: value for key, value in manifests["ABBY"].items() if key != "site"}
+        jerc_manifest = {key: value for key, value in manifests["JERC"].items() if key != "site"}
+        if abby_manifest != jerc_manifest:
+            raise AssertionError("paired-site manifest contracts differ beyond site")
+        if manifests["ABBY"]["site"] != "ABBY" or manifests["JERC"]["site"] != "JERC":
+            raise AssertionError("paired-site manifest site identity failed")
+        if figure_names["ABBY"] != figure_names["JERC"]:
+            raise AssertionError("paired-site figure membership differs beyond site prefix")
+        if loaded["ABBY"].metadata["site"] != "ABBY" or loaded["JERC"].metadata["site"] != "JERC":
+            raise AssertionError("paired synthetic embedded-site validation failed")
+        return {
+            "status": "pass",
+            "sites": ["ABBY", "JERC"],
+            "numeric_products_equal": True,
+            "manifest_difference": "site_only",
+            "figure_membership_equal_after_site_prefix": True,
+            "figure_count_per_site": 44,
+            "unsupported_member_rows_retained": 224,
+            "gap_rows_and_plots_exercised": True,
+        }
+    finally:
+        EXPECTED_HOURS = original_expected_hours
 
 
 def manifest_contract(
@@ -956,7 +1203,8 @@ def manifest_contract(
     observation_rows: list[dict[str, Any]],
 ) -> dict[str, Any]:
     return {
-        "schema": "elm_oat_input_manifest_v2",
+        "schema": INPUT_MANIFEST_SCHEMA,
+        "site": args.site,
         "pickle_dir": str(args.pickle_dir),
         "control_paramfile": str(args.control_paramfile),
         "parameter_pickles": mappings,
@@ -970,6 +1218,7 @@ def manifest_contract(
         "hr_n_limiter": interfaces["hr_n_limiter"],
         "hr_p_limiter": interfaces["hr_p_limiter"],
         "litter_ratios": [list(item) for item in interfaces["litter_ratios"]],
+        "litter_ratio_support_contract": "retain_all_members; blank_ratio_for_unsupported_total; record_supported_and_rejection_reason; omit_invalid_plot_points",
         "required_raw_variables": list(required_raw_variables(interfaces)),
         "regression_results": None if args.regression_results is None else str(args.regression_results),
         "expected_hours": EXPECTED_HOURS,
@@ -1009,7 +1258,7 @@ def validate_all(
     tool_hash = digest(Path(__file__).resolve())
     pickle_hashes: dict[str, str] = {}
     if expected_manifest is not None:
-        for field in ("pickle_dir", "control_paramfile", "parameter_pickles", "log_parameters", "parameters", "targets", "observations", "observation_sha256", "compensation", "hr_pools", "hr_n_limiter", "hr_p_limiter", "litter_ratios", "required_raw_variables", "regression_results", "regression_sha256", "expected_hours", "year_range", "member_count_per_parameter", "score"):
+        for field in ("schema", "site", "pickle_dir", "control_paramfile", "parameter_pickles", "log_parameters", "parameters", "targets", "observations", "observation_sha256", "compensation", "hr_pools", "hr_n_limiter", "hr_p_limiter", "litter_ratios", "litter_ratio_support_contract", "required_raw_variables", "regression_results", "regression_sha256", "expected_hours", "year_range", "member_count_per_parameter", "score"):
             if expected_manifest.get(field) != contract[field]:
                 raise ValueError(f"validated manifest field changed: {field}")
         if expected_manifest.get("status") != "pass":
@@ -1032,7 +1281,16 @@ def validate_all(
                 if expected_hash != pickle_hash:
                     raise ValueError(f"pickle hash changed for {parameter}")
             print(f"loading parameter={parameter} pickle={path.name}", flush=True)
-            summary, taxis = load_case_summary(parameter, path, pickle_hash, "log10" if parameter in log_parameters else "linear", control_dataset, reference_taxis, interfaces)
+            summary, taxis = load_case_summary(
+                parameter,
+                path,
+                pickle_hash,
+                "log10" if parameter in log_parameters else "linear",
+                control_dataset,
+                reference_taxis,
+                interfaces,
+                args.site,
+            )
             if reference_taxis is None:
                 reference_taxis = taxis.copy()
             summaries.append(summary)
@@ -1074,7 +1332,7 @@ def run_preflight(args: argparse.Namespace, mappings: dict[str, str], log_parame
         staging.mkdir()
         atomic_json(staging / "input_manifest.json", manifest)
         receipt = {
-            "schema": "elm_oat_validation_receipt_v1",
+            "schema": VALIDATION_RECEIPT_SCHEMA,
             "status": "pass",
             "created_at_utc": utc_now(),
             "input_manifest": str(args.output / "input_manifest.json"),
@@ -1087,7 +1345,7 @@ def run_preflight(args: argparse.Namespace, mappings: dict[str, str], log_parame
     except Exception as exc:
         if not args.output.exists():
             args.output.mkdir()
-            atomic_json(args.output / "validation_receipt.json", {"schema": "elm_oat_validation_receipt_v1", "status": "fail", "created_at_utc": utc_now(), "error_type": type(exc).__name__, "error": str(exc)})
+            atomic_json(args.output / "validation_receipt.json", {"schema": VALIDATION_RECEIPT_SCHEMA, "status": "fail", "created_at_utc": utc_now(), "error_type": type(exc).__name__, "error": str(exc)})
         raise
 
 
@@ -1118,11 +1376,11 @@ def run_diagnostic(args: argparse.Namespace, mappings: dict[str, str], log_param
         write_csv(staging / "litter_ratio_timeseries.csv", list(litter_timeseries[0]), litter_timeseries)
         write_csv(staging / "litter_ratio_curves.csv", list(litter_curves[0]), litter_curves)
     figures = [
-        *plot_response_atlases(staging, summaries, interfaces["targets"], observation_rows),
-        *plot_heatmaps(staging, score_rows, interfaces["targets"]),
-        *plot_compensation(staging, summaries, interfaces["compensation"]),
-        *plot_hr_pathways(staging, summaries),
-        *plot_litter_ratios(staging, summaries, taxis),
+        *plot_response_atlases(staging, summaries, interfaces["targets"], observation_rows, args.site),
+        *plot_heatmaps(staging, score_rows, interfaces["targets"], args.site),
+        *plot_compensation(staging, summaries, interfaces["compensation"], args.site),
+        *plot_hr_pathways(staging, summaries, args.site),
+        *plot_litter_ratios(staging, summaries, taxis, args.site),
     ]
     expected_figure_count = (
         2 * len(interfaces["targets"]) + 2 + len(interfaces["compensation"])
@@ -1143,8 +1401,9 @@ def run_diagnostic(args: argparse.Namespace, mappings: dict[str, str], log_param
         if path.is_file() and path.name != "output_manifest.json":
             artifacts[path.name] = {"bytes": path.stat().st_size, "sha256": digest(path)}
     output_manifest = {
-        "schema": "elm_oat_output_manifest_v2",
+        "schema": OUTPUT_MANIFEST_SCHEMA,
         "status": "pass",
+        "site": args.site,
         "created_at_utc": utc_now(),
         "input_manifest_path": str(args.manifest),
         "input_manifest_sha256": digest(args.manifest),
@@ -1165,6 +1424,7 @@ def run_diagnostic(args: argparse.Namespace, mappings: dict[str, str], log_param
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--site", required=True)
     parser.add_argument("--pickle-dir", required=True, type=Path)
     parser.add_argument("--parameter-pickle", required=True, action="append", default=[])
     parser.add_argument("--log-parameters", required=True)
@@ -1186,6 +1446,7 @@ def build_parser() -> argparse.ArgumentParser:
 
 def main() -> None:
     args = build_parser().parse_args()
+    args.site = validate_declared_site(args.site)
     mappings = parse_mapping(args.parameter_pickle)
     log_parameters = parse_log_parameters(args.log_parameters)
     if not args.output.is_absolute():

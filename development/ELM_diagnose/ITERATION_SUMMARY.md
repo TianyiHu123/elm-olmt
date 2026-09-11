@@ -45,3 +45,14 @@
 - Quantitative result: observed SR mean/std are `7.501337`/`2.627639` versus model-member ranges `0.622847`--`3.076300`/`0.134623`--`0.586511` gC m-2 day-1. Potential and P-limited accumulated total HR are identical across all 1,400 pairs and span `1,912.427`--`13,685.020` gC m-2; N-limited totals span `1,710.962`--`11,512.151`. All litter-ratio hours have 100-member support, with fixed flux-weighted leaf C:N/C:P `70`/`1050` and fine-root C:N/C:P `42`/`1000`.
 - Overall acceptance result: `pass`.
 - Decision: Accepted validated range-conditional descriptive OAT and pathway/stoichiometry package; no global sensitivity, interaction, causal, optimization, tuning, or parameter-value claim.
+
+## Iter006 — completed JERC extended OAT pathway and stoichiometry diagnostic
+
+- Work type: `implementation`; status: `completed`.
+- Objective: Apply the complete Iter005 extended OAT diagnostic to the 14 corresponding JERC one-parameter ensembles with explicit site-generalized tooling.
+- Bounded scope: 14 exact JERC pickles; 1,400 members; 13 standard targets; one SR observation; seven compensation mappings; eight-pool potential/N/P-limited HR; four litter ratios; descriptive OAT only.
+- Execution: after two classified preflight failures and an approved explicit-gap revision, preflight `23856771` and diagnostic `23861155` completed `0:0`. All four jobs are terminally accounted; passing peak memory was 5.85/40 GB and 32.87/40 GB.
+- Outputs: 3,520,119 data rows and 44 PNGs in `.../elm_diagnose_iter006_jerc_oat_extended/results`; input manifest `b10901c1`; output manifest `256cc1e1`; all artifact and support-reconciliation gates pass.
+- Quantitative result: potential/P-limited, N-limited, model SR, and observed SR means are `3.961651`, `3.560783`, `2.930035`, and `1.326166` gC m-2 day-1. Relative to model SR, these differ by `+35.21%`, `+21.53%`, and `-54.74%`; N limitation reduces potential HR by `10.12%`. Observations cover 51,882 hours (`84.61%`). Each litter ratio retains 1,363 supported and 37 explicitly rejected members.
+- Overall acceptance result: `pass`.
+- Decision: Accepted validated JERC range-conditional descriptive OAT and pathway/stoichiometry package under the explicit-gap support contract; no global sensitivity, interaction, causal, optimization, tuning, parameter-value, or cross-site claim.
