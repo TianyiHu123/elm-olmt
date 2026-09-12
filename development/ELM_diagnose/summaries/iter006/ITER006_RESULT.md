@@ -19,6 +19,23 @@
 - Each litter ratio retains 1,363 supported and 37 explicitly rejected member rows. The 148 rejected ratio rows all record `nonpositive_nutrient_total`: five members per ratio in `leaf_long` and 32 per ratio in `q10_mr`. Supported values remain effectively constant at leaf C:N `70`, leaf C:P `1050`, fine-root C:N `42`, and fine-root C:P `1000`; machine-scale numerical scatter is not sensitivity.
 - `q10_mr` ranks first for mean and temporal-standard-deviation responses of GPP, ER, and SR, and for most aggregate flux targets. The matched decomposition rate leads each corresponding mean litter/soil pool; `k_s4` leads mean total litter-plus-soil C, while a few temporal-variability pool leaders differ. These rankings are conditional on the declared one-parameter ranges.
 
+### Zero-productivity regime and hypothesis
+
+The visible cutoffs are retained zero-response members, not dropped members. The table gives only the regions represented by the sampled values; the unsampled gaps around each transition mean these bounds are not exact thresholds.
+
+| Parameter | Declared range | Zero members | Sampled zero-response values | Nearest sampled nonzero boundary |
+| --- | ---: | ---: | ---: | ---: |
+| `leaf_long` | 1.0--5.0 | 5/100 | 1.039381--1.165701 | smallest nonzero: 1.300837 |
+| `q10_mr` | 1.0--3.0 | 32/100 | 2.172782--2.993918 | largest nonzero: 2.143543 |
+
+For all 37 affected members, both the temporal mean and population standard deviation are exactly zero for:
+
+- Carbon fluxes: `GPP`, `ER`, `SR`, `HR_TOTAL`, and `LITFALL`.
+- Carbon stocks: `LITTER_SOIL_C_TOTAL`, `LITR1C`, `LITR2C`, `LITR3C`, `SOIL1C`, `SOIL2C`, `SOIL3C`, and `SOIL4C`.
+- Integrated pathways: total potential, N-limited, and P-limited HR.
+
+The same members have nonpositive accumulated leaf and fine-root N and P litter-flux denominators, so their four flux-weighted litter ratios are explicitly retained as gaps. The combined signature supports the hypothesis that sufficiently low sampled `leaf_long` or high sampled `q10_mr` is associated with an abrupt zero-productivity state consistent with possible vegetation collapse or loss of active vegetation. It does not confirm ecological die-off: zero soil and heterotrophic respiration could instead indicate a broader model-state collapse, inactive land column/PFT, failed upstream simulation, or postprocessing fill behavior. Confirmation would require vegetation-state diagnostics such as LAI, vegetation C/N pools, NPP, plant respiration, mortality/turnover, PFT abundance, soil pools, and original run completion evidence.
+
 ### Mean HR and SR flux comparison
 
 The model values are pooled ensemble means across 1,400 members, with equal representation from the 14 separate 100-member OAT ensembles. Potential and limited HR means divide each member's 2018--2024 accumulation by the full 2,555-day model window. Model SR is the arithmetic mean of daily-equivalent hourly rates over the same 61,320 model timesteps. Observed SR is the arithmetic mean over its 51,882 finite, unique hourly timesteps after unit conversion; missing observation hours are not filled or extrapolated.
@@ -37,7 +54,7 @@ N limitation reduces the ensemble-mean potential HR by `10.12%` when potential H
 
 ## Descriptive interpretation
 
-Within the declared JERC ranges, `q10_mr` produces the broadest responses for most ecosystem flux summaries, including zero-response members at part of its range; `act25` and `leaf_long` also produce substantial target-dependent responses. Matched decomposition parameters dominate their corresponding mean pool responses. Potential and P-limited HR coincide, while N limitation lowers the pooled potential-HR mean by 10.12%. Observed SR is lower than the pooled model SR mean, although both its mean and temporal variability lie within the full member ranges.
+Within the declared JERC ranges, `q10_mr` produces the broadest responses for most ecosystem flux summaries, including an abrupt zero-response regime at high sampled values; low sampled `leaf_long` values show a corresponding zero regime. `act25` and the nonzero portion of `leaf_long` also produce substantial target-dependent responses. Matched decomposition parameters dominate their corresponding mean pool responses. Potential and P-limited HR coincide, while N limitation lowers the pooled potential-HR mean by 10.12%. Observed SR is lower than the pooled model SR mean, although both its mean and temporal variability lie within the full member ranges.
 
 The revised support contract makes low-litter-flux members visible rather than dropping them or interpreting undefined ratios as zero. Supported ratios remain effectively fixed. Visual review found complete JERC-labelled panels and coherent gap behavior. Two non-blocking presentation limitations remain: heatmap annotations have weak contrast in some cells, and Matplotlib offset notation magnifies machine-scale noise in nearly constant litter-ratio panels.
 
