@@ -19,6 +19,22 @@
 - All four litter ratios retain 1,300/1,300 supported members. Flux-weighted medians remain effectively fixed at leaf C:N/C:P `70`/`1050` and fine-root C:N/C:P `42`/`1000`; machine-scale scatter is not sensitivity.
 - `leaf_long` leads mean GPP and ER spread; `act25` leads mean SR, HR_TOTAL, and LITFALL. `k_s4` leads mean total litter-plus-soil C and SOIL4C. `decomp_depth_efolding` ranks 13th for the five standard flux means (`0.30%`--`0.57%`), 11th for total litter-plus-soil C (`11.74%`), and 8th--10th for the four soil pools (`8.66%`--`12.59%`) over its sampled `0.1`--`15.0` range.
 
+### Mean HR and SR flux comparison
+
+The model values are pooled ensemble means across 1,300 members, with equal representation from the 13 separate 100-member OAT ensembles. Potential and limited HR means divide each member's 2018--2024 accumulation by the full 2,555-day model window. Model SR is the arithmetic mean of the daily-equivalent hourly rates over the same 61,320 model timesteps. Observed SR is the arithmetic mean over its 26,264 valid, unique hourly timesteps after unit conversion; missing observation hours are not filled or extrapolated.
+
+The percentage column uses model SR as the reference: `100 * (mean flux / model SR mean - 1)`.
+
+| Flux | Timesteps used | Mean flux (gC m⁻² day⁻¹) | Difference from model SR |
+| --- | ---: | ---: | ---: |
+| Potential HR | 61,320 model hours per member | 11.782900 | +777.48% |
+| P-limited HR | 61,320 model hours per member | 3.834530 | +185.56% |
+| N-limited HR | 61,320 model hours per member | 2.865373 | +113.39% |
+| Model SR | 61,320 model hours per member | 1.342808 | 0.00% (reference) |
+| Observed SR | 26,264 valid observation hours | 7.501337 | +458.63% |
+
+N limitation reduces the ensemble-mean potential HR by `75.68%` when potential HR is the denominator. The observation comparison is not exactly time-support matched because its valid hours cover only `42.83%` of the model window and may be seasonally or diurnally nonrepresentative.
+
 ## Descriptive interpretation
 
 Within the declared ABBY vertical-soil-carbon OAT ranges, vegetation parameters dominate most ecosystem-flux response spreads, while decomposition rates dominate total and matched soil-pool responses. The new `decomp_depth_efolding` ensemble has comparatively small response spreads for flux summaries and modest soil-pool spreads over its sampled range. Constructed potential HR is strongly reduced by both nutrient limiters, and the model's actual HR remains a separate diagnostic.
