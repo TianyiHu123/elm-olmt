@@ -56,3 +56,15 @@
 - Quantitative result: potential/P-limited, N-limited, model SR, and observed SR means are `3.961651`, `3.560783`, `2.930035`, and `1.326166` gC m-2 day-1. Relative to model SR, these differ by `+35.21%`, `+21.53%`, and `-54.74%`; N limitation reduces potential HR by `10.12%`. Observations cover 51,882 hours (`84.61%`). Each litter ratio retains 1,363 supported and 37 explicitly rejected members.
 - Overall acceptance result: `pass`.
 - Decision: Accepted validated JERC range-conditional descriptive OAT and pathway/stoichiometry package under the explicit-gap support contract; no global sensitivity, interaction, causal, optimization, tuning, parameter-value, or cross-site claim.
+
+## Iter007 — completed ABBY vertical-soil-carbon extended OAT diagnostic
+
+- Work type: `implementation`; status: `completed`.
+- Objective: Apply the complete Iter005/Iter006 extended OAT diagnostic to 13 ABBY vertical-soil-carbon one-parameter ensembles with explicit dynamic parameter mapping.
+- Bounded scope: 13 exact ABBY vertical-soil-carbon pickles; 1,300 members; 13 standard targets; one SR observation; seven compensation mappings; eight-pool potential/N/P-limited HR; four litter ratios; descriptive OAT only.
+- Execution: preflight `23882524` completed `0:0` after two classified pre-Python failures and explicitly authorized corrections; diagnostic `23882574` completed `0:0` on attempt one. All jobs are terminally accounted; passing peak memory was 40.00/40 GB and 42.99/60 GB.
+- Outputs: 3,268,682 data rows and 44 PNGs in `.../elm_diagnose_iter007_abby_ctrlvertc_oat_extended/results`; input manifest `bf459ada`; output manifest `61a85ab5`; all artifact, publication, and review gates pass.
+- Quantitative result: potential, P-limited, N-limited, model SR, and observed SR means are `11.782900`, `3.834530`, `2.865373`, `1.342808`, and `7.501337` gC m-2 day-1. Relative to model SR, the first three and observed SR differ by `+777.48%`, `+185.56%`, `+113.39%`, and `+458.63%`; N limitation reduces potential HR by `75.68%`. Observations cover 26,264 hours (`42.83%`). All four litter ratios retain 1,300 supported members and no rejected members.
+- Range-conditional result: `leaf_long` leads mean GPP/ER; `act25` leads mean SR/HR_TOTAL/LITFALL; `k_s4` leads mean total litter-plus-soil C and SOIL4C. `decomp_depth_efolding` has small flux-summary spreads and ranks 8th--11th for aggregated soil-C summaries over its sampled range.
+- Overall acceptance result: `pass`.
+- Decision: Accepted validated standalone ABBY vertical-soil-carbon range-conditional descriptive OAT and pathway/stoichiometry package; no PAWN/Sobol/global sensitivity, interaction, causal, optimization, tuning, parameter-value, cross-configuration, or cross-site claim.

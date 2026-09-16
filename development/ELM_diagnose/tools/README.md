@@ -7,7 +7,7 @@ Keep reusable validation, analysis, and release utilities here. Keep one-off uti
 | Tool | Purpose | Invocation / contract |
 | --- | --- | --- |
 | `iter002_sr_diagnostics.py` | Produces the Iter002 integrated nine-site `SR` diagnostic package from a passing preflight receipt: hourly, complete-day daily, monthly-climatology, UTC-diurnal, and hourly-distribution figures plus seed-level and `ppe6` control-mean hourly metrics. | Called by `slurm/iter002/diagnostic_iter002.slurm` with `--receipt` and `--output`. It verifies the receipt status and hashes of all control, optimized, and observation inputs before analysis; expected successful output is 45 PNGs, `metrics.csv` with 69 rows, and `manifest.json`. This is currently Iter002-specific (`SR`, nine sites, and the locked Puma repository root), not a general command-line diagnostic interface. |
-| `oat_sensitivity.py` | Validates and analyzes explicit one-parameter-at-a-time ELM ensemble pickles without inferring directory membership. Independent interfaces select standard targets, observation references, compensation mappings, accumulated potential/N/P-limited HR pathways, and litter-flux stoichiometry. | Supply exact parameter mappings plus repeated `--target`, `--observation`, `--compensation`, `--hr-pool`, and `--litter-ratio` arguments as needed. HR pathways require both limiter arguments. `--regression-results` locks core tables to a reference package. `--validate-only` writes a passing receipt and immutable manifest; `--manifest` revalidates it before atomic publication. |
+| `oat_sensitivity.py` | Validates and analyzes explicit one-parameter-at-a-time ELM ensemble pickles without inferring directory membership. Independent interfaces select standard targets, observation references, compensation mappings, accumulated potential/N/P-limited HR pathways, and litter-flux stoichiometry. | Supply an ordered, nonempty set of exact `PARAMETER:BASENAME` mappings and an explicit comma-separated subset through `--log-parameters`, plus repeated `--target`, `--observation`, `--compensation`, `--hr-pool`, and `--litter-ratio` arguments as needed. At most 16 mappings fit the supported atlas layout. HR pathways require both limiter arguments. `--regression-results` locks core tables to a reference package. `--validate-only` writes a passing receipt and immutable manifest; `--manifest` revalidates it before atomic publication. |
 
 ## OAT sensitivity interpretation and validation
 
@@ -33,12 +33,17 @@ denominators and report member support; member response ratios are flux-weighted
 after converting daily-equivalent flux samples to hourly mass. These specialized diagnostics do
 not enter the core OAT rankings.
 
-Validation rejects inferred or duplicate mappings, path components, globs, missing parameters,
-non-ABBY or multi-parameter cases, member counts other than 100, invalid bounds/samples, ambiguous
+Validation rejects inferred or duplicate mappings, path components, globs, duplicate or malformed
+parameter names, log or compensation parameters outside the explicit mapping, site mismatches,
+multi-parameter cases, member counts other than 100, invalid bounds/samples, ambiguous
 array orientation, non-finite required outputs, and anything other than identical 61,320-sample
 2018--2024 no-leap hourly axes. It never interpolates, drops members, repairs time axes, or follows
 embedded runtime paths. Native parameter markers are plotted only when the exact modified scalar
 or slice in the control NetCDF resolves to one finite value inside the sampled range.
+
+The explicit mappings define the production parameter inventory and its display order. The input
+directory must contain exactly those mapped pickle basenames. Iteration-specific wrappers and
+manifests, rather than reusable-code defaults, lock the approved parameter names and membership.
 
 Production reads only a passing manifest with matching hashes, loads one pickle at a time, retains
 compact summaries, writes into hidden staging, and renames staging to the final output only

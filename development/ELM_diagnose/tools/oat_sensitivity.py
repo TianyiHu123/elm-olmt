@@ -10,6 +10,7 @@ import hashlib
 import json
 import os
 import pickle
+import re
 import sys
 from dataclasses import dataclass, replace
 from datetime import datetime, timezone
@@ -30,23 +31,7 @@ if str(REPO_ROOT) not in sys.path:
 import model_ELM  # noqa: F401,E402  Required for ELMcase pickle loading.
 from model_ELM.load_obs_nc import load_observations_with_time_from_nc  # noqa: E402
 
-EXPECTED_PARAMETERS = (
-    "act25",
-    "br_mr",
-    "grperc",
-    "grpnow",
-    "k_l1",
-    "k_l2",
-    "k_l3",
-    "k_s1",
-    "k_s2",
-    "k_s3",
-    "k_s4",
-    "kmax",
-    "leaf_long",
-    "q10_mr",
-)
-LOG_PARAMETERS = frozenset({"k_l1", "k_l2", "k_l3", "k_s1", "k_s2", "k_s3", "k_s4"})
+PARAMETER_NAME = re.compile(r"^[A-Za-z][A-Za-z0-9_]*$")
 TARGETS = (
     "GPP",
     "ER",
@@ -158,7 +143,7 @@ def parse_mapping(raw_items: list[str]) -> dict[str, str]:
         if ":" not in item:
             raise ValueError(f"invalid --parameter-pickle mapping: {item!r}")
         parameter, basename = item.split(":", 1)
-        if not parameter or not basename or parameter not in EXPECTED_PARAMETERS:
+        if not parameter or not basename or PARAMETER_NAME.fullmatch(parameter) is None:
             raise ValueError(f"unknown or incomplete parameter mapping: {item!r}")
         if parameter in mappings:
             raise ValueError(f"duplicate parameter mapping: {parameter}")
@@ -168,17 +153,21 @@ def parse_mapping(raw_items: list[str]) -> dict[str, str]:
             raise ValueError(f"duplicate pickle basename: {basename}")
         mappings[parameter] = basename
         filenames.add(basename)
-    if set(mappings) != set(EXPECTED_PARAMETERS):
-        missing = sorted(set(EXPECTED_PARAMETERS) - set(mappings))
-        extra = sorted(set(mappings) - set(EXPECTED_PARAMETERS))
-        raise ValueError(f"mapping must contain the exact 14-parameter set; missing={missing}, extra={extra}")
-    return {parameter: mappings[parameter] for parameter in EXPECTED_PARAMETERS}
+    if not mappings:
+        raise ValueError("at least one --parameter-pickle mapping is required")
+    if len(mappings) > 16:
+        raise ValueError("at most 16 parameter mappings fit the supported atlas layout")
+    return mappings
 
 
-def parse_log_parameters(raw: str) -> frozenset[str]:
-    parsed = frozenset(item.strip() for item in raw.split(",") if item.strip())
-    if parsed != LOG_PARAMETERS:
-        raise ValueError(f"--log-parameters must be exactly {','.join(sorted(LOG_PARAMETERS))}")
+def parse_log_parameters(raw: str, parameters: tuple[str, ...]) -> frozenset[str]:
+    items = [item.strip() for item in raw.split(",") if item.strip()]
+    if len(items) != len(set(items)):
+        raise ValueError("duplicate --log-parameters values are not allowed")
+    parsed = frozenset(items)
+    unknown = sorted(parsed - set(parameters))
+    if unknown:
+        raise ValueError(f"--log-parameters must be a subset of mapped parameters; unknown={unknown}")
     return parsed
 
 
@@ -207,7 +196,7 @@ def parse_family(raw_items: list[str], fields: int, option: str) -> list[tuple[s
     return parsed
 
 
-def parse_interfaces(args: argparse.Namespace) -> dict[str, Any]:
+def parse_interfaces(args: argparse.Namespace, parameters: tuple[str, ...]) -> dict[str, Any]:
     targets = parse_targets(args.target)
     observations = parse_family(args.observation, 2, "--observation")
     if any(variable not in targets for variable, _ in observations):
@@ -215,7 +204,7 @@ def parse_interfaces(args: argparse.Namespace) -> dict[str, Any]:
     if any(not Path(path).is_absolute() for _, path in observations):
         raise ValueError("observation paths must be absolute")
     compensation = parse_family(args.compensation, 4, "--compensation")
-    if any(parameter not in EXPECTED_PARAMETERS for parameter, *_ in compensation):
+    if any(parameter not in parameters for parameter, *_ in compensation):
         raise ValueError("compensation parameters must be declared OAT parameters")
     hr_pools = parse_family(args.hr_pool, 2, "--hr-pool")
     litter_ratios = parse_family(args.litter_ratio, 3, "--litter-ratio")
@@ -717,16 +706,22 @@ def plot_response_atlases(
     return paths
 
 
-def plot_heatmaps(output: Path, score_rows: list[dict[str, Any]], targets: tuple[str, ...], site: str) -> list[Path]:
+def plot_heatmaps(
+    output: Path,
+    score_rows: list[dict[str, Any]],
+    targets: tuple[str, ...],
+    site: str,
+    parameters: tuple[str, ...],
+) -> list[Path]:
     paths: list[Path] = []
     for statistic in STATISTICS:
         lookup = {(row["parameter"], row["target"]): row for row in score_rows if row["statistic"] == statistic}
-        matrix = np.asarray([[lookup[(parameter, target)]["score_percent"] for target in targets] for parameter in EXPECTED_PARAMETERS])
+        matrix = np.asarray([[lookup[(parameter, target)]["score_percent"] for target in targets] for parameter in parameters])
         figure, axis = plt.subplots(figsize=(18, 10))
         image = axis.imshow(matrix, aspect="auto", cmap="viridis")
         axis.set_xticks(range(len(targets)), [DISPLAY_NAMES.get(item, item) for item in targets], rotation=45, ha="right")
-        axis.set_yticks(range(len(EXPECTED_PARAMETERS)), EXPECTED_PARAMETERS)
-        for row_index, parameter in enumerate(EXPECTED_PARAMETERS):
+        axis.set_yticks(range(len(parameters)), parameters)
+        for row_index, parameter in enumerate(parameters):
             for column_index, target in enumerate(targets):
                 row = lookup[(parameter, target)]
                 color = "white" if matrix[row_index, column_index] > np.nanmedian(matrix) else "black"
@@ -840,23 +835,23 @@ def build_specialized_rows(
     return hr_metrics, hr_curves, litter_members, litter_timeseries, litter_curves
 
 
-def expected_artifact_counts(interfaces: dict[str, Any]) -> dict[str, int]:
+def expected_artifact_counts(interfaces: dict[str, Any], parameter_count: int) -> dict[str, int]:
     counts = {
-        "parameter_metadata.csv": len(EXPECTED_PARAMETERS),
-        "member_metrics.csv": len(EXPECTED_PARAMETERS) * 100,
-        "sensitivity_scores.csv": len(EXPECTED_PARAMETERS) * len(interfaces["targets"]) * len(STATISTICS),
-        "response_curves.csv": len(EXPECTED_PARAMETERS) * len(interfaces["targets"]) * len(STATISTICS) * 110,
+        "parameter_metadata.csv": parameter_count,
+        "member_metrics.csv": parameter_count * 100,
+        "sensitivity_scores.csv": parameter_count * len(interfaces["targets"]) * len(STATISTICS),
+        "response_curves.csv": parameter_count * len(interfaces["targets"]) * len(STATISTICS) * 110,
     }
     if interfaces["observations"]:
         counts["observation_summary.csv"] = len(interfaces["observations"])
     if interfaces["hr_pools"]:
-        counts["hr_pathway_metrics.csv"] = len(EXPECTED_PARAMETERS) * 100 * 3 * (len(interfaces["hr_pools"]) + 1)
-        counts["hr_pathway_curves.csv"] = len(EXPECTED_PARAMETERS) * 3 * 10
+        counts["hr_pathway_metrics.csv"] = parameter_count * 100 * 3 * (len(interfaces["hr_pools"]) + 1)
+        counts["hr_pathway_curves.csv"] = parameter_count * 3 * 10
     if interfaces["litter_ratios"]:
         ratios = len(interfaces["litter_ratios"])
-        counts["litter_ratio_member_metrics.csv"] = len(EXPECTED_PARAMETERS) * 100 * ratios
-        counts["litter_ratio_timeseries.csv"] = len(EXPECTED_PARAMETERS) * EXPECTED_HOURS * ratios
-        counts["litter_ratio_curves.csv"] = len(EXPECTED_PARAMETERS) * 10 * ratios
+        counts["litter_ratio_member_metrics.csv"] = parameter_count * 100 * ratios
+        counts["litter_ratio_timeseries.csv"] = parameter_count * EXPECTED_HOURS * ratios
+        counts["litter_ratio_curves.csv"] = parameter_count * 10 * ratios
     return counts
 
 
@@ -921,7 +916,9 @@ def plot_litter_ratios(output: Path, summaries: list[CaseSummary], taxis: np.nda
     return paths
 
 
-def fixture_checks() -> dict[str, Any]:
+def fixture_checks(parameters: tuple[str, ...]) -> dict[str, Any]:
+    if not parameters or len(parameters) != len(set(parameters)):
+        raise AssertionError("fixture parameters must be nonempty and unique")
     taxis = 2018.0 + np.arange(EXPECTED_HOURS, dtype=np.float64) / 8760.0
     matrix = np.column_stack((np.arange(EXPECTED_HOURS), np.arange(EXPECTED_HOURS) + 2.0))
     if matrix.shape != (EXPECTED_HOURS, 2) or taxis.size != EXPECTED_HOURS:
@@ -1000,14 +997,14 @@ def fixture_checks() -> dict[str, Any]:
         target=["GPP"], observation=[], compensation=[], hr_pool=[],
         hr_n_limiter=None, hr_p_limiter=None, litter_ratio=[],
     )
-    minimal_interfaces = parse_interfaces(minimal)
+    minimal_interfaces = parse_interfaces(minimal, parameters)
     if required_raw_variables(minimal_interfaces) != ("GPP",):
         raise AssertionError("optional-family independence fixture failed")
-    if expected_artifact_counts(minimal_interfaces) != {
-        "parameter_metadata.csv": 14,
-        "member_metrics.csv": 1400,
-        "sensitivity_scores.csv": 28,
-        "response_curves.csv": 3080,
+    if expected_artifact_counts(minimal_interfaces, len(parameters)) != {
+        "parameter_metadata.csv": len(parameters),
+        "member_metrics.csv": len(parameters) * 100,
+        "sensitivity_scores.csv": len(parameters) * 2,
+        "response_curves.csv": len(parameters) * 220,
     }:
         raise AssertionError("dynamic optional-family artifact fixture failed")
     return {
@@ -1027,7 +1024,11 @@ def fixture_checks() -> dict[str, Any]:
     }
 
 
-def paired_site_contract_fixture(output_root: Path) -> dict[str, Any]:
+def paired_site_contract_fixture(
+    output_root: Path,
+    parameters: tuple[str, ...],
+    log_parameters: frozenset[str],
+) -> dict[str, Any]:
     """Exercise the complete numeric and presentation paths with paired synthetic sites."""
     global EXPECTED_HOURS
     original_expected_hours = EXPECTED_HOURS
@@ -1057,7 +1058,7 @@ def paired_site_contract_fixture(output_root: Path) -> dict[str, Any]:
                 "froot_cn:FROOTC_TO_LITTER:FROOTN_TO_LITTER",
                 "froot_cp:FROOTC_TO_LITTER:FROOTP_TO_LITTER",
             ],
-        ))
+        ), parameters)
         hours = np.arange(EXPECTED_HOURS, dtype=np.float64)[:, None]
         members = np.arange(100, dtype=np.float64)[None, :]
         base = 1.0 + 0.1 * hours + 0.01 * members
@@ -1121,10 +1122,10 @@ def paired_site_contract_fixture(output_root: Path) -> dict[str, Any]:
                     replace(
                         summary,
                         parameter=parameter,
-                        coordinate="log10" if parameter in LOG_PARAMETERS else "linear",
+                        coordinate="log10" if parameter in log_parameters else "linear",
                         metadata={**summary.metadata, "site": site},
                     )
-                    for parameter in EXPECTED_PARAMETERS
+                    for parameter in parameters
                 ]
                 loaded[site] = summary
                 parameter_rows, member_rows, score_rows, curve_rows = build_rows(summaries, interfaces["targets"])
@@ -1134,10 +1135,10 @@ def paired_site_contract_fixture(output_root: Path) -> dict[str, Any]:
                 specialized = build_specialized_rows(summaries, taxis)
                 litter_member_rows = specialized[2]
                 litter_curve_rows = specialized[4]
-                if len(litter_member_rows) != 5600 or len(litter_curve_rows) != 560:
+                if len(litter_member_rows) != len(parameters) * 400 or len(litter_curve_rows) != len(parameters) * 40:
                     raise AssertionError("paired-site gap fixture did not preserve litter row cardinality")
                 rejected_rows = [row for row in litter_member_rows if not row["supported"]]
-                if len(rejected_rows) != 224 or any(row["ratio_value"] != "" for row in rejected_rows):
+                if len(rejected_rows) != len(parameters) * 16 or any(row["ratio_value"] != "" for row in rejected_rows):
                     raise AssertionError("paired-site gap fixture did not retain explicit member gaps")
                 approved_reasons = {
                     "nonfinite_carbon_total", "nonfinite_nutrient_total",
@@ -1149,19 +1150,19 @@ def paired_site_contract_fixture(output_root: Path) -> dict[str, Any]:
                     if row["valid_count"] + row["rejected_count"] != row["count"]:
                         raise AssertionError("paired-site gap fixture curve support totals differ")
                 numeric_rows[site] = (parameter_rows, member_rows, score_rows, curve_rows, *specialized)
-                mappings = {parameter: f"synthetic_{parameter}.pkl" for parameter in EXPECTED_PARAMETERS}
+                mappings = {parameter: f"synthetic_{parameter}.pkl" for parameter in parameters}
                 manifest_args = argparse.Namespace(
                     site=site,
                     pickle_dir=output_root,
                     control_paramfile=output_root / "synthetic_control.nc",
                     regression_results=None,
                 )
-                manifests[site] = manifest_contract(manifest_args, mappings, LOG_PARAMETERS, interfaces, [])
+                manifests[site] = manifest_contract(manifest_args, mappings, log_parameters, interfaces, [])
                 site_output = output_root / site
                 site_output.mkdir()
                 figures = [
                     *plot_response_atlases(site_output, summaries, interfaces["targets"], [], site),
-                    *plot_heatmaps(site_output, score_rows, interfaces["targets"], site),
+                    *plot_heatmaps(site_output, score_rows, interfaces["targets"], site, parameters),
                     *plot_compensation(site_output, summaries, interfaces["compensation"], site),
                     *plot_hr_pathways(site_output, summaries, site),
                     *plot_litter_ratios(site_output, summaries, taxis, site),
@@ -1188,7 +1189,7 @@ def paired_site_contract_fixture(output_root: Path) -> dict[str, Any]:
             "manifest_difference": "site_only",
             "figure_membership_equal_after_site_prefix": True,
             "figure_count_per_site": 44,
-            "unsupported_member_rows_retained": 224,
+            "unsupported_member_rows_retained": len(parameters) * 16,
             "gap_rows_and_plots_exercised": True,
         }
     finally:
@@ -1209,7 +1210,7 @@ def manifest_contract(
         "control_paramfile": str(args.control_paramfile),
         "parameter_pickles": mappings,
         "log_parameters": sorted(log_parameters),
-        "parameters": list(EXPECTED_PARAMETERS),
+        "parameters": list(mappings),
         "targets": list(interfaces["targets"]),
         "observations": [list(item) for item in interfaces["observations"]],
         "observation_sha256": {row["variable"]: row["sha256"] for row in observation_rows},
@@ -1245,7 +1246,7 @@ def validate_all(
     if observed_basenames != expected_basenames:
         missing = sorted(expected_basenames - observed_basenames)
         extra = sorted(observed_basenames - expected_basenames)
-        raise ValueError(f"pickle directory must contain exactly the 14 mapped files; missing={missing}, extra={extra}")
+        raise ValueError(f"pickle directory must contain exactly the mapped files; missing={missing}, extra={extra}")
     regression_names = ("parameter_metadata.csv", "member_metrics.csv", "sensitivity_scores.csv", "response_curves.csv")
     regression_hashes: dict[str, str] = {}
     if args.regression_results is not None:
@@ -1323,8 +1324,9 @@ def run_preflight(args: argparse.Namespace, mappings: dict[str, str], log_parame
     if staging.exists():
         raise FileExistsError(f"preflight staging directory already exists: {staging}")
     try:
-        interfaces = parse_interfaces(args)
-        fixture = fixture_checks()
+        parameters = tuple(mappings)
+        interfaces = parse_interfaces(args, parameters)
+        fixture = fixture_checks(parameters)
         observation_rows = load_observation_rows(interfaces["observations"])
         summaries, manifest, _ = validate_all(args, mappings, log_parameters, interfaces, observation_rows)
         manifest["fixture"] = fixture
@@ -1341,7 +1343,11 @@ def run_preflight(args: argparse.Namespace, mappings: dict[str, str], log_parame
         }
         atomic_json(staging / "validation_receipt.json", receipt)
         os.replace(staging, args.output)
-        print(f"OAT_PREFLIGHT_PASS parameters=14 members=1400 hours=61320 observations={len(observation_rows)}", flush=True)
+        print(
+            f"OAT_PREFLIGHT_PASS parameters={len(summaries)} members={len(summaries) * 100} "
+            f"hours={EXPECTED_HOURS} observations={len(observation_rows)}",
+            flush=True,
+        )
     except Exception as exc:
         if not args.output.exists():
             args.output.mkdir()
@@ -1351,7 +1357,7 @@ def run_preflight(args: argparse.Namespace, mappings: dict[str, str], log_parame
 
 def run_diagnostic(args: argparse.Namespace, mappings: dict[str, str], log_parameters: frozenset[str]) -> None:
     manifest = json.loads(args.manifest.read_text())
-    interfaces = parse_interfaces(args)
+    interfaces = parse_interfaces(args, tuple(mappings))
     observation_rows = load_observation_rows(interfaces["observations"])
     summaries, current_manifest, taxis = validate_all(args, mappings, log_parameters, interfaces, observation_rows, expected_manifest=manifest)
     staging = args.output.with_name(f".{args.output.name}.staging.{os.getpid()}")
@@ -1377,7 +1383,7 @@ def run_diagnostic(args: argparse.Namespace, mappings: dict[str, str], log_param
         write_csv(staging / "litter_ratio_curves.csv", list(litter_curves[0]), litter_curves)
     figures = [
         *plot_response_atlases(staging, summaries, interfaces["targets"], observation_rows, args.site),
-        *plot_heatmaps(staging, score_rows, interfaces["targets"], args.site),
+        *plot_heatmaps(staging, score_rows, interfaces["targets"], args.site, tuple(mappings)),
         *plot_compensation(staging, summaries, interfaces["compensation"], args.site),
         *plot_hr_pathways(staging, summaries, args.site),
         *plot_litter_ratios(staging, summaries, taxis, args.site),
@@ -1388,7 +1394,7 @@ def run_diagnostic(args: argparse.Namespace, mappings: dict[str, str], log_param
     )
     if len(figures) != expected_figure_count:
         raise RuntimeError(f"expected {expected_figure_count} figures, generated {len(figures)}")
-    expected_counts = expected_artifact_counts(interfaces)
+    expected_counts = expected_artifact_counts(interfaces, len(mappings))
     observed_counts = {name: sum(1 for _ in (staging / name).open()) - 1 for name in expected_counts}
     if observed_counts != expected_counts:
         raise RuntimeError(f"artifact row counts differ: expected={expected_counts}, observed={observed_counts}")
@@ -1416,7 +1422,7 @@ def run_diagnostic(args: argparse.Namespace, mappings: dict[str, str], log_param
     atomic_json(staging / "output_manifest.json", output_manifest)
     os.replace(staging, args.output)
     print(
-        f"OAT_DIAGNOSTIC_GENERATE_PASS parameters=14 member_rows=1400 "
+        f"OAT_DIAGNOSTIC_GENERATE_PASS parameters={len(summaries)} member_rows={len(member_rows)} "
         f"score_rows={len(score_rows)} figures={expected_figure_count}",
         flush=True,
     )
@@ -1448,7 +1454,7 @@ def main() -> None:
     args = build_parser().parse_args()
     args.site = validate_declared_site(args.site)
     mappings = parse_mapping(args.parameter_pickle)
-    log_parameters = parse_log_parameters(args.log_parameters)
+    log_parameters = parse_log_parameters(args.log_parameters, tuple(mappings))
     if not args.output.is_absolute():
         raise ValueError("--output must be absolute")
     if args.validate_only:
