@@ -4,33 +4,15 @@ import numpy as np
 import subprocess
 import pickle
 import model_ELM
+from concurrent.futures import ProcessPoolExecutor, as_completed
 from optparse import OptionParser
 
 #Python code used to manage the ensemble simulations 
 #  and perform post-processing of model output.
 
-parser = OptionParser()
-
-
-parser.add_option("--case", dest="case", default="", \
-                  help="Case name")
-parser.add_option("--postproc_only", dest="postproc_only", default=False, \
-                  action="store_true")
-parser.add_option("--UQ_only", dest="UQ_only", default=False, \
-                  action="store_true")
-(options, args) = parser.parse_args()
-
-#Load case object
-myfile=open('pklfiles/'+options.case+'.pkl','rb')
-mycase=pickle.load(myfile)
-
-#mycase.postproc_startyear = 2010
-#mycase.postproc_freq = 'monthly'
-if (not options.UQ_only):
-    mycase.output = {}
-else:
-    print(mycase.output)
-    print(mycase.postproc_freq)
+mycase = None
+processes = []
+_WORKER_CASE = None
 
 #get the node file and parse
 def get_nodelist():
@@ -73,13 +55,15 @@ def get_node_submit(pactive,process_nodes,mynodes):
              node_submit=n
     return(node_submit)
 
-def check_run_success(n):
+def check_run_success(n, case=None):
+    if case is None:
+        case = mycase
     success=False
     jobst = str(100000+n)
-    rundir = mycase.runroot+'/UQ/'+mycase.casename+'/g'+jobst[1:]
-    yst = str(10000+mycase.startyear+mycase.run_n)[1:]
+    rundir = case.runroot+'/UQ/'+case.casename+'/g'+jobst[1:]
+    yst = str(10000+case.startyear+case.run_n)[1:]
     #yst = '2010'
-    if (os.path.isfile(rundir+'/'+mycase.casename+'.elm.r.'+yst+'-01-01-00000.nc')):
+    if (os.path.isfile(rundir+'/'+case.casename+'.elm.r.'+yst+'-01-01-00000.nc')):
         success=True
     return success
 
@@ -97,104 +81,163 @@ def active_processes(processes,process_jobnum,process_hang):
                 process.kill()  # Force kill the process
         else:
             pactive.append(0)
-            #Post-process ensemble member if it hasn't yet been done
-            if (mycase.postprocessed[n] == 0):
-                print(n, check_run_success(process_jobnum[n]))
-                if (check_run_success(process_jobnum[n])):
-                    ierr = postprocess_ensemble(process_jobnum[n])
-                else:
-                    print('Ensemble member '+str(process_jobnum[n])+ \
-                            'Failed to complete')
-                mycase.postprocessed[n] = 1
         n=n+1
     return pactive
 
-def postprocess_ensemble(n):
-  #Postprocess
-  if (mycase.postproc_vars != []):
-      for v in mycase.postproc_vars:
-        hnum=1
-        mypfts=[0]
-        if ('_pft' in v):
-            #PFT level outputs requested
-            hnum=2
-            mypfts=mycase.postproc_pfts
-        for p in mypfts:
-          if (mycase.postproc_freq == 'daily' or mycase.postproc_freq == 'hourly'):  #default
-            mycase.postprocess(v, ens_num=n,startyear=mycase.postproc_startyear, \
-                  endyear=mycase.postproc_endyear,index=p,hnum=hnum)
-          elif (mycase.postproc_freq == 'monthly'):  #monthly
-            mycase.postprocess(v, ens_num=n,startyear=mycase.postproc_startyear, \
-                  endyear=mycase.postproc_endyear,index=p,hnum=hnum, dailytomonthly=True)
-          elif (mycase.postproc_freq == 'annual'):  #annual
-            mycase.postprocess(v, ens_num=n,startyear=mycase.postproc_startyear, \
-                  endyear=mycase.postproc_endyear,index=p,hnum=hnum, annualmean=True)
-  return 0
+def postprocess_one_member(ens_num):
+    """Worker: postprocess one ensemble member and return arrays for the parent."""
+    case = _WORKER_CASE
+    member_out = {}
+    taxis = None
+    if (case.postproc_vars != []):
+        for v in case.postproc_vars:
+          hnum=1
+          mypfts=[0]
+          if ('_pft' in v):
+              hnum=2
+              mypfts=case.postproc_pfts
+          for p in mypfts:
+            kwargs = dict(ens_num=ens_num, startyear=case.postproc_startyear,
+                          endyear=case.postproc_endyear, index=p, hnum=hnum,
+                          write_output=False)
+            if (case.postproc_freq == 'daily' or case.postproc_freq == 'hourly'):
+              values_out, var_out, taxis = case.postprocess(v, **kwargs)
+            elif (case.postproc_freq == 'monthly'):
+              values_out, var_out, taxis = case.postprocess(v, dailytomonthly=True, **kwargs)
+            elif (case.postproc_freq == 'annual'):
+              values_out, var_out, taxis = case.postprocess(v, annualmean=True, **kwargs)
+            else:
+              continue
+            member_out[var_out] = np.asarray(values_out, dtype=float)
+    return ens_num, member_out, taxis
 
-workdir = os.getcwd()
+def _init_postprocess_worker(case):
+    global _WORKER_CASE
+    _WORKER_CASE = case
+    _WORKER_CASE.output = {}
 
-if (not options.UQ_only):
-  processes=[]
-  process_jobnum=[]
-  process_hang=[]    #Keep track of how long process has been hanging
-  mycase.postprocessed=np.zeros([mycase.nsamples],int)
-  n_job = 1
-  if (mycase.noslurm == False):
-    process_nodes = []
-    mynodes = get_nodelist()
+def run_parallel_postprocess(n_workers):
+    members = list(range(1, mycase.nsamples+1))
+    n_workers = max(1, min(int(n_workers), mycase.nsamples))
+    print('All '+str(mycase.nsamples)+' ensemble members succeeded; '
+          'postprocessing with '+str(n_workers)+' workers')
+    mycase.output = {}
+    with ProcessPoolExecutor(max_workers=n_workers,
+                             initializer=_init_postprocess_worker,
+                             initargs=(mycase,)) as executor:
+        futures = [executor.submit(postprocess_one_member, n) for n in members]
+        for fut in as_completed(futures):
+            ens_num, member_out, taxis = fut.result()
+            print('Postprocessed ensemble member '+str(ens_num))
+            for var_out, values_out in member_out.items():
+                if (not var_out in mycase.output):
+                    mycase.output[var_out] = np.zeros([len(values_out), mycase.nsamples], float)
+                mycase.output[var_out][:,ens_num-1] = values_out
+            if (taxis is not None):
+                mycase.output['taxis'] = taxis
 
-  #Run the simulations 
-  while (n_job <= mycase.nsamples):
-    pactive = active_processes(processes,process_jobnum,process_hang)
-    if (sum(pactive) < int(mycase.np_ensemble)):
-      jobst = str(100000+n_job)
-      rundir = mycase.runroot+'/UQ/'+mycase.casename+'/g'+jobst[1:]+'/'
-      log_file_path = f"{rundir}e3sm_log.txt"
-      #Copy relevant files
-      if not options.postproc_only:
-        mycase.ensemble_copy(n_job)
-      with open(log_file_path, "w") as log_file:
-        if (mycase.noslurm == False):
-          node_submit=get_node_submit(pactive,process_nodes,mynodes)
-          # command = ['srun -n '+str(mycase.np)+' -c 1 -w '+mynodes[node_submit]+' '+mycase.exeroot+'/e3sm.exe']
-          # Tianyi Hu added for parallel
-          command = ['srun --exact -n '+str(mycase.np)+' -c 1 -w '+mynodes[node_submit]+' '+mycase.exeroot+'/e3sm.exe']
-          print(command)
-          process_nodes.append(node_submit)
-        else:
-          command = [mycase.exeroot+'/e3sm.exe']
-        if (options.postproc_only):
-            command='ls'
-        process = subprocess.Popen(command, shell=True, stderr=subprocess.STDOUT, cwd=rundir, stdout=log_file)
-        processes.append(process)
-        process_jobnum.append(n_job)
-        process_hang.append(0)
-      n_job=n_job+1
+def main():
+    global mycase, processes
+
+    parser = OptionParser()
+    parser.add_option("--case", dest="case", default="", \
+                      help="Case name")
+    parser.add_option("--postproc_only", dest="postproc_only", default=False, \
+                      action="store_true")
+    parser.add_option("--UQ_only", dest="UQ_only", default=False, \
+                      action="store_true")
+    parser.add_option("--n_postproc_workers", dest="n_postproc_workers", default=4, \
+                      type="int", help="Worker processes for postprocess (default 4)")
+    (options, args) = parser.parse_args()
+
+    #Load case object
+    myfile=open('pklfiles/'+options.case+'.pkl','rb')
+    mycase=pickle.load(myfile)
+
+    #mycase.postproc_startyear = 2010
+    #mycase.postproc_freq = 'monthly'
+    if (not options.UQ_only):
+        mycase.output = {}
     else:
-      time.sleep(1)
+        print(mycase.output)
+        print(mycase.postproc_freq)
+        return
 
-  while (sum(pactive) > 0):
+    processes=[]
+    process_jobnum=[]
+    process_hang=[]    #Keep track of how long process has been hanging
+    n_job = 1
+    if (mycase.noslurm == False):
+      process_nodes = []
+      mynodes = get_nodelist()
+
+    #Run the simulations
+    pactive=[]
+    while (n_job <= mycase.nsamples):
+      pactive = active_processes(processes,process_jobnum,process_hang)
+      if (sum(pactive) < int(mycase.np_ensemble)):
+        jobst = str(100000+n_job)
+        rundir = mycase.runroot+'/UQ/'+mycase.casename+'/g'+jobst[1:]+'/'
+        log_file_path = f"{rundir}e3sm_log.txt"
+        #Copy relevant files
+        if not options.postproc_only:
+          mycase.ensemble_copy(n_job)
+        with open(log_file_path, "w") as log_file:
+          if (mycase.noslurm == False):
+            node_submit=get_node_submit(pactive,process_nodes,mynodes)
+            # command = ['srun -n '+str(mycase.np)+' -c 1 -w '+mynodes[node_submit]+' '+mycase.exeroot+'/e3sm.exe']
+            # Tianyi Hu added for parallel
+            command = ['srun --exact -n '+str(mycase.np)+' -c 1 -w '+mynodes[node_submit]+' '+mycase.exeroot+'/e3sm.exe']
+            print(command)
+            process_nodes.append(node_submit)
+          else:
+            command = [mycase.exeroot+'/e3sm.exe']
+          if (options.postproc_only):
+              command='ls'
+          process = subprocess.Popen(command, shell=True, stderr=subprocess.STDOUT, cwd=rundir, stdout=log_file)
+          processes.append(process)
+          process_jobnum.append(n_job)
+          process_hang.append(0)
+        n_job=n_job+1
+      else:
+        time.sleep(1)
+
+    # Wait until every launched e3sm.exe has exited (or been hang-killed)
     pactive = active_processes(processes,process_jobnum,process_hang)
-    time.sleep(1)
+    while (sum(pactive) > 0):
+      time.sleep(1)
+      pactive = active_processes(processes,process_jobnum,process_hang)
 
-  mycase.create_pkl(outdir=mycase.OLMTdir+'/pklfiles/')
+    failed=[]
+    for n in range(1, mycase.nsamples+1):
+      if (not check_run_success(n)):
+        failed.append(n)
+        print('Ensemble member '+str(n)+' Failed to complete')
+    if (failed):
+      print('Skipping postprocess because '+str(len(failed))+' of '+
+            str(mycase.nsamples)+' members did not produce the final restart:')
+      print(failed)
+      sys.exit(1)
+
+    run_parallel_postprocess(options.n_postproc_workers)
+    mycase.create_pkl(outdir=mycase.OLMTdir+'/pklfiles/')
 
 #UQ part of code
 
 # if (mycase.postproc_vars != []):
 #     #Train surrogate models
 #     mycase.train_surrogate(mycase.postproc_vars)
-    
+#     
 #     #Save postprocessed output
 #     mycase.create_pkl(outdir=mycase.OLMTdir+'/pklfiles/')
-    
+#     
 #     #run GSA
 #     mycase.GSA(mycase.postproc_vars)
 #     mycase.plot_GSA(mycase.postproc_vars)
-
+#
 #     #Save postprocessed output
 #     mycase.create_pkl(outdir=mycase.OLMTdir+'/pklfiles/')
-
+#
 #     #run MCMC
 #     #Set intial values for parameters
 #     if (mycase.obs):
@@ -202,10 +245,9 @@ if (not options.UQ_only):
 #         #Run MCMC for the observation variables
 #         obs_mcmc = [v for v in mycase.postproc_vars if v in mycase.obs.keys()]
 #         mycase.MCMC_emcee(obs_mcmc,nwalkers=24,nsteps=10000)
-
+#
 #         #Save postprocessed output
 #         mycase.create_pkl(outdir=mycase.OLMTdir+'/pklfiles/')
 
-
-
-
+if __name__ == '__main__':
+    main()
