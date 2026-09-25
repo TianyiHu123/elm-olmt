@@ -146,8 +146,8 @@ def main():
                       action="store_true")
     parser.add_option("--UQ_only", dest="UQ_only", default=False, \
                       action="store_true")
-    parser.add_option("--n_postproc_workers", dest="n_postproc_workers", default=4, \
-                      type="int", help="Worker processes for postprocess (default 4)")
+    parser.add_option("--n_postproc_workers", dest="n_postproc_workers", default=32, \
+                      type="int", help="Worker processes for postprocess (default 32)")
     (options, args) = parser.parse_args()
 
     #Load case object
