@@ -68,3 +68,13 @@
 - Range-conditional result: `leaf_long` leads mean GPP/ER; `act25` leads mean SR/HR_TOTAL/LITFALL; `k_s4` leads mean total litter-plus-soil C and SOIL4C. `decomp_depth_efolding` has small flux-summary spreads and ranks 8th--11th for aggregated soil-C summaries over its sampled range.
 - Overall acceptance result: `pass`.
 - Decision: Accepted validated standalone ABBY vertical-soil-carbon range-conditional descriptive OAT and pathway/stoichiometry package; no PAWN/Sobol/global sensitivity, interaction, causal, optimization, tuning, parameter-value, cross-configuration, or cross-site claim.
+
+## Iter008 — completed ABBY vertical-soil-carbon C:N nutrient-stress OAT diagnostic
+
+- Work type: `implementation`; status: `completed`.
+- Objective: Characterize how separate perturbations of `cn_s1`--`cn_s4` affect realized decomposition, microbial N/P demand satisfaction, plant N/P demand satisfaction, ecosystem carbon fluxes, and mineral nutrient cycling in the ABBY vertical-soil-carbon configuration.
+- Bounded scope: four exact ABBY vertical-soil-carbon C:N pickles; 400 members; 27 direct raw metrics; four accumulated satisfaction ratios; 58 response endpoints; 27,555 CSV rows; 11 figures; descriptive OAT only.
+- Execution: preflight `24015245` and diagnostic `24015300` completed `0:0` on attempt one; no scheduler/resource retry was consumed. The published package contains exactly 27,555 CSV data rows, 11 PNGs, and 1,600/1,600 supported ratios.
+- Quantitative result: low-to-high sampled C:N changes microbial N satisfaction by `+2.3%`, `+25.4%`, `+108.4%`, and `+118.6%` and microbial P satisfaction by `+22.2%`, `+33.7%`, `+96.1%`, and `+95.7%` for `cn_s1`--`cn_s4`. Plant satisfaction changes only about `+0.6%`, `-3.6%`, `+1.4%`, and `+4.3%`; direct HR changes `+1.0%`, `-5.4%`, `-0.7%`, and `+4.6%`.
+- Overall acceptance result: `pass`.
+- Decision: Accepted the validated baseline-conditioned ABBY C:N OAT package. Higher pool C:N primarily reduces microbial nutrient demand and improves microbial satisfaction, strongest for pools 3/4, but does not broadly relieve plant demand or guarantee higher realized decomposition.
