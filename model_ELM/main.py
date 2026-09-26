@@ -683,8 +683,11 @@ class ELMcase():
     #  os.system("./xmlchange CLM_BLDNML_OPTS = '" + xval + "'")
 
     # for spinup and transient runs, PIO_TYPENAME is pnetcdf, which now not works well
-    if('mac' in self.machine or 'cades' in self.machine or 'linux' in self.machine): 
-      self.xmlchange('PIO_TYPENAME',value='netcdf')
+    #if('mac' in self.machine or 'cades' in self.machine or 'linux' in self.machine): 
+    #  self.xmlchange('PIO_TYPENAME',value='netcdf')
+    
+    # Tianyi force change to netcdf since pnetcdf failure since 9/12/2026
+    self.xmlchange('PIO_TYPENAME',value='netcdf')
 
     if (self.has_finidat):
         self.customize_namelist(variable='finidat',value="'"+self.finidat+"'")
