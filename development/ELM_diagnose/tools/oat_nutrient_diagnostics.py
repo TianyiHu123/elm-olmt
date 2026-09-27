@@ -28,14 +28,15 @@ REPO_ROOT = Path("/xdisk/chopinsong/tianyihu/elm-olmt")
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 import model_ELM  # noqa: F401,E402  Required for ELMcase pickle loading.
+from model_ELM.load_obs_nc import load_observations_with_time_from_nc  # noqa: E402
 
 EXPECTED_HOURS = 7 * 365 * 24
 MEMBERS = 100
 PARAMETER_NAME = re.compile(r"^[A-Za-z][A-Za-z0-9_]*$")
 STATISTICS = ("mean", "temporal_std")
-INPUT_SCHEMA = "elm_oat_nutrient_input_manifest_v1"
-RECEIPT_SCHEMA = "elm_oat_nutrient_validation_receipt_v1"
-OUTPUT_SCHEMA = "elm_oat_nutrient_output_manifest_v1"
+INPUT_SCHEMA = "elm_oat_nutrient_input_manifest_v2"
+RECEIPT_SCHEMA = "elm_oat_nutrient_validation_receipt_v2"
+OUTPUT_SCHEMA = "elm_oat_nutrient_output_manifest_v2"
 
 RAW_UNITS = {
     "FPI": "1",
@@ -59,6 +60,14 @@ RAW_UNITS = {
     "SOIL2_HR": "gC m-2 day-1",
     "SOIL3_HR": "gC m-2 day-1",
     "SOIL4_HR": "gC m-2 day-1",
+    "CWDC": "gC m-2",
+    "LITR1C": "gC m-2",
+    "LITR2C": "gC m-2",
+    "LITR3C": "gC m-2",
+    "SOIL1C": "gC m-2",
+    "SOIL2C": "gC m-2",
+    "SOIL3C": "gC m-2",
+    "SOIL4C": "gC m-2",
     "SMINN": "gN m-2",
     "GROSS_NMIN": "gN m-2 day-1",
     "NET_NMIN": "gN m-2 day-1",
@@ -70,14 +79,26 @@ RAW_VARIABLES = tuple(RAW_UNITS)
 NONNEGATIVE = frozenset({
     "POTENTIAL_IMMOB", "ACTUAL_IMMOB", "POTENTIAL_IMMOB_P", "ACTUAL_IMMOB_P",
     "PLANT_NDEMAND_COL", "SMINN_TO_PLANT", "PLANT_PDEMAND_COL", "SMINP_TO_PLANT",
+    "CWDC", "LITR1C", "LITR2C", "LITR3C", "SOIL1C", "SOIL2C", "SOIL3C", "SOIL4C",
+    "CWDC_HR", "LITR1_HR", "LITR2_HR", "LITR3_HR", "SOIL1_HR", "SOIL2_HR", "SOIL3_HR", "SOIL4_HR",
 })
 RATIOS = {
     "microbial_n_satisfaction": ("ACTUAL_IMMOB", "POTENTIAL_IMMOB", "1"),
     "microbial_p_satisfaction": ("ACTUAL_IMMOB_P", "POTENTIAL_IMMOB_P", "1"),
     "plant_n_satisfaction": ("SMINN_TO_PLANT", "PLANT_NDEMAND_COL", "1"),
     "plant_p_satisfaction": ("SMINP_TO_PLANT", "PLANT_PDEMAND_COL", "1"),
+    "CWDC_HR_per_pool_C": ("CWDC_HR", "CWDC", "day-1"),
+    "LITR1_HR_per_pool_C": ("LITR1_HR", "LITR1C", "day-1"),
+    "LITR2_HR_per_pool_C": ("LITR2_HR", "LITR2C", "day-1"),
+    "LITR3_HR_per_pool_C": ("LITR3_HR", "LITR3C", "day-1"),
+    "SOIL1_HR_per_pool_C": ("SOIL1_HR", "SOIL1C", "day-1"),
+    "SOIL2_HR_per_pool_C": ("SOIL2_HR", "SOIL2C", "day-1"),
+    "SOIL3_HR_per_pool_C": ("SOIL3_HR", "SOIL3C", "day-1"),
+    "SOIL4_HR_per_pool_C": ("SOIL4_HR", "SOIL4C", "day-1"),
 }
 POOL_HR = ("CWDC_HR", "LITR1_HR", "LITR2_HR", "LITR3_HR", "SOIL1_HR", "SOIL2_HR", "SOIL3_HR", "SOIL4_HR")
+POOL_C = ("CWDC", "LITR1C", "LITR2C", "LITR3C", "SOIL1C", "SOIL2C", "SOIL3C", "SOIL4C")
+POOL_HR_PER_C = tuple(f"{hr}_per_pool_C" for hr in POOL_HR)
 FIGURES = (
     "ABBY_fpi_response.png",
     "ABBY_microbial_n_response.png",
@@ -86,10 +107,16 @@ FIGURES = (
     "ABBY_plant_p_response.png",
     "ABBY_gpp_response.png",
     "ABBY_sr_response.png",
-    "ABBY_hr_response.png",
-    "ABBY_pool_hr_response.png",
-    "ABBY_n_cycle_response.png",
-    "ABBY_p_cycle_response.png",
+    "ABBY_hr_mean_response.png",
+    "ABBY_hr_temporal_std_response.png",
+    "ABBY_pool_hr_mean_response.png",
+    "ABBY_pool_hr_temporal_std_response.png",
+    "ABBY_n_cycle_mean_response.png",
+    "ABBY_n_cycle_temporal_std_response.png",
+    "ABBY_p_cycle_mean_response.png",
+    "ABBY_p_cycle_temporal_std_response.png",
+    "ABBY_pool_c_mean_response.png",
+    "ABBY_pool_hr_per_c_response.png",
 )
 
 
@@ -168,6 +195,16 @@ def parse_parameter_paths(items: list[str], option: str, parameters: tuple[str, 
     if tuple(parsed) != parameters:
         raise ValueError(f"{option} must map the exact ordered parameter inventory")
     return parsed
+
+
+def parse_observation(item: str) -> Path:
+    if ":" not in item:
+        raise ValueError("--observation requires SR:ABSOLUTE_NETCDF")
+    variable, raw_path = item.split(":", 1)
+    path = Path(raw_path)
+    if variable != "SR" or not path.is_absolute() or not path.is_file():
+        raise ValueError("--observation must be one existing absolute SR mapping")
+    return path
 
 
 def member_matrix(case: Any, variable: str) -> np.ndarray:
@@ -261,6 +298,36 @@ def accumulated_ratio(numerator: np.ndarray, denominator: np.ndarray) -> tuple[n
     return ratio, support, reasons
 
 
+def load_observation(path: Path) -> dict[str, Any]:
+    payload = load_observations_with_time_from_nc(str(path), ["SR"])
+    times = np.asarray(payload["time"]).reshape(-1)
+    time_keys = [str(value) for value in times]
+    if len(time_keys) != len(set(time_keys)):
+        raise ValueError("SR observation timestamps are not unique")
+    values = np.asarray(payload["obs"]["SR"], dtype=np.float64).reshape(-1)
+    if values.size != times.size:
+        raise ValueError("SR observation time and value lengths differ")
+    in_window = np.asarray([2018 <= int(value.year) <= 2024 for value in times], dtype=bool)
+    valid = in_window & np.isfinite(values) & (values > -9000.0)
+    selected = values[valid]
+    if not selected.size:
+        raise ValueError("SR observation has no finite valid 2018--2024 support")
+    return {
+        "variable": "SR",
+        "path": str(path),
+        "sha256": digest(path),
+        "units": "gC m-2 day-1",
+        "window": "2018-2024 finite valid hourly overlap",
+        "valid_count": int(selected.size),
+        "model_window_hours": EXPECTED_HOURS,
+        "coverage_percent_of_model_window": float(100.0 * selected.size / EXPECTED_HOURS),
+        "minimum": float(np.min(selected)),
+        "maximum": float(np.max(selected)),
+        "mean": float(np.mean(selected)),
+        "temporal_std": float(np.std(selected, ddof=0)),
+    }
+
+
 def load_summary(parameter: str, path: Path, file_hash: str, control: xr.Dataset, reference: np.ndarray | None, site: str) -> tuple[Summary, np.ndarray]:
     with path.open("rb") as handle:
         case = pickle.load(handle)
@@ -350,10 +417,38 @@ def fixture_checks() -> dict[str, Any]:
     ratio, support, reasons = accumulated_ratio(numerator, denominator)
     if support[-1] or np.isfinite(ratio[-1]) or reasons[-1] != "nonpositive_denominator_total":
         raise AssertionError("explicit-gap fixture failed")
+    numerator = np.ones((24, MEMBERS), dtype=np.float64)
+    denominator = np.ones((24, MEMBERS), dtype=np.float64)
+    denominator[12:, 0] = 3.0
+    numerator[:, 1] = 0.0
+    ratio, support, reasons = accumulated_ratio(numerator, denominator)
+    mean_of_hourly_ratios = np.mean(numerator[:, 0] / denominator[:, 0])
+    if not np.isclose(ratio[0], 0.5) or np.isclose(ratio[0], mean_of_hourly_ratios):
+        raise AssertionError("ratio-of-sums ordering fixture failed")
+    if not support[1] or ratio[1] != 0.0 or reasons[1] != "":
+        raise AssertionError("supported zero-HR fixture failed")
     test_bins, membership = bins(np.linspace(0.0, 1.0, MEMBERS), np.linspace(1.0, 2.0, MEMBERS))
     if len(test_bins) != 10 or sorted(np.bincount(membership)[1:].tolist()) != [10] * 10:
         raise AssertionError("equal-count-bin fixture failed")
-    return {"status": "pass", "ratio_order": "sum_numerator_then_sum_denominator_then_divide", "gap_contract": "explicit", "bins": 10}
+    observation_values = np.asarray([1.0, 3.0])
+    if np.mean(observation_values) != 2.0 or np.std(observation_values, ddof=0) != 1.0:
+        raise AssertionError("observation mean/population-SD fixture failed")
+    metric_count = len(RAW_UNITS) + len(RATIOS)
+    endpoint_count = sum(1 if variable in POOL_C else 2 for variable in RAW_VARIABLES) + len(RATIOS)
+    response_rows = 4 * endpoint_count * 110
+    support_rows = 4 * MEMBERS * len(RATIOS)
+    total_rows = 4 + metric_count + 4 * MEMBERS + response_rows + support_rows + 1
+    superseded = {"ABBY_hr_response.png", "ABBY_pool_hr_response.png", "ABBY_n_cycle_response.png", "ABBY_p_cycle_response.png"}
+    if (metric_count, endpoint_count, response_rows, support_rows, total_rows, len(FIGURES)) != (47, 74, 32560, 4800, 37812, 17) or superseded.intersection(FIGURES):
+        raise AssertionError("derived artifact-contract fixture failed")
+    return {
+        "status": "pass", "ratio_order": "sum_numerator_then_sum_denominator_then_divide",
+        "mean_of_hourly_ratios_rejected": True, "supported_zero_hr": True,
+        "gap_contract": "explicit", "observation_statistic": "mean_and_population_std_ddof_0",
+        "metric_definitions": metric_count, "response_endpoints": endpoint_count,
+        "response_rows": response_rows, "support_rows": support_rows,
+        "csv_rows": total_rows, "figures": len(FIGURES), "superseded_figures_absent": True, "bins": 10,
+    }
 
 
 def contract(args: argparse.Namespace, mappings: dict[str, str], config_files: dict[str, Path], parameter_files: dict[str, Path]) -> dict[str, Any]:
@@ -364,6 +459,7 @@ def contract(args: argparse.Namespace, mappings: dict[str, str], config_files: d
         "parameter_pickles": mappings,
         "parameters": list(mappings),
         "control_paramfile": str(args.control_paramfile),
+        "observation": {"SR": str(args.observation)},
         "config_files": {key: str(value) for key, value in config_files.items()},
         "parameter_files": {key: str(value) for key, value in parameter_files.items()},
         "raw_variables": list(RAW_VARIABLES),
@@ -373,20 +469,26 @@ def contract(args: argparse.Namespace, mappings: dict[str, str], config_files: d
         "expected_hours": EXPECTED_HOURS,
         "members_per_parameter": MEMBERS,
         "figure_names": list(FIGURES),
-        "expected_rows": {"parameter_metadata.csv": 4, "metric_definitions.csv": 31, "member_metrics.csv": 400, "response_curves.csv": 25520, "ratio_support.csv": 1600},
+        "pool_c_variables": list(POOL_C),
+        "pool_hr_variables": list(POOL_HR),
+        "pool_hr_per_c_metrics": list(POOL_HR_PER_C),
+        "expected_rows": {"parameter_metadata.csv": 4, "metric_definitions.csv": 47, "member_metrics.csv": 400, "response_curves.csv": 32560, "ratio_support.csv": 4800, "observation_summary.csv": 1},
         "input_membership": "consume_only_explicit_mappings; ignore_unrelated_directory_files",
     }
 
 
-def validate_inputs(args: argparse.Namespace, mappings: dict[str, str], config_files: dict[str, Path], parameter_files: dict[str, Path], expected: dict[str, Any] | None = None) -> tuple[list[Summary], dict[str, Any]]:
+def validate_inputs(args: argparse.Namespace, mappings: dict[str, str], config_files: dict[str, Path], parameter_files: dict[str, Path], expected: dict[str, Any] | None = None) -> tuple[list[Summary], dict[str, Any], dict[str, Any]]:
     if args.site != "ABBY":
         raise ValueError("Iter008 contract requires --site ABBY")
     if not args.pickle_dir.is_absolute() or not args.pickle_dir.is_dir():
         raise ValueError("--pickle-dir must be an existing absolute directory")
     if not args.control_paramfile.is_absolute() or not args.control_paramfile.is_file():
         raise ValueError("--control-paramfile must be an existing absolute file")
+    if not args.observation.is_absolute() or not args.observation.is_file():
+        raise ValueError("--observation must resolve to an existing absolute file")
     current_contract = contract(args, mappings, config_files, parameter_files)
     control_hash = digest(args.control_paramfile)
+    observation = load_observation(args.observation)
     tool_hash = digest(Path(__file__).resolve())
     dependency_files: dict[str, dict[str, Any]] = {}
     for family, paths in (("config", config_files), ("parameter", parameter_files)):
@@ -398,7 +500,7 @@ def validate_inputs(args: argparse.Namespace, mappings: dict[str, str], config_f
         for field, value in current_contract.items():
             if expected.get(field) != value:
                 raise ValueError(f"validated manifest field changed: {field}")
-        if expected.get("status") != "pass" or expected.get("control_paramfile_sha256") != control_hash or expected.get("tool_sha256") != tool_hash:
+        if expected.get("status") != "pass" or expected.get("control_paramfile_sha256") != control_hash or expected.get("observation_sha256") != observation["sha256"] or expected.get("tool_sha256") != tool_hash:
             raise ValueError("validated manifest identity changed")
         if expected.get("dependency_files") != dependency_files:
             raise ValueError("config or parameter-file provenance changed")
@@ -427,6 +529,8 @@ def validate_inputs(args: argparse.Namespace, mappings: dict[str, str], config_f
         "tool_path": str(Path(__file__).resolve()),
         "tool_sha256": tool_hash,
         "control_paramfile_sha256": control_hash,
+        "observation_sha256": observation["sha256"],
+        "observation_summary": observation,
         "pickle_sha256": hashes,
         "pickle_files": {
             item.parameter: {"path": str(item.path), "bytes": item.path.stat().st_size, "sha256": item.sha256}
@@ -437,12 +541,12 @@ def validate_inputs(args: argparse.Namespace, mappings: dict[str, str], config_f
         "cases": {item.parameter: item.metadata for item in summaries},
         "native_markers": {item.parameter: {"status": item.native_status, "value": item.native_value} for item in summaries},
     }
-    return summaries, manifest
+    return summaries, manifest, observation
 
 
 def metric_definitions() -> list[dict[str, Any]]:
-    rows = [{"metric": name, "kind": "raw", "numerator": "", "denominator": "", "units": units, "statistics": "mean;temporal_std"} for name, units in RAW_UNITS.items()]
-    rows.extend({"metric": label, "kind": "accumulated_ratio", "numerator": numerator, "denominator": denominator, "units": units, "statistics": "integrated_ratio"} for label, (numerator, denominator, units) in RATIOS.items())
+    rows = [{"metric": name, "kind": "raw", "numerator": "", "denominator": "", "units": units, "statistics": "mean" if name in POOL_C else "mean;temporal_std"} for name, units in RAW_UNITS.items()]
+    rows.extend({"metric": label, "kind": "realized_pool_respiration_ratio" if label in POOL_HR_PER_C else "accumulated_satisfaction_ratio", "numerator": numerator, "denominator": denominator, "units": units, "statistics": "integrated_ratio"} for label, (numerator, denominator, units) in RATIOS.items())
     return rows
 
 
@@ -461,7 +565,7 @@ def build_tables(summaries: list[Summary]) -> tuple[list[dict[str, Any]], list[d
         for member in range(MEMBERS):
             row: dict[str, Any] = {"parameter": summary.parameter, "member": member + 1, "parameter_value": float(summary.samples[member]), "normalized_parameter": float(summary.normalized[member]), "model_hours": EXPECTED_HOURS}
             for variable in RAW_VARIABLES:
-                for statistic in STATISTICS:
+                for statistic in (("mean",) if variable in POOL_C else STATISTICS):
                     row[f"{variable}_{statistic}"] = float(summary.statistics[variable][statistic][member])
             for label in RATIOS:
                 row[label] = "" if not summary.ratio_support[label][member] else float(summary.ratios[label][member])
@@ -475,8 +579,12 @@ def build_tables(summaries: list[Summary]) -> tuple[list[dict[str, Any]], list[d
                     "value": "" if not summary.ratio_support[label][member] else float(summary.ratios[label][member]),
                 })
             member_rows.append(row)
-        endpoints = [(variable, statistic, summary.statistics[variable][statistic], RAW_UNITS[variable]) for variable in RAW_VARIABLES for statistic in STATISTICS]
-        endpoints.extend((label, "integrated_ratio", summary.ratios[label], "1") for label in RATIOS)
+        endpoints = [
+            (variable, statistic, summary.statistics[variable][statistic], RAW_UNITS[variable])
+            for variable in RAW_VARIABLES
+            for statistic in (("mean",) if variable in POOL_C else STATISTICS)
+        ]
+        endpoints.extend((label, "integrated_ratio", summary.ratios[label], RATIOS[label][2]) for label in RATIOS)
         for metric, statistic, values, units in endpoints:
             bin_rows, membership = bins(summary.samples, values)
             for member in range(MEMBERS):
@@ -511,13 +619,15 @@ def plot_curve(axis: Any, summary: Summary, metric: str, statistic: str, color: 
     axis.set_xlabel(summary.parameter)
 
 
-def plot_parameter_grid(path: Path, summaries: list[Summary], rows: list[list[tuple[str, str, str, str]]], title: str, ylabels: list[str]) -> None:
+def plot_parameter_grid(path: Path, summaries: list[Summary], rows: list[list[tuple[str, str, str, str]]], title: str, ylabels: list[str], references: list[float | None] | None = None) -> None:
     figure, axes = plt.subplots(len(rows), len(summaries), figsize=(15, max(4.0, 3.0 * len(rows))), squeeze=False)
     for column, summary in enumerate(summaries):
         for row_index, specifications in enumerate(rows):
             axis = axes[row_index, column]
             for metric, statistic, color, label in specifications:
                 plot_curve(axis, summary, metric, statistic, color, label)
+            if references is not None and references[row_index] is not None:
+                axis.axhline(references[row_index], color="tab:purple", ls=":", lw=1.0, label="observation")
             axis.set_title(summary.parameter if row_index == 0 else "")
             axis.set_ylabel(ylabels[row_index] if column == 0 else "")
             axis.legend(fontsize=6)
@@ -527,7 +637,7 @@ def plot_parameter_grid(path: Path, summaries: list[Summary], rows: list[list[tu
     plt.close(figure)
 
 
-def make_figures(output: Path, summaries: list[Summary]) -> None:
+def make_figures(output: Path, summaries: list[Summary], observation: dict[str, Any]) -> None:
     plot_parameter_grid(output / FIGURES[0], summaries, [
         [("FPI", "mean", "tab:blue", "FPI mean"), ("FPI_P", "mean", "tab:orange", "FPI_P mean")],
         [("FPI", "temporal_std", "tab:blue", "FPI temporal SD"), ("FPI_P", "temporal_std", "tab:orange", "FPI_P temporal SD")],
@@ -544,20 +654,30 @@ def make_figures(output: Path, summaries: list[Summary]) -> None:
             [(demand, "temporal_std", "tab:orange", f"{demand} temporal SD"), (actual, "temporal_std", "tab:blue", f"{actual} temporal SD")],
             [(ratio, "integrated_ratio", "black", "accumulated satisfaction")],
         ], title, [RAW_UNITS[demand], RAW_UNITS[demand], "ratio"])
-    for filename, metric, title in ((FIGURES[5], "GPP", "ABBY GPP response"), (FIGURES[6], "SR", "ABBY SR response"), (FIGURES[7], "HR", "ABBY direct HR response")):
+    for filename, metric, title in ((FIGURES[5], "GPP", "ABBY GPP response"), (FIGURES[6], "SR", "ABBY SR response")):
         plot_parameter_grid(output / filename, summaries, [
             [(metric, "mean", "tab:blue", "mean")],
             [(metric, "temporal_std", "tab:orange", "temporal SD")],
-        ], title, [RAW_UNITS[metric], RAW_UNITS[metric]])
-    pool_rows = [[(metric, "mean", "tab:blue", "mean"), (metric, "temporal_std", "tab:orange", "temporal SD")] for metric in POOL_HR]
-    plot_parameter_grid(output / FIGURES[8], summaries, pool_rows, "ABBY direct pool HR responses", [f"{metric}\n{RAW_UNITS[metric]}" for metric in POOL_HR])
-    for filename, metrics, title in ((FIGURES[9], ("SMINN", "GROSS_NMIN", "NET_NMIN"), "ABBY N-cycle context"), (FIGURES[10], ("SOLUTIONP", "GROSS_PMIN", "NET_PMIN"), "ABBY P-cycle context")):
-        rows = []
-        labels = []
-        for metric in metrics:
-            rows.append([(metric, "mean", "tab:blue", "mean"), (metric, "temporal_std", "tab:orange", "temporal SD")])
-            labels.append(f"{metric}\n{RAW_UNITS[metric]}")
-        plot_parameter_grid(output / filename, summaries, rows, title, labels)
+        ], title, [RAW_UNITS[metric], RAW_UNITS[metric]], [observation["mean"], observation["temporal_std"]] if metric == "SR" else None)
+    plot_parameter_grid(output / FIGURES[7], summaries, [[("HR", "mean", "tab:blue", "mean")]], "ABBY direct HR mean response", [RAW_UNITS["HR"]])
+    plot_parameter_grid(output / FIGURES[8], summaries, [[("HR", "temporal_std", "tab:orange", "temporal SD")]], "ABBY direct HR temporal SD response", [RAW_UNITS["HR"]])
+    for filename, statistic, color, title in (
+        (FIGURES[9], "mean", "tab:blue", "ABBY direct pool HR mean responses"),
+        (FIGURES[10], "temporal_std", "tab:orange", "ABBY direct pool HR temporal SD responses"),
+    ):
+        rows = [[(metric, statistic, color, statistic.replace("_", " "))] for metric in POOL_HR]
+        plot_parameter_grid(output / filename, summaries, rows, title, [f"{metric}\n{RAW_UNITS[metric]}" for metric in POOL_HR])
+    cycles = (
+        (FIGURES[11], ("SMINN", "GROSS_NMIN", "NET_NMIN"), "mean", "tab:blue", "ABBY N-cycle mean context"),
+        (FIGURES[12], ("SMINN", "GROSS_NMIN", "NET_NMIN"), "temporal_std", "tab:orange", "ABBY N-cycle temporal SD context"),
+        (FIGURES[13], ("SOLUTIONP", "GROSS_PMIN", "NET_PMIN"), "mean", "tab:blue", "ABBY P-cycle mean context"),
+        (FIGURES[14], ("SOLUTIONP", "GROSS_PMIN", "NET_PMIN"), "temporal_std", "tab:orange", "ABBY P-cycle temporal SD context"),
+    )
+    for filename, metrics, statistic, color, title in cycles:
+        rows = [[(metric, statistic, color, statistic.replace("_", " "))] for metric in metrics]
+        plot_parameter_grid(output / filename, summaries, rows, title, [f"{metric}\n{RAW_UNITS[metric]}" for metric in metrics])
+    plot_parameter_grid(output / FIGURES[15], summaries, [[(metric, "mean", "tab:blue", "mean")] for metric in POOL_C], "ABBY pool C mean responses", [f"{metric}\n{RAW_UNITS[metric]}" for metric in POOL_C])
+    plot_parameter_grid(output / FIGURES[16], summaries, [[(metric, "integrated_ratio", "tab:green", "sum(HR) / sum(pool C)")] for metric in POOL_HR_PER_C], "ABBY realized pool HR per pool C responses", [f"{metric}\nday-1" for metric in POOL_HR_PER_C])
 
 
 def run_preflight(args: argparse.Namespace, mappings: dict[str, str], config_files: dict[str, Path], parameter_files: dict[str, Path]) -> None:
@@ -565,13 +685,13 @@ def run_preflight(args: argparse.Namespace, mappings: dict[str, str], config_fil
         raise FileExistsError(f"refusing to replace existing preflight output: {args.output}")
     args.output.parent.mkdir(parents=True, exist_ok=True)
     try:
-        summaries, manifest = validate_inputs(args, mappings, config_files, parameter_files)
+        summaries, manifest, observation = validate_inputs(args, mappings, config_files, parameter_files)
         args.output.mkdir()
         write_json(args.output / "input_manifest.json", manifest)
         write_json(args.output / "validation_receipt.json", {
             "schema": RECEIPT_SCHEMA, "status": "pass", "created_at_utc": utc_now(),
             "input_manifest": str(args.output / "input_manifest.json"), "parameters": len(summaries),
-            "members": len(summaries) * MEMBERS, "hours": EXPECTED_HOURS, "fixture": manifest["fixture"],
+            "members": len(summaries) * MEMBERS, "hours": EXPECTED_HOURS, "fixture": manifest["fixture"], "observation": observation,
         })
         print(f"NUTRIENT_OAT_PREFLIGHT_PASS parameters={len(summaries)} members={len(summaries) * MEMBERS} hours={EXPECTED_HOURS}", flush=True)
     except Exception as exc:
@@ -584,7 +704,7 @@ def run_diagnostic(args: argparse.Namespace, mappings: dict[str, str], config_fi
     if args.output.exists():
         raise FileExistsError(f"refusing to replace existing result staging: {args.output}")
     manifest = json.loads(args.manifest.read_text())
-    summaries, current = validate_inputs(args, mappings, config_files, parameter_files, manifest)
+    summaries, current, observation = validate_inputs(args, mappings, config_files, parameter_files, manifest)
     args.output.mkdir(parents=True)
     parameter_rows, member_rows, curve_rows, support_rows = build_tables(summaries)
     definitions = metric_definitions()
@@ -593,14 +713,15 @@ def run_diagnostic(args: argparse.Namespace, mappings: dict[str, str], config_fi
     write_csv(args.output / "member_metrics.csv", list(member_rows[0]), member_rows)
     write_csv(args.output / "response_curves.csv", list(curve_rows[0]), curve_rows)
     write_csv(args.output / "ratio_support.csv", list(support_rows[0]), support_rows)
-    make_figures(args.output, summaries)
+    write_csv(args.output / "observation_summary.csv", list(observation), [observation])
+    make_figures(args.output, summaries, observation)
     artifacts = {}
     for path in sorted(args.output.iterdir()):
         artifacts[path.name] = {"bytes": path.stat().st_size, "sha256": digest(path)}
     output_manifest = {
         "schema": OUTPUT_SCHEMA, "status": "pass", "created_at_utc": utc_now(),
         "input_manifest_sha256": digest(args.manifest), "tool_sha256": current["tool_sha256"],
-        "row_counts": {"parameter_metadata.csv": len(parameter_rows), "metric_definitions.csv": len(definitions), "member_metrics.csv": len(member_rows), "response_curves.csv": len(curve_rows), "ratio_support.csv": len(support_rows)},
+        "row_counts": {"parameter_metadata.csv": len(parameter_rows), "metric_definitions.csv": len(definitions), "member_metrics.csv": len(member_rows), "response_curves.csv": len(curve_rows), "ratio_support.csv": len(support_rows), "observation_summary.csv": 1},
         "figure_count": len(FIGURES), "figure_names": list(FIGURES), "artifacts": artifacts,
     }
     write_json(args.output / "output_manifest.json", output_manifest)
@@ -615,6 +736,7 @@ def parser() -> argparse.ArgumentParser:
     result.add_argument("--config-file", required=True, action="append", default=[])
     result.add_argument("--parameter-file", required=True, action="append", default=[])
     result.add_argument("--control-paramfile", required=True, type=Path)
+    result.add_argument("--observation", required=True)
     result.add_argument("--output", required=True, type=Path)
     mode = result.add_mutually_exclusive_group(required=True)
     mode.add_argument("--validate-only", action="store_true")
@@ -627,6 +749,7 @@ def main() -> None:
     mappings = parse_mappings(args.parameter_pickle)
     config_files = parse_parameter_paths(args.config_file, "--config-file", tuple(mappings))
     parameter_files = parse_parameter_paths(args.parameter_file, "--parameter-file", tuple(mappings))
+    args.observation = parse_observation(args.observation)
     if not args.output.is_absolute():
         raise ValueError("--output must be absolute")
     if args.validate_only:

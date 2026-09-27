@@ -78,3 +78,14 @@
 - Quantitative result: low-to-high sampled C:N changes microbial N satisfaction by `+2.3%`, `+25.4%`, `+108.4%`, and `+118.6%` and microbial P satisfaction by `+22.2%`, `+33.7%`, `+96.1%`, and `+95.7%` for `cn_s1`--`cn_s4`. Plant satisfaction changes only about `+0.6%`, `-3.6%`, `+1.4%`, and `+4.3%`; direct HR changes `+1.0%`, `-5.4%`, `-0.7%`, and `+4.6%`.
 - Overall acceptance result: `pass`.
 - Decision: Accepted the validated baseline-conditioned ABBY C:N OAT package. Higher pool C:N primarily reduces microbial nutrient demand and improves microbial satisfaction, strongest for pools 3/4, but does not broadly relieve plant demand or guarantee higher realized decomposition.
+
+## Iter009 — completed ABBY vertical-soil-carbon C:N pool-context diagnostic
+
+- Work type: `implementation`; status: `completed`.
+- Objective: Amend the Iter008 N/P-stress diagnostic by separating mean and temporal-variability figures, restoring observed SR context, and adding pool-C and realized pool-HR-per-C responses.
+- Bounded scope: four exact ABBY vertical-soil-carbon C:N pickles; 400 members; 47 metrics; 74 response endpoints per parameter; 37,812 CSV rows; 17 figures; baseline-conditioned descriptive OAT only.
+- Execution: preflight `24019322` and diagnostic `24019366` completed `0:0` on attempt one in `00:01:12` and `00:01:17`; each used about 19.72/60 GB peak memory. No retry or cancellation was used.
+- Outputs: exactly 4 parameter rows, 47 metric definitions, 400 member rows, 32,560 response rows, 4,800 supported-ratio rows, one observation row, 37,812 CSV data rows, and 17 PNGs in `.../elm_diagnose_iter009_abby_ctrlvertc_cn_pool_context/results`; output manifest `afa885d5`.
+- Quantitative result: lowest-to-highest sampled-parameter-bin SOIL pool C, matched HR, and realized HR/C change by `+53.01%`/`-0.53%`/`-34.99%` for `cn_s1`, `-3.90%`/`-4.76%`/`-0.89%` for `cn_s2`, `-0.47%`/`-0.66%`/`-0.18%` for `cn_s3`, and `+3.56%`/`+4.64%`/`+1.04%` for `cn_s4`. ABBY observed SR coverage is 26,264/61,320 hours (`42.83%`), with mean/std `7.501337`/`2.627639` gC m-2 day-1.
+- Overall acceptance result: `pass`.
+- Decision: Accepted the validated amendment. Pool stocks and realized respiration per pool C can respond differently to the separate C:N perturbations; the evidence remains conditional on the declared baseline-conditioned OAT ranges and supports no causal, global-sensitivity, prescribed-rate, threshold, or cross-site claim.
