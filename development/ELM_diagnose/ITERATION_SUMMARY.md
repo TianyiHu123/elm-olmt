@@ -89,3 +89,10 @@
 - Quantitative result: lowest-to-highest sampled-parameter-bin SOIL pool C, matched HR, and realized HR/C change by `+53.01%`/`-0.53%`/`-34.99%` for `cn_s1`, `-3.90%`/`-4.76%`/`-0.89%` for `cn_s2`, `-0.47%`/`-0.66%`/`-0.18%` for `cn_s3`, and `+3.56%`/`+4.64%`/`+1.04%` for `cn_s4`. ABBY observed SR coverage is 26,264/61,320 hours (`42.83%`), with mean/std `7.501337`/`2.627639` gC m-2 day-1.
 - Overall acceptance result: `pass`.
 - Decision: Accepted the validated amendment. Pool stocks and realized respiration per pool C can respond differently to the separate C:N perturbations; the evidence remains conditional on the declared baseline-conditioned OAT ranges and supports no causal, global-sensitivity, prescribed-rate, threshold, or cross-site claim.
+
+## Iter010 — completed ABBY C:N carbon-balance diagnostic
+
+- Work type: `implementation`; status: `completed`; acceptance: `pass`.
+- Execution: preflight `24025653` and diagnostic `24025871` completed `0:0`; 39,542 CSV rows and 21 PNGs passed independent review; output manifest `80afe70b`.
+- Quantitative result: zero of 400 members are within 5% absolute closure; median errors are 8.79%--9.07%. HR accounts for 87.4%--101.2% of input response contrasts and storage change for 1.3%--11.5%.
+- Decision: accept the technically valid partial-boundary diagnostic. HR tracks input contrasts descriptively, but systematic nonclosure precludes a carbon-input-constraint or equilibrium conclusion.

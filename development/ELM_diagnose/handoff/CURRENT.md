@@ -3,14 +3,22 @@
 ## Live State
 
 - Active iteration: none
-- Most recent closed iteration: `iter009`
-- Proposed iteration: `iter010` (`not_initialized`)
-- Status: `pre_kickoff`
-- Phase: planning only; no Iter010 runtime authority
-- Active job scope: none; Iter009 jobs `24019322` and `24019366` are terminally accounted `COMPLETED 0:0`.
-- Active monitoring: none; preflight session `89631` handed off to terminal accounting and diagnostic session `45108` finished after terminal-state observation.
+- Most recent closed iteration: `iter010`
+- Proposed iteration: none
+- Status: `workflow_complete`
+- Phase: `closed`
+- Active job scope: none; Iter010 jobs `24025653` and `24025871` are terminally accounted `COMPLETED 0:0`.
+- Active monitoring: none.
 - Site profile: `development/hpc/puma.md`
-- Last updated: `2026-09-27T19:05:24-07:00`
+- Last updated: `2026-09-27T19:45:24-07:00`
+
+## Iter010 Closeout Snapshot
+
+- Objective: evaluate direct-`HR` carbon balance using cumulative `LITFALL`, direct `HR`, and eight-pool storage change across four ABBY C:N OAT ensembles.
+- Acceptance: `pass`; output manifest `80afe70badeb0a0f7cd2e3bda3be4ca1ec5fceef8543891b47a39036590b5c3c`; 39,542 CSV rows and 21 PNGs.
+- Result: median absolute closure errors are 8.79%--9.07%; zero of 400 members are within 5%. HR tracks 87.4%--101.2% of input contrasts, with storage accounting for 1.3%--11.5%.
+- Decision: accept the technically valid partial-boundary diagnostic, but do not claim carbon-input constraint or equilibrium because `HR + delta_C` systematically exceeds declared `LITFALL` by about 151 gC m-2.
+- Records: `iterations/iter010.md`, `summaries/iter010/ITER010_RESULT.md`, `ITERATION_SUMMARY.md`, and the Iter010 registry row.
 
 ## Closed Iteration Identity and Decision
 
@@ -41,7 +49,7 @@
 - The observation is contextual and covers 26,264/61,320 hours (`42.83%`). `/xdisk` is temporary and unbacked; allocation expiration remains unavailable to non-PI users.
 - Next state: the planning-only Iter010 proposal below is approved for documentation. Iter010 remains uninitialized; implementation and execution require a fresh consolidated kickoff package and explicit authority.
 
-## Proposed Next-Iteration Plan (Planning Only)
+## Approved Iter010 Plan (Historical)
 
 ### Identity, objective, and hypothesis
 
@@ -101,4 +109,4 @@
 1. Read this handoff and `development/ELM_diagnose/WORKFLOW.md`.
 2. Read `development/ELM_diagnose/iterations/iter009.md`, its compact result, and the Iter009 registry row.
 3. Treat Iter009 execution material, records, manifests, and results as immutable closed provenance.
-4. Verify the approved Iter010 plan above matches the copy in `iterations/iter009.md`, then prepare one complete consolidated kickoff package and obtain fresh explicit runtime authority before initialization or execution.
+4. Treat Iter010 as immutable closed provenance. Any further diagnostic requires a new complete plan and kickoff approval.
