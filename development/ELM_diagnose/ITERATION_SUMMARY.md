@@ -96,3 +96,12 @@
 - Execution: preflight `24025653` and diagnostic `24025871` completed `0:0`; 39,542 CSV rows and 21 PNGs passed independent review; output manifest `80afe70b`.
 - Quantitative result: zero of 400 members are within 5% absolute closure; median errors are 8.79%--9.07%. HR accounts for 87.4%--101.2% of input response contrasts and storage change for 1.3%--11.5%.
 - Decision: accept the technically valid partial-boundary diagnostic. HR tracks input contrasts descriptively, but systematic nonclosure precludes a carbon-input-constraint or equilibrium conclusion.
+
+## Iter011 — completed ABBY transient and spinup OAT diagnostic
+
+- Work type: `implementation`; status: `completed`; acceptance: `pass`.
+- Objective: rank baseline-conditioned transient carbon-flux/decomposer-stock responses, final spinup decomposer C/N/P states, and idealized potential/N/P-limited pathways across 21 separate ABBY vertical-soil-carbon OAT ensembles.
+- Execution: initial preflight `24101686` failed a fixture import-bootstrap defect; authorized corrected preflight `24102996` passed. Generation job `24103048` produced the complete package but failed an overbroad validator assertion; authorized validator-only job `24103109` passed `COMPLETED 0:0` and atomically published the unchanged staging package. All four submitted jobs are terminally accounted.
+- Outputs: exactly 80,200 primary CSV rows and 11 PNGs; all 105 transient and 63 spinup scores are supported; output manifest `0e13dfa6`.
+- Quantitative result: `act25` leads mean SR/HR/LITFALL response spreads and `leaf_long` leads mean GPP. `k_s4`, `k_s3`, and `k_s2` lead both transient decomposer-C and final-spinup C/N/P spreads; increasing these rates corresponds to sharply decreasing stocks over their declared ranges. Across all 2,100 members, mean N- and P-limited/potential pathway ratios are 0.294 and 0.388, and P-limited exceeds N-limited in every member.
+- Decision: accept the validated baseline-conditioned, sampled-range descriptive OAT package. Constructed pathways remain distinct from direct model `HR`; no PAWN/Sobol/global-sensitivity, interaction, causal limitation, optimization, tuning, threshold, parameter recommendation, or cross-site/configuration claim is supported.

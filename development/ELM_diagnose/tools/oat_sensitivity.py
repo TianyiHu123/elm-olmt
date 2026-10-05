@@ -24,6 +24,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
 import xarray as xr
+from netCDF4 import Dataset
 
 REPO_ROOT = Path("/xdisk/chopinsong/tianyihu/elm-olmt")
 if str(REPO_ROOT) not in sys.path:
@@ -36,9 +37,11 @@ TARGETS = (
     "GPP",
     "ER",
     "SR",
+    "HR",
     "HR_TOTAL",
     "LITFALL",
     "LITTER_SOIL_C_TOTAL",
+    "DECOMP_C_TOTAL",
     "LITR1C",
     "LITR2C",
     "LITR3C",
@@ -47,9 +50,10 @@ TARGETS = (
     "SOIL3C",
     "SOIL4C",
 )
-DIRECT_TARGETS = ("GPP", "ER", "SR", "LITFALL", "LITR1C", "LITR2C", "LITR3C", "SOIL1C", "SOIL2C", "SOIL3C", "SOIL4C")
+DIRECT_TARGETS = ("GPP", "ER", "SR", "HR", "LITFALL", "LITR1C", "LITR2C", "LITR3C", "SOIL1C", "SOIL2C", "SOIL3C", "SOIL4C")
 HR_COMPONENTS = ("CWDC_HR", "LITR1_HR", "LITR2_HR", "LITR3_HR", "SOIL1_HR", "SOIL2_HR", "SOIL3_HR", "SOIL4_HR")
 SOC_COMPONENTS = ("LITR1C", "LITR2C", "LITR3C", "SOIL1C", "SOIL2C", "SOIL3C", "SOIL4C")
+DECOMP_C_COMPONENTS = ("CWDC", *SOC_COMPONENTS)
 COMPENSATION = {
     "k_l1": ("LITR1C", "K_LITR1", "LITR1_HR", "LITR1"),
     "k_l2": ("LITR2C", "K_LITR2", "LITR2_HR", "LITR2"),
@@ -59,7 +63,7 @@ COMPENSATION = {
     "k_s3": ("SOIL3C", "K_SOIL3", "SOIL3_HR", "SOIL3"),
     "k_s4": ("SOIL4C", "K_SOIL4", "SOIL4_HR", "SOIL4"),
 }
-DERIVED_TARGETS = frozenset({"HR_TOTAL", "LITTER_SOIL_C_TOTAL"})
+DERIVED_TARGETS = frozenset({"HR_TOTAL", "LITTER_SOIL_C_TOTAL", "DECOMP_C_TOTAL"})
 EXPECTED_HOURS = 7 * 365 * 24
 STATISTICS = ("mean", "temporal_std")
 DISPLAY_NAMES = {"LITTER_SOIL_C_TOTAL": "Total SOC"}
@@ -67,9 +71,11 @@ UNITS = {
     "GPP": "gC m-2 day-1",
     "ER": "gC m-2 day-1",
     "SR": "gC m-2 day-1",
+    "HR": "gC m-2 day-1",
     "HR_TOTAL": "gC m-2 day-1",
     "LITFALL": "gC m-2 day-1",
     "LITTER_SOIL_C_TOTAL": "gC m-2",
+    "DECOMP_C_TOTAL": "gC m-2",
     "LITR1C": "gC m-2",
     "LITR2C": "gC m-2",
     "LITR3C": "gC m-2",
@@ -78,9 +84,31 @@ UNITS = {
     "SOIL3C": "gC m-2",
     "SOIL4C": "gC m-2",
 }
-INPUT_MANIFEST_SCHEMA = "elm_oat_input_manifest_v4"
-OUTPUT_MANIFEST_SCHEMA = "elm_oat_output_manifest_v4"
-VALIDATION_RECEIPT_SCHEMA = "elm_oat_validation_receipt_v3"
+SPINUP_COMPONENTS = {
+    "DECOMP_C_TOTAL": ("cwdc_vr", "litr1c_vr", "litr2c_vr", "litr3c_vr", "soil1c_vr", "soil2c_vr", "soil3c_vr", "soil4c_vr"),
+    "DECOMP_N_TOTAL": ("cwdn_vr", "litr1n_vr", "litr2n_vr", "litr3n_vr", "soil1n_vr", "soil2n_vr", "soil3n_vr", "soil4n_vr"),
+    "DECOMP_P_TOTAL": ("cwdp_vr", "litr1p_vr", "litr2p_vr", "litr3p_vr", "soil1p_vr", "soil2p_vr", "soil3p_vr", "soil4p_vr"),
+}
+SPINUP_UNITS = {
+    "DECOMP_C_TOTAL": "gC m-2",
+    "DECOMP_N_TOTAL": "gN m-2",
+    "DECOMP_P_TOTAL": "gP m-2",
+}
+ENDPOINT_DEFINITIONS = {
+    "SR": "direct case.output['SR'] arithmetic temporal mean",
+    "HR": "direct case.output['HR'] arithmetic temporal mean",
+    "GPP": "direct case.output['GPP'] arithmetic temporal mean",
+    "LITFALL": "direct case.output['LITFALL'] arithmetic temporal mean",
+    "DECOMP_C_TOTAL": "CWDC + LITR1C + LITR2C + LITR3C + SOIL1C + SOIL2C + SOIL3C + SOIL4C",
+}
+SPINUP_ENDPOINT_DEFINITIONS = {
+    target: " + ".join(components) for target, components in SPINUP_COMPONENTS.items()
+}
+TRANSIENT_COVERAGE = "declared-site model members; hourly 2018-2024 noleap; 61,320 samples/member"
+SPINUP_COVERAGE = "declared-site final restart state at 0201-01-01; all stored vertical elements summed"
+INPUT_MANIFEST_SCHEMA = "elm_oat_input_manifest_v5"
+OUTPUT_MANIFEST_SCHEMA = "elm_oat_output_manifest_v5"
+VALIDATION_RECEIPT_SCHEMA = "elm_oat_validation_receipt_v4"
 
 
 @dataclass
@@ -101,11 +129,21 @@ class CaseSummary:
     litter_ratio_members: dict[str, np.ndarray]
     litter_ratio_support: dict[str, dict[str, np.ndarray]]
     litter_ratio_timeseries: dict[str, dict[str, np.ndarray]]
+    spinup_metrics: dict[str, np.ndarray]
+    spinup_metadata: dict[str, Any]
     metadata: dict[str, Any]
 
 
 def utc_now() -> str:
     return datetime.now(timezone.utc).isoformat()
+
+
+def endpoint_definition(target: str) -> str:
+    return ENDPOINT_DEFINITIONS.get(target, f"{target} endpoint selected by the explicit diagnostic interface")
+
+
+def spinup_endpoint_definition(target: str) -> str:
+    return SPINUP_ENDPOINT_DEFINITIONS[target]
 
 
 def digest(path: Path) -> str:
@@ -155,8 +193,8 @@ def parse_mapping(raw_items: list[str]) -> dict[str, str]:
         filenames.add(basename)
     if not mappings:
         raise ValueError("at least one --parameter-pickle mapping is required")
-    if len(mappings) > 16:
-        raise ValueError("at most 16 parameter mappings fit the supported atlas layout")
+    if len(mappings) > 36:
+        raise ValueError("at most 36 parameter mappings fit the supported atlas layout")
     return mappings
 
 
@@ -169,6 +207,63 @@ def parse_log_parameters(raw: str, parameters: tuple[str, ...]) -> frozenset[str
     if unknown:
         raise ValueError(f"--log-parameters must be a subset of mapped parameters; unknown={unknown}")
     return parsed
+
+
+def parse_statistics(raw_items: list[str]) -> tuple[str, ...]:
+    if not raw_items:
+        return STATISTICS
+    if len(raw_items) != len(set(raw_items)):
+        raise ValueError("duplicate --statistic values are not allowed")
+    unknown = sorted(set(raw_items) - set(STATISTICS))
+    if unknown:
+        raise ValueError(f"unknown statistics: {unknown}")
+    return tuple(raw_items)
+
+
+def parse_restart_mapping(raw_items: list[str], parameters: tuple[str, ...]) -> dict[str, str]:
+    if not raw_items:
+        return {}
+    mappings: dict[str, str] = {}
+    basenames: set[str] = set()
+    for item in raw_items:
+        if ":" not in item:
+            raise ValueError(f"invalid --parameter-restart mapping: {item!r}")
+        parameter, basename = item.split(":", 1)
+        if parameter not in parameters or not basename:
+            raise ValueError(f"unknown or incomplete restart mapping: {item!r}")
+        if parameter in mappings or basename in basenames:
+            raise ValueError(f"duplicate restart mapping: {item!r}")
+        if basename != Path(basename).name or any(token in basename for token in ("*", "?", "[", "]")):
+            raise ValueError(f"restart mapping must use an exact case basename: {basename!r}")
+        mappings[parameter] = basename
+        basenames.add(basename)
+    if tuple(mappings) != parameters:
+        raise ValueError("restart mappings must match the ordered parameter mappings exactly")
+    return mappings
+
+
+def parse_provenance_mapping(
+    raw_items: list[str], parameters: tuple[str, ...], option: str
+) -> dict[str, str]:
+    if not raw_items:
+        return {}
+    mappings: dict[str, str] = {}
+    basenames: set[str] = set()
+    for item in raw_items:
+        if ":" not in item:
+            raise ValueError(f"invalid {option} mapping: {item!r}")
+        parameter, basename = item.split(":", 1)
+        if parameter not in parameters or not basename:
+            raise ValueError(f"unknown or incomplete {option} mapping: {item!r}")
+        if parameter in mappings or basename in basenames:
+            raise ValueError(f"duplicate {option} mapping: {item!r}")
+        if basename != Path(basename).name or any(token in basename for token in ("*", "?", "[", "]")):
+            raise ValueError(f"{option} mapping must use an exact basename: {basename!r}")
+        mappings[parameter] = basename
+        basenames.add(basename)
+    if tuple(mappings) != parameters:
+        raise ValueError(f"{option} mappings must match the ordered parameter mappings exactly")
+    return mappings
 
 
 def parse_targets(raw_items: list[str]) -> tuple[str, ...]:
@@ -198,6 +293,7 @@ def parse_family(raw_items: list[str], fields: int, option: str) -> list[tuple[s
 
 def parse_interfaces(args: argparse.Namespace, parameters: tuple[str, ...]) -> dict[str, Any]:
     targets = parse_targets(args.target)
+    statistics = parse_statistics(getattr(args, "statistic", []))
     observations = parse_family(args.observation, 2, "--observation")
     if any(variable not in targets for variable, _ in observations):
         raise ValueError("every observation variable must also be a selected target")
@@ -211,14 +307,40 @@ def parse_interfaces(args: argparse.Namespace, parameters: tuple[str, ...]) -> d
     hr_enabled = bool(hr_pools or args.hr_n_limiter or args.hr_p_limiter)
     if hr_enabled and (not hr_pools or not args.hr_n_limiter or not args.hr_p_limiter):
         raise ValueError("HR pathway analysis requires pools plus both N and P limiters")
+    restart_root = getattr(args, "restart_root", None)
+    restart_mappings = parse_restart_mapping(getattr(args, "parameter_restart", []), parameters)
+    if bool(restart_mappings) != bool(restart_root):
+        raise ValueError("restart analysis requires both --restart-root and complete --parameter-restart mappings")
+    if restart_root is not None and not restart_root.is_absolute():
+        raise ValueError("--restart-root must be absolute")
+    config_dir = getattr(args, "config_dir", None)
+    parameter_dir = getattr(args, "parameter_dir", None)
+    config_mappings = parse_provenance_mapping(
+        getattr(args, "parameter_config", []), parameters, "--parameter-config"
+    )
+    parameter_file_mappings = parse_provenance_mapping(
+        getattr(args, "parameter_file", []), parameters, "--parameter-file"
+    )
+    provenance_enabled = any((config_dir, parameter_dir, config_mappings, parameter_file_mappings))
+    if provenance_enabled and not all((config_dir, parameter_dir, config_mappings, parameter_file_mappings)):
+        raise ValueError("parameter provenance requires both roots and both complete ordered mappings")
+    if config_dir is not None and (not config_dir.is_absolute() or not parameter_dir.is_absolute()):
+        raise ValueError("parameter provenance roots must be absolute")
     return {
         "targets": targets,
+        "statistics": statistics,
         "observations": observations,
         "compensation": compensation,
         "hr_pools": hr_pools,
         "hr_n_limiter": args.hr_n_limiter,
         "hr_p_limiter": args.hr_p_limiter,
         "litter_ratios": litter_ratios,
+        "restart_root": restart_root,
+        "restart_mappings": restart_mappings,
+        "config_dir": config_dir,
+        "parameter_dir": parameter_dir,
+        "config_mappings": config_mappings,
+        "parameter_file_mappings": parameter_file_mappings,
     }
 
 
@@ -231,6 +353,8 @@ def required_raw_variables(interfaces: dict[str, Any]) -> tuple[str, ...]:
             required.extend(HR_COMPONENTS)
         elif target == "LITTER_SOIL_C_TOTAL":
             required.extend(SOC_COMPONENTS)
+        elif target == "DECOMP_C_TOTAL":
+            required.extend(DECOMP_C_COMPONENTS)
     for _, pool, rate, respiration in interfaces["compensation"]:
         required.extend((pool, rate, respiration))
     for pool, rate in interfaces["hr_pools"]:
@@ -410,6 +534,8 @@ def load_case_summary(
         targets["HR_TOTAL"] = sum(raw[variable] for variable in HR_COMPONENTS)
     if "LITTER_SOIL_C_TOTAL" in interfaces["targets"]:
         targets["LITTER_SOIL_C_TOTAL"] = sum(raw[variable] for variable in SOC_COMPONENTS)
+    if "DECOMP_C_TOTAL" in interfaces["targets"]:
+        targets["DECOMP_C_TOTAL"] = sum(raw[variable] for variable in DECOMP_C_COMPONENTS)
     target_statistics = {target: temporal_statistics(targets[target]) for target in interfaces["targets"]}
     compensation_statistics: dict[str, dict[str, np.ndarray]] = {}
     compensation_lookup = {item[0]: item[1:] for item in interfaces["compensation"]}
@@ -506,11 +632,92 @@ def load_case_summary(
         litter_ratio_members=litter_ratio_members,
         litter_ratio_support=litter_ratio_support,
         litter_ratio_timeseries=litter_ratio_timeseries,
+        spinup_metrics={},
+        spinup_metadata={},
         metadata=metadata,
     )
     del raw, targets, case
     gc.collect()
     return summary, taxis
+
+
+def load_spinup_state(
+    summary: CaseSummary,
+    restart_root: Path,
+    case_basename: str,
+) -> CaseSummary:
+    case_dir = restart_root / case_basename
+    if not case_dir.is_dir() or case_dir.parent.resolve() != restart_root.resolve():
+        raise FileNotFoundError(f"missing or out-of-root restart case: {case_dir}")
+    observed_members = {path.name for path in case_dir.iterdir() if path.is_dir()}
+    expected_members = {f"g{member:05d}" for member in range(1, 101)}
+    if observed_members != expected_members:
+        raise ValueError(
+            f"restart member directories differ for {summary.parameter}: "
+            f"missing={sorted(expected_members - observed_members)} extra={sorted(observed_members - expected_members)}"
+        )
+    metrics = {target: np.empty(100, dtype=np.float64) for target in SPINUP_COMPONENTS}
+    schemas: dict[str, dict[str, Any]] = {}
+    file_hashes: dict[str, str] = {}
+    support: dict[str, dict[str, int]] = {
+        target: {"valid_values": 0, "masked_values": 0} for target in SPINUP_COMPONENTS
+    }
+    for member in range(1, 101):
+        member_name = f"g{member:05d}"
+        restart = case_dir / member_name / f"{case_basename}.elm.r.0201-01-01-00000.nc"
+        if not restart.is_file():
+            raise FileNotFoundError(f"missing restart member file: {restart}")
+        unexpected = [path.name for path in (case_dir / member_name).iterdir() if path.is_file() and path != restart]
+        if unexpected:
+            raise ValueError(f"unexpected restart files for {summary.parameter}/{member_name}: {sorted(unexpected)}")
+        file_hashes[member_name] = digest(restart)
+        with Dataset(str(restart), "r") as dataset:
+            for target, components in SPINUP_COMPONENTS.items():
+                total = 0.0
+                target_shapes: set[tuple[int, ...]] = set()
+                target_dimensions: set[tuple[str, ...]] = set()
+                target_units: set[str] = set()
+                for component in components:
+                    if component not in dataset.variables:
+                        raise KeyError(f"missing restart component {component!r} in {restart}")
+                    variable = dataset.variables[component]
+                    raw = np.ma.asarray(variable[:])
+                    values = np.asarray(raw.filled(np.nan), dtype=np.float64)
+                    valid = np.asarray(raw.compressed(), dtype=np.float64)
+                    if not valid.size or not np.all(np.isfinite(valid)):
+                        raise ValueError(f"restart component {component} lacks finite valid support in {restart}")
+                    units = str(getattr(variable, "units", "")).strip()
+                    component_schema = {
+                        "dimensions": list(variable.dimensions),
+                        "shape": list(values.shape),
+                        "units": units,
+                    }
+                    if component in schemas and schemas[component] != component_schema:
+                        raise ValueError(f"restart component schema differs across members: {component}")
+                    schemas.setdefault(component, component_schema)
+                    target_shapes.add(tuple(values.shape))
+                    target_dimensions.add(tuple(variable.dimensions))
+                    target_units.add(units)
+                    support[target]["valid_values"] += int(valid.size)
+                    support[target]["masked_values"] += int(np.ma.count_masked(raw))
+                    total += float(np.nansum(values))
+                if len(target_shapes) != 1 or len(target_dimensions) != 1 or len(target_units) != 1:
+                    raise ValueError(f"restart {target} components have incompatible shape, dimensions, or units in {restart}")
+                if not np.isfinite(total):
+                    raise ValueError(f"restart {target} total is non-finite in {restart}")
+                metrics[target][member - 1] = total
+    return replace(
+        summary,
+        spinup_metrics=metrics,
+        spinup_metadata={
+            "case_basename": case_basename,
+            "case_dir": str(case_dir),
+            "members": 100,
+            "component_schema": schemas,
+            "support": support,
+            "restart_sha256": file_hashes,
+        },
+    )
 
 
 def equal_count_bins(x: np.ndarray, y: np.ndarray) -> list[dict[str, float | int]]:
@@ -565,6 +772,25 @@ def response_score(values: np.ndarray) -> tuple[float, float, float, float]:
     return score, median, p05, p95
 
 
+def response_score_record(values: np.ndarray) -> dict[str, Any]:
+    if values.shape != (100,) or not np.all(np.isfinite(values)):
+        return {
+            "score_percent": "", "median": "", "p05": "", "p95": "",
+            "supported": False, "rejection_reason": "nonfinite_or_incomplete_ensemble",
+        }
+    median = float(np.median(values))
+    if median == 0.0:
+        return {
+            "score_percent": "", "median": median, "p05": "", "p95": "",
+            "supported": False, "rejection_reason": "zero_ensemble_median",
+        }
+    score, median, p05, p95 = response_score(values)
+    return {
+        "score_percent": score, "median": median, "p05": p05, "p95": p95,
+        "supported": True, "rejection_reason": "",
+    }
+
+
 def normalized_response(values: np.ndarray) -> np.ndarray:
     median = float(np.median(values))
     if not np.isfinite(median) or median == 0.0:
@@ -572,7 +798,11 @@ def normalized_response(values: np.ndarray) -> np.ndarray:
     return 100.0 * (values - median) / abs(median)
 
 
-def build_rows(summaries: list[CaseSummary], targets: tuple[str, ...]) -> tuple[list[dict[str, Any]], list[dict[str, Any]], list[dict[str, Any]], list[dict[str, Any]]]:
+def build_rows(
+    summaries: list[CaseSummary],
+    targets: tuple[str, ...],
+    statistics: tuple[str, ...] = STATISTICS,
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]], list[dict[str, Any]], list[dict[str, Any]]]:
     parameter_rows: list[dict[str, Any]] = []
     member_rows: list[dict[str, Any]] = []
     score_rows: list[dict[str, Any]] = []
@@ -590,6 +820,15 @@ def build_rows(summaries: list[CaseSummary], targets: tuple[str, ...]) -> tuple[
                 "native_status": summary.native_status,
                 "selector": summary.metadata["selector"],
                 "members": 100,
+                "restart_case": summary.spinup_metadata.get("case_basename", ""),
+                "restart_components": (
+                    json.dumps(summary.spinup_metadata.get("component_schema", {}), sort_keys=True)
+                    if summary.spinup_metadata else ""
+                ),
+                "restart_support": (
+                    json.dumps(summary.spinup_metadata.get("support", {}), sort_keys=True)
+                    if summary.spinup_metadata else ""
+                ),
             }
         )
         for member in range(100):
@@ -598,26 +837,32 @@ def build_rows(summaries: list[CaseSummary], targets: tuple[str, ...]) -> tuple[
                 "member": member + 1,
                 "parameter_value": float(summary.parameter_values[member]),
                 "normalized_parameter": float(summary.normalized_parameter[member]),
+                "endpoint_definitions": json.dumps(
+                    {target: endpoint_definition(target) for target in targets}, sort_keys=True
+                ),
+                "endpoint_units": json.dumps({target: UNITS[target] for target in targets}, sort_keys=True),
+                "model_coverage": TRANSIENT_COVERAGE,
             }
             for target in targets:
-                row[f"{target}_mean"] = float(summary.member_statistics[target]["mean"][member])
-                row[f"{target}_temporal_std"] = float(summary.member_statistics[target]["temporal_std"][member])
+                for statistic in statistics:
+                    row[f"{target}_{statistic}"] = float(summary.member_statistics[target][statistic][member])
             member_rows.append(row)
         for target in targets:
-            for statistic in STATISTICS:
+            for statistic in statistics:
                 values = summary.member_statistics[target][statistic]
-                score, median, p05, p95 = response_score(values)
+                score_record = response_score_record(values)
                 score_rows.append(
                     {
                         "parameter": summary.parameter,
                         "target": target,
                         "statistic": statistic,
-                        "score_percent": score,
+                        **score_record,
                         "rank": 0,
-                        "median": median,
-                        "p05": p05,
-                        "p95": p95,
                         "units": UNITS[target],
+                        "endpoint_definition": endpoint_definition(target),
+                        "model_coverage": TRANSIENT_COVERAGE,
+                        "score_denominator": "absolute ensemble median",
+                        "rank_scope": f"within endpoint={target} and statistic={statistic} across declared parameters",
                     }
                 )
                 bins = equal_count_bins(summary.normalized_parameter, values)
@@ -636,6 +881,9 @@ def build_rows(summaries: list[CaseSummary], targets: tuple[str, ...]) -> tuple[
                             "parameter_value": float(summary.parameter_values[member]),
                             "normalized_parameter": float(summary.normalized_parameter[member]),
                             "response": float(values[member]),
+                            "units": UNITS[target],
+                            "endpoint_definition": endpoint_definition(target),
+                            "model_coverage": TRANSIENT_COVERAGE,
                             "bin_count": "",
                             "bin_x_min": "",
                             "bin_x_max": "",
@@ -653,18 +901,182 @@ def build_rows(summaries: list[CaseSummary], targets: tuple[str, ...]) -> tuple[
                             "parameter_value": "",
                             "normalized_parameter": item["x_median"],
                             "response": item["response_median"],
+                            "units": UNITS[target],
+                            "endpoint_definition": endpoint_definition(target),
+                            "model_coverage": TRANSIENT_COVERAGE,
                             "bin_count": item["count"],
                             "bin_x_min": item["x_min"],
                             "bin_x_max": item["x_max"],
                         }
                     )
     for target in targets:
-        for statistic in STATISTICS:
+        for statistic in statistics:
             selected = [row for row in score_rows if row["target"] == target and row["statistic"] == statistic]
+            selected = [row for row in selected if row["supported"]]
             selected.sort(key=lambda row: (-float(row["score_percent"]), str(row["parameter"])))
             for rank, row in enumerate(selected, start=1):
                 row["rank"] = rank
     return parameter_rows, member_rows, score_rows, curve_rows
+
+
+def atlas_layout(parameter_count: int) -> tuple[int, int, tuple[float, float]]:
+    if parameter_count < 1 or parameter_count > 36:
+        raise ValueError("atlas layout requires between 1 and 36 parameters")
+    columns = min(5, max(1, int(np.ceil(np.sqrt(parameter_count)))))
+    rows = int(np.ceil(parameter_count / columns))
+    return rows, columns, (3.75 * columns, 3.2 * rows + 1.0)
+
+
+def build_spinup_rows(
+    summaries: list[CaseSummary],
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]], list[dict[str, Any]]]:
+    member_rows: list[dict[str, Any]] = []
+    score_rows: list[dict[str, Any]] = []
+    curve_rows: list[dict[str, Any]] = []
+    for summary in summaries:
+        if set(summary.spinup_metrics) != set(SPINUP_COMPONENTS):
+            raise ValueError(f"missing spinup metrics for {summary.parameter}")
+        member_bins = np.empty(100, dtype=int)
+        sorted_groups = np.array_split(np.argsort(summary.normalized_parameter, kind="stable"), 10)
+        for bin_index, indices in enumerate(sorted_groups, start=1):
+            member_bins[indices] = bin_index
+        for member in range(100):
+            member_rows.append({
+                "parameter": summary.parameter,
+                "member": member + 1,
+                "parameter_value": float(summary.parameter_values[member]),
+                "normalized_parameter": float(summary.normalized_parameter[member]),
+                "endpoint_definitions": json.dumps(
+                    {target: spinup_endpoint_definition(target) for target in SPINUP_COMPONENTS}, sort_keys=True
+                ),
+                "endpoint_units": json.dumps(SPINUP_UNITS, sort_keys=True),
+                "model_coverage": SPINUP_COVERAGE,
+                **{target: float(summary.spinup_metrics[target][member]) for target in SPINUP_COMPONENTS},
+            })
+        for target in SPINUP_COMPONENTS:
+            values = summary.spinup_metrics[target]
+            score_record = response_score_record(values)
+            score_rows.append({
+                "parameter": summary.parameter,
+                "target": target,
+                "statistic": "spinup_state",
+                **score_record,
+                "rank": 0,
+                "units": SPINUP_UNITS[target],
+                "endpoint_definition": spinup_endpoint_definition(target),
+                "model_coverage": SPINUP_COVERAGE,
+                "score_denominator": "absolute ensemble median",
+                "rank_scope": f"within final-spinup endpoint={target} across declared parameters",
+            })
+            for member in range(100):
+                curve_rows.append({
+                    "parameter": summary.parameter,
+                    "target": target,
+                    "point_type": "member",
+                    "member": member + 1,
+                    "bin": int(member_bins[member]),
+                    "parameter_value": float(summary.parameter_values[member]),
+                    "normalized_parameter": float(summary.normalized_parameter[member]),
+                    "response": float(values[member]),
+                    "units": SPINUP_UNITS[target],
+                    "endpoint_definition": spinup_endpoint_definition(target),
+                    "model_coverage": SPINUP_COVERAGE,
+                    "bin_count": "",
+                    "bin_x_min": "",
+                    "bin_x_max": "",
+                })
+            for item in equal_count_bins(summary.normalized_parameter, values):
+                curve_rows.append({
+                    "parameter": summary.parameter,
+                    "target": target,
+                    "point_type": "bin_median",
+                    "member": "",
+                    "bin": item["bin"],
+                    "parameter_value": "",
+                    "normalized_parameter": item["x_median"],
+                    "response": item["response_median"],
+                    "units": SPINUP_UNITS[target],
+                    "endpoint_definition": spinup_endpoint_definition(target),
+                    "model_coverage": SPINUP_COVERAGE,
+                    "bin_count": item["count"],
+                    "bin_x_min": item["x_min"],
+                    "bin_x_max": item["x_max"],
+                })
+    for target in SPINUP_COMPONENTS:
+        selected = [row for row in score_rows if row["target"] == target]
+        selected = [row for row in selected if row["supported"]]
+        selected.sort(key=lambda row: (-float(row["score_percent"]), str(row["parameter"])))
+        for rank, row in enumerate(selected, start=1):
+            row["rank"] = rank
+    return member_rows, score_rows, curve_rows
+
+
+def plot_spinup_atlases(output: Path, summaries: list[CaseSummary], site: str) -> list[Path]:
+    paths: list[Path] = []
+    rows, columns, size = atlas_layout(len(summaries))
+    for target in SPINUP_COMPONENTS:
+        figure, axes = plt.subplots(rows, columns, figsize=size, squeeze=False)
+        for axis, summary in zip(axes.flat, summaries):
+            values = summary.spinup_metrics[target]
+            axis.scatter(summary.normalized_parameter, values, s=9, alpha=0.25, color="tab:blue")
+            bins = equal_count_bins(summary.normalized_parameter, values)
+            axis.plot(
+                [item["x_median"] for item in bins],
+                [item["response_median"] for item in bins],
+                "o-", color="black", lw=1.2, ms=3,
+            )
+            if summary.native_value is not None:
+                native_x = normalize_parameter(
+                    np.asarray([summary.native_value]), summary.pmin, summary.pmax, summary.coordinate
+                )[0]
+                axis.axvline(native_x, color="tab:red", ls="--", lw=0.9)
+            axis.set(
+                title=summary.parameter,
+                xlim=(-0.03, 1.03),
+                xlabel=f"normalized {summary.coordinate}",
+                ylabel=SPINUP_UNITS[target],
+            )
+        for axis in axes.flat[len(summaries):]:
+            axis.set_visible(False)
+        figure.suptitle(f"{site} final spinup {target} OAT responses")
+        figure.tight_layout(rect=(0, 0, 1, 0.97))
+        path = output / f"{site}_{target}_spinup_response_atlas.png"
+        figure.savefig(path, dpi=150)
+        plt.close(figure)
+        paths.append(path)
+    return paths
+
+
+def plot_spinup_heatmap(
+    output: Path,
+    score_rows: list[dict[str, Any]],
+    site: str,
+    parameters: tuple[str, ...],
+) -> Path:
+    targets = tuple(SPINUP_COMPONENTS)
+    lookup = {(row["parameter"], row["target"]): row for row in score_rows}
+    matrix = np.asarray([
+        [float(lookup[(parameter, target)]["score_percent"]) if lookup[(parameter, target)]["supported"] else np.nan
+         for target in targets]
+        for parameter in parameters
+    ])
+    figure, axis = plt.subplots(figsize=(10, 10))
+    image = axis.imshow(matrix, aspect="auto", cmap="viridis")
+    axis.set_xticks(range(len(targets)), list(targets), rotation=30, ha="right")
+    axis.set_yticks(range(len(parameters)), parameters)
+    for row_index, parameter in enumerate(parameters):
+        for column_index, target in enumerate(targets):
+            row = lookup[(parameter, target)]
+            color = "white" if matrix[row_index, column_index] > np.nanmedian(matrix) else "black"
+            label = f"{float(row['score_percent']):.1f}\n#{row['rank']}" if row["supported"] else "NA"
+            axis.text(column_index, row_index, label, ha="center", va="center", fontsize=6, color=color)
+    axis.set_title(f"{site} final-spinup OAT response spread")
+    figure.colorbar(image, ax=axis, label="response spread (%)")
+    figure.tight_layout()
+    path = output / f"{site}_spinup_state_sensitivity_heatmap.png"
+    figure.savefig(path, dpi=150)
+    plt.close(figure)
+    return path
 
 
 def plot_response_atlases(
@@ -673,12 +1085,14 @@ def plot_response_atlases(
     targets: tuple[str, ...],
     observation_rows: list[dict[str, Any]],
     site: str,
+    statistics: tuple[str, ...] = STATISTICS,
 ) -> list[Path]:
     paths: list[Path] = []
     observation_lookup = {row["variable"]: row for row in observation_rows}
     for target in targets:
-        for statistic in STATISTICS:
-            figure, axes = plt.subplots(4, 4, figsize=(15, 13), squeeze=False)
+        for statistic in statistics:
+            rows, columns, size = atlas_layout(len(summaries))
+            figure, axes = plt.subplots(rows, columns, figsize=size, squeeze=False)
             for axis, summary in zip(axes.flat, summaries):
                 x = summary.normalized_parameter
                 y = summary.member_statistics[target][statistic]
@@ -712,11 +1126,17 @@ def plot_heatmaps(
     targets: tuple[str, ...],
     site: str,
     parameters: tuple[str, ...],
+    statistics: tuple[str, ...] = STATISTICS,
+    filename_prefix: str = "",
 ) -> list[Path]:
     paths: list[Path] = []
-    for statistic in STATISTICS:
+    for statistic in statistics:
         lookup = {(row["parameter"], row["target"]): row for row in score_rows if row["statistic"] == statistic}
-        matrix = np.asarray([[lookup[(parameter, target)]["score_percent"] for target in targets] for parameter in parameters])
+        matrix = np.asarray([
+            [float(lookup[(parameter, target)]["score_percent"]) if lookup[(parameter, target)]["supported"] else np.nan
+             for target in targets]
+            for parameter in parameters
+        ])
         figure, axis = plt.subplots(figsize=(18, 10))
         image = axis.imshow(matrix, aspect="auto", cmap="viridis")
         axis.set_xticks(range(len(targets)), [DISPLAY_NAMES.get(item, item) for item in targets], rotation=45, ha="right")
@@ -725,11 +1145,13 @@ def plot_heatmaps(
             for column_index, target in enumerate(targets):
                 row = lookup[(parameter, target)]
                 color = "white" if matrix[row_index, column_index] > np.nanmedian(matrix) else "black"
-                axis.text(column_index, row_index, f"{row['score_percent']:.1f}\n#{row['rank']}", ha="center", va="center", fontsize=6, color=color)
+                label = f"{float(row['score_percent']):.1f}\n#{row['rank']}" if row["supported"] else "NA"
+                axis.text(column_index, row_index, label, ha="center", va="center", fontsize=6, color=color)
         axis.set_title(f"{site} OAT response spread: {statistic.replace('_', ' ')}")
         figure.colorbar(image, ax=axis, label="response spread (%)")
         figure.tight_layout()
-        path = output / f"{site}_{statistic}_sensitivity_heatmap.png"
+        prefix = f"{filename_prefix}_" if filename_prefix else ""
+        path = output / f"{site}_{prefix}{statistic}_sensitivity_heatmap.png"
         figure.savefig(path, dpi=150)
         plt.close(figure)
         paths.append(path)
@@ -804,9 +1226,19 @@ def build_specialized_rows(
         for pathway, pools in summary.hr_pathway_totals.items():
             for pool, values in pools.items():
                 for member, value in enumerate(values, start=1):
-                    hr_metrics.append({"parameter": summary.parameter, "member": member, "pathway": pathway, "pool": pool, "accumulated_gC_m2": float(value)})
+                    hr_metrics.append({
+                        "parameter": summary.parameter, "member": member, "pathway": pathway,
+                        "pool": pool, "accumulated_gC_m2": float(value), "units": "gC m-2",
+                        "endpoint_definition": "sum over hourly pool_C * K_pool * limiter * 3600 seconds; limiter=1 for potential",
+                        "model_coverage": TRANSIENT_COVERAGE,
+                    })
             for item in equal_count_bins(summary.normalized_parameter, pools["TOTAL"]):
-                hr_curves.append({"parameter": summary.parameter, "pathway": pathway, **item})
+                hr_curves.append({
+                    "parameter": summary.parameter, "pathway": pathway, **item,
+                    "units": "gC m-2",
+                    "endpoint_definition": "TOTAL across the eight declared decomposition pools",
+                    "model_coverage": TRANSIENT_COVERAGE,
+                })
         for label, values in summary.litter_ratio_members.items():
             support = summary.litter_ratio_support[label]
             for member, value in enumerate(values, start=1):
@@ -839,8 +1271,8 @@ def expected_artifact_counts(interfaces: dict[str, Any], parameter_count: int) -
     counts = {
         "parameter_metadata.csv": parameter_count,
         "member_metrics.csv": parameter_count * 100,
-        "sensitivity_scores.csv": parameter_count * len(interfaces["targets"]) * len(STATISTICS),
-        "response_curves.csv": parameter_count * len(interfaces["targets"]) * len(STATISTICS) * 110,
+        "sensitivity_scores.csv": parameter_count * len(interfaces["targets"]) * len(interfaces["statistics"]),
+        "response_curves.csv": parameter_count * len(interfaces["targets"]) * len(interfaces["statistics"]) * 110,
     }
     if interfaces["observations"]:
         counts["observation_summary.csv"] = len(interfaces["observations"])
@@ -852,13 +1284,18 @@ def expected_artifact_counts(interfaces: dict[str, Any], parameter_count: int) -
         counts["litter_ratio_member_metrics.csv"] = parameter_count * 100 * ratios
         counts["litter_ratio_timeseries.csv"] = parameter_count * EXPECTED_HOURS * ratios
         counts["litter_ratio_curves.csv"] = parameter_count * 10 * ratios
+    if interfaces["restart_mappings"]:
+        counts["spinup_member_metrics.csv"] = parameter_count * 100
+        counts["spinup_sensitivity_scores.csv"] = parameter_count * len(SPINUP_COMPONENTS)
+        counts["spinup_response_curves.csv"] = parameter_count * len(SPINUP_COMPONENTS) * 110
     return counts
 
 
 def plot_hr_pathways(output: Path, summaries: list[CaseSummary], site: str) -> list[Path]:
     if not summaries or not summaries[0].hr_pathway_totals:
         return []
-    figure, axes = plt.subplots(4, 4, figsize=(15, 13), squeeze=False)
+    rows, columns, size = atlas_layout(len(summaries))
+    figure, axes = plt.subplots(rows, columns, figsize=size, squeeze=False)
     colors = {"potential": "tab:orange", "n_limited": "tab:blue", "p_limited": "tab:green"}
     for axis, summary in zip(axes.flat, summaries):
         for pathway, pools in summary.hr_pathway_totals.items():
@@ -883,7 +1320,8 @@ def plot_litter_ratios(output: Path, summaries: list[CaseSummary], taxis: np.nda
         return []
     paths: list[Path] = []
     for label in summaries[0].litter_ratio_members:
-        figure, axes = plt.subplots(4, 4, figsize=(15, 13), squeeze=False)
+        rows, columns, size = atlas_layout(len(summaries))
+        figure, axes = plt.subplots(rows, columns, figsize=size, squeeze=False)
         for axis, summary in zip(axes.flat, summaries):
             stats = summary.litter_ratio_timeseries[label]
             axis.plot(taxis, stats["mean"], color="tab:blue", lw=0.5)
@@ -897,7 +1335,8 @@ def plot_litter_ratios(output: Path, summaries: list[CaseSummary], taxis: np.nda
         figure.savefig(path, dpi=150)
         plt.close(figure)
         paths.append(path)
-        figure, axes = plt.subplots(4, 4, figsize=(15, 13), squeeze=False)
+        rows, columns, size = atlas_layout(len(summaries))
+        figure, axes = plt.subplots(rows, columns, figsize=size, squeeze=False)
         for axis, summary in zip(axes.flat, summaries):
             values = summary.litter_ratio_members[label]
             axis.scatter(summary.normalized_parameter, values, s=9, alpha=0.25)
@@ -1007,6 +1446,10 @@ def fixture_checks(parameters: tuple[str, ...]) -> dict[str, Any]:
         "response_curves.csv": len(parameters) * 220,
     }:
         raise AssertionError("dynamic optional-family artifact fixture failed")
+    if plot_compensation(Path("."), [], minimal_interfaces["compensation"], "TEST"):
+        raise AssertionError("omitted compensation fixture generated figures")
+    if len(parameters) == 21 and atlas_layout(len(parameters))[:2] != (5, 5):
+        raise AssertionError("21-parameter dynamic atlas fixture failed")
     return {
         "status": "pass",
         "orientation": "time_x_member",
@@ -1021,6 +1464,8 @@ def fixture_checks(parameters: tuple[str, ...]) -> dict[str, Any]:
         "exact_hr_pool_count": 8,
         "litter_ratios": "hourly_mask_population_spread_and_flux_weighted_totals_with_explicit_member_gaps",
         "optional_families": "independently_disableable",
+        "omitted_compensation": "no_tables_or_figures",
+        "atlas_layout": list(atlas_layout(len(parameters))[:2]),
     }
 
 
@@ -1212,6 +1657,7 @@ def manifest_contract(
         "log_parameters": sorted(log_parameters),
         "parameters": list(mappings),
         "targets": list(interfaces["targets"]),
+        "statistics": list(interfaces["statistics"]),
         "observations": [list(item) for item in interfaces["observations"]],
         "observation_sha256": {row["variable"]: row["sha256"] for row in observation_rows},
         "compensation": [list(item) for item in interfaces["compensation"]],
@@ -1220,6 +1666,16 @@ def manifest_contract(
         "hr_p_limiter": interfaces["hr_p_limiter"],
         "litter_ratios": [list(item) for item in interfaces["litter_ratios"]],
         "litter_ratio_support_contract": "retain_all_members; blank_ratio_for_unsupported_total; record_supported_and_rejection_reason; omit_invalid_plot_points",
+        "restart_root": None if interfaces["restart_root"] is None else str(interfaces["restart_root"]),
+        "parameter_restarts": interfaces["restart_mappings"],
+        "config_dir": None if interfaces["config_dir"] is None else str(interfaces["config_dir"]),
+        "parameter_dir": None if interfaces["parameter_dir"] is None else str(interfaces["parameter_dir"]),
+        "parameter_configs": interfaces["config_mappings"],
+        "parameter_files": interfaces["parameter_file_mappings"],
+        "spinup_components": {target: list(components) for target, components in SPINUP_COMPONENTS.items()},
+        "spinup_units": SPINUP_UNITS,
+        "spinup_scalar_definition": "sum numpy.nansum(component[:]) across the eight declared vertical components",
+        "score_support_contract": "finite complete 100-member ensemble and nonzero ensemble median; otherwise explicit unsupported reason",
         "required_raw_variables": list(required_raw_variables(interfaces)),
         "regression_results": None if args.regression_results is None else str(args.regression_results),
         "expected_hours": EXPECTED_HOURS,
@@ -1241,6 +1697,31 @@ def validate_all(
         raise ValueError("--pickle-dir must be an existing absolute directory")
     if not args.control_paramfile.is_absolute() or not args.control_paramfile.is_file():
         raise ValueError("--control-paramfile must be an existing absolute file")
+    if interfaces["restart_root"] is not None:
+        restart_root = interfaces["restart_root"]
+        if not restart_root.is_dir():
+            raise ValueError("--restart-root must be an existing absolute directory")
+        observed_cases = {path.name for path in restart_root.iterdir() if path.is_dir()}
+        expected_cases = set(interfaces["restart_mappings"].values())
+        if observed_cases != expected_cases:
+            raise ValueError(
+                "restart root must contain exactly the mapped cases; "
+                f"missing={sorted(expected_cases - observed_cases)} extra={sorted(observed_cases - expected_cases)}"
+            )
+    if interfaces["config_dir"] is not None:
+        for root, mapped, label in (
+            (interfaces["config_dir"], interfaces["config_mappings"], "config"),
+            (interfaces["parameter_dir"], interfaces["parameter_file_mappings"], "parameter file"),
+        ):
+            if not root.is_dir():
+                raise ValueError(f"{label} root must be an existing absolute directory: {root}")
+            observed = {path.name for path in root.iterdir() if path.is_file()}
+            expected = set(mapped.values())
+            if observed != expected:
+                raise ValueError(
+                    f"{label} root must contain exactly the mapped files; "
+                    f"missing={sorted(expected - observed)} extra={sorted(observed - expected)}"
+                )
     expected_basenames = set(mappings.values())
     observed_basenames = {path.name for path in args.pickle_dir.glob("*.pkl") if path.is_file()}
     if observed_basenames != expected_basenames:
@@ -1259,7 +1740,17 @@ def validate_all(
     tool_hash = digest(Path(__file__).resolve())
     pickle_hashes: dict[str, str] = {}
     if expected_manifest is not None:
-        for field in ("schema", "site", "pickle_dir", "control_paramfile", "parameter_pickles", "log_parameters", "parameters", "targets", "observations", "observation_sha256", "compensation", "hr_pools", "hr_n_limiter", "hr_p_limiter", "litter_ratios", "litter_ratio_support_contract", "required_raw_variables", "regression_results", "regression_sha256", "expected_hours", "year_range", "member_count_per_parameter", "score"):
+        for field in (
+            "schema", "site", "pickle_dir", "control_paramfile", "parameter_pickles",
+            "log_parameters", "parameters", "targets", "statistics", "observations",
+            "observation_sha256", "compensation", "hr_pools", "hr_n_limiter",
+            "hr_p_limiter", "litter_ratios", "litter_ratio_support_contract",
+            "restart_root", "parameter_restarts", "config_dir", "parameter_dir",
+            "parameter_configs", "parameter_files", "spinup_components", "spinup_units",
+            "spinup_scalar_definition", "score_support_contract", "required_raw_variables",
+            "regression_results", "regression_sha256", "expected_hours", "year_range",
+            "member_count_per_parameter", "score",
+        ):
             if expected_manifest.get(field) != contract[field]:
                 raise ValueError(f"validated manifest field changed: {field}")
         if expected_manifest.get("status") != "pass":
@@ -1292,10 +1783,52 @@ def validate_all(
                 interfaces,
                 args.site,
             )
+            if interfaces["restart_mappings"]:
+                summary = load_spinup_state(
+                    summary,
+                    interfaces["restart_root"],
+                    interfaces["restart_mappings"][parameter],
+                )
+            if interfaces["config_mappings"]:
+                config_path = interfaces["config_dir"] / interfaces["config_mappings"][parameter]
+                parameter_path = interfaces["parameter_dir"] / interfaces["parameter_file_mappings"][parameter]
+                config_text = config_path.read_text()
+                if re.search(r"^use_vertsoilc\s*=\s*\.true\.\s*$", config_text, re.MULTILINE) is None:
+                    raise ValueError(f"vertical soil carbon is not active in {config_path}")
+                if interfaces["parameter_file_mappings"][parameter] not in config_text:
+                    raise ValueError(f"config does not bind the mapped parameter file: {config_path}")
+                records = [line.split() for line in parameter_path.read_text().splitlines() if line.strip() and not line.lstrip().startswith("#")]
+                if len(records) != 1 or len(records[0]) < 4:
+                    raise ValueError(f"parameter file must contain one four-field declaration: {parameter_path}")
+                declared_name, declared_selector, declared_min, declared_max = records[0][:4]
+                if declared_name != parameter:
+                    raise ValueError(f"parameter name differs from pickle: {parameter_path}")
+                if not np.allclose(
+                    [float(declared_min), float(declared_max)], [summary.pmin, summary.pmax],
+                    rtol=0.0, atol=max(abs(summary.pmin), abs(summary.pmax), 1.0) * 1e-12,
+                ):
+                    raise ValueError(f"parameter bounds differ from pickle: {parameter_path}")
+                summary.metadata["provenance"] = {
+                    "config_path": str(config_path), "config_sha256": digest(config_path),
+                    "parameter_file_path": str(parameter_path), "parameter_file_sha256": digest(parameter_path),
+                    "parameter_file_second_field": int(declared_selector),
+                    "declared_pmin": float(declared_min), "declared_pmax": float(declared_max),
+                }
             if reference_taxis is None:
                 reference_taxis = taxis.copy()
             summaries.append(summary)
             print(f"validated parameter={parameter}", flush=True)
+    restart_cases = {
+        summary.parameter: summary.spinup_metadata for summary in summaries if summary.spinup_metadata
+    }
+    provenance_identity = {
+        summary.parameter: summary.metadata.get("provenance", {}) for summary in summaries
+    }
+    if expected_manifest is not None:
+        if expected_manifest.get("restart_cases") != restart_cases:
+            raise ValueError("restart file identity or component support differs from validated manifest")
+        if expected_manifest.get("provenance_sha256") != provenance_identity:
+            raise ValueError("config or parameter provenance differs from validated manifest")
     manifest = {
         **contract,
         "status": "pass",
@@ -1306,6 +1839,8 @@ def validate_all(
         "regression_sha256": regression_hashes,
         "pickle_sha256": pickle_hashes,
         "cases": {summary.parameter: summary.metadata for summary in summaries},
+        "restart_cases": restart_cases,
+        "provenance_sha256": provenance_identity,
         "native_parameter_markers": {
             summary.parameter: {"status": summary.native_status, "value": summary.native_value}
             for summary in summaries
@@ -1366,11 +1901,21 @@ def run_diagnostic(args: argparse.Namespace, mappings: dict[str, str], log_param
     if staging.exists():
         raise FileExistsError(f"staging directory already exists: {staging}")
     staging.mkdir(parents=True)
-    parameter_rows, member_rows, score_rows, curve_rows = build_rows(summaries, interfaces["targets"])
+    parameter_rows, member_rows, score_rows, curve_rows = build_rows(
+        summaries, interfaces["targets"], interfaces["statistics"]
+    )
     write_csv(staging / "parameter_metadata.csv", list(parameter_rows[0]), parameter_rows)
     write_csv(staging / "member_metrics.csv", list(member_rows[0]), member_rows)
     write_csv(staging / "sensitivity_scores.csv", list(score_rows[0]), score_rows)
     write_csv(staging / "response_curves.csv", list(curve_rows[0]), curve_rows)
+    spinup_member_rows: list[dict[str, Any]] = []
+    spinup_score_rows: list[dict[str, Any]] = []
+    spinup_curve_rows: list[dict[str, Any]] = []
+    if interfaces["restart_mappings"]:
+        spinup_member_rows, spinup_score_rows, spinup_curve_rows = build_spinup_rows(summaries)
+        write_csv(staging / "spinup_member_metrics.csv", list(spinup_member_rows[0]), spinup_member_rows)
+        write_csv(staging / "spinup_sensitivity_scores.csv", list(spinup_score_rows[0]), spinup_score_rows)
+        write_csv(staging / "spinup_response_curves.csv", list(spinup_curve_rows[0]), spinup_curve_rows)
     if observation_rows:
         write_csv(staging / "observation_summary.csv", list(observation_rows[0]), observation_rows)
     hr_metrics, hr_curves, litter_members, litter_timeseries, litter_curves = build_specialized_rows(summaries, taxis)
@@ -1382,15 +1927,26 @@ def run_diagnostic(args: argparse.Namespace, mappings: dict[str, str], log_param
         write_csv(staging / "litter_ratio_timeseries.csv", list(litter_timeseries[0]), litter_timeseries)
         write_csv(staging / "litter_ratio_curves.csv", list(litter_curves[0]), litter_curves)
     figures = [
-        *plot_response_atlases(staging, summaries, interfaces["targets"], observation_rows, args.site),
-        *plot_heatmaps(staging, score_rows, interfaces["targets"], args.site, tuple(mappings)),
+        *plot_response_atlases(
+            staging, summaries, interfaces["targets"], observation_rows, args.site,
+            interfaces["statistics"],
+        ),
+        *plot_heatmaps(
+            staging, score_rows, interfaces["targets"], args.site, tuple(mappings),
+            interfaces["statistics"],
+        ),
         *plot_compensation(staging, summaries, interfaces["compensation"], args.site),
         *plot_hr_pathways(staging, summaries, args.site),
         *plot_litter_ratios(staging, summaries, taxis, args.site),
+        *(plot_spinup_atlases(staging, summaries, args.site) if interfaces["restart_mappings"] else []),
+        *([plot_spinup_heatmap(staging, spinup_score_rows, args.site, tuple(mappings))]
+          if interfaces["restart_mappings"] else []),
     ]
     expected_figure_count = (
-        2 * len(interfaces["targets"]) + 2 + len(interfaces["compensation"])
+        len(interfaces["statistics"]) * len(interfaces["targets"])
+        + len(interfaces["statistics"]) + len(interfaces["compensation"])
         + (1 if interfaces["hr_pools"] else 0) + 2 * len(interfaces["litter_ratios"])
+        + (len(SPINUP_COMPONENTS) + 1 if interfaces["restart_mappings"] else 0)
     )
     if len(figures) != expected_figure_count:
         raise RuntimeError(f"expected {expected_figure_count} figures, generated {len(figures)}")
@@ -1418,6 +1974,7 @@ def run_diagnostic(args: argparse.Namespace, mappings: dict[str, str], log_param
         "figure_count": expected_figure_count,
         "artifacts": artifacts,
         "compensation_normalization": "100 * (response - ensemble median) / abs(ensemble median)",
+        "spinup_scalar_definition": current_manifest["spinup_scalar_definition"],
     }
     atomic_json(staging / "output_manifest.json", output_manifest)
     os.replace(staging, args.output)
@@ -1436,12 +1993,19 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--log-parameters", required=True)
     parser.add_argument("--control-paramfile", required=True, type=Path)
     parser.add_argument("--target", action="append", default=[])
+    parser.add_argument("--statistic", action="append", default=[])
     parser.add_argument("--observation", action="append", default=[])
     parser.add_argument("--compensation", action="append", default=[])
     parser.add_argument("--hr-pool", action="append", default=[])
     parser.add_argument("--hr-n-limiter")
     parser.add_argument("--hr-p-limiter")
     parser.add_argument("--litter-ratio", action="append", default=[])
+    parser.add_argument("--restart-root", type=Path)
+    parser.add_argument("--parameter-restart", action="append", default=[])
+    parser.add_argument("--config-dir", type=Path)
+    parser.add_argument("--parameter-dir", type=Path)
+    parser.add_argument("--parameter-config", action="append", default=[])
+    parser.add_argument("--parameter-file", action="append", default=[])
     parser.add_argument("--regression-results", type=Path)
     parser.add_argument("--output", required=True, type=Path)
     mode = parser.add_mutually_exclusive_group(required=True)
