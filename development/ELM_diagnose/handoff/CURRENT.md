@@ -4,13 +4,13 @@
 
 - Active iteration: none
 - Most recent closed iteration: `iter010`
-- Proposed iteration: none
-- Status: `workflow_complete`
-- Phase: `closed`
+- Proposed iteration: `iter011`
+- Status: `pre_kickoff`
+- Phase: `planning`
 - Active job scope: none; Iter010 jobs `24025653` and `24025871` are terminally accounted `COMPLETED 0:0`.
 - Active monitoring: none.
 - Site profile: `development/hpc/puma.md`
-- Last updated: `2026-09-27T19:45:24-07:00`
+- Last updated: `2026-10-04T22:13:11-07:00`
 
 ## Iter010 Closeout Snapshot
 
@@ -20,93 +20,88 @@
 - Decision: accept the technically valid partial-boundary diagnostic, but do not claim carbon-input constraint or equilibrium because `HR + delta_C` systematically exceeds declared `LITFALL` by about 151 gC m-2.
 - Records: `iterations/iter010.md`, `summaries/iter010/ITER010_RESULT.md`, `ITERATION_SUMMARY.md`, and the Iter010 registry row.
 
-## Closed Iteration Identity and Decision
+## Planning Authority and Next Action
 
-- Iteration ID: `iter009`
-- Work type: `implementation`
-- Objective: Amend the Iter008 N/P-stress diagnostic by separating mean and temporal-variability figures, restoring observed SR context, and adding pool-C and realized pool-HR-per-C responses.
-- Bounded scope: four exact ABBY vertical-soil-carbon C:N pickles; 400 members; 47 metrics; 74 response endpoints per parameter; 37,812 CSV rows; 17 figures; baseline-conditioned descriptive OAT only.
-- Overall acceptance result: `pass`.
-- Decision: Accepted the validated amendment. Pool stocks and realized respiration per pool C can respond differently to the separate C:N perturbations; especially, the `cn_s1` sampled-parameter-bin contrast increases SOIL1C by `53.01%` while SOIL1 HR is nearly unchanged and SOIL1 HR/C falls `34.99%`.
-- Closeout branch: one authorized scoped commit; no push.
+- The user approved the finalized Iter011 planning-only proposal, the exact output root, three retries after the initial attempt for each of preflight and diagnostic, and one scoped closeout commit with no push.
+- Current authority is limited to recording this plan and making the scoped planning commit. It does not authorize Iter011 initialization, implementation, repository Python, output creation, review launch, scheduler operations, retries, cancellation, publication, runtime closeout, or another commit.
+- Next action: present one complete consolidated Iter011 kickoff package and runtime contract, including the exact outside-sandbox authority question required by `WORKFLOW.md`, then await fresh explicit approval.
 
-## Authoritative Evidence
+## Proposed Iter011 Plan (Planning Only)
 
-- Full report: `development/ELM_diagnose/iterations/iter009.md`.
-- Compact result: `development/ELM_diagnose/summaries/iter009/ITER009_RESULT.md`.
-- Published output: `/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/diagnostic/elm_diagnose_iter009_abby_ctrlvertc_cn_pool_context/results`.
-- Input manifest SHA-256: `bb2836591c0857fb45a560cc1d7fdfb2d85053571394a85633f10855f982bf62`.
-- Validation receipt SHA-256: `04bb75cefee96589f4b3d4b452633865dc6de92352b7dc6f9e9a7d08c58fe0bd`.
-- Output manifest SHA-256: `afa885d5642b7cd886e5dfc05afd2575c803e91250c040604d23333fa5b95aae`.
-- Execution: preflight `24019322` and diagnostic `24019366` completed `0:0` on attempt one; no retry or cancellation was used. Diagnostic stderr is empty and generator, artifact-validator, and atomic-publication markers pass.
-- Package: 4 parameter rows, 47 metric definitions, 400 member rows, 32,560 response rows, 4,800 supported-ratio rows, one observation row, 37,812 total CSV data rows, and exactly 17 PNGs.
-- Review: initial preparation review blocked unit/validator/fixture/record defects that were corrected before submission; focused preparation re-review, diagnostic launch review, final calculation/artifact review, and all-figure visual review passed.
-- Scientific result: lowest-to-highest sampled-parameter-bin matched soil-pool C/HR/HR-C changes are `+53.01%`/`-0.53%`/`-34.99%`, `-3.90%`/`-4.76%`/`-0.89%`, `-0.47%`/`-0.66%`/`-0.18%`, and `+3.56%`/`+4.64%`/`+1.04%` for `cn_s1`--`cn_s4`.
+### Identity, objective, and interpretation boundary
 
-## Risks and Next State
+- Sequential ID and work type: `iter011`, implementation.
+- Proposed run slug: `elm_diagnose_iter011_abby_ctrlvertc_oat_spinup`.
+- Site and configuration: standalone ABBY with vertical soil carbon active; no site or configuration comparison.
+- Objective: rank the baseline-conditioned responses of transient carbon fluxes and decomposer carbon storage, final spinup decomposer C/N/P states, and idealized potential/N/P-limited decomposition pathways across 21 separate ABBY one-parameter OAT ensembles.
+- Hypothesis: the expanded 21-parameter inventory will show distinct range-conditional controls on transient flux means and final spinup pool states, while the constructed pathway responses will distinguish potential decomposition from N- and P-limited realizations. Technical acceptance is independent of the hypothesis direction.
+- Interpretation boundary: results are range-dependent descriptive OAT responses conditioned on the baseline configuration and each declared one-parameter range. They are not PAWN, Sobol, joint/global sensitivity, interaction, mediation, causal limitation, optimization, tuning, parameter recommendations, exact thresholds, or evidence for cross-site/configuration differences.
 
-- Results are conditional on declared ranges and separate baseline-conditioned OAT ensembles. They establish neither interactions nor causal, global-sensitivity, prescribed-rate, optimization, parameter-recommendation, threshold, cross-site/configuration, or whole-ecosystem limitation conclusions.
-- The observation is contextual and covers 26,264/61,320 hours (`42.83%`). `/xdisk` is temporary and unbacked; allocation expiration remains unavailable to non-PI users.
-- Next state: the planning-only Iter010 proposal below is approved for documentation. Iter010 remains uninitialized; implementation and execution require a fresh consolidated kickoff package and explicit authority.
+### Exact diagnostic inputs, dependencies, and trust assumptions
 
-## Approved Iter010 Plan (Historical)
+- Consume exactly the following ordered mappings beneath `/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ctrlvertc_sensi/ABBY/pklfiles`; reject globs, discovery, duplicate parameters or basenames, path components in basenames, missing/extra top-level pickles, or substitutions:
+  - `act25:ABBY_ctrlvertcact25_I20TRCNPRDCTCBC.pkl`
+  - `br_mr:ABBY_ctrlvertcbrmr_I20TRCNPRDCTCBC.pkl`
+  - `cn_s1:ABBY_ctrlvertccns1_I20TRCNPRDCTCBC.pkl`
+  - `cn_s2:ABBY_ctrlvertccns2_I20TRCNPRDCTCBC.pkl`
+  - `cn_s3:ABBY_ctrlvertccns3_I20TRCNPRDCTCBC.pkl`
+  - `cn_s4:ABBY_ctrlvertccns4_I20TRCNPRDCTCBC.pkl`
+  - `decomp_depth_efolding:ABBY_ctrlvertcdepthefold_I20TRCNPRDCTCBC.pkl`
+  - `frootcn:ABBY_ctrlvertcfrootcn_I20TRCNPRDCTCBC.pkl`
+  - `grperc:ABBY_ctrlvertcgrperc_I20TRCNPRDCTCBC.pkl`
+  - `k_l1:ABBY_ctrlvertckl1_I20TRCNPRDCTCBC.pkl`
+  - `k_l2:ABBY_ctrlvertckl2_I20TRCNPRDCTCBC.pkl`
+  - `k_l3:ABBY_ctrlvertckl3_I20TRCNPRDCTCBC.pkl`
+  - `k_s1:ABBY_ctrlvertcks1_I20TRCNPRDCTCBC.pkl`
+  - `k_s2:ABBY_ctrlvertcks2_I20TRCNPRDCTCBC.pkl`
+  - `k_s3:ABBY_ctrlvertcks3_I20TRCNPRDCTCBC.pkl`
+  - `k_s4:ABBY_ctrlvertcks4_I20TRCNPRDCTCBC.pkl`
+  - `leafcn:ABBY_ctrlvertcleafcn_I20TRCNPRDCTCBC.pkl`
+  - `leaf_long:ABBY_ctrlvertcleaflong_I20TRCNPRDCTCBC.pkl`
+  - `lflitcn:ABBY_ctrlvertclflitcn_I20TRCNPRDCTCBC.pkl`
+  - `livewdcn:ABBY_ctrlvertclivewdcn_I20TRCNPRDCTCBC.pkl`
+  - `q10_mr:ABBY_ctrlvertcq10mr_I20TRCNPRDCTCBC.pkl`
+- Map those parameters in the same order to these exact restart case basenames beneath `/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ctrlvertc_sensi/ABBY/restart`: `ABBY_ctrlvertcact25_I1850CNPRDCTCBC`, `ABBY_ctrlvertcbrmr_I1850CNPRDCTCBC`, `ABBY_ctrlvertccns1_I1850CNPRDCTCBC`, `ABBY_ctrlvertccns2_I1850CNPRDCTCBC`, `ABBY_ctrlvertccns3_I1850CNPRDCTCBC`, `ABBY_ctrlvertccns4_I1850CNPRDCTCBC`, `ABBY_ctrlvertcdepthefold_I1850CNPRDCTCBC`, `ABBY_ctrlvertcfrootcn_I1850CNPRDCTCBC`, `ABBY_ctrlvertcgrperc_I1850CNPRDCTCBC`, `ABBY_ctrlvertckl1_I1850CNPRDCTCBC`, `ABBY_ctrlvertckl2_I1850CNPRDCTCBC`, `ABBY_ctrlvertckl3_I1850CNPRDCTCBC`, `ABBY_ctrlvertcks1_I1850CNPRDCTCBC`, `ABBY_ctrlvertcks2_I1850CNPRDCTCBC`, `ABBY_ctrlvertcks3_I1850CNPRDCTCBC`, `ABBY_ctrlvertcks4_I1850CNPRDCTCBC`, `ABBY_ctrlvertcleafcn_I1850CNPRDCTCBC`, `ABBY_ctrlvertcleaflong_I1850CNPRDCTCBC`, `ABBY_ctrlvertclflitcn_I1850CNPRDCTCBC`, `ABBY_ctrlvertclivewdcn_I1850CNPRDCTCBC`, and `ABBY_ctrlvertcq10mr_I1850CNPRDCTCBC`. Each must contain exactly `g00001`--`g00100/<case_basename>.elm.r.0201-01-01-00000.nc`. Do not infer or substitute cases from the shared root.
+- Require the matching 21 configs under `.../ABBY/config` and 21 parameter files under `.../NEON_ctrlvertc_sensi/params` as provenance cross-checks. The four added files declare `leafcn 30--40`, `frootcn 30--50`, `livewdcn 35--65`, and `lflitcn 50--90`. Pickle metadata remains authoritative for parameter identity, selector, bounds, samples, site, member count, years, output variables, and time axes; stale embedded Perlmutter paths are never dereferenced.
+- Use `/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ctrl_sensi/params/clm_params_c211124.nc` for native parameter markers and `SR:/xdisk/chopinsong/chopinsong/CTSM_inputdata/lnd/clm2/neon_ncar/NEON/eval_files/v4/ABBY/ABBY_cdo_merge.nc` for the contextual observed mean-SR line. Recompute all hashes at kickoff and preflight.
+- Planning-time read-only inspection found 21 pickles totaling 76,930,326,400 bytes, 21 restart case directories with 100 files each, and the same 24 lowercase vertical-pool variables in member one of every case family. Full content, hashes, dimensions, units, masks, finiteness, deserialization compatibility, and all-member parity remain compute-node preflight gates.
 
-### Identity, objective, and hypothesis
+### Reusable engine and locked calculations
 
-- Sequential ID: `iter010`.
-- Work type: `implementation`.
-- Proposed run slug: `elm_diagnose_iter010_abby_ctrlvertc_cn_carbon_balance`.
-- Site and configuration: standalone ABBY vertical-soil-carbon; no site or configuration comparison.
-- Objective: determine whether the weak historical HR responses to the separate `cn_s1`--`cn_s4` perturbations are associated with limited carbon input to the decomposition subsystem or with changing carbon storage in that subsystem.
-- Hypothesis: over 2018--2024, cumulative litterfall carbon input is balanced primarily by direct model HR, with a smaller contribution from the change in total decomposer-pool carbon. Technical acceptance is independent of whether this hypothesis is supported.
+- Extend `development/ELM_diagnose/tools/oat_sensitivity.py` backward-compatibly. Add no ABBY-, Iter011-, or inventory-specific defaults. Preserve historical interfaces and formulas when their prior arguments are supplied.
+- Replace the 16-parameter/fixed-4-by-4 plotting limit with a deterministic dynamic layout that accommodates 21 panels, expected to be 5 by 5. Apply it to every multi-parameter atlas used by Iter011.
+- Preserve 100 members per parameter, exactly 61,320 no-leap hourly samples for 2018--2024, log10 parameter coordinates only for `k_l1`--`k_l3` and `k_s1`--`k_s4`, linear coordinates for the other 14 parameters, ten deterministic equal-count parameter bins, member points, bin medians, and native markers where one finite native value resolves inside the sampled range.
+- Transient analysis uses arithmetic temporal means only; produce no temporal-standard-deviation rows, scores, heatmaps, or response figures. The five endpoints are direct `SR`, direct `HR`, direct `GPP`, direct `LITFALL`, and `DECOMP_C_TOTAL = CWDC + LITR1C + LITR2C + LITR3C + SOIL1C + SOIL2C + SOIL3C + SOIL4C`. Direct `HR` must be `case.output["HR"]`; never replace it with or cross-sum pool-specific HR outputs. The observed SR mean is a contextual horizontal line in the SR response atlas and never enters model statistics or scores.
+- Add an explicit restart interface binding every parameter to its exact restart case basename. For each member calculate final-spinup `DECOMP_C_TOTAL`, `DECOMP_N_TOTAL`, and `DECOMP_P_TOTAL` as the sum of the eight corresponding lowercase vertical arrays: `cwd{c,n,p}_vr`, `litr1{c,n,p}_vr`--`litr3{c,n,p}_vr`, and `soil1{c,n,p}_vr`--`soil4{c,n,p}_vr`.
+- Follow the repository spinup-surrogate scalar convention of summing restart components with masked-array-aware `numpy.nansum`, but harden support validation: require every exact lowercase component, expected dimensions/shapes and compatible units, at least one valid value per component, no unmasked NaN/Inf, exact member/file identity, and recorded masked/valid counts. Sum the stored layer pools directly; introduce no layer-thickness weighting or vegetation pools. A dimensional or unit contradiction stops rather than silently changing the formula.
+- For transient and spinup endpoints, retain the existing range-conditional screening score `100 * (P95 - P05) / abs(ensemble median)` and descending within-endpoint parameter rank. A nonfinite or zero denominator is an explicit unsupported score with reason, never zero. Produce exactly one transient-mean score/rank heatmap and one final-spinup score/rank heatmap.
+- Enable only the Iter005 decomposition-pathway family with eight mappings: `CWDC:K_CWD`, `LITR1C:K_LITR1`, `LITR2C:K_LITR2`, `LITR3C:K_LITR3`, `SOIL1C:K_SOIL1`, `SOIL2C:K_SOIL2`, `SOIL3C:K_SOIL3`, and `SOIL4C:K_SOIL4`; use `FPI` and `FPI_P` as the N and P limiters. Calculate potential pool decomposition as `pool_C * K_pool`, N-limited as `FPI * potential`, P-limited as `FPI_P * potential`, multiply hourly flux by 3600 seconds, then sum over pools and time. Require finite limiters in `[0,1]`.
+- Compensation and litter-ratio interfaces are omitted. Add regression coverage proving that absent compensation arguments produce no compensation plots or tables and do not affect other families. Constructed potential/N/P-limited pathways remain distinct from direct model `HR`.
 
-### Diagnostic inputs, dependencies, and trust boundary
+### Figures, machine-readable artifacts, and report
 
-- Consume exactly the four ordered explicit mappings beneath `/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ctrlvertc_sensi/ABBY/pklfiles`: `cn_s1:ABBY_ctrlvertccns1_I20TRCNPRDCTCBC.pkl`, `cn_s2:ABBY_ctrlvertccns2_I20TRCNPRDCTCBC.pkl`, `cn_s3:ABBY_ctrlvertccns3_I20TRCNPRDCTCBC.pkl`, and `cn_s4:ABBY_ctrlvertccns4_I20TRCNPRDCTCBC.pkl`. Do not discover or consume unrelated files.
-- Preserve the Iter009 linear ranges, 100 members per parameter, exact 61,320-hour 2018--2024 no-leap support, site/configuration provenance, four explicit config files, four explicit parameter files, control parameter NetCDF for native markers, and baseline-conditioned descriptive OAT interpretation. Recompute all identities and hashes at kickoff and preflight rather than trusting historical receipts.
-- Create a new reusable engine at `development/ELM_diagnose/tools/oat_carbon_balance.py`. Do not extend `oat_nutrient_diagnostics.py`: Iter010 is a carbon-balance analysis, not an N/P-stress analysis. Iter009 tools, scripts, manifests, results, and hashes remain immutable closed provenance.
-- Required raw outputs are direct `LITFALL`, direct `HR`, and the exact eight carbon pools `CWDC`, `LITR1C`, `LITR2C`, `LITR3C`, `SOIL1C`, `SOIL2C`, `SOIL3C`, and `SOIL4C`. Direct `HR` is the sole HR term; do not replace it with or cross-sum the pool-specific HR outputs.
-- Preflight must verify from declared model/configuration provenance that `LITFALL` is the intended external carbon-input variable for the eight-pool boundary and identify whether fire, harvest, leaching, or another external carbon transfer crosses that boundary. If the declared outputs cannot establish a complete boundary, retain technical reporting but label the result a partial balance and withhold the intended carbon-input-constraint conclusion.
+- Publish exactly 11 ABBY-labelled PNGs: five 21-panel transient-mean response atlases, three 21-panel final-spinup response atlases, one transient-mean sensitivity heatmap, one final-spinup sensitivity heatmap, and one 21-panel accumulated potential/N-limited/P-limited pathway atlas.
+- Publish the following primary CSV data rows: 21 parameter metadata; 2,100 transient member metrics; 105 transient sensitivity scores; 11,550 transient response-curve rows; one SR observation row; 2,100 spinup member metrics; 63 spinup sensitivity scores; 6,930 spinup response-curve rows; 56,700 pathway pool/member rows; and 630 pathway total-curve rows. The primary total is exactly 80,200 data rows excluding headers.
+- Tables must state endpoint definitions, units, parameter/member identity, model or observation coverage, score denominator/support, rank scope, restart component support, and explicit rejection reasons. Manifests record every mapped absolute source, hash, generated artifact, size, row count, and SHA-256.
+- Produce a compact result report covering inputs, methods, units, model and observation coverage, range-conditional rankings, response directions and nonlinearities, pathway comparisons, limitations, and unsupported quantities. Repository closeout records are `iterations/iter011.md`, `summaries/iter011/ITER011_RESULT.md`, one `ITERATION_SUMMARY.md` append, one `registry.csv` row, rebuilt `handoff/CURRENT.md`, and Iter011 execution material.
 
-### Calculations and figure contract
+### Bounded scope, work units, exclusions, and output policy
 
-- For each member, integrate daily-equivalent hourly fluxes over the full common window as `input_C = sum_t(LITFALL_t / 24)` and `HR_C = sum_t(HR_t / 24)`, both in `gC m-2`.
-- At each hour define total decomposer-pool carbon as `CWDC + LITR1C + LITR2C + LITR3C + SOIL1C + SOIL2C + SOIL3C + SOIL4C`. Define `delta_C = total_pool_C_end - total_pool_C_begin` in `gC m-2`, using the exact first and last common state samples and recording their timestamps.
-- Define `rhs_C = HR_C + delta_C`, signed closure residual `residual_C = input_C - rhs_C`, and absolute relative closure error `abs(residual_C) / abs(input_C)` only where input is finite and nonzero. Preserve unsupported values as explicit gaps with reasons; never coerce them to zero.
-- Use the established 100 member points, ten equal-count parameter bins, bin medians, and native-value markers for the three parameter-response products. Publish exactly four new figures: `ABBY_cumulative_litter_input_response.png`, `ABBY_cumulative_total_hr_response.png`, `ABBY_decomposer_pool_delta_c_response.png`, and `ABBY_carbon_balance_closure.png`.
-- The closure figure has separate `cn_s1`--`cn_s4` panels of `input_C` against `rhs_C`, an equal-aspect 1:1 line, and labeled 1% and 5% relative-error bands. Do not pool the four separate OAT ensembles into one fitted sensitivity relationship.
-- Preserve and regression-check the 37,812 Iter009 core CSV data rows and 17 prior figures. Add exactly 6 `carbon_balance_metric_definitions.csv` rows, 400 `carbon_balance_members.csv` rows, 1,320 `carbon_balance_response_curves.csv` rows (`4 parameters x 3 metrics x 110 member/bin rows`), and 4 `carbon_balance_parameter_summary.csv` rows. The complete proposed package is exactly 39,542 CSV data rows and 21 PNGs, plus versioned input, validation, and output manifests.
-- The parameter summary records finite support, counts and percentages within 1% and 5% closure error, median and P95 absolute relative error, descriptive absolute-scale slope/intercept/R-squared, and lowest-to-highest-bin contrasts for `input_C`, `HR_C`, `delta_C`, and their balance residual.
+- Work unit one is a bounded compute-node preflight. It validates exact inventories and hashes, safe pickle deserialization, config/parameter provenance, time/member axes, direct targets, observation coverage, restart file/member mapping, all 24 restart variables, masks/dimensions/units/support, score behavior, pathway formulas, optional-interface behavior, dynamic layouts, deterministic fixtures, and exact artifact expectations. It publishes only an immutable input manifest and validation receipt in its attempt directory.
+- Work unit two is one diagnostic operation after preflight passes. It consumes only the passing manifest, loads inputs sequentially, creates outputs in hidden attempt-local staging, runs the exact artifact validator, and atomically publishes only a complete `results/` directory.
+- Approved proposed output root: `/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/diagnostic/elm_diagnose_iter011_abby_ctrlvertc_oat_spinup`, with `preflight/attempt_N`, `diagnostic/attempt_N`, hidden staging, and atomic `results/`. Do not create it before consolidated kickoff approval; never overwrite, delete, or automatically back up existing material. `/xdisk` is temporary and unbacked.
+- Exclude ELM simulation, postprocessing, input mutation or repair, member/time dropping, interpolation, alternative pool definitions, layer weighting, vegetation pools, compensation plots, litter ratios, temporal-standard-deviation products, cross-site/configuration comparison, prior-result regeneration, surrogate modeling, PAWN/Sobol/global sensitivity, interactions, causal limitation, optimization, tuning, thresholds, and parameter recommendations.
 
-### Scientific decision rule and exclusions
+### Tentative gates, decision rule, resources, retries, and authority boundary
 
-- A near-1:1 absolute balance demonstrates closure of the selected accounting boundary; it does not alone demonstrate that HR is carbon-input limited because `input_C = HR_C + delta_C` is the balance identity.
-- Historical HR tracking of carbon input is supported only where closure errors are small, the response contrast in `HR_C` follows the response contrast in `input_C`, and the response contrast in `delta_C` is small relative to the input response. If storage change is material, report partitioning between respiration and accumulation or depletion instead.
-- Describe only the 2018--2024 historical window. A small net storage change may be described as approximate balance over that window, not proof of equilibrium or a spinup-convergence result.
-- Exclude pool-HR reconstruction, potential/N/P-limited HR, N/P-stress figures, observations, parameter interactions, PAWN/Sobol/global sensitivity, causal limitation, optimization, tuning, parameter recommendations, exact thresholds, and cross-site/configuration comparisons.
-
-### Work units, tentative resources, review, and boundaries
-
-- Work unit one is a bounded compute-node preflight. It validates exact identities and provenance, safe deserialization, shapes/time axes, units, nonnegative pool stocks, direct-`HR` use, full-window integration, endpoint timestamps, boundary semantics, explicit-gap behavior, deterministic balance fixtures, schemas, counts, figure membership, and Iter009 regression evidence.
-- Work unit two is one diagnostic execution after preflight passes, followed by exact artifact validation and atomic publication. Proposed Puma envelope for each unit is `standard/chopinsong`, one node/task, 12 CPUs, 60 GB, with 2 hours for preflight and 4 hours for diagnostic under `OLMT_puma`; recheck account, capacity, environment, storage, and current site policy at kickoff.
-- A different read-only reviewer must pass the prepared package before preflight, verify passing preflight evidence before diagnostic launch, and perform final independent calculation, artifact, and visual review.
-- Proposed output root: `/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/diagnostic/elm_diagnose_iter010_abby_ctrlvertc_cn_carbon_balance`. Do not create it before consolidated kickoff approval; generate only in attempt-local staging and atomically publish a complete new `results/` directory; never overwrite, delete, or automatically back up existing material.
-- Tentative retry boundary: at most one minimal preflight-only correction/rerun and one same-scope scheduler/resource retry per work unit. Application, code, interface, schema, data, dependency, numerical, scope, or gate failures require a revised package and fresh authority. Cancellation is limited to recorded Iter010 job IDs under verified contract conditions.
-- Stop for a missing material decision, identity mismatch, failed immutable gate, unapproved defect, exhausted retry, unavailable authoritative monitoring, explicit user stop, or validated closeout. Empty `squeue` is not completion; every submitted job requires job-scoped terminal `sacct` evidence.
-
-### Tentative gates, evidence, records, and approval boundary
-
-- Input/provenance gate: the exact four mapped pickles and declared dependencies match the approved identities and contracts; only direct `LITFALL`, direct `HR`, and the eight declared pools enter the balance; no undeclared input is consumed.
-- Calculation gate: full-window flux integration, eight-pool endpoint storage change, right-hand side, signed and relative residuals, support rules, equal-count bins, endpoint-bin contrasts, and independent reproductions pass deterministic checks.
-- Artifact/visual gate: exact 39,542 CSV rows and 21 PNGs; four carbon-balance figures have correct quantities, units, panels, member support, bin summaries, native markers, 1:1 reference, and error bands; the preserved Iter009 core passes regression checks.
-- Publication/review/accounting/record gates: manifests cover the full payload, staging is atomically published, independent reviews pass, every job is terminally accounted, and the iteration report, compact result, cumulative summary, registry, and handoff agree under a final cross-record validator.
-- Decision rule: technical acceptance depends only on immutable gates, not on closure or hypothesis direction. Report closure denominators and response partitioning without exceeding the descriptive OAT boundary.
-- Expected evidence includes the approved contract; source/config/submitted hashes and byte identity; exact input/dependency identities; boundary audit; fixture and preflight receipts; table/figure counts; support denominators; independent calculation reproductions; visual checks; reviewer findings; job IDs, logs, terminal accounting, resources; output manifest; compact interpretation; and final record-validation output.
-- Planning approval and documentation/commit authority were granted by the user's response agreeing with the plan while requiring direct `HR` and a new carbon-balance engine. This authorizes only these two planning-record updates and one scoped planning commit. Iter010 remains uninitialized. Before implementation, repository Python, output creation, review launch, scheduler activity, or runtime work, present the complete consolidated kickoff package required by `development/ELM_diagnose/WORKFLOW.md` and obtain fresh explicit approval, including outside-sandbox scheduler and cancellation authority and the closeout branch.
-
-## Resume Protocol
-
-1. Read this handoff and `development/ELM_diagnose/WORKFLOW.md`.
-2. Read `development/ELM_diagnose/iterations/iter009.md`, its compact result, and the Iter009 registry row.
-3. Treat Iter009 execution material, records, manifests, and results as immutable closed provenance.
-4. Treat Iter010 as immutable closed provenance. Any further diagnostic requires a new complete plan and kickoff approval.
+- Input/provenance gate: exactly 21 mapped pickles, configs, parameter files, and restart cases with 2,100 uniquely mapped members match the locked identities; every pickle has the exact ABBY/100-member/2018--2024 contract; every restart member has the exact final timestamp and required component schema; control and observation dependencies match newly recorded hashes.
+- Calculation gate: direct-HR use, five transient means, three restart totals, observation separation, masks/support, units, parameter coordinates, equal-count bins, conditional scores/ranks, and potential/N/P-limited pathway multiplication and summation order pass fixtures and independent reproduction.
+- Artifact/visual gate: exactly 80,200 primary CSV rows and 11 PNGs with correct membership, units, labels, support, native markers, observed SR line, ranks, and legibility; no standard-deviation, compensation, or litter artifacts exist.
+- Publication/review/accounting/record gate: manifests cover the full payload, hidden staging validates before atomic publication, a different read-only reviewer passes preparation and final calculation/artifact/visual checks, every job receives job-scoped terminal `sacct` evidence, and the iteration report, compact result, cumulative summary, registry, and handoff agree under the final validator.
+- Decision rule: technical acceptance depends only on the immutable gates, not on ranking magnitude or hypothesis direction. Report only baseline-conditioned, sampled-range descriptive OAT evidence.
+- Proposed Puma envelope: `development/hpc/puma.md`, `standard/chopinsong`, one node/task, 16 CPUs with standard-derived 80 GB; two hours for preflight and four hours for diagnostic under `OLMT_puma`. Recheck host, account, limits, environment, capacity, and storage at kickoff.
+- Retry budget for each work unit is one initial attempt plus at most three retries, for at most four preflight attempts and four diagnostic attempts. Preflight retries may include at most one minimal correction that restores the locked validation/interface contract without changing inputs, calculations, artifacts, interpretation, or gates; other retries are limited to classified same-scope scheduler/resource failures. Diagnostic retries are limited to classified same-scope scheduler/resource failures. Application, code, interface, schema, data, dependency, numerical, scientific, publication, or gate failures require classification, preserved evidence, a revised package, and fresh user authority before change or rerun. Retry resources may not exceed 16 CPUs/80 GB and six hours.
+- Proposed monitoring requires immediate identity checks, one retained runtime-supported state-change monitor with bounded backoff and unchanged-output suppression, and job-scoped terminal accounting for every attempt. Empty `squeue` is not completion; query/transport failure means unknown state.
+- Proposed cancellation is limited to recorded Iter011 job IDs under the future runtime contract for identity mismatch, a proven universal pre-execution defect, out-of-root writes, resource-contract overrun, or explicit user instruction, followed by terminal accounting.
+- Expected evidence includes the approved contract; repository/source/config/submitted identities and hashes; exact input/dependency manifests; fixture and preflight receipts; dimensions, units, masks, support and coverage; table/figure counts; independent numerical reproductions and visual review; job IDs, logs, terminal accounting and resources; output manifest; scientific report; and cross-record validator output.
+- The user authorized these planning-record updates and one scoped planning commit with no push. This planning-only approval grants no Iter011 initialization, implementation, repository Python, output-directory creation, review launch, scheduler operation, retry, cancellation, diagnostic publication, runtime closeout, or additional commit authority. Before any runtime work, present the complete consolidated kickoff package required by `WORKFLOW.md`, including exact lifecycle authority, outside-sandbox submission/monitoring/accounting/cancellation authority, and the already selected one-commit/no-push closeout branch, then obtain fresh explicit approval.
