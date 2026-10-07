@@ -105,3 +105,13 @@
 - Outputs: exactly 80,200 primary CSV rows and 11 PNGs; all 105 transient and 63 spinup scores are supported; output manifest `0e13dfa6`.
 - Quantitative result: `act25` leads mean SR/HR/LITFALL response spreads and `leaf_long` leads mean GPP. `k_s4`, `k_s3`, and `k_s2` lead both transient decomposer-C and final-spinup C/N/P spreads; increasing these rates corresponds to sharply decreasing stocks over their declared ranges. Across all 2,100 members, mean N- and P-limited/potential pathway ratios are 0.294 and 0.388, and P-limited exceeds N-limited in every member.
 - Decision: accept the validated baseline-conditioned, sampled-range descriptive OAT package. Constructed pathways remain distinct from direct model `HR`; no PAWN/Sobol/global-sensitivity, interaction, causal limitation, optimization, tuning, threshold, parameter recommendation, or cross-site/configuration claim is supported.
+
+## Iter012 — completed ABBY respiration-fraction OAT extension
+
+- Work type: `implementation`; status: `completed`; acceptance: `pass`.
+- Objective: extend the Iter011 ABBY transient/spinup OAT package with six respiration-fraction ensembles while preserving the same descriptive methods and interpretation boundary.
+- Bounded scope: 27 exact pickles/configs/parameter files/restart cases; 2,700 members; five transient means; three spinup totals; three constructed pathways; 103,114 CSV rows; 11 figures; descriptive OAT only.
+- Execution: preflights `24137742`, `24137829`, `24137929`, and `24149109`, plus diagnostic `24149371`, all completed `0:0`. Independent GNU-time measurement resolved allocation-pegged Slurm MaxRSS and supported right-sizing from 20 CPUs/100 GB to four CPUs/20 GB. Diagnostic generation, validation, and atomic publication passed with a `6408012K` process peak and no swaps.
+- Outputs: exactly 103,114 primary CSV rows and 11 PNGs; all 135 transient and 81 spinup scores are supported; output manifest `a24daac2`.
+- Quantitative result: `rf_s2s3` leads mean SR, HR, and LITFALL spread and ranks third for GPP and final-spinup decomposer C. `k_s4`, `k_s3`, and `k_s2` remain the dominant stock-response parameters. Across 2,700 members, mean N- and P-limited/potential ratios are 0.305 and 0.402; P exceeds N in 2,693 cases, with seven low-range `rf_s2s3` exceptions.
+- Decision: accept the validated baseline-conditioned sampled-range OAT extension. The low-range `rf_s2s3` exceptions are descriptive nonlinearity, not a confirmed threshold; constructed pathways remain distinct from direct HR and support no global-sensitivity or causal nutrient-limitation claim.
