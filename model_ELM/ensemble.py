@@ -173,10 +173,12 @@ def create_multisite_script(self,sites,scriptdir, walltime='24:00:00'):
     # Tianyi added error output #
     myfile.write('cd '+self.caseroot+'/'+self.casename+'\n')
     myfile.write('export LD_LIBRARY_PATH='+ldpath+'\n\n')
+    myfile.write('e3sm_pids=()\n')
     for s in sites:
+      site_rundir = self.runroot+'/'+self.casename.replace(sites[0],s)+'/run'
       myfile.write('cd '+self.caseroot+'/'+self.casename.replace(sites[0],s)+'\n')
       myfile.write('./preview_namelists\n')
-      myfile.write('cd '+self.runroot+'/'+self.casename.replace(sites[0],s)+'/run\n')
+      myfile.write('cd '+site_rundir+'\n')
       myfile.write('mkdir -p timing/checkpoints\n')
       #restart file options
       for key in self.case_options.keys():
@@ -194,32 +196,37 @@ def create_multisite_script(self,sites,scriptdir, walltime='24:00:00'):
                     self.finidat+' --var '+var+' --val '+value+'\n')
       if (self.noslurm):
         myfile.write('mpiexec -n '+str(self.np)+' '+self.exeroot+'/e3sm.exe > '+ \
-           self.rundir+'/e3sm_log.txt &\n\n')
+           site_rundir+'/e3sm_log.txt &\n')
       else:
         myfile.write('srun -n '+str(self.np)+' -c 1 '+self.exeroot+'/e3sm.exe > '+ \
-                self.rundir+'/e3sm_log.txt &\n\n')
-    myfile.write('wait\n')
+                site_rundir+'/e3sm_log.txt &\n')
+      myfile.write('e3sm_pids+=($!)\n\n')
+    myfile.write('e3sm_status=0\n')
+    myfile.write('for pid in "${e3sm_pids[@]}"; do\n')
+    myfile.write('  wait $pid || e3sm_status=1\n')
+    myfile.write('done\n')
+    myfile.write('if [ $e3sm_status -ne 0 ]; then\n')
+    myfile.write('    echo "Error: e3sm.exe failed. Aborting post-processing."\n')
+    myfile.write('    exit 1\n')
+    myfile.write('fi\n')
     myfile.write('cd '+self.OLMTdir+'\n')
-    for s in sites:
-        # Check if it's a site run (single point simulation)
-        is_site_run = hasattr(self, 'site') and self.site != '' and self.site is not None
-        if (not 'ICBELM' in self.compset and not '20TR' in self.compset and not 'trans' in self.casename \
-            and not 'ad_spinup' in self.casename and is_site_run):
-            # Tianyi Hu activate conda environment
-            myfile.write('conda activate '+self.OLMT_condaenv+'\n')
-            #Assume this is a final spinup case, do spinup diagnostic plots
-            myfile.write('python manage_postproc.py --case '+self.casename.replace(sites[0],s)+' --plot_spinup\n')
-            # Tianyi Hu added to remove slurm.out because it is too big #
-            myfile.write('[ $? -eq 0 ] && rm -v '+self.runroot+'/slurm_error_${SLURM_JOB_ID}.*\n')
-            # Tianyi Hu added to remove slurm.out because it is too big #
-        elif self.postproc_vars:
-            # Tianyi Hu activate conda environment
-            myfile.write('conda activate '+self.OLMT_condaenv+'\n')
-            #Do requested postprocessing and plotting
-            myfile.write('python manage_postproc.py --case '+self.casename.replace(sites[0],s)+'\n')
-            # Tianyi Hu added to remove slurm.out because it is too big #
-            myfile.write('[ $? -eq 0 ] && rm -v '+self.runroot+'/slurm_error_${SLURM_JOB_ID}.*\n')
-            # Tianyi Hu added to remove slurm.out because it is too big #
+    is_site_run = hasattr(self, 'site') and self.site != '' and self.site is not None
+    do_spinup_plot = (not 'ICBELM' in self.compset and not '20TR' in self.compset and not 'trans' in self.casename \
+        and not 'ad_spinup' in self.casename and is_site_run)
+    if do_spinup_plot or self.postproc_vars:
+        myfile.write('conda activate '+self.OLMT_condaenv+'\n')
+        myfile.write('postproc_status=0\n')
+        for s in sites:
+            if do_spinup_plot:
+                #Assume this is a final spinup case, do spinup diagnostic plots
+                myfile.write('python manage_postproc.py --case '+self.casename.replace(sites[0],s)+' --plot_spinup\n')
+            else:
+                #Do requested postprocessing and plotting
+                myfile.write('python manage_postproc.py --case '+self.casename.replace(sites[0],s)+'\n')
+            myfile.write('if [ $? -ne 0 ]; then postproc_status=1; fi\n')
+        myfile.write('if [ $postproc_status -eq 0 ]; then\n')
+        myfile.write('    rm -v '+self.runroot+'/slurm_error_${SLURM_JOB_ID}.*\n')
+        myfile.write('fi\n')
     
     myfile.close()
     os.system('chmod u+x '+fname)
@@ -394,7 +401,7 @@ def ensemble_copy(self, ens_num):
         print('Creting netcdf variable for '+p)
         param = self.getncvar(myfile,'flnr')
         param[:] = parm_values[pnum]
-      elif (p == 'psi50'):
+      elif (p == 'psi50' or p == 'kmax'):
         param[:,parm_indices[pnum]] = parm_values[pnum]
       elif (parm_indices[pnum] > 0):
          param[parm_indices[pnum]] = parm_values[pnum]

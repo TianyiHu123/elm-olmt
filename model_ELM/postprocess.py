@@ -229,7 +229,7 @@ def plot_adspinup_ensemble(self, plotvars=[]):
 
 def postprocess(self, var, index=0, gindex=0, startyear=-1, endyear=9999, hnum=0, \
         dailytomonthly=False, annualmean=False,  meanseasonalcycle=False, \
-        xindex=0,yindex=0, ens_num=0, plot=False):
+        xindex=0,yindex=0, ens_num=0, plot=False, write_output=True):
     if (ens_num > 0):
         gst = str(100000+ens_num)[1:]
         rundir = self.rundir_UQ+'/g'+gst
@@ -317,21 +317,24 @@ def postprocess(self, var, index=0, gindex=0, startyear=-1, endyear=9999, hnum=0
     var_out = var
     if ('_pft' in var):
         var_out = var_out+str(index)
-    if (ens_num > 0 and not var_out in self.output):
-        self.output[var_out] = np.zeros([len(values_out),self.nsamples],float)
-    if (ens_num > 0):
-        self.output[var_out][:,ens_num-1] = values_out
-    else:
-        self.output[var_out]=values_out
-    self.output['taxis'] = np.zeros([len(values_out)],float)
+    taxis = np.zeros([len(values_out)],float)
     for t in range(0,len(values_out)):
-        self.output['taxis'][t] = startyear+t/nperyear_out
-    if (plot):
-        os.system('mkdir -p '+self.rundir+'/../diagnostics')
-        plt.plot(self.output['taxis'],self.output[var_out],'k')
-        plt.ylabel(var_out+' ('+units+')')
-        plt.xlabel('Years')
-        plt.legend([var_out])
-        plt.tight_layout()
-        plt.savefig(self.rundir+'/../diagnostics/plot_'+var_out+'_'+str(startyear)+'-'+str(endyear)+'.png')
-        plt.close()
+        taxis[t] = startyear+t/nperyear_out
+    if (write_output):
+        if (ens_num > 0 and not var_out in self.output):
+            self.output[var_out] = np.zeros([len(values_out),self.nsamples],float)
+        if (ens_num > 0):
+            self.output[var_out][:,ens_num-1] = values_out
+        else:
+            self.output[var_out]=values_out
+        self.output['taxis'] = taxis
+        if (plot):
+            os.system('mkdir -p '+self.rundir+'/../diagnostics')
+            plt.plot(self.output['taxis'],self.output[var_out],'k')
+            plt.ylabel(var_out+' ('+units+')')
+            plt.xlabel('Years')
+            plt.legend([var_out])
+            plt.tight_layout()
+            plt.savefig(self.rundir+'/../diagnostics/plot_'+var_out+'_'+str(startyear)+'-'+str(endyear)+'.png')
+            plt.close()
+    return values_out, var_out, taxis
