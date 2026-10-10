@@ -89,10 +89,15 @@ SPINUP_COMPONENTS = {
     "DECOMP_N_TOTAL": ("cwdn_vr", "litr1n_vr", "litr2n_vr", "litr3n_vr", "soil1n_vr", "soil2n_vr", "soil3n_vr", "soil4n_vr"),
     "DECOMP_P_TOTAL": ("cwdp_vr", "litr1p_vr", "litr2p_vr", "litr3p_vr", "soil1p_vr", "soil2p_vr", "soil3p_vr", "soil4p_vr"),
 }
+SPINUP_RATIO_TARGETS = ("DECOMP_CN_RATIO", "DECOMP_CP_RATIO")
+SPINUP_BASE_TARGETS = tuple(SPINUP_COMPONENTS)
+SPINUP_TARGETS = (*SPINUP_BASE_TARGETS, *SPINUP_RATIO_TARGETS)
 SPINUP_UNITS = {
     "DECOMP_C_TOTAL": "gC m-2",
     "DECOMP_N_TOTAL": "gN m-2",
     "DECOMP_P_TOTAL": "gP m-2",
+    "DECOMP_CN_RATIO": "gC gN-1",
+    "DECOMP_CP_RATIO": "gC gP-1",
 }
 ENDPOINT_DEFINITIONS = {
     "SR": "direct case.output['SR'] arithmetic temporal mean",
@@ -104,11 +109,15 @@ ENDPOINT_DEFINITIONS = {
 SPINUP_ENDPOINT_DEFINITIONS = {
     target: " + ".join(components) for target, components in SPINUP_COMPONENTS.items()
 }
+SPINUP_ENDPOINT_DEFINITIONS.update({
+    "DECOMP_CN_RATIO": "DECOMP_C_TOTAL / DECOMP_N_TOTAL (ratio of eight-pool sums)",
+    "DECOMP_CP_RATIO": "DECOMP_C_TOTAL / DECOMP_P_TOTAL (ratio of eight-pool sums)",
+})
 TRANSIENT_COVERAGE = "declared-site model members; hourly 2018-2024 noleap; 61,320 samples/member"
 SPINUP_COVERAGE = "declared-site final restart state at 0201-01-01; all stored vertical elements summed"
-INPUT_MANIFEST_SCHEMA = "elm_oat_input_manifest_v5"
-OUTPUT_MANIFEST_SCHEMA = "elm_oat_output_manifest_v5"
-VALIDATION_RECEIPT_SCHEMA = "elm_oat_validation_receipt_v4"
+INPUT_MANIFEST_SCHEMA = "elm_oat_input_manifest_v6"
+OUTPUT_MANIFEST_SCHEMA = "elm_oat_output_manifest_v6"
+VALIDATION_RECEIPT_SCHEMA = "elm_oat_validation_receipt_v6"
 
 
 @dataclass
@@ -291,14 +300,70 @@ def parse_family(raw_items: list[str], fields: int, option: str) -> list[tuple[s
     return parsed
 
 
+def parse_observations(raw_items: list[str]) -> list[tuple[str, str, str, str]]:
+    parsed: list[tuple[str, str, str, str]] = []
+    identities: set[tuple[str, str]] = set()
+    for raw in raw_items:
+        parts = tuple(raw.split(":"))
+        if len(parts) == 2:
+            target, path = parts
+            source = target
+            label = target
+        elif len(parts) == 4:
+            target, source, label, path = parts
+        else:
+            raise ValueError(
+                "--observation requires TARGET:PATH or TARGET:SOURCE_VARIABLE:SERIES_LABEL:PATH"
+            )
+        if any(not item for item in (target, source, label, path)):
+            raise ValueError(f"--observation fields must be nonempty: {raw!r}")
+        identity = (target, label)
+        if identity in identities:
+            raise ValueError(f"duplicate --observation target/label: {identity}")
+        identities.add(identity)
+        parsed.append((target, source, label, path))
+    return parsed
+
+
+def parse_spinup_observations(raw_items: list[str]) -> list[tuple[str, str, str, str]]:
+    parsed = parse_family(raw_items, 4, "--spinup-observation")
+    identities: set[tuple[str, str]] = set()
+    for target, column, label, path in parsed:
+        identity = (target, label)
+        if identity in identities:
+            raise ValueError(f"duplicate --spinup-observation target/label: {identity}")
+        identities.add(identity)
+    return parsed
+
+
 def parse_interfaces(args: argparse.Namespace, parameters: tuple[str, ...]) -> dict[str, Any]:
     targets = parse_targets(args.target)
     statistics = parse_statistics(getattr(args, "statistic", []))
-    observations = parse_family(args.observation, 2, "--observation")
-    if any(variable not in targets for variable, _ in observations):
-        raise ValueError("every observation variable must also be a selected target")
-    if any(not Path(path).is_absolute() for _, path in observations):
+    observations = parse_observations(args.observation)
+    if any(target not in targets for target, *_ in observations):
+        raise ValueError("every observation target must also be a selected target")
+    if any(not Path(path).is_absolute() for *_, path in observations):
         raise ValueError("observation paths must be absolute")
+    spinup_ratios = tuple(getattr(args, "spinup_ratio", []))
+    if len(spinup_ratios) != len(set(spinup_ratios)) or any(
+        target not in SPINUP_RATIO_TARGETS for target in spinup_ratios
+    ):
+        raise ValueError("--spinup-ratio values must be unique declared ratio endpoints")
+    spinup_targets = (*SPINUP_BASE_TARGETS, *spinup_ratios)
+    require_complete_spinup_ratios = bool(
+        getattr(args, "require_complete_spinup_ratios", False)
+    )
+    if require_complete_spinup_ratios and set(spinup_ratios) != set(SPINUP_RATIO_TARGETS):
+        raise ValueError(
+            "--require-complete-spinup-ratios requires both declared spinup ratio endpoints"
+        )
+    spinup_observations = parse_spinup_observations(getattr(args, "spinup_observation", []))
+    if spinup_observations and not getattr(args, "restart_root", None):
+        raise ValueError("spinup observations require restart analysis")
+    if any(target not in spinup_targets for target, *_ in spinup_observations):
+        raise ValueError("every spinup observation target must be a selected final-spinup endpoint")
+    if any(not Path(path).is_absolute() for *_, path in spinup_observations):
+        raise ValueError("spinup observation paths must be absolute")
     compensation = parse_family(args.compensation, 4, "--compensation")
     if any(parameter not in parameters for parameter, *_ in compensation):
         raise ValueError("compensation parameters must be declared OAT parameters")
@@ -330,6 +395,9 @@ def parse_interfaces(args: argparse.Namespace, parameters: tuple[str, ...]) -> d
         "targets": targets,
         "statistics": statistics,
         "observations": observations,
+        "spinup_observations": spinup_observations,
+        "spinup_targets": spinup_targets,
+        "require_complete_spinup_ratios": require_complete_spinup_ratios,
         "compensation": compensation,
         "hr_pools": hr_pools,
         "hr_n_limiter": args.hr_n_limiter,
@@ -645,7 +713,12 @@ def load_spinup_state(
     summary: CaseSummary,
     restart_root: Path,
     case_basename: str,
+    ratio_targets: tuple[str, ...] = (),
 ) -> CaseSummary:
+    if len(ratio_targets) != len(set(ratio_targets)) or any(
+        target not in SPINUP_RATIO_TARGETS for target in ratio_targets
+    ):
+        raise ValueError("spinup ratio targets must be unique declared ratio endpoints")
     case_dir = restart_root / case_basename
     if not case_dir.is_dir() or case_dir.parent.resolve() != restart_root.resolve():
         raise FileNotFoundError(f"missing or out-of-root restart case: {case_dir}")
@@ -706,6 +779,22 @@ def load_spinup_state(
                 if not np.isfinite(total):
                     raise ValueError(f"restart {target} total is non-finite in {restart}")
                 metrics[target][member - 1] = total
+    carbon = metrics["DECOMP_C_TOTAL"]
+    for target, denominator_target in (
+        ("DECOMP_CN_RATIO", "DECOMP_N_TOTAL"),
+        ("DECOMP_CP_RATIO", "DECOMP_P_TOTAL"),
+    ):
+        if target not in ratio_targets:
+            continue
+        denominator = metrics[denominator_target]
+        supported = np.isfinite(carbon) & np.isfinite(denominator) & (denominator > 0.0)
+        ratio = np.full(100, np.nan, dtype=np.float64)
+        np.divide(carbon, denominator, out=ratio, where=supported)
+        metrics[target] = ratio
+        support[target] = {
+            "valid_members": int(np.count_nonzero(supported)),
+            "rejected_members": int(np.count_nonzero(~supported)),
+        }
     return replace(
         summary,
         spinup_metrics=metrics,
@@ -929,12 +1018,13 @@ def atlas_layout(parameter_count: int) -> tuple[int, int, tuple[float, float]]:
 
 def build_spinup_rows(
     summaries: list[CaseSummary],
+    targets: tuple[str, ...] = SPINUP_BASE_TARGETS,
 ) -> tuple[list[dict[str, Any]], list[dict[str, Any]], list[dict[str, Any]]]:
     member_rows: list[dict[str, Any]] = []
     score_rows: list[dict[str, Any]] = []
     curve_rows: list[dict[str, Any]] = []
     for summary in summaries:
-        if set(summary.spinup_metrics) != set(SPINUP_COMPONENTS):
+        if not set(targets).issubset(summary.spinup_metrics):
             raise ValueError(f"missing spinup metrics for {summary.parameter}")
         member_bins = np.empty(100, dtype=int)
         sorted_groups = np.array_split(np.argsort(summary.normalized_parameter, kind="stable"), 10)
@@ -947,13 +1037,32 @@ def build_spinup_rows(
                 "parameter_value": float(summary.parameter_values[member]),
                 "normalized_parameter": float(summary.normalized_parameter[member]),
                 "endpoint_definitions": json.dumps(
-                    {target: spinup_endpoint_definition(target) for target in SPINUP_COMPONENTS}, sort_keys=True
+                    {target: spinup_endpoint_definition(target) for target in targets}, sort_keys=True
                 ),
-                "endpoint_units": json.dumps(SPINUP_UNITS, sort_keys=True),
+                "endpoint_units": json.dumps(
+                    {target: SPINUP_UNITS[target] for target in targets}, sort_keys=True
+                ),
                 "model_coverage": SPINUP_COVERAGE,
-                **{target: float(summary.spinup_metrics[target][member]) for target in SPINUP_COMPONENTS},
+                **{
+                    target: (
+                        float(summary.spinup_metrics[target][member])
+                        if np.isfinite(summary.spinup_metrics[target][member]) else ""
+                    )
+                    for target in targets
+                },
+                **{
+                    f"{target}_supported": bool(np.isfinite(summary.spinup_metrics[target][member]))
+                    for target in SPINUP_RATIO_TARGETS if target in targets
+                },
+                **{
+                    f"{target}_rejection_reason": (
+                        "" if np.isfinite(summary.spinup_metrics[target][member])
+                        else "nonfinite_or_nonpositive_denominator"
+                    )
+                    for target in SPINUP_RATIO_TARGETS if target in targets
+                },
             })
-        for target in SPINUP_COMPONENTS:
+        for target in targets:
             values = summary.spinup_metrics[target]
             score_record = response_score_record(values)
             score_rows.append({
@@ -977,15 +1086,17 @@ def build_spinup_rows(
                     "bin": int(member_bins[member]),
                     "parameter_value": float(summary.parameter_values[member]),
                     "normalized_parameter": float(summary.normalized_parameter[member]),
-                    "response": float(values[member]),
+                    "response": float(values[member]) if np.isfinite(values[member]) else "",
                     "units": SPINUP_UNITS[target],
                     "endpoint_definition": spinup_endpoint_definition(target),
                     "model_coverage": SPINUP_COVERAGE,
                     "bin_count": "",
                     "bin_x_min": "",
                     "bin_x_max": "",
+                    "valid_count": "",
+                    "rejected_count": "",
                 })
-            for item in equal_count_bins(summary.normalized_parameter, values):
+            for item in equal_count_bins_with_gaps(summary.normalized_parameter, values):
                 curve_rows.append({
                     "parameter": summary.parameter,
                     "target": target,
@@ -1001,8 +1112,10 @@ def build_spinup_rows(
                     "bin_count": item["count"],
                     "bin_x_min": item["x_min"],
                     "bin_x_max": item["x_max"],
+                    "valid_count": item["valid_count"],
+                    "rejected_count": item["rejected_count"],
                 })
-    for target in SPINUP_COMPONENTS:
+    for target in targets:
         selected = [row for row in score_rows if row["target"] == target]
         selected = [row for row in selected if row["supported"]]
         selected.sort(key=lambda row: (-float(row["score_percent"]), str(row["parameter"])))
@@ -1011,18 +1124,30 @@ def build_spinup_rows(
     return member_rows, score_rows, curve_rows
 
 
-def plot_spinup_atlases(output: Path, summaries: list[CaseSummary], site: str) -> list[Path]:
+def plot_spinup_atlases(
+    output: Path,
+    summaries: list[CaseSummary],
+    observation_rows: list[dict[str, Any]],
+    site: str,
+    targets: tuple[str, ...] = SPINUP_BASE_TARGETS,
+) -> list[Path]:
     paths: list[Path] = []
     rows, columns, size = atlas_layout(len(summaries))
-    for target in SPINUP_COMPONENTS:
+    observation_lookup = {row["target"]: row for row in observation_rows}
+    for target in targets:
         figure, axes = plt.subplots(rows, columns, figsize=size, squeeze=False)
         for axis, summary in zip(axes.flat, summaries):
             values = summary.spinup_metrics[target]
-            axis.scatter(summary.normalized_parameter, values, s=9, alpha=0.25, color="tab:blue")
-            bins = equal_count_bins(summary.normalized_parameter, values)
+            supported = np.isfinite(values)
+            axis.scatter(
+                summary.normalized_parameter[supported], values[supported],
+                s=9, alpha=0.25, color="tab:blue",
+            )
+            bins = equal_count_bins_with_gaps(summary.normalized_parameter, values)
+            supported_bins = [item for item in bins if item["response_median"] != ""]
             axis.plot(
-                [item["x_median"] for item in bins],
-                [item["response_median"] for item in bins],
+                [item["x_median"] for item in supported_bins],
+                [item["response_median"] for item in supported_bins],
                 "o-", color="black", lw=1.2, ms=3,
             )
             if summary.native_value is not None:
@@ -1030,6 +1155,12 @@ def plot_spinup_atlases(output: Path, summaries: list[CaseSummary], site: str) -
                     np.asarray([summary.native_value]), summary.pmin, summary.pmax, summary.coordinate
                 )[0]
                 axis.axvline(native_x, color="tab:red", ls="--", lw=0.9)
+            if target in observation_lookup:
+                reference = observation_lookup[target]
+                axis.axhline(
+                    float(reference["value"]), color="tab:purple", ls=":", lw=1.0,
+                    label=reference["series_label"],
+                )
             axis.set(
                 title=summary.parameter,
                 xlim=(-0.03, 1.03),
@@ -1038,8 +1169,15 @@ def plot_spinup_atlases(output: Path, summaries: list[CaseSummary], site: str) -
             )
         for axis in axes.flat[len(summaries):]:
             axis.set_visible(False)
+        if target in observation_lookup:
+            handles, labels = axes.flat[0].get_legend_handles_labels()
+            figure.legend(handles, labels, loc="upper right", fontsize=8)
+            figure.text(
+                0.5, 0.008, observation_lookup[target]["boundary_warning"],
+                ha="center", va="bottom", fontsize=7, wrap=True,
+            )
         figure.suptitle(f"{site} final spinup {target} OAT responses")
-        figure.tight_layout(rect=(0, 0, 1, 0.97))
+        figure.tight_layout(rect=(0, 0.035 if target in observation_lookup else 0, 1, 0.96))
         path = output / f"{site}_{target}_spinup_response_atlas.png"
         figure.savefig(path, dpi=150)
         plt.close(figure)
@@ -1052,8 +1190,8 @@ def plot_spinup_heatmap(
     score_rows: list[dict[str, Any]],
     site: str,
     parameters: tuple[str, ...],
+    targets: tuple[str, ...] = SPINUP_BASE_TARGETS,
 ) -> Path:
-    targets = tuple(SPINUP_COMPONENTS)
     lookup = {(row["parameter"], row["target"]): row for row in score_rows}
     matrix = np.asarray([
         [float(lookup[(parameter, target)]["score_percent"]) if lookup[(parameter, target)]["supported"] else np.nan
@@ -1088,7 +1226,10 @@ def plot_response_atlases(
     statistics: tuple[str, ...] = STATISTICS,
 ) -> list[Path]:
     paths: list[Path] = []
-    observation_lookup = {row["variable"]: row for row in observation_rows}
+    observation_lookup: dict[str, list[dict[str, Any]]] = {}
+    for row in observation_rows:
+        observation_lookup.setdefault(row["target"], []).append(row)
+    observation_colors = {"GPP_DT": "tab:orange", "GPP_NT": "tab:purple"}
     for target in targets:
         for statistic in statistics:
             rows, columns, size = atlas_layout(len(summaries))
@@ -1102,17 +1243,24 @@ def plot_response_atlases(
                 if summary.native_value is not None:
                     native_x = normalize_parameter(np.asarray([summary.native_value]), summary.pmin, summary.pmax, summary.coordinate)[0]
                     axis.axvline(native_x, color="tab:red", ls="--", lw=0.9)
-                if target in observation_lookup:
-                    reference = observation_lookup[target]["mean" if statistic == "mean" else "temporal_std"]
-                    axis.axhline(reference, color="tab:purple", ls=":", lw=1.0, label="observation")
+                for reference_row in observation_lookup.get(target, []):
+                    reference = reference_row["mean" if statistic == "mean" else "temporal_std"]
+                    axis.axhline(
+                        reference,
+                        color=observation_colors.get(reference_row["source_variable"], "tab:purple"),
+                        ls=":", lw=1.0, label=reference_row["series_label"],
+                    )
                 axis.set_title(summary.parameter)
                 axis.set_xlim(-0.03, 1.03)
                 axis.set_xlabel(f"normalized {summary.coordinate}")
                 axis.set_ylabel(UNITS[target])
             for axis in axes.flat[len(summaries) :]:
                 axis.set_visible(False)
+            if observation_lookup.get(target):
+                handles, labels = axes.flat[0].get_legend_handles_labels()
+                figure.legend(handles, labels, loc="upper right", fontsize=8)
             figure.suptitle(f"{site} {DISPLAY_NAMES.get(target, target)} member {statistic.replace('_', ' ')} OAT responses")
-            figure.tight_layout(rect=(0, 0, 1, 0.97))
+            figure.tight_layout(rect=(0, 0, 1, 0.96))
             path = output / f"{site}_{target}_{statistic}_response_atlas.png"
             figure.savefig(path, dpi=150)
             plt.close(figure)
@@ -1182,34 +1330,111 @@ def plot_compensation(output: Path, summaries: list[CaseSummary], mappings: list
     return paths
 
 
-def load_observation_rows(observations: list[tuple[str, ...]]) -> list[dict[str, Any]]:
+def load_observation_rows(observations: list[tuple[str, str, str, str]]) -> list[dict[str, Any]]:
     rows: list[dict[str, Any]] = []
-    for variable, raw_path in observations:
+    for target, source_variable, series_label, raw_path in observations:
         path = Path(raw_path)
         if not path.is_absolute() or not path.is_file():
             raise FileNotFoundError(f"invalid observation path: {path}")
-        payload = load_observations_with_time_from_nc(str(path), [variable])
+        with xr.open_dataset(path) as source_dataset:
+            if source_variable not in source_dataset.variables:
+                raise KeyError(f"observation source variable {source_variable!r} not found in {path}")
+            source_values = np.asarray(source_dataset[source_variable], dtype=np.float64).reshape(-1)
+            source_count = int(source_values.size)
+            source_finite_count = int(np.count_nonzero(np.isfinite(source_values)))
+            source_negative_count = int(np.count_nonzero(np.isfinite(source_values) & (source_values < 0.0)))
+            calendar_dataset = source_dataset
+            if "time" not in calendar_dataset.coords:
+                raise ValueError(f"observation source lacks time coordinate: {path}")
+            if calendar_dataset["time"].dt.calendar != "noleap":
+                calendar_dataset = calendar_dataset.convert_calendar("noleap", dim="time")
+            post_calendar_source = np.asarray(
+                calendar_dataset[source_variable].squeeze(), dtype=np.float64
+            ).reshape(-1)
+            post_calendar_negative_count = int(np.count_nonzero(
+                np.isfinite(post_calendar_source) & (post_calendar_source < 0.0)
+            ))
+            post_calendar_missing_count = int(np.count_nonzero(~np.isfinite(post_calendar_source)))
+        payload = load_observations_with_time_from_nc(str(path), [source_variable])
         times = np.asarray(payload["time"]).reshape(-1)
         keys = [str(value) for value in times]
         if len(keys) != len(set(keys)):
-            raise ValueError(f"{variable}: observation timestamps are not unique")
+            raise ValueError(f"{series_label}: observation timestamps are not unique")
         in_window = np.asarray([2018 <= int(value.year) <= 2024 for value in times], dtype=bool)
-        values = np.asarray(payload["obs"][variable], dtype=np.float64)
+        values = np.asarray(payload["obs"][source_variable], dtype=np.float64)
         valid = in_window & np.isfinite(values) & (values > -9000.0)
         selected = values[valid]
         if not selected.size:
-            raise ValueError(f"{variable}: no finite valid observations in 2018--2024")
+            raise ValueError(f"{series_label}: no finite valid observations in 2018--2024")
         rows.append({
-            "variable": variable,
+            "variable": target,
+            "target": target,
+            "source_variable": source_variable,
+            "series_label": series_label,
             "path": str(path),
             "sha256": digest(path),
             "units": "gC m-2 day-1",
-            "window": "2018-2024 noleap hourly overlap",
+            "aggregation": "arithmetic mean over independent finite valid observation support",
+            "window": "available observations within 2018-2024 after noleap conversion; model remains full-window",
+            "source_count": source_count,
+            "source_finite_count": source_finite_count,
+            "source_negative_count": source_negative_count,
+            "post_calendar_count": int(values.size),
+            "post_calendar_negative_rejected_count": post_calendar_negative_count,
+            "post_calendar_missing_count": post_calendar_missing_count,
             "valid_count": int(selected.size),
+            "rejected_count": int(values.size - selected.size),
+            "coverage_denominator": EXPECTED_HOURS,
+            "coverage_percent": float(100.0 * selected.size / EXPECTED_HOURS),
             "minimum": float(np.min(selected)),
             "maximum": float(np.max(selected)),
             "mean": float(np.mean(selected)),
             "temporal_std": float(np.std(selected, ddof=0)),
+            "enters_scoring": False,
+        })
+    return rows
+
+
+def load_spinup_observation_rows(
+    observations: list[tuple[str, str, str, str]], site: str
+) -> list[dict[str, Any]]:
+    rows: list[dict[str, Any]] = []
+    for target, source_column, series_label, raw_path in observations:
+        path = Path(raw_path)
+        if not path.is_absolute() or not path.is_file():
+            raise FileNotFoundError(f"invalid spinup observation path: {path}")
+        with path.open(newline="") as handle:
+            table = list(csv.DictReader(handle))
+        if not table or "siteID" not in table[0] or source_column not in table[0]:
+            raise ValueError(f"spinup observation schema is incomplete: {path}")
+        selected = [row for row in table if row["siteID"] == site]
+        if len(selected) != 1:
+            raise ValueError(f"spinup observation requires one unique siteID={site} row")
+        value = float(selected[0][source_column])
+        depth = float(selected[0]["effectiveDepth_m"])
+        if not np.isfinite(value) or not np.isfinite(depth) or depth <= 0.0:
+            raise ValueError(f"spinup observation is non-finite or has invalid depth: {series_label}")
+        rows.append({
+            "target": target,
+            "source_column": source_column,
+            "series_label": series_label,
+            "site": site,
+            "path": str(path),
+            "sha256": digest(path),
+            "value": value,
+            "units": SPINUP_UNITS[target],
+            "aggregation": "source CSV site-level scalar",
+            "source_table_rows": len(table),
+            "raw_value_count": 1,
+            "retained_count": 1,
+            "rejected_count": 0,
+            "coverage_denominator": 1,
+            "coverage_percent": 100.0,
+            "effective_depth_m": depth,
+            "model_endpoint_definition": spinup_endpoint_definition(target),
+            "model_coverage": SPINUP_COVERAGE,
+            "boundary_warning": "accepted boundary mismatch: observed soil profile versus model eight-pool CWD+litter+soil total across all stored vertical elements; context only",
+            "enters_scoring": False,
         })
     return rows
 
@@ -1286,8 +1511,10 @@ def expected_artifact_counts(interfaces: dict[str, Any], parameter_count: int) -
         counts["litter_ratio_curves.csv"] = parameter_count * 10 * ratios
     if interfaces["restart_mappings"]:
         counts["spinup_member_metrics.csv"] = parameter_count * 100
-        counts["spinup_sensitivity_scores.csv"] = parameter_count * len(SPINUP_COMPONENTS)
-        counts["spinup_response_curves.csv"] = parameter_count * len(SPINUP_COMPONENTS) * 110
+        counts["spinup_sensitivity_scores.csv"] = parameter_count * len(interfaces["spinup_targets"])
+        counts["spinup_response_curves.csv"] = parameter_count * len(interfaces["spinup_targets"]) * 110
+    if interfaces["spinup_observations"]:
+        counts["spinup_observation_summary.csv"] = len(interfaces["spinup_observations"])
     return counts
 
 
@@ -1602,7 +1829,9 @@ def paired_site_contract_fixture(
                     control_paramfile=output_root / "synthetic_control.nc",
                     regression_results=None,
                 )
-                manifests[site] = manifest_contract(manifest_args, mappings, log_parameters, interfaces, [])
+                manifests[site] = manifest_contract(
+                    manifest_args, mappings, log_parameters, interfaces, [], []
+                )
                 site_output = output_root / site
                 site_output.mkdir()
                 figures = [
@@ -1647,6 +1876,7 @@ def manifest_contract(
     log_parameters: frozenset[str],
     interfaces: dict[str, Any],
     observation_rows: list[dict[str, Any]],
+    spinup_observation_rows: list[dict[str, Any]],
 ) -> dict[str, Any]:
     return {
         "schema": INPUT_MANIFEST_SCHEMA,
@@ -1659,7 +1889,11 @@ def manifest_contract(
         "targets": list(interfaces["targets"]),
         "statistics": list(interfaces["statistics"]),
         "observations": [list(item) for item in interfaces["observations"]],
-        "observation_sha256": {row["variable"]: row["sha256"] for row in observation_rows},
+        "observation_sha256": {row["series_label"]: row["sha256"] for row in observation_rows},
+        "spinup_observations": [list(item) for item in interfaces["spinup_observations"]],
+        "spinup_observation_sha256": {
+            row["series_label"]: row["sha256"] for row in spinup_observation_rows
+        },
         "compensation": [list(item) for item in interfaces["compensation"]],
         "hr_pools": [list(item) for item in interfaces["hr_pools"]],
         "hr_n_limiter": interfaces["hr_n_limiter"],
@@ -1673,8 +1907,10 @@ def manifest_contract(
         "parameter_configs": interfaces["config_mappings"],
         "parameter_files": interfaces["parameter_file_mappings"],
         "spinup_components": {target: list(components) for target, components in SPINUP_COMPONENTS.items()},
-        "spinup_units": SPINUP_UNITS,
-        "spinup_scalar_definition": "sum numpy.nansum(component[:]) across the eight declared vertical components",
+        "spinup_targets": list(interfaces["spinup_targets"]),
+        "spinup_units": {target: SPINUP_UNITS[target] for target in interfaces["spinup_targets"]},
+        "spinup_scalar_definition": "sum numpy.nansum(component[:]) across eight declared vertical components; ratios are memberwise ratios of those sums",
+        "require_complete_spinup_ratios": interfaces["require_complete_spinup_ratios"],
         "score_support_contract": "finite complete 100-member ensemble and nonzero ensemble median; otherwise explicit unsupported reason",
         "required_raw_variables": list(required_raw_variables(interfaces)),
         "regression_results": None if args.regression_results is None else str(args.regression_results),
@@ -1691,6 +1927,7 @@ def validate_all(
     log_parameters: frozenset[str],
     interfaces: dict[str, Any],
     observation_rows: list[dict[str, Any]],
+    spinup_observation_rows: list[dict[str, Any]],
     expected_manifest: dict[str, Any] | None = None,
 ) -> tuple[list[CaseSummary], dict[str, Any], np.ndarray]:
     if not args.pickle_dir.is_absolute() or not args.pickle_dir.is_dir():
@@ -1734,7 +1971,9 @@ def validate_all(
         if not args.regression_results.is_absolute() or not args.regression_results.is_dir():
             raise ValueError("--regression-results must identify an existing absolute directory")
         regression_hashes = {name: digest(args.regression_results / name) for name in regression_names}
-    contract = manifest_contract(args, mappings, log_parameters, interfaces, observation_rows)
+    contract = manifest_contract(
+        args, mappings, log_parameters, interfaces, observation_rows, spinup_observation_rows
+    )
     contract["regression_sha256"] = regression_hashes
     control_hash = digest(args.control_paramfile)
     tool_hash = digest(Path(__file__).resolve())
@@ -1743,10 +1982,12 @@ def validate_all(
         for field in (
             "schema", "site", "pickle_dir", "control_paramfile", "parameter_pickles",
             "log_parameters", "parameters", "targets", "statistics", "observations",
-            "observation_sha256", "compensation", "hr_pools", "hr_n_limiter",
+            "observation_sha256", "spinup_observations", "spinup_observation_sha256",
+            "compensation", "hr_pools", "hr_n_limiter",
             "hr_p_limiter", "litter_ratios", "litter_ratio_support_contract",
             "restart_root", "parameter_restarts", "config_dir", "parameter_dir",
-            "parameter_configs", "parameter_files", "spinup_components", "spinup_units",
+            "parameter_configs", "parameter_files", "spinup_components", "spinup_targets", "spinup_units",
+            "require_complete_spinup_ratios",
             "spinup_scalar_definition", "score_support_contract", "required_raw_variables",
             "regression_results", "regression_sha256", "expected_hours", "year_range",
             "member_count_per_parameter", "score",
@@ -1788,7 +2029,18 @@ def validate_all(
                     summary,
                     interfaces["restart_root"],
                     interfaces["restart_mappings"][parameter],
+                    tuple(
+                        target for target in interfaces["spinup_targets"]
+                        if target in SPINUP_RATIO_TARGETS
+                    ),
                 )
+                if interfaces["require_complete_spinup_ratios"] and any(
+                    not np.all(np.isfinite(summary.spinup_metrics[target]))
+                    for target in SPINUP_RATIO_TARGETS
+                ):
+                    raise ValueError(
+                        f"{parameter}: strict final-spinup ratio support requires 100/100 members"
+                    )
             if interfaces["config_mappings"]:
                 config_path = interfaces["config_dir"] / interfaces["config_mappings"][parameter]
                 parameter_path = interfaces["parameter_dir"] / interfaces["parameter_file_mappings"][parameter]
@@ -1863,9 +2115,15 @@ def run_preflight(args: argparse.Namespace, mappings: dict[str, str], log_parame
         interfaces = parse_interfaces(args, parameters)
         fixture = fixture_checks(parameters)
         observation_rows = load_observation_rows(interfaces["observations"])
-        summaries, manifest, _ = validate_all(args, mappings, log_parameters, interfaces, observation_rows)
+        spinup_observation_rows = load_spinup_observation_rows(
+            interfaces["spinup_observations"], args.site
+        )
+        summaries, manifest, _ = validate_all(
+            args, mappings, log_parameters, interfaces, observation_rows, spinup_observation_rows
+        )
         manifest["fixture"] = fixture
         manifest["observation_summary"] = observation_rows
+        manifest["spinup_observation_summary"] = spinup_observation_rows
         staging.mkdir()
         atomic_json(staging / "input_manifest.json", manifest)
         receipt = {
@@ -1880,7 +2138,8 @@ def run_preflight(args: argparse.Namespace, mappings: dict[str, str], log_parame
         os.replace(staging, args.output)
         print(
             f"OAT_PREFLIGHT_PASS parameters={len(summaries)} members={len(summaries) * 100} "
-            f"hours={EXPECTED_HOURS} observations={len(observation_rows)}",
+            f"hours={EXPECTED_HOURS} observations={len(observation_rows)} "
+            f"spinup_observations={len(spinup_observation_rows)}",
             flush=True,
         )
     except Exception as exc:
@@ -1894,7 +2153,13 @@ def run_diagnostic(args: argparse.Namespace, mappings: dict[str, str], log_param
     manifest = json.loads(args.manifest.read_text())
     interfaces = parse_interfaces(args, tuple(mappings))
     observation_rows = load_observation_rows(interfaces["observations"])
-    summaries, current_manifest, taxis = validate_all(args, mappings, log_parameters, interfaces, observation_rows, expected_manifest=manifest)
+    spinup_observation_rows = load_spinup_observation_rows(
+        interfaces["spinup_observations"], args.site
+    )
+    summaries, current_manifest, taxis = validate_all(
+        args, mappings, log_parameters, interfaces, observation_rows, spinup_observation_rows,
+        expected_manifest=manifest,
+    )
     staging = args.output.with_name(f".{args.output.name}.staging.{os.getpid()}")
     if args.output.exists():
         raise FileExistsError(f"refusing to replace existing result directory: {args.output}")
@@ -1912,12 +2177,19 @@ def run_diagnostic(args: argparse.Namespace, mappings: dict[str, str], log_param
     spinup_score_rows: list[dict[str, Any]] = []
     spinup_curve_rows: list[dict[str, Any]] = []
     if interfaces["restart_mappings"]:
-        spinup_member_rows, spinup_score_rows, spinup_curve_rows = build_spinup_rows(summaries)
+        spinup_member_rows, spinup_score_rows, spinup_curve_rows = build_spinup_rows(
+            summaries, interfaces["spinup_targets"]
+        )
         write_csv(staging / "spinup_member_metrics.csv", list(spinup_member_rows[0]), spinup_member_rows)
         write_csv(staging / "spinup_sensitivity_scores.csv", list(spinup_score_rows[0]), spinup_score_rows)
         write_csv(staging / "spinup_response_curves.csv", list(spinup_curve_rows[0]), spinup_curve_rows)
     if observation_rows:
         write_csv(staging / "observation_summary.csv", list(observation_rows[0]), observation_rows)
+    if spinup_observation_rows:
+        write_csv(
+            staging / "spinup_observation_summary.csv",
+            list(spinup_observation_rows[0]), spinup_observation_rows,
+        )
     hr_metrics, hr_curves, litter_members, litter_timeseries, litter_curves = build_specialized_rows(summaries, taxis)
     if hr_metrics:
         write_csv(staging / "hr_pathway_metrics.csv", list(hr_metrics[0]), hr_metrics)
@@ -1938,15 +2210,20 @@ def run_diagnostic(args: argparse.Namespace, mappings: dict[str, str], log_param
         *plot_compensation(staging, summaries, interfaces["compensation"], args.site),
         *plot_hr_pathways(staging, summaries, args.site),
         *plot_litter_ratios(staging, summaries, taxis, args.site),
-        *(plot_spinup_atlases(staging, summaries, args.site) if interfaces["restart_mappings"] else []),
-        *([plot_spinup_heatmap(staging, spinup_score_rows, args.site, tuple(mappings))]
+        *(plot_spinup_atlases(
+            staging, summaries, spinup_observation_rows, args.site, interfaces["spinup_targets"]
+        )
+          if interfaces["restart_mappings"] else []),
+        *([plot_spinup_heatmap(
+            staging, spinup_score_rows, args.site, tuple(mappings), interfaces["spinup_targets"]
+        )]
           if interfaces["restart_mappings"] else []),
     ]
     expected_figure_count = (
         len(interfaces["statistics"]) * len(interfaces["targets"])
         + len(interfaces["statistics"]) + len(interfaces["compensation"])
         + (1 if interfaces["hr_pools"] else 0) + 2 * len(interfaces["litter_ratios"])
-        + (len(SPINUP_COMPONENTS) + 1 if interfaces["restart_mappings"] else 0)
+        + (len(interfaces["spinup_targets"]) + 1 if interfaces["restart_mappings"] else 0)
     )
     if len(figures) != expected_figure_count:
         raise RuntimeError(f"expected {expected_figure_count} figures, generated {len(figures)}")
@@ -1995,6 +2272,9 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--target", action="append", default=[])
     parser.add_argument("--statistic", action="append", default=[])
     parser.add_argument("--observation", action="append", default=[])
+    parser.add_argument("--spinup-observation", action="append", default=[])
+    parser.add_argument("--spinup-ratio", action="append", default=[])
+    parser.add_argument("--require-complete-spinup-ratios", action="store_true")
     parser.add_argument("--compensation", action="append", default=[])
     parser.add_argument("--hr-pool", action="append", default=[])
     parser.add_argument("--hr-n-limiter")

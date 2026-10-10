@@ -115,3 +115,14 @@
 - Outputs: exactly 103,114 primary CSV rows and 11 PNGs; all 135 transient and 81 spinup scores are supported; output manifest `a24daac2`.
 - Quantitative result: `rf_s2s3` leads mean SR, HR, and LITFALL spread and ranks third for GPP and final-spinup decomposer C. `k_s4`, `k_s3`, and `k_s2` remain the dominant stock-response parameters. Across 2,700 members, mean N- and P-limited/potential ratios are 0.305 and 0.402; P exceeds N in 2,693 cases, with seven low-range `rf_s2s3` exceptions.
 - Decision: accept the validated baseline-conditioned sampled-range OAT extension. The low-range `rf_s2s3` exceptions are descriptive nonlinearity, not a confirmed threshold; constructed pathways remain distinct from direct HR and support no global-sensitivity or causal nutrient-limitation claim.
+
+## Iter013 — completed ABBY observation and spinup-ratio OAT extension
+
+- Work type: `implementation`; status: `completed`; acceptance: `pass`.
+- Objective: extend the Iter012 standard package with contextual NEON daytime/nighttime GPP products, final-spinup eight-pool C:N and C:P response endpoints, and contextual observed soil C, N, and C:N.
+- Bounded scope: 27 exact pickles/configs/parameter files/restart cases; 2,700 members; five transient means; five spinup endpoints; three constructed pathways; 109,113 CSV rows; 13 figures; descriptive OAT only.
+- Execution: preflights `24192660` and `24204148` and diagnostic `24204180` completed `0:0`; preparations 1 and 3 were unsubmitted. The passing diagnostic generated, validated, and atomically published output manifest `99d84254` with a `6413020K` process peak and no swaps.
+- Observation context: SR, GPP_DT, and GPP_NT retain 26,264, 15,771, and 11,404 valid hours (42.83%, 25.72%, and 18.60% of the full model-window denominator). GPP_NT rejects 4,367 post-calendar negative values. Soil C/N/C:N values are context-only and explicitly boundary-mismatched; no C:P observation is used.
+- Quantitative result: all 2,700 C:N/C:P ratios and all 135 spinup scores are supported. `rf_s2s3` leads final-spinup C:N spread (166.2%), followed by `k_s4` (76.8%) and `cn_s4` (50.9%). `k_s4` leads C:P (51.7%), followed by `cn_s4` (48.7%) and `rf_s2s3` (39.7%), and also leads C/N/P total spreads.
+- Overall acceptance result: `pass`.
+- Decision: accept the validated baseline-conditioned sampled-range OAT extension. Observations are independent context only; the soil stock boundary mismatch and partial GPP support preclude boundary-matched validation or calibration claims, and no global-sensitivity, causal, tuning, or recommendation conclusion is supported.
