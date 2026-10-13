@@ -117,6 +117,10 @@ def create_ensemble_script(self, walltime=12):
 
     myfile.write('cd '+self.caseroot+'/'+self.casename+'\n')
     myfile.write('export LD_LIBRARY_PATH='+ldpath+'\n\n')
+    myfile.write('export OMP_NUM_THREADS=1\n')
+    myfile.write('export OPENBLAS_NUM_THREADS=1\n')
+    myfile.write('export MKL_NUM_THREADS=1\n')
+    myfile.write('export NUMEXPR_NUM_THREADS=1\n\n')
     myfile.write('./preview_namelists\n\n')
     myfile.write('ulimit -n '+str(self.nsamples+1024)+'\n')
     myfile.write('cd '+self.OLMTdir+'\n')
