@@ -444,6 +444,7 @@ class ELMcase():
     # timestr=str(int(float(walltime)))+':'+str(int((float(walltime)- \
     #                                  int(float(walltime)))*60))+':00'
     timestr=walltime
+    self.case_walltime = walltime
     #IF the resolution is user defined (site), we will first create a case with 
     #original resolution to get them correct domain, surface and land use files.
     cmd = './create_newcase --case '+self.casedir+' --mach '+self.machine+' --compset '+ \

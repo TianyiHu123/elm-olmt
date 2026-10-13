@@ -5,6 +5,46 @@ import numpy as np
 import datetime
 import matplotlib.pyplot as plt
 
+def _walltime_to_seconds(walltime):
+    if isinstance(walltime, (int, float)):
+        return int(float(walltime) * 3600)
+    text = str(walltime).strip()
+    if text.replace('.', '', 1).isdigit():
+        return int(float(text) * 3600)
+    parts = [int(p) for p in text.split(':')]
+    if len(parts) == 3:
+        hours, minutes, seconds = parts
+    elif len(parts) == 2:
+        hours = 0
+        minutes, seconds = parts
+    elif len(parts) == 1:
+        hours, minutes, seconds = parts[0], 0, 0
+    else:
+        raise ValueError('Unrecognized walltime: '+text)
+    return hours * 3600 + minutes * 60 + seconds
+
+def _seconds_to_walltime(seconds):
+    seconds = max(int(seconds), 0)
+    hours, rem = divmod(seconds, 3600)
+    minutes, secs = divmod(rem, 60)
+    return f'{hours:02d}:{minutes:02d}:{secs:02d}'
+
+def _is_transient_ensemble_case(case):
+    name = str(getattr(case, 'casename', ''))
+    compset = str(getattr(case, 'compset', ''))
+    return ('20TR' in name or '20TR' in compset or 'trans' in name or 'phase2' in name)
+
+def _ensemble_slurm_time(case, walltime=None):
+    if case.queue == 'debug':
+        return '2:00:00'
+    base = walltime
+    if base is None:
+        base = getattr(case, 'case_walltime', None)
+    if base is None:
+        return '12:00:00'
+    factor = 4 if _is_transient_ensemble_case(case) else 3
+    return _seconds_to_walltime(_walltime_to_seconds(base) * factor)
+
 #Read the parameter list file
 def read_parm_list(self, parm_list=''):
     os.chdir(self.OLMTdir)
@@ -81,7 +121,7 @@ def create_samples(self, sampletype='monte_carlo', nsamples=100, parm_list=''):
     # .T is the NumPy shorthand for np.transpose()
     np.savetxt(self.ensemble_file, self.samples.T)
 
-def create_ensemble_script(self, walltime=12):
+def create_ensemble_script(self, walltime=None):
     #Create the PBS script we will submit to run the ensemble
     os.chdir(self.casedir)
     #Get the LD_LIBRARY_PATH from software environment
@@ -92,17 +132,17 @@ def create_ensemble_script(self, walltime=12):
     softenv.close()
     self.npernode=int(self.xmlquery('MAX_TASKS_PER_NODE'))
     nnodes = int(np.ceil((self.np_ensemble*self.np)/self.npernode))
+    timestr = _ensemble_slurm_time(self, walltime=walltime)
+    print('Ensemble walltime: '+timestr)
     myfile = open('case.submit_ensemble','w')
     myfile.write('#!/bin/bash -e\n\n')
-    if (self.queue == 'debug'):
-        walltime=2
     if ('pm-cpu' in self.machine):
-        myfile.write('#SBATCH --time='+str(walltime)+':00:00\n')
+        myfile.write('#SBATCH --time='+timestr+'\n')
         myfile.write('#SBATCH --constraint=cpu\n')
         myfile.write('#SBATCH --qos='+self.queue+'\n')
         myfile.write('#SBATCH --account='+self.project+'\n')
     else:
-        myfile.write('#SBATCH -t '+str(walltime)+':00:00\n')
+        myfile.write('#SBATCH -t '+timestr+'\n')
         myfile.write('#SBATCH -p '+self.queue+'\n')
         if (self.project != ''):
             myfile.write('#SBATCH -A '+self.project+'\n')
