@@ -30,16 +30,15 @@ def get_nodelist():
   return mynodes
 
 def get_node_submit(pactive,process_nodes,mynodes):
-    node_submit=0
+    slots_per_node = max(1, int(mycase.npernode / max(int(mycase.np), 1)))
     for n in range(0,len(mynodes)):
          ctn=0    #Counter for active processes on each node
          for p in range(0,len(processes)):
                 if pactive[p] == 1 and process_nodes[p] == n:
                     ctn=ctn+1
-         if (ctn < mycase.npernode/mycase.np):
-             #If this node is not full, submit
-             node_submit=n
-    return(node_submit)
+         if (ctn < slots_per_node):
+             return n
+    return 0
 
 def check_run_success(n, case=None):
     if case is None:
@@ -171,9 +170,12 @@ def main():
         with open(log_file_path, "w") as log_file:
           if (mycase.noslurm == False):
             node_submit=get_node_submit(pactive,process_nodes,mynodes)
-            # command = ['srun -n '+str(mycase.np)+' -c 1 -w '+mynodes[node_submit]+' '+mycase.exeroot+'/e3sm.exe']
-            # Tianyi Hu added for parallel
-            command = ['srun --exact -n '+str(mycase.np)+' -c 1 -w '+mynodes[node_submit]+' '+mycase.exeroot+'/e3sm.exe']
+            # Bind one hardware thread per member so SMT slots are usable on
+            # multi-node allocations. --mem is required with --exact or each
+            # step inherits a full node's memory and packing stalls.
+            command = ['srun --exact --overlap --nodes=1 --ntasks='+str(mycase.np)+
+                       ' --cpus-per-task=1 --threads-per-core=2 --cpu-bind=threads --mem=1800M -w '+
+                       mynodes[node_submit]+' '+mycase.exeroot+'/e3sm.exe']
             print(command)
             process_nodes.append(node_submit)
           else:

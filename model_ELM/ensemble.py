@@ -150,6 +150,9 @@ def create_ensemble_script(self, walltime=None):
     myfile.write('#SBATCH --nodes='+str(nnodes)+'\n')
     # Tianyi added for parallel srun #
     myfile.write('#SBATCH --ntasks='+str(self.np_ensemble)+'\n')
+    if ('pm-cpu' in self.machine):
+        myfile.write('#SBATCH --threads-per-core=2\n')
+        myfile.write('#SBATCH --hint=multithread\n')
     # Tianyi added error output #
     myfile.write('#SBATCH --output='+self.runroot+'/slurm_error_%j.out'+'\n')
     myfile.write('#SBATCH --error='+self.runroot+'/slurm_error_%j.err'+'\n')
