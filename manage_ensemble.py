@@ -14,33 +14,19 @@ mycase = None
 processes = []
 _WORKER_CASE = None
 
-#get the node file and parse
+# Expand Slurm compact hostlists (nid[001-002], nid[001,003], single nid001).
 def get_nodelist():
-  mynodes=[]
-  nodelist=os.environ['SLURM_JOB_NODELIST'].split('xxx')
-  print(nodelist)
-  for n in nodelist:
-    if ('[' in n):
-        node_prefix=n.split('[')[0]
-        nodelist2=n.split('[')[1].split(',')
-        for n2 in nodelist2:
-          if ('-' in n2):
-            firstnode=n2.split('-')[0]
-            lastnode=n2.split('-')[1].strip(']')
-            for nn in range(int(firstnode),int(lastnode)+1):
-              if ('baseline' in mycase.machine):
-                nstr = str(nn)
-              else:
-                nstr = str(10000+nn)[1:]
-              mynodes.append(node_prefix+nstr)
-          else:
-              if ('baseline' in mycase.machine):
-                nstr=str(n2).strip(']')
-              else:
-                nstr=str(10000+n2)[1:].strip(']')
-              mynodes.append(node_prefix+nstr)
-    else:
-        mynodes.append(n)
+  raw = os.environ.get('SLURM_JOB_NODELIST') or os.environ.get('SLURM_NODELIST')
+  if not raw:
+    raise RuntimeError('SLURM_JOB_NODELIST is not set')
+  result = subprocess.run(
+      ['scontrol', 'show', 'hostnames', raw],
+      capture_output=True, text=True, check=True)
+  mynodes = [line.strip() for line in result.stdout.splitlines() if line.strip()]
+  if not mynodes:
+    raise RuntimeError('Failed to expand SLURM nodelist: '+raw)
+  print('SLURM_JOB_NODELIST='+raw)
+  print('Expanded nodelist: '+str(mynodes))
   return mynodes
 
 def get_node_submit(pactive,process_nodes,mynodes):
