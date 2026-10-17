@@ -1,0 +1,99 @@
+variable: SR
+units: gC m-2 day-1
+sites:
+  ABBY:
+    observation: {label: obs, path: /xdisk/chopinsong/chopinsong/CTSM_inputdata/lnd/clm2/neon_ncar/NEON/eval_files/v4/ABBY/ABBY_cdo_merge.nc, value_variable: SR, error_variable: SR_err}
+    series:
+      - {role: control, label: ctrl, pickle_paths: [/xdisk/chopinsong/tianyihu/elm-olmt/pklfiles/ABBY_ppe6_I20TRCNPRDCTCBC.pkl]}
+      - {role: optimized, label: '9009', pickle_paths: [/xdisk/chopinsong/tianyihu/elm-olmt/pklfiles/ABBY_ctrlopt9009_I20TRCNPRDCTCBC.pkl]}
+      - {role: optimized, label: '9010', pickle_paths: [/xdisk/chopinsong/tianyihu/elm-olmt/pklfiles/ABBY_ctrlopt9010_I20TRCNPRDCTCBC.pkl]}
+      - {role: optimized, label: '9011', pickle_paths: [/xdisk/chopinsong/tianyihu/elm-olmt/pklfiles/ABBY_ctrlopt9011_I20TRCNPRDCTCBC.pkl]}
+      - {role: optimized, label: '9012', pickle_paths: [/xdisk/chopinsong/tianyihu/elm-olmt/pklfiles/ABBY_ctrlopt9012_I20TRCNPRDCTCBC.pkl]}
+      - {role: optimized, label: '9013', pickle_paths: [/xdisk/chopinsong/tianyihu/elm-olmt/pklfiles/ABBY_ctrlopt9013_I20TRCNPRDCTCBC.pkl]}
+      - {role: optimized, label: '9014', pickle_paths: [/xdisk/chopinsong/tianyihu/elm-olmt/pklfiles/ABBY_ctrlopt9014_I20TRCNPRDCTCBC.pkl]}
+      - {role: optimized, label: '9015', pickle_paths: [/xdisk/chopinsong/tianyihu/elm-olmt/pklfiles/ABBY_ctrlopt9015_I20TRCNPRDCTCBC.pkl]}
+      - {role: optimized, label: '9016', pickle_paths: [/xdisk/chopinsong/tianyihu/elm-olmt/pklfiles/ABBY_ctrlopt9016_I20TRCNPRDCTCBC.pkl]}
+      - {role: optimized, label: '9017', pickle_paths: [/xdisk/chopinsong/tianyihu/elm-olmt/pklfiles/ABBY_ctrlopt9017_I20TRCNPRDCTCBC.pkl]}
+  JERC:
+    observation: {label: obs, path: /xdisk/chopinsong/chopinsong/CTSM_inputdata/lnd/clm2/neon_ncar/NEON/eval_files/v4/JERC/JERC_cdo_merge.nc, value_variable: SR, error_variable: SR_err}
+    series:
+      - {role: control, label: ctrl, pickle_paths: [/xdisk/chopinsong/tianyihu/elm-olmt/pklfiles/JERC_ppe6_I20TRCNPRDCTCBC.pkl]}
+      - {role: optimized, label: '9017', pickle_paths: [/xdisk/chopinsong/tianyihu/elm-olmt/pklfiles/JERC_ctrlopt9017_I20TRCNPRDCTCBC.pkl]}
+  OSBS:
+    observation: {label: obs, path: /xdisk/chopinsong/chopinsong/CTSM_inputdata/lnd/clm2/neon_ncar/NEON/eval_files/v4/OSBS/OSBS_cdo_merge.nc, value_variable: SR, error_variable: SR_err}
+    series:
+      - {role: control, label: ctrl, pickle_paths: [/xdisk/chopinsong/tianyihu/elm-olmt/pklfiles/OSBS_ppe6_I20TRCNPRDCTCBC.pkl]}
+      - {role: optimized, label: '9009', pickle_paths: [/xdisk/chopinsong/tianyihu/elm-olmt/pklfiles/OSBS_ctrlopt9009_I20TRCNPRDCTCBC.pkl]}
+      - {role: optimized, label: '9010', pickle_paths: [/xdisk/chopinsong/tianyihu/elm-olmt/pklfiles/OSBS_ctrlopt9010_I20TRCNPRDCTCBC.pkl]}
+      - {role: optimized, label: '9013', pickle_paths: [/xdisk/chopinsong/tianyihu/elm-olmt/pklfiles/OSBS_ctrlopt9013_I20TRCNPRDCTCBC.pkl]}
+      - {role: optimized, label: '9017', pickle_paths: [/xdisk/chopinsong/tianyihu/elm-olmt/pklfiles/OSBS_ctrlopt9017_I20TRCNPRDCTCBC.pkl]}
+  RMNP:
+    observation: {label: obs, path: /xdisk/chopinsong/chopinsong/CTSM_inputdata/lnd/clm2/neon_ncar/NEON/eval_files/v4/RMNP/RMNP_cdo_merge.nc, value_variable: SR, error_variable: SR_err}
+    series:
+      - {role: control, label: ctrl, pickle_paths: [/xdisk/chopinsong/tianyihu/elm-olmt/pklfiles/RMNP_ppe6_I20TRCNPRDCTCBC.pkl]}
+      - {role: optimized, label: '9009', pickle_paths: [/xdisk/chopinsong/tianyihu/elm-olmt/pklfiles/RMNP_ctrlopt9009_I20TRCNPRDCTCBC.pkl]}
+      - {role: optimized, label: '9010', pickle_paths: [/xdisk/chopinsong/tianyihu/elm-olmt/pklfiles/RMNP_ctrlopt9010_I20TRCNPRDCTCBC.pkl]}
+      - {role: optimized, label: '9011', pickle_paths: [/xdisk/chopinsong/tianyihu/elm-olmt/pklfiles/RMNP_ctrlopt9011_I20TRCNPRDCTCBC.pkl]}
+      - {role: optimized, label: '9012', pickle_paths: [/xdisk/chopinsong/tianyihu/elm-olmt/pklfiles/RMNP_ctrlopt9012_I20TRCNPRDCTCBC.pkl]}
+      - {role: optimized, label: '9013', pickle_paths: [/xdisk/chopinsong/tianyihu/elm-olmt/pklfiles/RMNP_ctrlopt9013_I20TRCNPRDCTCBC.pkl]}
+      - {role: optimized, label: '9015', pickle_paths: [/xdisk/chopinsong/tianyihu/elm-olmt/pklfiles/RMNP_ctrlopt9015_I20TRCNPRDCTCBC.pkl]}
+      - {role: optimized, label: '9016', pickle_paths: [/xdisk/chopinsong/tianyihu/elm-olmt/pklfiles/RMNP_ctrlopt9016_I20TRCNPRDCTCBC.pkl]}
+      - {role: optimized, label: '9017', pickle_paths: [/xdisk/chopinsong/tianyihu/elm-olmt/pklfiles/RMNP_ctrlopt9017_I20TRCNPRDCTCBC.pkl]}
+  SOAP:
+    observation: {label: obs, path: /xdisk/chopinsong/chopinsong/CTSM_inputdata/lnd/clm2/neon_ncar/NEON/eval_files/v4/SOAP/SOAP_cdo_merge.nc, value_variable: SR, error_variable: SR_err}
+    series:
+      - {role: control, label: ctrl, pickle_paths: [/xdisk/chopinsong/tianyihu/elm-olmt/pklfiles/SOAP_ppe6_I20TRCNPRDCTCBC.pkl]}
+      - {role: optimized, label: '9009', pickle_paths: [/xdisk/chopinsong/tianyihu/elm-olmt/pklfiles/SOAP_ctrlopt9009_I20TRCNPRDCTCBC.pkl]}
+      - {role: optimized, label: '9010', pickle_paths: [/xdisk/chopinsong/tianyihu/elm-olmt/pklfiles/SOAP_ctrlopt9010_I20TRCNPRDCTCBC.pkl]}
+      - {role: optimized, label: '9011', pickle_paths: [/xdisk/chopinsong/tianyihu/elm-olmt/pklfiles/SOAP_ctrlopt9011_I20TRCNPRDCTCBC.pkl]}
+      - {role: optimized, label: '9012', pickle_paths: [/xdisk/chopinsong/tianyihu/elm-olmt/pklfiles/SOAP_ctrlopt9012_I20TRCNPRDCTCBC.pkl]}
+      - {role: optimized, label: '9013', pickle_paths: [/xdisk/chopinsong/tianyihu/elm-olmt/pklfiles/SOAP_ctrlopt9013_I20TRCNPRDCTCBC.pkl]}
+      - {role: optimized, label: '9014', pickle_paths: [/xdisk/chopinsong/tianyihu/elm-olmt/pklfiles/SOAP_ctrlopt9014_I20TRCNPRDCTCBC.pkl]}
+      - {role: optimized, label: '9015', pickle_paths: [/xdisk/chopinsong/tianyihu/elm-olmt/pklfiles/SOAP_ctrlopt9015_I20TRCNPRDCTCBC.pkl]}
+      - {role: optimized, label: '9016', pickle_paths: [/xdisk/chopinsong/tianyihu/elm-olmt/pklfiles/SOAP_ctrlopt9016_I20TRCNPRDCTCBC.pkl]}
+      - {role: optimized, label: '9017', pickle_paths: [/xdisk/chopinsong/tianyihu/elm-olmt/pklfiles/SOAP_ctrlopt9017_I20TRCNPRDCTCBC.pkl]}
+  TALL:
+    observation: {label: obs, path: /xdisk/chopinsong/chopinsong/CTSM_inputdata/lnd/clm2/neon_ncar/NEON/eval_files/v4/TALL/TALL_cdo_merge.nc, value_variable: SR, error_variable: SR_err}
+    series:
+      - {role: control, label: ctrl, pickle_paths: [/xdisk/chopinsong/tianyihu/elm-olmt/pklfiles/TALL_ppe6_I20TRCNPRDCTCBC.pkl]}
+      - {role: optimized, label: '9009', pickle_paths: [/xdisk/chopinsong/tianyihu/elm-olmt/pklfiles/TALL_ctrlopt9009_I20TRCNPRDCTCBC.pkl]}
+      - {role: optimized, label: '9010', pickle_paths: [/xdisk/chopinsong/tianyihu/elm-olmt/pklfiles/TALL_ctrlopt9010_I20TRCNPRDCTCBC.pkl]}
+      - {role: optimized, label: '9011', pickle_paths: [/xdisk/chopinsong/tianyihu/elm-olmt/pklfiles/TALL_ctrlopt9011_I20TRCNPRDCTCBC.pkl]}
+      - {role: optimized, label: '9012', pickle_paths: [/xdisk/chopinsong/tianyihu/elm-olmt/pklfiles/TALL_ctrlopt9012_I20TRCNPRDCTCBC.pkl]}
+      - {role: optimized, label: '9013', pickle_paths: [/xdisk/chopinsong/tianyihu/elm-olmt/pklfiles/TALL_ctrlopt9013_I20TRCNPRDCTCBC.pkl]}
+      - {role: optimized, label: '9014', pickle_paths: [/xdisk/chopinsong/tianyihu/elm-olmt/pklfiles/TALL_ctrlopt9014_I20TRCNPRDCTCBC.pkl]}
+      - {role: optimized, label: '9015', pickle_paths: [/xdisk/chopinsong/tianyihu/elm-olmt/pklfiles/TALL_ctrlopt9015_I20TRCNPRDCTCBC.pkl]}
+      - {role: optimized, label: '9016', pickle_paths: [/xdisk/chopinsong/tianyihu/elm-olmt/pklfiles/TALL_ctrlopt9016_I20TRCNPRDCTCBC.pkl]}
+      - {role: optimized, label: '9017', pickle_paths: [/xdisk/chopinsong/tianyihu/elm-olmt/pklfiles/TALL_ctrlopt9017_I20TRCNPRDCTCBC.pkl]}
+  TEAK:
+    observation: {label: obs, path: /xdisk/chopinsong/chopinsong/CTSM_inputdata/lnd/clm2/neon_ncar/NEON/eval_files/v4/TEAK/TEAK_cdo_merge.nc, value_variable: SR, error_variable: SR_err}
+    series:
+      - {role: control, label: ctrl, pickle_paths: [/xdisk/chopinsong/tianyihu/elm-olmt/pklfiles/TEAK_ppe6_I20TRCNPRDCTCBC.pkl]}
+      - {role: optimized, label: '9009', pickle_paths: [/xdisk/chopinsong/tianyihu/elm-olmt/pklfiles/TEAK_ctrlopt9009_I20TRCNPRDCTCBC.pkl]}
+      - {role: optimized, label: '9016', pickle_paths: [/xdisk/chopinsong/tianyihu/elm-olmt/pklfiles/TEAK_ctrlopt9016_I20TRCNPRDCTCBC.pkl]}
+  WREF:
+    observation: {label: obs, path: /xdisk/chopinsong/chopinsong/CTSM_inputdata/lnd/clm2/neon_ncar/NEON/eval_files/v4/WREF/WREF_cdo_merge.nc, value_variable: SR, error_variable: SR_err}
+    series:
+      - {role: control, label: ctrl, pickle_paths: [/xdisk/chopinsong/tianyihu/elm-olmt/pklfiles/WREF_ppe6_I20TRCNPRDCTCBC.pkl]}
+      - {role: optimized, label: '9009', pickle_paths: [/xdisk/chopinsong/tianyihu/elm-olmt/pklfiles/WREF_ctrlopt9009_I20TRCNPRDCTCBC.pkl]}
+      - {role: optimized, label: '9010', pickle_paths: [/xdisk/chopinsong/tianyihu/elm-olmt/pklfiles/WREF_ctrlopt9010_I20TRCNPRDCTCBC.pkl]}
+      - {role: optimized, label: '9011', pickle_paths: [/xdisk/chopinsong/tianyihu/elm-olmt/pklfiles/WREF_ctrlopt9011_I20TRCNPRDCTCBC.pkl]}
+      - {role: optimized, label: '9012', pickle_paths: [/xdisk/chopinsong/tianyihu/elm-olmt/pklfiles/WREF_ctrlopt9012_I20TRCNPRDCTCBC.pkl]}
+      - {role: optimized, label: '9013', pickle_paths: [/xdisk/chopinsong/tianyihu/elm-olmt/pklfiles/WREF_ctrlopt9013_I20TRCNPRDCTCBC.pkl]}
+      - {role: optimized, label: '9014', pickle_paths: [/xdisk/chopinsong/tianyihu/elm-olmt/pklfiles/WREF_ctrlopt9014_I20TRCNPRDCTCBC.pkl]}
+      - {role: optimized, label: '9015', pickle_paths: [/xdisk/chopinsong/tianyihu/elm-olmt/pklfiles/WREF_ctrlopt9015_I20TRCNPRDCTCBC.pkl]}
+      - {role: optimized, label: '9016', pickle_paths: [/xdisk/chopinsong/tianyihu/elm-olmt/pklfiles/WREF_ctrlopt9016_I20TRCNPRDCTCBC.pkl]}
+      - {role: optimized, label: '9017', pickle_paths: [/xdisk/chopinsong/tianyihu/elm-olmt/pklfiles/WREF_ctrlopt9017_I20TRCNPRDCTCBC.pkl]}
+  YELL:
+    observation: {label: obs, path: /xdisk/chopinsong/chopinsong/CTSM_inputdata/lnd/clm2/neon_ncar/NEON/eval_files/v4/YELL/YELL_cdo_merge.nc, value_variable: SR, error_variable: SR_err}
+    series:
+      - {role: control, label: ctrl, pickle_paths: [/xdisk/chopinsong/tianyihu/elm-olmt/pklfiles/YELL_ppe6_I20TRCNPRDCTCBC.pkl]}
+      - {role: optimized, label: '9009', pickle_paths: [/xdisk/chopinsong/tianyihu/elm-olmt/pklfiles/YELL_ctrlopt9009_I20TRCNPRDCTCBC.pkl]}
+      - {role: optimized, label: '9010', pickle_paths: [/xdisk/chopinsong/tianyihu/elm-olmt/pklfiles/YELL_ctrlopt9010_I20TRCNPRDCTCBC.pkl]}
+      - {role: optimized, label: '9011', pickle_paths: [/xdisk/chopinsong/tianyihu/elm-olmt/pklfiles/YELL_ctrlopt9011_I20TRCNPRDCTCBC.pkl]}
+      - {role: optimized, label: '9012', pickle_paths: [/xdisk/chopinsong/tianyihu/elm-olmt/pklfiles/YELL_ctrlopt9012_I20TRCNPRDCTCBC.pkl]}
+      - {role: optimized, label: '9013', pickle_paths: [/xdisk/chopinsong/tianyihu/elm-olmt/pklfiles/YELL_ctrlopt9013_I20TRCNPRDCTCBC.pkl]}
+      - {role: optimized, label: '9014', pickle_paths: [/xdisk/chopinsong/tianyihu/elm-olmt/pklfiles/YELL_ctrlopt9014_I20TRCNPRDCTCBC.pkl]}
+      - {role: optimized, label: '9015', pickle_paths: [/xdisk/chopinsong/tianyihu/elm-olmt/pklfiles/YELL_ctrlopt9015_I20TRCNPRDCTCBC.pkl]}
+      - {role: optimized, label: '9016', pickle_paths: [/xdisk/chopinsong/tianyihu/elm-olmt/pklfiles/YELL_ctrlopt9016_I20TRCNPRDCTCBC.pkl]}
+      - {role: optimized, label: '9017', pickle_paths: [/xdisk/chopinsong/tianyihu/elm-olmt/pklfiles/YELL_ctrlopt9017_I20TRCNPRDCTCBC.pkl]}

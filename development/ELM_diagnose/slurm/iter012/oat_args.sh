@@ -1,0 +1,99 @@
+#!/usr/bin/env bash
+# Locked Iter012 scientific interface. Source from the submitted run configuration.
+readonly -a OAT_ARGS=(
+  --site ABBY
+  --pickle-dir /xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ctrlvertc_sensi/ABBY/pklfiles
+  --parameter-pickle act25:ABBY_ctrlvertcact25_I20TRCNPRDCTCBC.pkl
+  --parameter-pickle br_mr:ABBY_ctrlvertcbrmr_I20TRCNPRDCTCBC.pkl
+  --parameter-pickle cn_s1:ABBY_ctrlvertccns1_I20TRCNPRDCTCBC.pkl
+  --parameter-pickle cn_s2:ABBY_ctrlvertccns2_I20TRCNPRDCTCBC.pkl
+  --parameter-pickle cn_s3:ABBY_ctrlvertccns3_I20TRCNPRDCTCBC.pkl
+  --parameter-pickle cn_s4:ABBY_ctrlvertccns4_I20TRCNPRDCTCBC.pkl
+  --parameter-pickle decomp_depth_efolding:ABBY_ctrlvertcdepthefold_I20TRCNPRDCTCBC.pkl
+  --parameter-pickle frootcn:ABBY_ctrlvertcfrootcn_I20TRCNPRDCTCBC.pkl
+  --parameter-pickle grperc:ABBY_ctrlvertcgrperc_I20TRCNPRDCTCBC.pkl
+  --parameter-pickle k_l1:ABBY_ctrlvertckl1_I20TRCNPRDCTCBC.pkl
+  --parameter-pickle k_l2:ABBY_ctrlvertckl2_I20TRCNPRDCTCBC.pkl
+  --parameter-pickle k_l3:ABBY_ctrlvertckl3_I20TRCNPRDCTCBC.pkl
+  --parameter-pickle k_s1:ABBY_ctrlvertcks1_I20TRCNPRDCTCBC.pkl
+  --parameter-pickle k_s2:ABBY_ctrlvertcks2_I20TRCNPRDCTCBC.pkl
+  --parameter-pickle k_s3:ABBY_ctrlvertcks3_I20TRCNPRDCTCBC.pkl
+  --parameter-pickle k_s4:ABBY_ctrlvertcks4_I20TRCNPRDCTCBC.pkl
+  --parameter-pickle leafcn:ABBY_ctrlvertcleafcn_I20TRCNPRDCTCBC.pkl
+  --parameter-pickle leaf_long:ABBY_ctrlvertcleaflong_I20TRCNPRDCTCBC.pkl
+  --parameter-pickle lflitcn:ABBY_ctrlvertclflitcn_I20TRCNPRDCTCBC.pkl
+  --parameter-pickle livewdcn:ABBY_ctrlvertclivewdcn_I20TRCNPRDCTCBC.pkl
+  --parameter-pickle q10_mr:ABBY_ctrlvertcq10mr_I20TRCNPRDCTCBC.pkl
+  --parameter-pickle rf_l1s1:ABBY_ctrlvertcrfl1s1_I20TRCNPRDCTCBC.pkl
+  --parameter-pickle rf_l2s2:ABBY_ctrlvertcrfl2s2_I20TRCNPRDCTCBC.pkl
+  --parameter-pickle rf_l3s3:ABBY_ctrlvertcrfl3s3_I20TRCNPRDCTCBC.pkl
+  --parameter-pickle rf_s1s2:ABBY_ctrlvertcrfs1s2_I20TRCNPRDCTCBC.pkl
+  --parameter-pickle rf_s2s3:ABBY_ctrlvertcrfs2s3_I20TRCNPRDCTCBC.pkl
+  --parameter-pickle rf_s3s4:ABBY_ctrlvertcrfs3s4_I20TRCNPRDCTCBC.pkl
+  --log-parameters k_l1,k_l2,k_l3,k_s1,k_s2,k_s3,k_s4
+  --control-paramfile /xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ctrl_sensi/params/clm_params_c211124.nc
+  --config-dir /xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ctrlvertc_sensi/ABBY/config
+  --parameter-dir /xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ctrlvertc_sensi/params
+  --parameter-config act25:ABBY_act25.cfg --parameter-file act25:act25_paramfile
+  --parameter-config br_mr:ABBY_br_mr.cfg --parameter-file br_mr:br_mr_paramfile
+  --parameter-config cn_s1:ABBY_cn_s1.cfg --parameter-file cn_s1:cn_s1_paramfile
+  --parameter-config cn_s2:ABBY_cn_s2.cfg --parameter-file cn_s2:cn_s2_paramfile
+  --parameter-config cn_s3:ABBY_cn_s3.cfg --parameter-file cn_s3:cn_s3_paramfile
+  --parameter-config cn_s4:ABBY_cn_s4.cfg --parameter-file cn_s4:cn_s4_paramfile
+  --parameter-config decomp_depth_efolding:ABBY_depth_efold.cfg --parameter-file decomp_depth_efolding:depth_efold_paramfile.txt
+  --parameter-config frootcn:ABBY_frootcn.cfg --parameter-file frootcn:frootcn_paramfile
+  --parameter-config grperc:ABBY_grperc.cfg --parameter-file grperc:grperc_paramfile
+  --parameter-config k_l1:ABBY_k_l1.cfg --parameter-file k_l1:k_l1_paramfile
+  --parameter-config k_l2:ABBY_k_l2.cfg --parameter-file k_l2:k_l2_paramfile
+  --parameter-config k_l3:ABBY_k_l3.cfg --parameter-file k_l3:k_l3_paramfile
+  --parameter-config k_s1:ABBY_k_s1.cfg --parameter-file k_s1:k_s1_paramfile
+  --parameter-config k_s2:ABBY_k_s2.cfg --parameter-file k_s2:k_s2_paramfile
+  --parameter-config k_s3:ABBY_k_s3.cfg --parameter-file k_s3:k_s3_paramfile
+  --parameter-config k_s4:ABBY_k_s4.cfg --parameter-file k_s4:k_s4_paramfile
+  --parameter-config leafcn:ABBY_leafcn.cfg --parameter-file leafcn:leafcn_paramfile
+  --parameter-config leaf_long:ABBY_leaf_long.cfg --parameter-file leaf_long:leaf_long_paramfile
+  --parameter-config lflitcn:ABBY_lflitcn.cfg --parameter-file lflitcn:lflitcn_paramfile
+  --parameter-config livewdcn:ABBY_livewdcn.cfg --parameter-file livewdcn:livewdcn_paramfile
+  --parameter-config q10_mr:ABBY_q10_mr.cfg --parameter-file q10_mr:q10_mr_paramfile
+  --parameter-config rf_l1s1:ABBY_rf_l1s1.cfg --parameter-file rf_l1s1:rf_l1s1_paramfile
+  --parameter-config rf_l2s2:ABBY_rf_l2s2.cfg --parameter-file rf_l2s2:rf_l2s2_paramfile
+  --parameter-config rf_l3s3:ABBY_rf_l3s3.cfg --parameter-file rf_l3s3:rf_l3s3_paramfile
+  --parameter-config rf_s1s2:ABBY_rf_s1s2.cfg --parameter-file rf_s1s2:rf_s1s2_paramfile
+  --parameter-config rf_s2s3:ABBY_rf_s2s3.cfg --parameter-file rf_s2s3:rf_s2s3_paramfile
+  --parameter-config rf_s3s4:ABBY_rf_s3s4.cfg --parameter-file rf_s3s4:rf_s3s4_paramfile
+  --target SR --target HR --target GPP --target LITFALL --target DECOMP_C_TOTAL
+  --statistic mean
+  --observation SR:/xdisk/chopinsong/chopinsong/CTSM_inputdata/lnd/clm2/neon_ncar/NEON/eval_files/v4/ABBY/ABBY_cdo_merge.nc
+  --hr-pool CWDC:K_CWD --hr-pool LITR1C:K_LITR1 --hr-pool LITR2C:K_LITR2
+  --hr-pool LITR3C:K_LITR3 --hr-pool SOIL1C:K_SOIL1 --hr-pool SOIL2C:K_SOIL2
+  --hr-pool SOIL3C:K_SOIL3 --hr-pool SOIL4C:K_SOIL4
+  --hr-n-limiter FPI --hr-p-limiter FPI_P
+  --restart-root /xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ctrlvertc_sensi/ABBY/restart
+  --parameter-restart act25:ABBY_ctrlvertcact25_I1850CNPRDCTCBC
+  --parameter-restart br_mr:ABBY_ctrlvertcbrmr_I1850CNPRDCTCBC
+  --parameter-restart cn_s1:ABBY_ctrlvertccns1_I1850CNPRDCTCBC
+  --parameter-restart cn_s2:ABBY_ctrlvertccns2_I1850CNPRDCTCBC
+  --parameter-restart cn_s3:ABBY_ctrlvertccns3_I1850CNPRDCTCBC
+  --parameter-restart cn_s4:ABBY_ctrlvertccns4_I1850CNPRDCTCBC
+  --parameter-restart decomp_depth_efolding:ABBY_ctrlvertcdepthefold_I1850CNPRDCTCBC
+  --parameter-restart frootcn:ABBY_ctrlvertcfrootcn_I1850CNPRDCTCBC
+  --parameter-restart grperc:ABBY_ctrlvertcgrperc_I1850CNPRDCTCBC
+  --parameter-restart k_l1:ABBY_ctrlvertckl1_I1850CNPRDCTCBC
+  --parameter-restart k_l2:ABBY_ctrlvertckl2_I1850CNPRDCTCBC
+  --parameter-restart k_l3:ABBY_ctrlvertckl3_I1850CNPRDCTCBC
+  --parameter-restart k_s1:ABBY_ctrlvertcks1_I1850CNPRDCTCBC
+  --parameter-restart k_s2:ABBY_ctrlvertcks2_I1850CNPRDCTCBC
+  --parameter-restart k_s3:ABBY_ctrlvertcks3_I1850CNPRDCTCBC
+  --parameter-restart k_s4:ABBY_ctrlvertcks4_I1850CNPRDCTCBC
+  --parameter-restart leafcn:ABBY_ctrlvertcleafcn_I1850CNPRDCTCBC
+  --parameter-restart leaf_long:ABBY_ctrlvertcleaflong_I1850CNPRDCTCBC
+  --parameter-restart lflitcn:ABBY_ctrlvertclflitcn_I1850CNPRDCTCBC
+  --parameter-restart livewdcn:ABBY_ctrlvertclivewdcn_I1850CNPRDCTCBC
+  --parameter-restart q10_mr:ABBY_ctrlvertcq10mr_I1850CNPRDCTCBC
+  --parameter-restart rf_l1s1:ABBY_ctrlvertcrfl1s1_I1850CNPRDCTCBC
+  --parameter-restart rf_l2s2:ABBY_ctrlvertcrfl2s2_I1850CNPRDCTCBC
+  --parameter-restart rf_l3s3:ABBY_ctrlvertcrfl3s3_I1850CNPRDCTCBC
+  --parameter-restart rf_s1s2:ABBY_ctrlvertcrfs1s2_I1850CNPRDCTCBC
+  --parameter-restart rf_s2s3:ABBY_ctrlvertcrfs2s3_I1850CNPRDCTCBC
+  --parameter-restart rf_s3s4:ABBY_ctrlvertcrfs3s4_I1850CNPRDCTCBC
+)
