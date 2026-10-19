@@ -131,9 +131,19 @@ def create_ensemble_script(self, walltime=None):
             ldpath = s.split('=')[1].strip()
     softenv.close()
     self.npernode=int(self.xmlquery('MAX_TASKS_PER_NODE'))
-    nnodes = int(np.ceil((self.np_ensemble*self.np)/self.npernode))
+    np_ranks = max(int(self.np), 1)
+    nnodes_smt = int(np.ceil((self.np_ensemble*np_ranks)/self.npernode))
+    self.cpus_per_task = 1
+    if ('pm-cpu' in self.machine) and nnodes_smt > 1:
+        # Multi-node: 1 physical core (2 logical CPUs) per member, 128/node.
+        self.cpus_per_task = 2
+        self.npernode = max(1, self.npernode // self.cpus_per_task)
+    nnodes = int(np.ceil((self.np_ensemble*np_ranks)/self.npernode))
     timestr = _ensemble_slurm_time(self, walltime=walltime)
     print('Ensemble walltime: '+timestr)
+    print('Ensemble layout: nodes='+str(nnodes)+
+          ' slots_per_node='+str(self.npernode)+
+          ' cpus_per_task='+str(self.cpus_per_task))
     myfile = open('case.submit_ensemble','w')
     myfile.write('#!/bin/bash -e\n\n')
     if ('pm-cpu' in self.machine):
@@ -151,6 +161,7 @@ def create_ensemble_script(self, walltime=None):
     # Tianyi added for parallel srun #
     myfile.write('#SBATCH --ntasks='+str(self.np_ensemble)+'\n')
     if ('pm-cpu' in self.machine):
+        myfile.write('#SBATCH --cpus-per-task='+str(self.cpus_per_task)+'\n')
         myfile.write('#SBATCH --threads-per-core=2\n')
         myfile.write('#SBATCH --hint=multithread\n')
     # Tianyi added error output #

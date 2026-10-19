@@ -29,8 +29,30 @@ def get_nodelist():
   print('Expanded nodelist: '+str(mynodes))
   return mynodes
 
+def pmcpu_member_resources(n_nodes):
+    """Return slots, cpus-per-task, cpu-bind, and step memory for one member.
+
+    Single-node Perlmutter jobs keep 1 logical CPU per member (256/node).
+    Multi-node jobs use 1 physical core (2 logical CPUs) per member (128/node)
+    so two members do not share an SMT pair. That matches the ad-spinup
+    occupancy that finished, and avoids the 256/node I/O stall.
+    """
+    np_ranks = max(int(mycase.np), 1)
+    machine = str(getattr(mycase, 'machine', ''))
+    npernode = int(getattr(mycase, 'npernode', 256) or 256)
+    if 'pm-cpu' in machine and n_nodes > 1:
+        cpus_per_task = 2
+        # Old pickles store logical CPUs (256); new scripts store slots (128).
+        if npernode >= 256:
+            slots_per_node = max(1, (npernode // cpus_per_task) // np_ranks)
+        else:
+            slots_per_node = max(1, npernode // np_ranks)
+        return slots_per_node, cpus_per_task, 'cores', '3600M'
+    slots_per_node = max(1, npernode // np_ranks)
+    return slots_per_node, 1, 'threads', '1800M'
+
 def get_node_submit(pactive,process_nodes,mynodes):
-    slots_per_node = max(1, int(mycase.npernode / max(int(mycase.np), 1)))
+    slots_per_node, _, _, _ = pmcpu_member_resources(len(mynodes))
     for n in range(0,len(mynodes)):
          ctn=0    #Counter for active processes on each node
          for p in range(0,len(processes)):
@@ -152,15 +174,23 @@ def main():
     process_jobnum=[]
     process_hang=[]    #Keep track of how long process has been hanging
     n_job = 1
+    max_concurrent = int(mycase.np_ensemble)
     if (mycase.noslurm == False):
       process_nodes = []
       mynodes = get_nodelist()
+      slots, cpus, bind, mem = pmcpu_member_resources(len(mynodes))
+      max_concurrent = min(max_concurrent, slots * len(mynodes))
+      print('Member packing: nodes='+str(len(mynodes))+
+            ' slots_per_node='+str(slots)+
+            ' cpus_per_task='+str(cpus)+
+            ' cpu_bind='+bind+' mem='+mem+
+            ' max_concurrent='+str(max_concurrent))
 
     #Run the simulations
     pactive=[]
     while (n_job <= mycase.nsamples):
       pactive = active_processes(processes,process_jobnum,process_hang)
-      if (sum(pactive) < int(mycase.np_ensemble)):
+      if (sum(pactive) < max_concurrent):
         jobst = str(100000+n_job)
         rundir = mycase.runroot+'/UQ/'+mycase.casename+'/g'+jobst[1:]+'/'
         log_file_path = f"{rundir}e3sm_log.txt"
@@ -170,11 +200,12 @@ def main():
         with open(log_file_path, "w") as log_file:
           if (mycase.noslurm == False):
             node_submit=get_node_submit(pactive,process_nodes,mynodes)
-            # Bind one hardware thread per member so SMT slots are usable on
-            # multi-node allocations. --mem is required with --exact or each
-            # step inherits a full node's memory and packing stalls.
+            # --mem is required with --exact or each step inherits a full
+            # node's memory and packing stalls.
+            _, cpus_per_task, cpu_bind, mem = pmcpu_member_resources(len(mynodes))
             command = ['srun --exact --overlap --nodes=1 --ntasks='+str(mycase.np)+
-                       ' --cpus-per-task=1 --threads-per-core=2 --cpu-bind=threads --mem=1800M -w '+
+                       ' --cpus-per-task='+str(cpus_per_task)+
+                       ' --threads-per-core=2 --cpu-bind='+cpu_bind+' --mem='+mem+' -w '+
                        mynodes[node_submit]+' '+mycase.exeroot+'/e3sm.exe']
             print(command)
             process_nodes.append(node_submit)
