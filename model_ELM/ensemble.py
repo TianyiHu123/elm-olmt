@@ -132,18 +132,14 @@ def create_ensemble_script(self, walltime=None):
     softenv.close()
     self.npernode=int(self.xmlquery('MAX_TASKS_PER_NODE'))
     np_ranks = max(int(self.np), 1)
-    nnodes_smt = int(np.ceil((self.np_ensemble*np_ranks)/self.npernode))
-    self.cpus_per_task = 1
-    if ('pm-cpu' in self.machine) and nnodes_smt > 1:
-        # Multi-node: 1 physical core (2 logical CPUs) per member, 128/node.
-        self.cpus_per_task = 2
-        self.npernode = max(1, self.npernode // self.cpus_per_task)
-    nnodes = int(np.ceil((self.np_ensemble*np_ranks)/self.npernode))
+    # AD-style layout: --ntasks=np_ensemble, 1 CPU per member, no SMT hint.
+    # On Perlmutter that yields 128 runnable members per node.
+    nnodes = int(np.ceil((self.np_ensemble*np_ranks)/max(self.npernode, 1)))
     timestr = _ensemble_slurm_time(self, walltime=walltime)
     print('Ensemble walltime: '+timestr)
     print('Ensemble layout: nodes='+str(nnodes)+
           ' slots_per_node='+str(self.npernode)+
-          ' cpus_per_task='+str(self.cpus_per_task))
+          ' cpus_per_task=1 (AD-style)')
     myfile = open('case.submit_ensemble','w')
     myfile.write('#!/bin/bash -e\n\n')
     if ('pm-cpu' in self.machine):
@@ -160,10 +156,6 @@ def create_ensemble_script(self, walltime=None):
     myfile.write('#SBATCH --nodes='+str(nnodes)+'\n')
     # Tianyi added for parallel srun #
     myfile.write('#SBATCH --ntasks='+str(self.np_ensemble)+'\n')
-    if ('pm-cpu' in self.machine):
-        myfile.write('#SBATCH --cpus-per-task='+str(self.cpus_per_task)+'\n')
-        myfile.write('#SBATCH --threads-per-core=2\n')
-        myfile.write('#SBATCH --hint=multithread\n')
     # Tianyi added error output #
     myfile.write('#SBATCH --output='+self.runroot+'/slurm_error_%j.out'+'\n')
     myfile.write('#SBATCH --error='+self.runroot+'/slurm_error_%j.err'+'\n')
@@ -174,7 +166,8 @@ def create_ensemble_script(self, walltime=None):
     myfile.write('export OMP_NUM_THREADS=1\n')
     myfile.write('export OPENBLAS_NUM_THREADS=1\n')
     myfile.write('export MKL_NUM_THREADS=1\n')
-    myfile.write('export NUMEXPR_NUM_THREADS=1\n\n')
+    myfile.write('export NUMEXPR_NUM_THREADS=1\n')
+    myfile.write('export PYTHONUNBUFFERED=1\n\n')
     myfile.write('./preview_namelists\n\n')
     myfile.write('ulimit -n '+str(self.nsamples+1024)+'\n')
     myfile.write('cd '+self.OLMTdir+'\n')
@@ -296,10 +289,11 @@ def ensemble_copy(self, ens_num):
 
   # create ensemble directory from original case 
   orig_dir = str(os.path.abspath(self.runroot)+'/'+self.casename+'/run')
+  orig_dir_real = os.path.realpath(orig_dir)
   ens_dir  = str(os.path.abspath(self.runroot)+'/UQ/'+self.casename+'/g'+gst[1:])
 		
   os.system('mkdir -p '+ens_dir+'/timing/checkpoints')
-  os.system('rm -f '+ens_dir+'/*.log.* '+ens_dir+'/*.nc '+ens_dir+'/rpointer*')
+  os.system('rm -f '+ens_dir+'/*.log.* '+ens_dir+'/e3sm_log.txt '+ens_dir+'/e3sm_err.txt '+ens_dir+'/*.nc '+ens_dir+'/rpointer*')
   os.system('cp  '+orig_dir+'/*_in* '+ens_dir)
   os.system('cp  '+orig_dir+'/*nml '+ens_dir)
   # Tianyi debug
@@ -390,7 +384,10 @@ def ensemble_copy(self, ens_num):
                 date_string = now.strftime("%y%m%d-%H%M%S")
                 myoutput.write(s.replace('`date +%y%m%d-%H%M%S`',date_string))
             else:
-                myoutput.write(s.replace(orig_dir,ens_dir))
+                s_out = s.replace(orig_dir, ens_dir)
+                if orig_dir_real != orig_dir:
+                    s_out = s_out.replace(orig_dir_real, ens_dir)
+                myoutput.write(s_out)
         myoutput.close()
         myinput.close()
         os.system(' mv '+ens_dir+'/'+f+'.tmp '+ens_dir+'/'+f)
