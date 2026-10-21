@@ -3,7 +3,7 @@
 ## Campaign Plan
 
 - Plan path: `development/three_stage_surrogate/PLAN.md`
-- Current plan SHA-256: `94d3016ebf76deed3a49b0285596ee9b07d30387e58ccf7f8d3dd46072015e1f`
+- Current plan SHA-256: `f72836d6449191f67567fbc7a73a262ca9ca2c7c8102560978e39a1034ecf5b5`
 - Active iteration locked plan SHA-256: `none`
 - Applicable campaign phase: project scaffold and pre-kickoff planning
 - Alignment status: `aligned`
@@ -17,7 +17,7 @@
 - Active job scope: `none`
 - Active monitoring: `none`
 - Site profile: `not selected`
-- Last updated: `2026-10-19T03:02:07-07:00`
+- Last updated: `2026-10-21T03:24:23-07:00`
 
 ## Active Kickoff Package and Runtime Authority
 
@@ -39,12 +39,19 @@ runtime work is initialized.
 ## Best Evidence So Far
 
 - The campaign direction and initial development progression are recorded in `PLAN.md`.
+- The plan now defines robustness-derived surrogate-error outputs and provenance required by the
+  downstream MCMC project while leaving likelihood construction and observational uncertainty in
+  that project's scope.
+- Likelihood-ready spinup C/N artifacts remain subject to the user-approved target and
+  observation-interface decision gate recorded in `PLAN.md`.
 - No iteration-specific inputs, runtime contract, outputs, jobs, or results exist.
 
 ## Current Risks or Blockers
 
 - The user must identify the authoritative transferred inputs before the first data-initialization
   proposal can be finalized.
+- The spinup C/N target and observation operator require scientific resolution before C/N
+  likelihood-ready artifacts can be declared; this does not block independent flux-surrogate work.
 
 ## Next Action
 

@@ -17,7 +17,7 @@ The development folder should follow the conventions of [spinup_surrogate](https
 
 **Data sequence and ownership:** The user owns completion of the ELM PPE simulations on Perlmutter and transfer of the required data to Puma. The user will identify the authoritative directories and necessary files under `/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe_vertc`. The surrogate campaign consumes those declared inputs; it does not infer replacements from nearby directories. At the beginning of each iteration, validate the declared data identities, site/member correspondence, required schemas, and completeness before training or evaluation. Surrogate data preparation, development, robustness runs, and evaluation take place on Puma, using `development/hpc/puma.md` as the platform reference.
 
-**Scope:** Deterministic surrogate construction, evaluation, and reusable inference only. Optimization, MCMC, likelihood design, uncertainty modeling, and comparison against NEON observations are outside this plan. MCMC is a future downstream use, so released inference must preserve and validate the 18-parameter order, bounds, transforms, and conditional C:N support recorded by the PPE design.
+**Scope:** Deterministic surrogate construction, evaluation, empirical held-out surrogate-error characterization, and reusable inference only. Optimization, MCMC implementation, prior and likelihood construction, observational-uncertainty estimation, posterior sampling, and comparison against NEON observations are outside this plan. The downstream [`MCMC_OPTIMIZATION_PLAN.md`](../mcmc_optimization/MCMC_OPTIMIZATION_PLAN.md) owns those activities. This surrogate campaign owns the model training, validation, robustness experiments, end-to-end surrogate-error estimates, and versioned inference/evaluation artifacts that the MCMC campaign consumes. Released inference must preserve and validate the 18-parameter order, bounds, transforms, and conditional C:N support recorded by the PPE design.
 
 ---
 
@@ -58,6 +58,27 @@ The initial SR stage uses **same-hour predicted GPP**. Alternative lagged or rol
 - Support an end-to-end predictor that returns C/N, hourly GPP, and hourly SR from parameters plus site/forcing inputs, without needing ELM target outputs at inference. The hourly interface follows the existing forcing-surrogate procedure and accepts the ordered forcing history required to construct its antecedent/rolling features.
 
 **Generalization target:** New PPE parameter vectors at the **nine modeled sites**, not unseen sites.
+
+### Spinup C/N target and observation-interface decision gate
+
+The final spinup C/N quantity needed for comparison with NEON soil stocks is **not yet settled**. ELM uses `use_vertsoilc = .true.`; its standard configuration has 10 active biogeochemical soil layers within 15 total ground layers. Native `TOTSOMC` and `TOTSOMN` generally represent vertically integrated soil-organic-matter stocks across the active decomposition profile, while the NEON C and N observations have site-dependent effective integration depths that may not match the full active ELM depth. Restart files retain vertically resolved C and N pools, so a depth-compatible observation operator may be possible without changing the number of surrogate outputs.
+
+The current surrogate interfaces are evidence to audit, not definitions to preserve without review:
+
+- `model_ELM/surrogate_NN_Forcing.py` currently constructs the C target as `numpy.nansum(totsomc[:])`.
+- The current N target is reconstructed by summing `litr1n`–`litr3n`, `cwdn`, and `soil1n`–`soil4n` over all stored elements. This construction must be checked against ELM's native `TOTSOMN` definition, particularly whether litter and coarse woody debris are excluded from the native soil-organic-matter total.
+- Current released-artifact validation and coupled inference require exactly two ordered outputs, `TOTSOMC` and `TOTSOMN`. Do not automatically expand this interface from two outputs to four, assume that layer-resolved surrogate outputs are required, or silently redefine either target.
+
+Potential resolutions include retaining full-profile two-output targets with a scientifically validated observation operator, training two depth-compatible integrated targets, or adopting another evidence-supported interface. These are alternatives for later user decision, not approved implementation choices. The decision requires, at minimum:
+
+1. authoritative ELM definitions and units for native `TOTSOMC` and `TOTSOMN`;
+2. exact restart pool membership, dimensions, active-layer depths, vertical integration semantics, and treatment of a partially intersected observation-depth layer;
+3. site-specific NEON effective depths, stock definitions, units, and boundary/support limitations;
+4. a reproducible comparison among native history totals, current restart-derived targets, and candidate depth-compatible operators across declared sites and members;
+5. confirmation that training targets, inference outputs, artifact metadata, and downstream observation handling use the same pool and depth boundary; and
+6. held-out positive-stock and log-space diagnostics for the selected targets.
+
+No spinup artifact or surrogate-error package may be declared **C/N likelihood-ready** until the user approves the target/operator choice and the corresponding scientific validation passes an explicit iteration gate. This planning decision does not block data preparation, the GPP/SR stages, flux robustness work, or a future flux-only MCMC mode. Do not change existing training targets or restart processing merely because this gate is recorded.
 
 ---
 
@@ -118,15 +139,36 @@ The hourly nine-site training matrix may be very large. Retain or adapt memory-a
 
 Within the 819 development members, perform repeated **80/20 member-wise train/validation splits** (approximately **655 training / 164 validation members** per repetition), synchronized across sites and stages.
 
-Require **20 repetitions** for the selected configuration, with any expansion to **50** treated as a separately planned resource decision. In each repetition, train the **complete three-stage chain** from its training members and evaluate end-to-end on its unseen validation members. Save the member lists/seeds, configurations, metrics, and enough provenance to compare repetitions. The 205-member fixed test pool must not enter these experiments. Do not repeat large hyperparameter searches inside the robustness repetitions.
+Require **20 repetitions** for the selected configuration, with any expansion to **50** treated as a separately planned resource decision. In each repetition, train the **complete three-stage chain** from its training members and evaluate end-to-end on its unseen validation members. Save the member lists/seeds, configurations, per-repetition metrics, held-out predictions or reproducible residual summaries, and enough provenance to compare repetitions and quantify repetition-to-repetition variability. The 205-member fixed test pool must not enter these experiments or any selection of uncertainty summaries or error scales. Do not repeat large hyperparameter searches inside the robustness repetitions.
 
-### Metrics and diagnostics
+### Metrics, residuals, and downstream uncertainty support
 
-Evaluate `TOTSOMC` and `TOTSOMN` at member/site level, and GPP/SR at both **hourly** and **daily-aggregated** resolution. Initially follow the established surrogate evaluation approach and report results **per site** and **pooled**, explicitly recording each site's time coverage because sites may have different forcing windows. Any later site-weighting rule, cross-site decision metric, or worst-site gate must be defined in the applicable iteration plan before results are examined.
+Evaluate the selected spinup C/N targets at member/site level and evaluate GPP/SR separately at both **hourly** and **daily-aggregated** resolution. Report results **per site** and **pooled**, explicitly recording each site's time coverage because sites may have different forcing windows. Any later site-weighting rule, cross-site decision metric, or worst-site gate must be defined in the applicable iteration plan before results are examined.
 
-Use conventional predictive **R²**, RMSE, MAE, and bias as primary metrics; correlation may be an additional diagnostic. Note that some existing surrogate functions label *squared correlation* as R²: distinguish that from `r2_score` when building the unified evaluation.
+For GPP and SR, each robustness repetition must provide conventional predictive **R²** using `r2_score`, RMSE, MAE, signed bias, and residual standard deviation at both resolutions, plus reproducible residual-distribution summaries with declared quantiles. Correlation or squared correlation may be retained as an additional diagnostic, but must not be mislabeled as predictive R². Preserve the distributions of every metric across all 20 repetitions rather than reporting only a pooled or median score.
 
-Inspect training–validation gaps and **end-to-end error propagation** (spinup → GPP → SR). Optionally compare downstream predictions obtained with true upstream inputs as a **diagnostic only**, not a deployment score or normal training method.
+Construct daily errors by first aligning the held-out ELM targets and full-chain hourly predictions under the same timestamps and valid-data mask, aggregating both to declared daily values with an explicit coverage rule, and only then calculating daily residuals and metrics. Do **not** approximate a daily surrogate error by dividing hourly RMSE or residual spread by \(\sqrt{24}\). For every site, resolution, target, and repetition, preserve site identity, global PPE member identity, timestamps or reproducible day groups, expected and valid coverage, masks, units, aggregation rules, and residual sign convention.
+
+For spinup C/N, report site-specific held-out RMSE, MAE, signed bias, residual standard deviation, relevant residual quantiles, and their distributions across the 20 repetitions. For positive stock targets, also evaluate `log(predicted) - log(ELM target)` with log-space bias, residual standard deviation, RMSE/MAE, quantiles, and non-Gaussian/outlier diagnostics suitable for assessing a future lognormal likelihood. Every result must identify the exact C/N target definition, included pools, units, and vertical integration depth. Current full-profile outputs must not be presented as observation-compatible until the C/N decision gate passes.
+
+All deployment-chain GPP/SR error estimates must come from the full three-stage prediction path using **predicted** upstream C/N and predicted same-hour GPP as applicable. Comparisons that supply true ELM C/N or GPP to a downstream stage may be retained only as explicitly labeled error-propagation diagnostics; they are not deployment-chain uncertainty estimates and must not supply MCMC surrogate-error scales.
+
+Inspect training–validation gaps and end-to-end error propagation (spinup → GPP → SR) without prescribing additional training experiments beyond the existing 20-repetition design.
+
+### Surrogate-error handoff for downstream MCMC
+
+Integrate the uncertainty handoff with the normal robustness and artifact outputs rather than creating a separate uncertainty experiment. The surrogate campaign must provide:
+
+- site-specific hourly and daily held-out error information for GPP and SR;
+- site-specific log-space C/N error information after, and only after, the C/N target/operator gate passes;
+- sufficient residual summaries to assess systematic bias, distribution shape, tails, and variability among repetitions;
+- per-repetition metrics and the cross-repetition distributions used to derive any candidate fixed surrogate-error scale;
+- reproducible provenance linking results to the surrogate configuration and version, global train/validation member lists, upstream-prediction mode, source-data identities, coverage/masks, units, and temporal aggregation rules; and
+- a documented, reproducible interface by which downstream MCMC development can select a fixed site/target/resolution surrogate-error component without recomputing or reverse-engineering the robustness analysis.
+
+The surrogate project supplies the empirical surrogate-error component only. It does not estimate observational uncertainty, combine errors in quadrature, choose the final likelihood, or perform posterior inference; those responsibilities remain in the downstream MCMC campaign. Any fixed-scale summary must be reported alongside signed bias and distribution diagnostics so widening an error scale is not presented as correction of systematic bias.
+
+Document that hourly errors may be serially correlated and GPP/SR errors may be cross-correlated; repeated validation sets overlap across the 20 member-wise splits; site windows and valid coverage differ; and robustness models train on approximately 655 members whereas the final surrogate trains on all 819 development members. These limitations constrain interpretation of uncertainty-scale precision and transfer to the final artifact. The fixed 205-member test set may evaluate a frozen surrogate, but it must not select an uncertainty model, tune an error scale, or motivate architecture changes while retaining a pristine-test claim.
 
 ### Fixed-test evaluation
 
@@ -149,7 +191,7 @@ Work directly in the existing source tree **on the new development branch**:
 | `model_ELM/surrogate_NN_Spinup.py` | Reuse spinup preparation/fit/predict; integrate explicit global member splitting and suitable model interfaces. |
 | `model_ELM/surrogate_NN_Forcing.py` | Reuse forcing loading/features and hourly modeling; implement consistent timestamp-based DOY features and predicted-upstream input handling. |
 | `model_ELM/surrogate_forcing_multicase.py` | Reuse pooled multi-case preparation where suitable. |
-| `model_ELM/spinup_surrogate_artifact.py`, `model_ELM/forcing_surrogate_artifact.py` | Reuse compatible artifact schema/validation concepts. |
+| `model_ELM/spinup_surrogate_artifact.py`, `model_ELM/forcing_surrogate_artifact.py` | Reuse compatible artifact schema/validation concepts; require explicit target definitions and uncertainty-diagnostic provenance without changing the current two-output spinup contract before the C/N gate. |
 | `model_ELM/coupled_surrogate.py` | Review existing spinup → SR inference for reusable interfaces, while preserving existing behavior. |
 | Repository-root `train_surrogate_*.py` scripts | Preserve existing entry points; add a dedicated pipeline training/evaluation CLI if useful. |
 | `tests/` | Add focused pipeline, global-split, upstream-feature, and inference tests. |
@@ -159,7 +201,7 @@ Possible **new reusable modules within `model_ELM/`**, subject to Codex's review
 - **Global member split/manifest support**, shared by stages.
 - **Three-stage pipeline orchestration**, for sequential fit and inference.
 - **Upstream prediction feature generation**, initially direct/in-sample, with an OOF extension interface.
-- **Common pipeline evaluation and bundle serialization**, where existing utilities are insufficient.
+- **Common pipeline evaluation and bundle serialization**, including reusable per-site/per-resolution residual and uncertainty-summary provenance where existing utilities are insufficient.
 
 These are *responsibility boundaries*, not a mandatory list of new files or class names. Prefer reusing existing functions and avoiding unnecessary wrappers or duplicate abstractions.
 
@@ -196,10 +238,10 @@ This folder holds **iteration records, HPC job scripts, diagnostics, and develop
 1. **Branch and project scaffold:** Create the branch from `pmcpu`; initialize the development records in the pre-kickoff state; inspect/reuse existing surrogate code.
 2. **Iter001 data initialization:** After the user identifies the transferred ABBY/JERC inputs, validate and record the exact PPE design, parameter/member mapping, restart targets, site-specific forcing/GPP/SR time axes, established feature inputs, units, schemas, coverage, and eligible members. Create the deterministic 819/205 split and a reusable no-training data-contract validator. Do not train a surrogate in this iteration.
 3. **Two-site prototype:** Build the direct three-stage chain on ABBY/JERC using only development members; establish cross-fitting-ready interfaces and deterministic end-to-end inference.
-4. **Two-site tuning and robustness:** Settle feature/model choices within the development pool and complete the required 20 synchronized robustness repetitions.
+4. **Two-site tuning and robustness:** Settle feature/model choices within the development pool; complete the required 20 synchronized robustness repetitions; evaluate full-chain hourly/daily flux residuals and the declared spinup targets; and publish the reusable surrogate-error handoff with its limitations.
 5. **Two-site fixed test:** Freeze and refit the selected chain on all 819 development members, then perform the simple 205-member ABBY/JERC test without tuning from its results.
 6. **Nine-site expansion:** As the user supplies the remaining transferred sites, extend and validate the data contract without changing established ABBY/JERC identities; then scale preparation, fitting, and development-only robustness to all nine sites.
-7. **Nine-site fixed-test evaluation and release:** Refit the frozen nine-site chain on the 819 development members, evaluate the reused 205-member fixed test with the required disclosure, and produce reusable deterministic model artifacts.
+7. **Nine-site fixed-test evaluation and release:** Refit the frozen nine-site chain on the 819 development members, evaluate the reused 205-member fixed test with the required disclosure, and produce reusable deterministic model artifacts plus site-specific flux uncertainty diagnostics. Declare C/N artifacts likelihood-ready only if the separate target/operator decision gate has passed.
 8. **Integration:** Review implementation and tests, then merge validated code from the development branch back to `pmcpu`.
 
 A later **cross-fitting experiment** can be added as a separate development iteration if validation suggests meaningful train/inference mismatch.
@@ -208,4 +250,4 @@ A later **cross-fitting experiment** can be added as a separate development iter
 
 ## Expected outcome
 
-A reproducible, pooled nine-site **spinup → GPP → SR** surrogate that accepts new PPE parameter vectors and site forcing inputs, supplies predicted upstream features throughout, and has documented robustness and held-out performance. The first implementation uses **direct in-sample sequential training**, while keeping the architecture open to **out-of-fold cross-fitting**. Code lives in the normal repository source tree; the dedicated development folder preserves the experiment history.
+A reproducible, pooled nine-site **spinup → GPP → SR** surrogate that accepts new PPE parameter vectors and site forcing inputs, supplies predicted upstream features throughout, and has documented robustness, held-out performance, and reproducible site/resolution-specific surrogate-error diagnostics for downstream MCMC. The first implementation uses **direct in-sample sequential training**, while keeping the architecture open to **out-of-fold cross-fitting**. Flux uncertainty outputs are derived from the full deployed chain; C/N likelihood readiness remains conditional on the user-approved pool/depth target decision. Code lives in the normal repository source tree; the dedicated development folder preserves the experiment history.
