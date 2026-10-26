@@ -3,7 +3,7 @@
 ## Campaign Plan
 
 - Plan path: `development/three_stage_surrogate/PLAN.md`
-- Current plan SHA-256: `f72836d6449191f67567fbc7a73a262ca9ca2c7c8102560978e39a1034ecf5b5`
+- Current plan SHA-256: `347646addaad8cc8c99a72e6a89e1f1824f023eb5f2481065336e2d2215dda0c`
 - Active iteration locked plan SHA-256: `none`
 - Applicable campaign phase: project scaffold and pre-kickoff planning
 - Alignment status: `aligned`
@@ -17,7 +17,7 @@
 - Active job scope: `none`
 - Active monitoring: `none`
 - Site profile: `not selected`
-- Last updated: `2026-10-21T03:24:23-07:00`
+- Last updated: `2026-10-26T03:08:36-07:00`
 
 ## Active Kickoff Package and Runtime Authority
 
@@ -39,19 +39,24 @@ runtime work is initialized.
 ## Best Evidence So Far
 
 - The campaign direction and initial development progression are recorded in `PLAN.md`.
-- The plan now defines robustness-derived surrogate-error outputs and provenance required by the
-  downstream MCMC project while leaving likelihood construction and observational uncertainty in
-  that project's scope.
-- Likelihood-ready spinup C/N artifacts remain subject to the user-approved target and
-  observation-interface decision gate recorded in `PLAN.md`.
+- The spinup design is settled at exactly two soil-only, full-profile outputs reconstructed from
+  `soil1`-`soil4` over the 10 active decomposition layers with ELM layer-thickness weighting.
+- ABBY and JERC spinup-preprocessing NetCDF files for all 1,024 members per site have been
+  transferred under the declared Puma `spinup_preprocessing/` root; their identities, schemas,
+  units, member coverage, and recorded reconstruction evidence remain subject to Iter001 input
+  validation.
+- The plan defines paired held-out C/N error outputs and the diagnostic-only surrogate/depth-error
+  dependence check required by the downstream MCMC project. The MCMC project owns the fixed
+  site-specific NEON-depth observation operator and likelihood construction.
 - No iteration-specific inputs, runtime contract, outputs, jobs, or results exist.
 
 ## Current Risks or Blockers
 
-- The user must identify the authoritative transferred inputs before the first data-initialization
-  proposal can be finalized.
-- The spinup C/N target and observation operator require scientific resolution before C/N
-  likelihood-ready artifacts can be declared; this does not block independent flux-surrogate work.
+- The exact authoritative ABBY/JERC PPE parameter/member mapping, forcing, GPP, and SR inputs and
+  their schemas and coverage must still be declared or confirmed before the first
+  data-initialization proposal can be finalized.
+- Preprocessed spinup inputs for the remaining seven sites are pending, but they do not block the
+  planned ABBY/JERC initialization.
 
 ## Next Action
 
@@ -70,7 +75,7 @@ proposal has not yet been finalized or approved.
 2. Confirm Git state and the current campaign-plan identity.
 3. Do not expect an iteration report, registry row, summary, script, or job for pre-kickoff
    `iter001`.
-4. Obtain the user-declared input paths and resolve every missing proposal field.
+4. Confirm the remaining ABBY/JERC input paths and resolve every missing proposal field.
 5. Seek one approval of the complete kickoff package before initialization or runtime action.
 
 ## Artifact References

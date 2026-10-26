@@ -15,7 +15,7 @@ Create a new Git branch from `pmcpu`; develop the implementation directly in the
 
 The development folder should follow the conventions of [spinup_surrogate](https://github.com/TianyiHu123/elm-olmt/tree/pmcpu/development/spinup_surrogate), [spinup_forcing_coupling](https://github.com/TianyiHu123/elm-olmt/tree/pmcpu/development/spinup_forcing_coupling) and [ELM_diagnose](https://github.com/TianyiHu123/elm-olmt/tree/feature/ELM_diagnostics/development/ELM_diagnose): a concise `README.md`, project plan, development workflow/handoff, iteration records, cumulative summaries, and iteration-specific Slurm scripts and diagnostic tools as needed. Codex and the user will decide detailed iteration procedures separately; do not duplicate the older workflows' extensive operational rules in this plan.
 
-**Data sequence and ownership:** The user owns completion of the ELM PPE simulations on Perlmutter and transfer of the required data to Puma. The user will identify the authoritative directories and necessary files under `/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe_vertc`. The surrogate campaign consumes those declared inputs; it does not infer replacements from nearby directories. At the beginning of each iteration, validate the declared data identities, site/member correspondence, required schemas, and completeness before training or evaluation. Surrogate data preparation, development, robustness runs, and evaluation take place on Puma, using `development/hpc/puma.md` as the platform reference.
+**Data sequence and ownership:** The user owns completion of the ELM PPE simulations on Perlmutter and transfer of the required data to Puma. The user will identify the authoritative directories and necessary files under `/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe_vertc`. Initial ABBY/JERC spinup preprocessing has been transferred under `spinup_preprocessing/` as described below; the remaining seven sites will be incorporated when their PPE preprocessing is complete. The surrogate campaign consumes those declared inputs; it does not infer replacements from nearby directories. At the beginning of each iteration, validate the declared data identities, site/member correspondence, required schemas, and completeness before training or evaluation. Surrogate data preparation, development, robustness runs, and evaluation take place on Puma, using `development/hpc/puma.md` as the platform reference.
 
 **Scope:** Deterministic surrogate construction, evaluation, empirical held-out surrogate-error characterization, and reusable inference only. Optimization, MCMC implementation, prior and likelihood construction, observational-uncertainty estimation, posterior sampling, and comparison against NEON observations are outside this plan. The downstream [`MCMC_OPTIMIZATION_PLAN.md`](../mcmc_optimization/MCMC_OPTIMIZATION_PLAN.md) owns those activities. This surrogate campaign owns the model training, validation, robustness experiments, end-to-end surrogate-error estimates, and versioned inference/evaluation artifacts that the MCMC campaign consumes. Released inference must preserve and validate the 18-parameter order, bounds, transforms, and conditional C:N support recorded by the PPE design.
 
@@ -59,26 +59,35 @@ The initial SR stage uses **same-hour predicted GPP**. Alternative lagged or rol
 
 **Generalization target:** New PPE parameter vectors at the **nine modeled sites**, not unseen sites.
 
-### Spinup C/N target and observation-interface decision gate
+### Final spinup C/N targets and preprocessing evidence
 
-The final spinup C/N quantity needed for comparison with NEON soil stocks is **not yet settled**. ELM uses `use_vertsoilc = .true.`; its standard configuration has 10 active biogeochemical soil layers within 15 total ground layers. Native `TOTSOMC` and `TOTSOMN` generally represent vertically integrated soil-organic-matter stocks across the active decomposition profile, while the NEON C and N observations have site-dependent effective integration depths that may not match the full active ELM depth. Restart files retain vertically resolved C and N pools, so a depth-compatible observation operator may be possible without changing the number of surrogate outputs.
+The spinup surrogate retains exactly two ordered outputs and predicts **full-profile ELM soil-organic-matter stocks**:
 
-The current surrogate interfaces are evidence to audit, not definitions to preserve without review:
+- `TOTSOMC`: full-profile soil organic carbon stock, gC/m².
+- `TOTSOMN`: full-profile soil organic nitrogen stock, gN/m².
 
-- `model_ELM/surrogate_NN_Forcing.py` currently constructs the C target as `numpy.nansum(totsomc[:])`.
-- The current N target is reconstructed by summing `litr1n`–`litr3n`, `cwdn`, and `soil1n`–`soil4n` over all stored elements. This construction must be checked against ELM's native `TOTSOMN` definition, particularly whether litter and coarse woody debris are excluded from the native soil-organic-matter total.
-- Current released-artifact validation and coupled inference require exactly two ordered outputs, `TOTSOMC` and `TOTSOMN`. Do not automatically expand this interface from two outputs to four, assume that layer-resolved surrogate outputs are required, or silently redefine either target.
+Reconstruct both targets from each member's final ELM spinup restart by integrating only the four vertically resolved soil organic pools, `soil1`–`soil4`, over the validated active decomposition column:
 
-Potential resolutions include retaining full-profile two-output targets with a scientifically validated observation operator, training two depth-compatible integrated targets, or adopting another evidence-supported interface. These are alternatives for later user decision, not approved implementation choices. The decision requires, at minimum:
+\[
+C_{\mathrm{full}}=\sum_{j=1}^{n_{\mathrm{decomp}}}
+\left(\sum_{p=1}^{4}C_{p,j}\right)\Delta z_j
+\]
 
-1. authoritative ELM definitions and units for native `TOTSOMC` and `TOTSOMN`;
-2. exact restart pool membership, dimensions, active-layer depths, vertical integration semantics, and treatment of a partially intersected observation-depth layer;
-3. site-specific NEON effective depths, stock definitions, units, and boundary/support limitations;
-4. a reproducible comparison among native history totals, current restart-derived targets, and candidate depth-compatible operators across declared sites and members;
-5. confirmation that training targets, inference outputs, artifact metadata, and downstream observation handling use the same pool and depth boundary; and
-6. held-out positive-stock and log-space diagnostics for the selected targets.
+\[
+N_{\mathrm{full}}=\sum_{j=1}^{n_{\mathrm{decomp}}}
+\left(\sum_{p=1}^{4}N_{p,j}\right)\Delta z_j.
+\]
 
-No spinup artifact or surrogate-error package may be declared **C/N likelihood-ready** until the user approves the target/operator choice and the corresponding scientific validation passes an explicit iteration gate. This planning decision does not block data preparation, the GPP/SR stages, flux robustness work, or a future flux-only MCMC mode. Do not change existing training targets or restart processing merely because this gate is recorded.
+The restart pool values are concentrations in gC/m³ and gN/m³; multiplication by the corresponding ELM layer thickness \(\Delta z_j\) produces integrated targets in gC/m² and gN/m². The current configuration uses **10 active decomposition layers**. Use the validated active-soil-column mask and ELM layer thicknesses; do not sum raw vertical concentrations. Exclude all litter and coarse woody debris pools. This settled target definition replaces the legacy nitrogen construction that included litter/CWD and any raw vertical summation behavior.
+
+The surrogate does **not** apply the site-specific NEON observation-depth correction. That correction and its uncertainty belong to the downstream MCMC observation operator. Keep the two-output spinup interface and the three-stage sequential architecture unchanged; no four-output or layer-resolved spinup architecture is introduced.
+
+Initial preprocessing is complete for all **1,024 ABBY members** and all **1,024 JERC members**. The transferred Puma sources intended to be authoritative for spinup-surrogate targets, subject to normal transfer, schema, member-identity, units, and completeness validation, are:
+
+- `/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe_vertc/spinup_preprocessing/ABBY/ABBY_spinup_preprocessing.nc`
+- `/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe_vertc/spinup_preprocessing/JERC/JERC_spinup_preprocessing.nc`
+
+For both sites, reconstructed full-profile carbon agreed with native restart `totsomc` for all 1,024 members, with maximum relative differences of approximately \(10^{-8}\). Preserve the preprocessing provenance and validation evidence in the data contract. Incorporate equivalently validated datasets for OSBS, SOAP, RMNP, TALL, TEAK, WREF, and YELL as their PPE preprocessing becomes available.
 
 ---
 
@@ -149,7 +158,9 @@ For GPP and SR, each robustness repetition must provide conventional predictive 
 
 Construct daily errors by first aligning the held-out ELM targets and full-chain hourly predictions under the same timestamps and valid-data mask, aggregating both to declared daily values with an explicit coverage rule, and only then calculating daily residuals and metrics. Do **not** approximate a daily surrogate error by dividing hourly RMSE or residual spread by \(\sqrt{24}\). For every site, resolution, target, and repetition, preserve site identity, global PPE member identity, timestamps or reproducible day groups, expected and valid coverage, masks, units, aggregation rules, and residual sign convention.
 
-For spinup C/N, report site-specific held-out RMSE, MAE, signed bias, residual standard deviation, relevant residual quantiles, and their distributions across the 20 repetitions. For positive stock targets, also evaluate `log(predicted) - log(ELM target)` with log-space bias, residual standard deviation, RMSE/MAE, quantiles, and non-Gaussian/outlier diagnostics suitable for assessing a future lognormal likelihood. Every result must identify the exact C/N target definition, included pools, units, and vertical integration depth. Current full-profile outputs must not be presented as observation-compatible until the C/N decision gate passes.
+For the full-profile spinup C/N targets, report site-specific held-out RMSE, MAE, signed bias, residual standard deviation, relevant residual quantiles, and their distributions across the 20 repetitions. For these positive stock targets, also evaluate `log(predicted) - log(ELM target)` with log-space bias, residual standard deviation, RMSE/MAE, quantiles, and non-Gaussian/outlier diagnostics. Preserve paired held-out C and N predictions and target values with site, member, and repetition identity so the downstream MCMC project can estimate the site-specific 2×2 log-error covariance, including C–N covariance. Every result must identify the settled `soil1`–`soil4` full-profile target definition, gC/m² or gN/m² units, active-layer mask, layer thickness source, and integration depth.
+
+Where the validated preprocessing provides member-level NEON-depth stocks, use the same held-out development members to calculate the small requested diagnostic between paired surrogate log errors and paired depth-correction log errors, including within-element and available cross-element correlations or covariances. This is part of normal robustness evaluation, not a new training experiment or release gate. Preserve the paired values needed to reproduce it and report whether ignored cross-source covariance appears small relative to the retained surrogate and depth covariance components.
 
 All deployment-chain GPP/SR error estimates must come from the full three-stage prediction path using **predicted** upstream C/N and predicted same-hour GPP as applicable. Comparisons that supply true ELM C/N or GPP to a downstream stage may be retained only as explicitly labeled error-propagation diagnostics; they are not deployment-chain uncertainty estimates and must not supply MCMC surrogate-error scales.
 
@@ -160,9 +171,10 @@ Inspect training–validation gaps and end-to-end error propagation (spinup → 
 Integrate the uncertainty handoff with the normal robustness and artifact outputs rather than creating a separate uncertainty experiment. The surrogate campaign must provide:
 
 - site-specific hourly and daily held-out error information for GPP and SR;
-- site-specific log-space C/N error information after, and only after, the C/N target/operator gate passes;
+- site-specific paired full-profile C/N predictions, targets, log errors, biases, and 2×2 log-error covariance information;
 - sufficient residual summaries to assess systematic bias, distribution shape, tails, and variability among repetitions;
 - per-repetition metrics and the cross-repetition distributions used to derive any candidate fixed surrogate-error scale;
+- the same-member surrogate/depth-error dependence diagnostic where member-level depth-adjusted preprocessing is available, without using fixed-test members to estimate coefficients or covariance inputs;
 - reproducible provenance linking results to the surrogate configuration and version, global train/validation member lists, upstream-prediction mode, source-data identities, coverage/masks, units, and temporal aggregation rules; and
 - a documented, reproducible interface by which downstream MCMC development can select a fixed site/target/resolution surrogate-error component without recomputing or reverse-engineering the robustness analysis.
 
@@ -191,7 +203,7 @@ Work directly in the existing source tree **on the new development branch**:
 | `model_ELM/surrogate_NN_Spinup.py` | Reuse spinup preparation/fit/predict; integrate explicit global member splitting and suitable model interfaces. |
 | `model_ELM/surrogate_NN_Forcing.py` | Reuse forcing loading/features and hourly modeling; implement consistent timestamp-based DOY features and predicted-upstream input handling. |
 | `model_ELM/surrogate_forcing_multicase.py` | Reuse pooled multi-case preparation where suitable. |
-| `model_ELM/spinup_surrogate_artifact.py`, `model_ELM/forcing_surrogate_artifact.py` | Reuse compatible artifact schema/validation concepts; require explicit target definitions and uncertainty-diagnostic provenance without changing the current two-output spinup contract before the C/N gate. |
+| `model_ELM/spinup_surrogate_artifact.py`, `model_ELM/forcing_surrogate_artifact.py` | Reuse compatible artifact schema/validation concepts; require explicit soil-only full-profile target definitions and uncertainty-diagnostic provenance while preserving the two-output spinup contract. |
 | `model_ELM/coupled_surrogate.py` | Review existing spinup → SR inference for reusable interfaces, while preserving existing behavior. |
 | Repository-root `train_surrogate_*.py` scripts | Preserve existing entry points; add a dedicated pipeline training/evaluation CLI if useful. |
 | `tests/` | Add focused pipeline, global-split, upstream-feature, and inference tests. |
@@ -236,12 +248,12 @@ This folder holds **iteration records, HPC job scripts, diagnostics, and develop
 ### 4.3 Suggested development progression
 
 1. **Branch and project scaffold:** Create the branch from `pmcpu`; initialize the development records in the pre-kickoff state; inspect/reuse existing surrogate code.
-2. **Iter001 data initialization:** After the user identifies the transferred ABBY/JERC inputs, validate and record the exact PPE design, parameter/member mapping, restart targets, site-specific forcing/GPP/SR time axes, established feature inputs, units, schemas, coverage, and eligible members. Create the deterministic 819/205 split and a reusable no-training data-contract validator. Do not train a surrogate in this iteration.
+2. **Iter001 data initialization:** Validate and record the declared transferred ABBY/JERC inputs, including the two authoritative spinup-preprocessing NetCDF files; exact PPE design and parameter/member mapping; settled soil-only full-profile restart targets; site-specific forcing/GPP/SR time axes; established feature inputs; units, schemas, coverage, and eligible members. Create the deterministic 819/205 split and a reusable no-training data-contract validator. Do not train a surrogate in this iteration.
 3. **Two-site prototype:** Build the direct three-stage chain on ABBY/JERC using only development members; establish cross-fitting-ready interfaces and deterministic end-to-end inference.
 4. **Two-site tuning and robustness:** Settle feature/model choices within the development pool; complete the required 20 synchronized robustness repetitions; evaluate full-chain hourly/daily flux residuals and the declared spinup targets; and publish the reusable surrogate-error handoff with its limitations.
 5. **Two-site fixed test:** Freeze and refit the selected chain on all 819 development members, then perform the simple 205-member ABBY/JERC test without tuning from its results.
 6. **Nine-site expansion:** As the user supplies the remaining transferred sites, extend and validate the data contract without changing established ABBY/JERC identities; then scale preparation, fitting, and development-only robustness to all nine sites.
-7. **Nine-site fixed-test evaluation and release:** Refit the frozen nine-site chain on the 819 development members, evaluate the reused 205-member fixed test with the required disclosure, and produce reusable deterministic model artifacts plus site-specific flux uncertainty diagnostics. Declare C/N artifacts likelihood-ready only if the separate target/operator decision gate has passed.
+7. **Nine-site fixed-test evaluation and release:** Refit the frozen nine-site chain on the 819 development members, evaluate the reused 205-member fixed test with the required disclosure, and produce reusable deterministic model artifacts plus site-specific flux and paired full-profile C/N uncertainty diagnostics.
 8. **Integration:** Review implementation and tests, then merge validated code from the development branch back to `pmcpu`.
 
 A later **cross-fitting experiment** can be added as a separate development iteration if validation suggests meaningful train/inference mismatch.
@@ -250,4 +262,4 @@ A later **cross-fitting experiment** can be added as a separate development iter
 
 ## Expected outcome
 
-A reproducible, pooled nine-site **spinup → GPP → SR** surrogate that accepts new PPE parameter vectors and site forcing inputs, supplies predicted upstream features throughout, and has documented robustness, held-out performance, and reproducible site/resolution-specific surrogate-error diagnostics for downstream MCMC. The first implementation uses **direct in-sample sequential training**, while keeping the architecture open to **out-of-fold cross-fitting**. Flux uncertainty outputs are derived from the full deployed chain; C/N likelihood readiness remains conditional on the user-approved pool/depth target decision. Code lives in the normal repository source tree; the dedicated development folder preserves the experiment history.
+A reproducible, pooled nine-site **spinup → GPP → SR** surrogate that accepts new PPE parameter vectors and site forcing inputs, supplies predicted upstream features throughout, and has documented robustness, held-out performance, and reproducible site/resolution-specific surrogate-error diagnostics for downstream MCMC. Its two spinup outputs are the settled soil-only, full-profile `TOTSOMC` and `TOTSOMN` stocks; NEON depth correction remains outside the surrogate. The first implementation uses **direct in-sample sequential training**, while keeping the architecture open to **out-of-fold cross-fitting**. Flux uncertainty outputs are derived from the full deployed chain, and paired C/N outputs support downstream covariance estimation. Code lives in the normal repository source tree; the dedicated development folder preserves the experiment history.
