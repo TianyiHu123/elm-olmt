@@ -1,0 +1,28 @@
+{
+  "development_count": 819,
+  "fixed_test_count": 205,
+  "member_count": 1024,
+  "no_training": true,
+  "parameter_count": 18,
+  "prepare_attempt": 1,
+  "result": "pass",
+  "schema": "three-stage-surrogate-validation-report-v1",
+  "sites": [
+    {
+      "hours": 61320,
+      "members": 1024,
+      "prepared_path": "sites/ABBY/input_data_v1.nc",
+      "prepared_sha256": "85f526909f9552a01c388713da3a45dfaff3e3d3ecdf69194ff46dd94346c9c1",
+      "site": "ABBY"
+    },
+    {
+      "hours": 61320,
+      "members": 1024,
+      "prepared_path": "sites/JERC/input_data_v1.nc",
+      "prepared_sha256": "a846c7312a7f306af5b5e95e337ee5d31da6d23a1d09866df97d94e3eb3c0cb6",
+      "site": "JERC"
+    }
+  ],
+  "snapshot_revision": "r0001",
+  "validation_attempt": 1
+}

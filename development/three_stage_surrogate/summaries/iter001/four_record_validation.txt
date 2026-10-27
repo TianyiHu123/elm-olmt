@@ -1,0 +1,9 @@
+ITER001_FOUR_RECORD_VALIDATE_PASS
+command=python3 development/three_stage_surrogate/tools/validate_closeout_records.py --active-job-count 0
+records=iterations/iter001.md,ITERATION_SUMMARY.md,registry.csv,handoff/CURRENT.md
+evidence=summaries/iter001/summary.md,summaries/iter001/iter001_validation_report.json,catalog.json,manifests/dataset_snapshot_r0001.json
+snapshot=r0001
+sites=ABBY,JERC
+members=1024
+split=819/205
+active_jobs=0
