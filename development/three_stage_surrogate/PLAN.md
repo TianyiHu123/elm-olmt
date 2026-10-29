@@ -9,7 +9,7 @@
 
 ## Project context and workflow
 
-Develop a **single pooled surrogate system for nine NEON forest sites**—in canonical order, **ABBY, JERC, OSBS, SOAP, RMNP, TALL, TEAK, WREF, and YELL**—using the same 1,024-member, 18-parameter Owen-scrambled Sobol PPE at each site. Begin implementation, tuning, robustness testing, and integration with **ABBY and JERC**. Introduce the other seven sites only after the complete three-stage structure and reusable inference path are ready.
+Develop a **single pooled surrogate system for nine NEON forest sites**—in canonical order, **ABBY, JERC, OSBS, SOAP, RMNP, TALL, TEAK, WREF, and YELL**—using the same 1,024-member, 18-parameter Owen-scrambled Sobol PPE at each site. Begin implementation, tuning, robustness testing, and integration with **ABBY and JERC**. Develop the stages sequentially—first spinup C/N, then GPP, then SR—so each stage has an independently validated data, training, artifact, and inference contract before it becomes an upstream dependency. Introduce the other seven sites only after the complete three-stage structure and reusable inference path are ready.
 
 Create a new Git branch from `pmcpu`; develop the implementation directly in the repository's established code locations (principally `model_ELM/` and root-level training scripts). Merge the tested implementation back to `pmcpu` after review. The branch provides isolation; `development/three_stage_surrogate/` is **not** a separate Python package.
 
@@ -51,7 +51,11 @@ The initial SR stage uses **same-hour predicted GPP**. Alternative lagged or rol
 
 - Reuse the surface, climatological, hourly forcing, antecedent/rolling, and `sin_hour`/`cos_hour` features and inference-history behavior established by the existing spinup and coupled-surrogate procedures. Pin their exact source, ordering, units, and construction during data initialization rather than reinterpreting them independently for this campaign.
 - Add **`sin_doy` and `cos_doy`** to both hourly stages, calculated from actual aligned forcing timestamps with the ELM **no-leap calendar**. Avoid assuming the record always begins on January 1 or at midnight.
-- Include an explicit categorical site identity alongside the established physical site descriptors. The system targets new parameter vectors at the nine known sites, not inference for unseen sites.
+- Preserve site identity as an explicit coordinate and provenance field for grouping, diagnostics,
+  and reporting, but do not use a categorical site-identity input by default. Represent site
+  context through the approved surface and forcing-climatology descriptors. This assumes those
+  descriptors capture the relevant modeled differences among sites. Any later categorical site
+  feature requires a development-only comparison and a user-approved plan revision.
 - Keep a canonical parameter-name/order schema and explicit site/member/time identifiers. The same member ID must resolve to the **same parameter vector at every site**; account for the existing distinction between 0-based array positions and 1-based ensemble directories.
 - Permit different forcing and target windows among sites when their available forcing data differ. Within one site, all eligible members must use the same validated timestamp axis for a given hourly stage. Record each site's model window, expected and valid row counts, and any explicit gaps; never silently truncate all sites to a common window.
 - Reuse one feature-engineering implementation for training and inference, with consistent feature ordering, units, and timestamps.
@@ -92,6 +96,14 @@ For both sites, reconstructed full-profile carbon agreed with native restart `to
 ---
 
 ## 2. Training strategy
+
+Develop and validate one stage at a time. A stage-level baseline run establishes implementation,
+resource, artifact, inference, and held-out development-performance evidence; it is not a release
+fit. If its development-only evidence motivates configuration changes, perform those changes in a
+separate bounded iteration. Only after a stage configuration is frozen may a later release
+iteration refit that stage on all 819 development members and publish the predicted upstream
+inputs needed by the next stage. Never treat a mixed collection of in-sample and held-out upstream
+predictions as the normal downstream training handoff.
 
 ### 2.1 Shared global split
 
@@ -205,7 +217,7 @@ Work directly in the existing source tree **on the new development branch**:
 | `model_ELM/surrogate_forcing_multicase.py` | Reuse pooled multi-case preparation where suitable. |
 | `model_ELM/spinup_surrogate_artifact.py`, `model_ELM/forcing_surrogate_artifact.py` | Reuse compatible artifact schema/validation concepts; require explicit soil-only full-profile target definitions and uncertainty-diagnostic provenance while preserving the two-output spinup contract. |
 | `model_ELM/coupled_surrogate.py` | Review existing spinup → SR inference for reusable interfaces, while preserving existing behavior. |
-| Repository-root `train_surrogate_*.py` scripts | Preserve existing entry points; add a dedicated pipeline training/evaluation CLI if useful. |
+| Repository-root `train_surrogate_*.py` scripts | Preserve existing entry points; add dedicated stage training, prediction, and evaluation CLIs where useful. |
 | `tests/` | Add focused pipeline, global-split, upstream-feature, and inference tests. |
 
 Possible **new reusable modules within `model_ELM/`**, subject to Codex's review of existing functionality:
@@ -249,12 +261,38 @@ This folder holds **iteration records, HPC job scripts, diagnostics, and develop
 
 1. **Branch and project scaffold:** Create the branch from `pmcpu`; initialize the development records in the pre-kickoff state; inspect/reuse existing surrogate code.
 2. **Iter001 data initialization:** Validate and record the declared transferred ABBY/JERC inputs, including the two authoritative spinup-preprocessing NetCDF files; exact PPE design and parameter/member mapping; settled soil-only full-profile restart targets; site-specific forcing/GPP/SR time axes; established feature inputs; units, schemas, coverage, and eligible members. Create the deterministic 819/205 split and a reusable no-training data-contract validator. Do not train a surrogate in this iteration.
-3. **Two-site prototype:** Build the direct three-stage chain on ABBY/JERC using only development members; establish cross-fitting-ready interfaces and deterministic end-to-end inference.
-4. **Two-site tuning and robustness:** Settle feature/model choices within the development pool; complete the required 20 synchronized robustness repetitions; evaluate full-chain hourly/daily flux residuals and the declared spinup targets; and publish the reusable surrogate-error handoff with its limitations.
-5. **Two-site fixed test:** Freeze and refit the selected chain on all 819 development members, then perform the simple 205-member ABBY/JERC test without tuning from its results.
-6. **Nine-site expansion:** As the user supplies the remaining transferred sites, extend and validate the data contract without changing established ABBY/JERC identities; then scale preparation, fitting, and development-only robustness to all nine sites.
-7. **Nine-site fixed-test evaluation and release:** Refit the frozen nine-site chain on the 819 development members, evaluate the reused 205-member fixed test with the required disclosure, and produce reusable deterministic model artifacts plus site-specific flux and paired full-profile C/N uncertainty diagnostics.
-8. **Integration:** Review implementation and tests, then merge validated code from the development branch back to `pmcpu`.
+3. **Two-site spinup baseline:** Implement the pooled ABBY/JERC spinup C/N loader, fixed feature
+   schema, training, flexible member prediction, versioned development artifact, physical/log
+   evaluation, and package validation. Use development members only: a small integration smoke
+   fit followed by one synchronized 655-member fit / 164-member validation baseline. Judge this
+   step on technical/package gates, not a performance threshold. Do not fit all 819 members or
+   publish the downstream C/N handoff in this step.
+4. **Spinup configuration finalization and handoff:** Use only held-out development evidence to
+   decide whether a separate spinup-configuration experiment is needed. Once frozen, refit the
+   selected spinup configuration on all 819 development members, publish its validated artifact,
+   and generate one consistently in-sample predicted C/N handoff for GPP development.
+5. **Two-site GPP development:** Build, validate, and if necessary tune the pooled hourly GPP
+   stage using the frozen spinup artifact and predicted C/N handoff. Preserve timestamp-aware
+   feature construction and a flexible deterministic inference interface before publishing the
+   full-development predicted GPP handoff needed by SR.
+6. **Two-site SR development and three-stage integration:** Build the pooled hourly SR stage from
+   predicted C/N and same-hour predicted GPP, then validate deterministic spinup -> GPP -> SR
+   inference without ELM upstream outputs.
+7. **Two-site tuning and robustness:** Settle remaining full-chain choices within the development
+   pool; complete the required 20 synchronized robustness repetitions; evaluate full-chain
+   hourly/daily flux residuals and the declared spinup targets; and publish the reusable
+   surrogate-error handoff with its limitations.
+8. **Two-site fixed test:** Freeze and refit the selected chain on all 819 development members,
+   then perform the simple 205-member ABBY/JERC test without tuning from its results.
+9. **Nine-site expansion:** As the user supplies the remaining transferred sites, extend and
+   validate the data contract without changing established ABBY/JERC identities; then scale
+   preparation, fitting, and development-only robustness to all nine sites.
+10. **Nine-site fixed-test evaluation and release:** Refit the frozen nine-site chain on the 819
+    development members, evaluate the reused 205-member fixed test with the required disclosure,
+    and produce reusable deterministic model artifacts plus site-specific flux and paired
+    full-profile C/N uncertainty diagnostics.
+11. **Integration:** Review implementation and tests, then merge validated code from the
+    development branch back to `pmcpu`.
 
 A later **cross-fitting experiment** can be added as a separate development iteration if validation suggests meaningful train/inference mismatch.
 
@@ -262,4 +300,4 @@ A later **cross-fitting experiment** can be added as a separate development iter
 
 ## Expected outcome
 
-A reproducible, pooled nine-site **spinup → GPP → SR** surrogate that accepts new PPE parameter vectors and site forcing inputs, supplies predicted upstream features throughout, and has documented robustness, held-out performance, and reproducible site/resolution-specific surrogate-error diagnostics for downstream MCMC. Its two spinup outputs are the settled soil-only, full-profile `TOTSOMC` and `TOTSOMN` stocks; NEON depth correction remains outside the surrogate. The first implementation uses **direct in-sample sequential training**, while keeping the architecture open to **out-of-fold cross-fitting**. Flux uncertainty outputs are derived from the full deployed chain, and paired C/N outputs support downstream covariance estimation. Code lives in the normal repository source tree; the dedicated development folder preserves the experiment history.
+A reproducible, pooled nine-site **spinup → GPP → SR** surrogate that accepts new PPE parameter vectors and site forcing inputs, supplies predicted upstream features throughout, and has documented robustness, held-out performance, and reproducible site/resolution-specific surrogate-error diagnostics for downstream MCMC. Site labels remain explicit metadata, while approved physical and climatological descriptors provide model inputs. Its two spinup outputs are the settled soil-only, full-profile `TOTSOMC` and `TOTSOMN` stocks; NEON depth correction remains outside the surrogate. The first implementation uses **direct in-sample sequential training**, while keeping the architecture open to **out-of-fold cross-fitting**. Flux uncertainty outputs are derived from the full deployed chain, and paired C/N outputs support downstream covariance estimation. Code lives in the normal repository source tree; the dedicated development folder preserves the experiment history.
