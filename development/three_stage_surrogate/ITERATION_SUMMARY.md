@@ -45,3 +45,24 @@
 - Campaign-plan amendment recommendation: `none`.
 - Next direction: planning-only Iter003 bounded spinup-configuration experiment; fresh consolidated
   kickoff approval is required.
+
+## iter003 - ABBY/JERC spinup MLP configuration experiment
+
+- Closed: `2026-10-30T15:15:56-07:00`.
+- Status/work type: `completed` / `experiment`.
+- Objective/result: select and freeze a spinup MLP configuration from 96 candidates using 20
+  shared 655/164 development-only splits; `pass`.
+- Decision: freeze candidate 74—`(64,32)`, `tanh`, alpha `10`, L-BFGS, `max_iter=800`, seed
+  `42`—for an all-819 development refit and artifact handoff.
+- Performance: winner median mean pooled validation log R2 is `0.8910`, versus `0.8015` for the
+  Iter002 baseline; paired mean improvement is `+0.07655`; all four site/target median deltas are
+  positive. Its 27 convergence warnings are nonfatal but remain explicit release evidence.
+- Validation/accounting: all 96 production leaves, preflight `24472427`, smoke `24472428`,
+  aggregation `24475235`, and independent validation `24475275` completed `0:0`; both aggregation
+  and validation selected candidate 74; no retries occurred.
+- Boundary/evidence: no fixed-test access, all-819 fit, or model artifact; compact evidence is in
+  `development/three_stage_surrogate/summaries/iter003/` and full ranking/logs remain under the
+  external run root.
+- Campaign-plan amendment recommendation: `none`.
+- Next direction: planning-only Iter004 frozen all-819 development refit, artifact publication, and
+  predicted-C/N handoff; fresh consolidated kickoff approval is required.

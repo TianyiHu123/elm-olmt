@@ -9,11 +9,41 @@ from sklearn.linear_model import LinearRegression
 from sklearn.preprocessing import StandardScaler
 
 from model_ELM.three_stage_data import CLIMATOLOGY_HOURS, compact_climatology, schema_sha256
-from model_ELM.three_stage_spinup import metric_gap_rows, regression_metrics
+from model_ELM.three_stage_spinup import metric_gap_rows, normalize_mlp_config, regression_metrics
+from model_ELM.three_stage_spinup_screen import balanced_split_manifest, candidate_manifest
 from model_ELM.three_stage_spinup_artifact import load_artifact, predict_matrix, save_artifact
 
 
 class ThreeStageSpinupTests(unittest.TestCase):
+    def test_iter003_candidate_matrix(self) -> None:
+        manifest = candidate_manifest()
+        self.assertEqual(len(manifest["candidates"]), 96)
+        self.assertEqual(sum(item["is_iter002_baseline"] for item in manifest["candidates"]), 1)
+        configs = {item["config_sha256"] for item in manifest["candidates"]}
+        self.assertEqual(len(configs), 96)
+
+    def test_iter003_balanced_splits(self) -> None:
+        members = [f"g{index:05d}" for index in range(1, 820)]
+        manifest = balanced_split_manifest(members)
+        self.assertEqual(len(manifest["splits"]), 20)
+        counts = list(manifest["validation_appearance_counts"].values())
+        self.assertEqual(counts.count(4), 815)
+        self.assertEqual(counts.count(5), 4)
+        self.assertTrue(all(len(split["train_member_ids"]) == 655 for split in manifest["splits"]))
+        self.assertTrue(all(len(split["validation_member_ids"]) == 164 for split in manifest["splits"]))
+
+    def test_explicit_mlp_config_validation(self) -> None:
+        observed = normalize_mlp_config({
+            "hidden_layer_sizes": [64, 32],
+            "activation": "relu",
+            "solver": "lbfgs",
+            "alpha": 10,
+            "max_iter": 800,
+            "random_state": 42,
+        })
+        self.assertEqual(observed["hidden_layer_sizes"], [64, 32])
+        self.assertEqual(observed["alpha"], 10.0)
+
     def test_compact_climatology_exact_values(self) -> None:
         forcing = {
             "PRECTmms": np.full(CLIMATOLOGY_HOURS, 2.0),

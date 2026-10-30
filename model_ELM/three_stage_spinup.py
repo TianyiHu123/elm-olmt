@@ -36,6 +36,95 @@ METRIC_FIELDS = ("n", "r2", "rmse", "mae", "bias", "residual_std")
 GAP_METRIC_FIELDS = ("r2", "rmse", "mae", "bias", "residual_std")
 
 
+def normalize_mlp_config(config: Mapping[str, Any]) -> Dict[str, Any]:
+    """Validate and normalize the explicit MLP configuration supplied by a driver."""
+    layers = tuple(int(value) for value in config.get("hidden_layer_sizes", ()))
+    require(bool(layers) and len(layers) <= 2, "hidden layers must contain one or two sizes")
+    require(all(value in {8, 16, 32, 64, 128} for value in layers), "unsupported hidden layer size")
+    activation = str(config.get("activation", ""))
+    require(activation in {"tanh", "relu"}, "unsupported activation")
+    solver = str(config.get("solver", ""))
+    require(solver == "lbfgs", "unsupported solver")
+    alpha = float(config.get("alpha", float("nan")))
+    require(math.isfinite(alpha) and alpha >= 0.0, "alpha must be finite and nonnegative")
+    max_iter = int(config.get("max_iter", 0))
+    require(max_iter == 800, "max_iter must be 800")
+    random_state = int(config.get("random_state", -1))
+    require(random_state == 42, "random_state must be 42")
+    return {
+        "hidden_layer_sizes": list(layers),
+        "activation": activation,
+        "solver": solver,
+        "alpha": alpha,
+        "max_iter": max_iter,
+        "random_state": random_state,
+    }
+
+
+def fit_compact_models(train: LoadedRows, model_config: Mapping[str, Any]) -> Dict[str, Any]:
+    """Fit the two locked targets without producing a persistent artifact."""
+    require(train.y is not None, "training targets missing")
+    normalized = normalize_mlp_config(model_config)
+    models: Dict[str, Any] = {}
+    x_scalers: Dict[str, StandardScaler] = {}
+    y_scalers: Dict[str, StandardScaler] = {}
+    convergence: Dict[str, Any] = {}
+    for target_index, target in enumerate(TARGETS):
+        x_scaler = StandardScaler().fit(train.X)
+        log_target = np.log(train.y[:, target_index]).reshape(-1, 1)
+        y_scaler = StandardScaler().fit(log_target)
+        model = MLPRegressor(
+            hidden_layer_sizes=tuple(normalized["hidden_layer_sizes"]),
+            activation=normalized["activation"],
+            solver=normalized["solver"],
+            alpha=normalized["alpha"],
+            max_iter=normalized["max_iter"],
+            random_state=normalized["random_state"],
+        )
+        with warnings.catch_warnings(record=True) as captured:
+            warnings.simplefilter("always")
+            model.fit(x_scaler.transform(train.X), y_scaler.transform(log_target).ravel())
+        convergence[target] = {
+            "n_iter": int(getattr(model, "n_iter_", -1)),
+            "loss": float(getattr(model, "loss_", float("nan"))),
+            "warnings": [
+                {"category": item.category.__name__, "message": str(item.message)} for item in captured
+            ],
+            "has_convergence_warning": any(
+                issubclass(item.category, ConvergenceWarning) for item in captured
+            ),
+        }
+        models[target] = model
+        x_scalers[target] = x_scaler
+        y_scalers[target] = y_scaler
+    return {
+        "model_config": normalized,
+        "models": models,
+        "x_scalers": x_scalers,
+        "y_scalers": y_scalers,
+        "convergence": convergence,
+    }
+
+
+def predict_compact_models(fitted: Mapping[str, Any], X: np.ndarray) -> np.ndarray:
+    """Predict positive physical C/N values from an in-memory compact fit."""
+    matrix = np.asarray(X, dtype=np.float64)
+    require(matrix.ndim == 2 and matrix.shape[1] == 25, "prediction matrix shape mismatch")
+    require(np.all(np.isfinite(matrix)), "prediction matrix contains nonfinite values")
+    outputs = []
+    for target in TARGETS:
+        scaled = fitted["x_scalers"][target].transform(matrix)
+        scaled_prediction = fitted["models"][target].predict(scaled)
+        log_prediction = fitted["y_scalers"][target].inverse_transform(
+            np.asarray(scaled_prediction, dtype=np.float64).reshape(-1, 1)
+        ).ravel()
+        require(np.all(np.isfinite(log_prediction)), f"{target} log prediction contains nonfinite values")
+        prediction = np.exp(log_prediction)
+        require(np.all(np.isfinite(prediction)) and np.all(prediction > 0.0), f"{target} prediction invalid")
+        outputs.append(prediction)
+    return np.column_stack(outputs)
+
+
 def _json_safe(value: Any) -> Any:
     if isinstance(value, dict):
         return {str(key): _json_safe(item) for key, item in value.items()}
@@ -327,39 +416,12 @@ def fit_baseline(
     train = snapshot.load_rows(train_members, include_targets=True)
     validation = snapshot.load_rows(validation_members, include_targets=True)
     require(train.y is not None and validation.y is not None, "training targets missing")
-    models: Dict[str, Any] = {}
-    x_scalers: Dict[str, StandardScaler] = {}
-    y_scalers: Dict[str, StandardScaler] = {}
-    convergence: Dict[str, Any] = {}
-    for target_index, target in enumerate(TARGETS):
-        x_scaler = StandardScaler().fit(train.X)
-        log_target = np.log(train.y[:, target_index]).reshape(-1, 1)
-        y_scaler = StandardScaler().fit(log_target)
-        model = MLPRegressor(
-            hidden_layer_sizes=(32,),
-            activation="tanh",
-            solver="lbfgs",
-            alpha=40.0,
-            max_iter=800,
-            random_state=42,
-        )
-        with warnings.catch_warnings(record=True) as captured:
-            warnings.simplefilter("always")
-            model.fit(
-                x_scaler.transform(train.X),
-                y_scaler.transform(log_target).ravel(),
-            )
-        convergence[target] = {
-            "n_iter": int(getattr(model, "n_iter_", -1)),
-            "loss": float(getattr(model, "loss_", float("nan"))),
-            "warnings": [
-                {"category": item.category.__name__, "message": str(item.message)} for item in captured
-            ],
-            "has_convergence_warning": any(issubclass(item.category, ConvergenceWarning) for item in captured),
-        }
-        models[target] = model
-        x_scalers[target] = x_scaler
-        y_scalers[target] = y_scaler
+    compact = fit_compact_models(train, MODEL_CONFIG)
+    normalized_model_config = compact["model_config"]
+    models = compact["models"]
+    x_scalers = compact["x_scalers"]
+    y_scalers = compact["y_scalers"]
+    convergence = compact["convergence"]
 
     artifact: Dict[str, Any] = {
         "schema": "three-stage-spinup-development-v1",
@@ -374,7 +436,7 @@ def fit_baseline(
         "models": models,
         "x_scalers": x_scalers,
         "y_scalers": y_scalers,
-        "model_config": dict(MODEL_CONFIG),
+        "model_config": normalized_model_config,
         "feature_names": list(snapshot.feature_names),
         "feature_schema_sha256": schema_sha256(snapshot.feature_names),
         "parameter_metadata": snapshot.parameter_metadata,
@@ -421,7 +483,7 @@ def fit_baseline(
         "snapshot_sha256": snapshot.snapshot_sha256,
         "feature_names": list(snapshot.feature_names),
         "feature_schema_sha256": artifact["feature_schema_sha256"],
-        "model_config": MODEL_CONFIG,
+        "model_config": normalized_model_config,
         "target_transform": "natural_log",
         "fit_scope": artifact["fit_scope"],
         "metric_definition": {
