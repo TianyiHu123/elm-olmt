@@ -44,6 +44,24 @@ advisory until the user authorizes a separate `PLAN.md` revision outside the ite
 Use templates only to initialize or repair their corresponding records. Keep `CURRENT.md` concise;
 detailed history belongs in iteration reports, summaries, and the registry.
 
+### Concise record and log policy
+
+Repository records preserve decision-relevant evidence, not full command or monitoring transcripts.
+The iteration report records the approved contract, material lifecycle transitions, submitted job
+scope, terminal accounting, classified failures and corrections, acceptance evidence, decision,
+limitations, and exact paths or hashes needed to recover the detailed evidence. Keep raw scheduler
+and application logs, repeated monitoring snapshots, verbose test output, per-work-unit payloads,
+and other reproducible bulk evidence in the approved external run directory. Summarize their
+outcome and location in Git rather than copying their contents into repository records.
+
+Do not repeat the same narrative across records. `CURRENT.md` holds live state and the next action;
+the iteration report holds authoritative lifecycle evidence; `summaries/iterXXX/` holds only the
+compact evidence needed to reproduce the decision; `ITERATION_SUMMARY.md` holds one cumulative
+closeout synopsis; and `registry.csv` remains a one-row index. Concision must not omit material
+failures, retries, rejected work, authority changes, job IDs, terminal states, gate results, or
+limitations. An iteration plan may require additional compact evidence but need not restate this
+policy.
+
 ## 2. State and Status Model
 
 | Phase | Required action | Allowed change |
@@ -83,8 +101,11 @@ A complete proposal states:
 
 For `iter001`, the user supplies or approves the proposal at kickoff. For later iterations, copy
 the complete proposal unchanged from the preceding closed report into `CURRENT.md`. A proposal is
-not initialized work and grants no authority. If it conflicts materially with the campaign plan,
-stop and ask the user whether to revise the proposal or separately revise `PLAN.md` before kickoff.
+not initialized work and grants no authority. If the user later revises that planning-only
+proposal, preserve the closed report as historical evidence and record the superseding proposal,
+revision provenance, and unresolved approval boundary in `CURRENT.md`. If a proposal conflicts
+materially with the campaign plan, stop and ask the user whether to revise the proposal or
+separately revise `PLAN.md` before kickoff.
 
 ### Consolidated kickoff package and runtime contract
 
@@ -138,9 +159,11 @@ When outside-sandbox Slurm access is needed, the package must explicitly ask whe
 8. If an iteration is already initialized, verify its recorded package is complete, unexhausted,
    and unchanged, then resume from the recorded phase without asking again.
 
-For `iter002` and later, the preceding closed report and `CURRENT.md` must contain the same complete
-next proposal. If they differ or a material term is unclear, stop and ask the user. Clarification
-does not grant authority.
+For `iter002` and later, first compare the preceding closed report and `CURRENT.md`. They must
+contain the same complete next proposal unless `CURRENT.md` explicitly records a later user-directed
+planning revision that supersedes the historical proposal. If they differ without that provenance,
+or a material term is unclear, stop and ask the user. Clarification or proposal revision does not
+grant initialization or runtime authority.
 
 ### B. Approve and initialize
 
