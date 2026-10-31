@@ -4,88 +4,104 @@
 
 - Plan: `development/three_stage_surrogate/PLAN.md`
 - Current/latest locked SHA-256: `9bbb68654a5ef7c41298a135758946f3a4ab3397b82d9238539cbc3dbe319128`
-- Phase/alignment: progression item 4 spinup configuration frozen; `aligned`; deviation `none`
+- Phase/alignment: progression item 4 spinup release complete; `aligned`; deviation `none`
 
 ## Live State
 
-- Latest iteration: `iter003`
+- Latest iteration: `iter004`
 - Active iteration: none
-- Work type: `experiment`
+- Work type: `implementation`
 - Status: `completed`
 - Phase: `closed`
 - Package state: `closed`
 - Next proposal state: `planning_only`
 - Active job scope: none
-- Active monitoring: none; all Iter003 jobs terminally accounted
+- Active monitoring: none; all Iter004 jobs terminally accounted
 - Site profile: `development/hpc/puma.md`
-- Last updated: `2026-10-30T15:15:56-07:00`
+- Last updated: `2026-10-31T04:59:22-07:00`
 
 ## Best Evidence and Decision
 
-- Result/decision: `pass` / freeze candidate 74 for an all-819 development refit and artifact
-  handoff.
-- Frozen configuration: `(64,32)`, `tanh`, alpha `10`, L-BFGS, `max_iter=800`, seed `42`.
-- Winner median mean pooled validation log R2: `0.8910`; Iter002 baseline: `0.8015`; paired mean
-  delta: `+0.07655`; every ABBY/JERC C/N site-median delta is positive.
-- Stability: 27/40 winner fits emitted nonfatal convergence warnings; preserve this as release
-  validation evidence.
-- Independent validation: `ITER003_VALIDATE_OK selected=74`; 96 candidates; fixed-test access
-  false; model artifacts created false.
-- Accounting: preflight `24472427`, smoke `24472428`, all 96 leaves of `24472431_[0-95]`,
-  aggregation `24475235`, and validation `24475275` completed `0:0`; no retry.
-- Summary: `development/three_stage_surrogate/summaries/iter003/`.
-- External root:
-  `/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/three_stage_surrogate/iter003_abby_jerc_spinup_config`.
-- Limitations: two sites; overlapping development splits; finite MLP grid; convergence warnings;
-  temporary unbacked `/xdisk`; no release or fixed-test evidence.
+- Result/decision: `pass` / publish and authorize spinup `release_0001`, its predicted-C/N GPP
+  handoff, and its explicitly surrogate-only uncertainty package.
+- Stable product:
+  `/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe_vertc/surrogate_products/spinup_abby_jerc/release_0001`.
+- Identities: release manifest `69f840f7...f2dc`; artifact `9abb342d...a809`; predicted-C/N
+  handoff `9e2d5be4...fdb5`; catalog `93f080de...10be`.
+- Robustness: 20 fresh synchronized 655/164 development splits; 6,560 paired rows; cross-
+  repetition log R2 ABBY C/N `0.8931/0.8899`, JERC C/N `0.8053/0.8011`; 22/40 nonfatal
+  convergence warnings.
+- Uncertainty: member-balanced `1/k`, population-`ddof=0` paired log-error covariance; C/N
+  correlation ABBY/JERC `0.9775/0.9883`; minimum eigenvalues `0.00298/0.00287`.
+- Validation: `ITER004_VALIDATE_OK`; exact 819-development-member fit; fixed-test access false;
+  flexible fresh-process reload, explicit schemas, covariance, hashes, and catalog-last publication
+  passed.
+- Accounting: `24479223`, `24480121`, `24480153`, `24480174`, and `24480199` completed `0:0`.
+  Robustness attempt `24479279` failed before fitting; its exact source and bounded non-scientific
+  correction are preserved and independently reviewed.
+- Evidence: `development/three_stage_surrogate/summaries/iter004/` and the external Iter004 root.
+- Limitations: two sites; overlapping development splits; robustness uses 655-member fits while the
+  release uses 819; handoff predictions are in-sample; strong C/N error correlation; convergence
+  warnings; temporary unbacked `/xdisk`; no fixed-test, flux-stage, or full-chain evidence.
 - Campaign-plan amendment recommendation: `none`.
 
 ## Current Objective and Next Action
 
-Iter003 is closed. Review and, if acceptable, grant fresh consolidated kickoff authority for the
-planning-only Iter004 proposal below. No initialization, runtime, scheduler, directory, retry,
-record, or commit authority is currently active.
+Iter004 is closed. Review and, if acceptable, grant fresh consolidated kickoff authority for the
+planning-only Iter005 proposal below. No Iter005 initialization, directory, implementation,
+execution, scheduler, retry, publication, record, or commit authority is active.
 
 ## Next Iteration Plan (Planning Only)
 
-### Iter004 - ABBY/JERC frozen spinup artifact and GPP handoff
+### Iter005 - ABBY/JERC GPP input and inference-interface materialization
 
-- Sequential ID/work type: `iter004` / `implementation`.
+- Proposed sequential ID/work type: `iter005` / `data_initialization`.
 - Campaign alignment: `development/three_stage_surrogate/PLAN.md`, SHA-256
-  `9bbb68654a5ef7c41298a135758946f3a4ab3397b82d9238539cbc3dbe319128`; progression item 4;
+  `9bbb68654a5ef7c41298a135758946f3a4ab3397b82d9238539cbc3dbe319128`; progression item 5;
   `aligned`; proposed deviation `none`.
-- Objective: refit the frozen candidate-74 spinup configuration on all 819 development members,
-  publish and independently validate its versioned ABBY/JERC inference artifact, and freeze the
-  predicted-C/N handoff contract needed by the later GPP stage.
-- Inputs/dependencies: immutable snapshot `r0001`; exact global 819-development/205-fixed-test
-  manifest; Iter003 winner `(64,32)`, `tanh`, alpha `10`, L-BFGS, `max_iter=800`, seed `42`;
-  validated 25-feature order, natural-log C/N targets, separate fit-only scalers/models, positive
-  exponentiated predictions, and no-clipping interface. Trust only recorded hashes and revalidate
-  compatibility before execution.
-- Bounded scope: locked preparation and read-only review; no-training preflight; bounded smoke of
-  artifact serialization/reload; one all-819 development fit; flexible-size inference validation;
-  exact feature/target/member provenance; artifact/package manifests and hashes; concise records;
-  and one user-selected closeout branch. Record convergence behavior but do not alter the frozen
-  configuration from runtime evidence.
-- Exclusions: no fixed-test parameter or target access; no configuration, feature, solver, target,
-  or split selection; no held-out performance claim from the all-development fit; no GPP/SR model
-  fitting, observations, MCMC, campaign-plan edit, or push.
-- Tentative gates/decision: exact snapshot/member/config/feature/target identities; all and only 819
-  development members in fit scope; zero fixed-test access; finite positive outputs without
-  clipping; deterministic flexible-size inference; serialization and fresh-process reload
-  equivalence; complete self-describing package and hashes; no unaccounted jobs; and independent
-  validation. Publish the artifact and authorize it as the GPP-stage upstream dependency only if
-  every gate passes; otherwise publish nothing and retain candidate 74 as frozen but unreleased.
-- Proposed runtime contract: Puma `chopinsong/standard`; proposed output root
-  `/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/three_stage_surrogate/iter004_abby_jerc_spinup_release`;
-  initial one CPU/Puma-derived 5 GB with single-thread BLAS/OpenMP, 30 minutes for preflight/smoke/
-  validation and two hours for the all-819 fit, subject to bounded smoke evidence before the fit.
-  Require independent read-only reviews before preflight and fit, job-scoped monitoring through
-  terminal accounting, explicit retry/cancellation bounds, and separate authority for one no-push
-  closeout commit.
-- Expected evidence/stop: versioned all-development artifact and manifest; exact 819-member fit
-  provenance; flexible prediction/reload validation; resource and terminal accounting; frozen C/N
-  handoff schema for a planning-only GPP iteration; concise records; and no fixed-test access.
-  Stop before any GPP training or fixed-test evaluation. Fresh consolidated kickoff approval is
-  required for every initialization, directory, execution, scheduler, retry, cancellation, record,
-  and closeout authority.
+- Evidence-derived objective: before any hourly GPP fit, implement and independently validate the
+  memory-aware ABBY/JERC GPP loader, timestamp-aware feature builder, and deterministic inference
+  interface using the published spinup `release_0001` and its 819-member predicted-C/N handoff.
+  Freeze a reusable prepared-data contract that a later GPP baseline can consume without ELM C/N.
+- Inputs/dependencies: immutable snapshot `r0001` and its exact 819-development/205-fixed-test
+  boundary; stable spinup catalog `93f080de...10be`, release manifest `69f840f7...f2dc`, artifact
+  `9abb342d...a809`, and handoff `9e2d5be4...fdb5`; ABBY/JERC forcing and ELM GPP targets in the
+  snapshot; canonical 18-parameter order; and site-specific no-leap timestamp axes. Trust only
+  recorded hashes and reject any identity, time, unit, or coverage mismatch.
+- Bounded scope/work units: locked implementation and read-only review; one no-training preflight;
+  one compute-node streaming/sharded development-only materialization; one independent contract
+  validation; concise records; and one user-selected closeout branch. Implement one shared
+  training/inference feature path with explicit `upstream_mode=in_sample`; predicted C/N only;
+  exact site/member/time coordinates; actual-timestamp `sin_hour`, `cos_hour`, `sin_doy`, and
+  `cos_doy`; declared forcing/history features and masks; per-site coverage; and deterministic
+  shard/manifests. Unsupported upstream modes fail explicitly.
+- Exclusions: no GPP model fit, tuning, artifact, or performance claim; no fixed-test parameter,
+  C/N, GPP, or forcing access; no true ELM C/N as an upstream feature; no SR, full-chain robustness,
+  observations, MCMC, campaign-plan edit, or push. Do not silently force a common site window or
+  materialize duplicated parameter/CN columns when indexed references suffice.
+- Tentative gates/decision: exact snapshot/release/member/parameter/site/time identities; all and
+  only 819 development members; zero fixed-test access; GPP units/valid masks and each site's full
+  declared window preserved; no-leap calendar and timestamp-derived cyclic features independently
+  reproduced; predicted-C/N values exactly match the release handoff; training and inference
+  feature order/values agree on sampled rows; deterministic shard hashes and row accounting;
+  bounded memory behavior; no active/unaccounted jobs; independent validation. Publish the prepared
+  GPP-input contract only if all gates pass; otherwise publish nothing and retain spinup release as
+  valid but GPP-uninitialized.
+- Proposed site/output/resources: Puma `chopinsong/standard`; run root
+  `/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/three_stage_surrogate/iter005_abby_jerc_gpp_input`;
+  temporary unbacked `/xdisk`, with raw/sharded data external and compact schemas/evidence in Git.
+  Propose one CPU/derived 5 GB/30 minutes for preflight and validation, and four CPUs/derived 20 GB/
+  four hours for streaming materialization, single-threaded per worker and no GPU. Confirm capacity
+  and input sizes at kickoff; any different shape requires explicit package approval.
+- Proposed review/monitoring/retry/cancellation: independent read-only review before preflight and
+  substantive materialization; exact submitted copies and configurations; job-scoped monitoring
+  through terminal `sacct`; initial attempt plus up to three same-scope retries or bounded
+  non-scientific debugging corrections that preserve the approved contract; any scientific,
+  feature, target, coverage, upstream-mode, fixed-test, or resource change requires fresh approval.
+  Cancel only recorded Iter005 jobs for identity mismatch, duplicate submission, unsafe behavior,
+  or explicit user direction.
+- Expected evidence/stop: validated GPP target/forcing/time inventory; frozen feature schema and
+  units; predicted-C/N join proof; development-only shard/index manifests and hashes; sampled
+  training/inference equivalence; coverage/mask/resource evidence; concise records. Stop before any
+  GPP fitting. Fresh consolidated approval is required before initialization, directory creation,
+  implementation, execution, scheduler mutation, publication, records, or closeout.

@@ -66,3 +66,31 @@
 - Campaign-plan amendment recommendation: `none`.
 - Next direction: planning-only Iter004 frozen all-819 development refit, artifact publication, and
   predicted-C/N handoff; fresh consolidated kickoff approval is required.
+
+## iter004 - ABBY/JERC spinup robustness and release
+
+- Closed: `2026-10-31T04:59:22-07:00`.
+- Status/work type: `completed` / `implementation`.
+- Objective/result: characterize frozen candidate 74 on fresh development-only splits, publish its
+  surrogate-error component, refit on all 819 development members, and release its artifact plus
+  predicted-C/N GPP handoff; `pass`.
+- Robustness: 20 synchronized 655/164 splits; 6,560 paired observations; 168 metric rows; 22/40
+  nonfatal convergence warnings. Cross-repetition log R2 is ABBY C/N `0.8931/0.8899` and JERC C/N
+  `0.8053/0.8011`; full distributions and quantiles are retained.
+- Uncertainty: member-balanced `1/k`, normalized, population-`ddof=0` site-specific paired log-error
+  products passed finite/symmetry/PSD gates. C/N correlations are `0.9775` for ABBY and `0.9883`
+  for JERC; minimum covariance eigenvalues are `0.00298/0.00287`.
+- Release: artifact `9abb342d...a809`; 819-member predicted-C/N handoff `9e2d5be4...fdb5`;
+  independently validated 14-file manifest `69f840f7...f2dc`; fixed-test access false.
+- Publication: stable catalog-last `release_0001` under
+  `/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe_vertc/surrogate_products/spinup_abby_jerc`.
+  Run and release copies are distinct but share temporary unbacked `/xdisk` and are not backups.
+- Accounting: preflight `24479223`, successful robustness `24480121`, uncertainty `24480153`,
+  release fit `24480174`, and validation `24480199` completed `0:0`. Failed robustness attempt
+  `24479279` stopped before fitting; its non-scientific indexing correction and exact provenance
+  passed independent re-review.
+- Boundary/evidence: no fixed-test, GPP/SR fitting, full-chain robustness, observation, likelihood,
+  MCMC, or push. Compact evidence is in `development/three_stage_surrogate/summaries/iter004/`.
+- Campaign-plan amendment recommendation: `none`.
+- Next direction: planning-only Iter005 GPP input/inference-interface materialization, stopping
+  before GPP fitting; fresh consolidated kickoff approval is required.
