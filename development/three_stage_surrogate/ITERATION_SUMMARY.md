@@ -127,3 +127,29 @@
 - Campaign-plan amendment recommendation: `none`.
 - Next direction: planning-only Iter006 20-repeat fixed-upstream GPP robustness; fresh consolidated
   kickoff approval is required.
+
+## iter006 - ABBY/JERC fixed-upstream GPP robustness
+
+- Closed: `2026-11-01T04:58:32-07:00`.
+- Status/work type: `completed` / `implementation`.
+- Objective/result: test the frozen Iter005 GPP configuration on 20 balanced 655/164
+  development-member splits and conditionally release only on immutable gate pass; `fail`.
+- Robustness: all 20 fits and reload validators passed with zero convergence warnings, complete
+  coverage, and no fixed-test access, but R2 q10 and RMSE q90 failed for ABBY/JERC at both hourly
+  and daily resolution. Bias ceilings passed.
+- Gate evidence: ABBY hourly/daily R2 q10 is `0.7084/0.1937` and RMSE q90 is `7.0410/6.0718`;
+  JERC hourly/daily R2 q10 is `0.7560/0.0288` and RMSE q90 is `7.2607/5.9397`.
+- Uncertainty: independently validated 240-row metric table, 84-row uncertainty table, and compact
+  four-field `gpp_uncertainty.nc`; member-balanced hourly RMSE is `5.3187` ABBY and `5.8212` JERC.
+- Decision: `optimization_required`. Preserve diagnostic products only; no all-819 GPP fit,
+  artifact, predicted-GPP SR handoff, stable release, catalog, or push occurred.
+- Accounting: prepare `24489883`, smoke `24489912`, all 20 robustness leaves under `24489937`,
+  and final aggregate validation `24491301` completed `0:0`. Failed validator attempts `24491172`
+  and `24491252` are preserved; two user-approved numerical-validation corrections were
+  independently re-reviewed.
+- Boundary/evidence: fixed published C/N is in-sample upstream, so claims are GPP-stage
+  conditional. Compact evidence is in `development/three_stage_surrogate/summaries/iter006/` and
+  full diagnostic products remain under the external Iter006 run root.
+- Campaign-plan amendment recommendation: `none`.
+- Next state: explicit terminal declaration; any GPP configuration-optimization iteration requires
+  a separate planning discussion and consolidated kickoff approval.
