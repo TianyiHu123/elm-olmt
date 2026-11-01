@@ -94,3 +94,36 @@
 - Campaign-plan amendment recommendation: `none`.
 - Next direction: planning-only Iter005 GPP input/inference-interface materialization, stopping
   before GPP fitting; fresh consolidated kickoff approval is required.
+
+## iter005 - ABBY/JERC fixed-upstream GPP baseline
+
+- Closed: `2026-10-31T22:17:39-07:00`.
+- Status/work type: `completed` / `implementation`.
+- Objective/result: implement, fit, and independently validate one hourly-trained ABBY/JERC GPP
+  baseline using the first 655 development members for fitting and the remaining 164 for
+  validation; `pass` under the user-approved batch-aware reload contract.
+- Model/scope: fixed 43-feature `(128,)` ReLU/Adam MLP, physical-target standardization, 29
+  iterations, zero convergence warnings, 100,442,160 total rows, zero fixed-test access, and zero
+  spinup execution. Validation is `fixed_upstream_gpp_stage` because published predicted C/N is
+  in-sample upstream input for all 819 development members.
+- Validation performance: pooled hourly R2/RMSE/MAE/bias is
+  `0.911104/4.025672/2.151374/0.087570`; pooled daily is
+  `0.860052/2.366163/1.393406/0.087570`. ABBY/JERC hourly validation R2 is
+  `0.918870/0.904396`; daily is `0.886994/0.819122`. Full train/validation hourly/daily metrics are
+  recorded in `development/three_stage_surrogate/summaries/iter005/summary.md`.
+- Artifact/evidence: artifact `09820737...c31b`, predictions `74b2b133...4024`, metrics
+  `5b7a40bf...172d`; revised validation `24488737` replayed three original chunks within unchanged
+  `1e-6`, verified finite exact same-batch repeatability for 1/7/1,000 rows, and independently
+  matched all 12 metric rows.
+- Accounting: preparation `24485863`, smoke `24485909`, baseline `24485952`, and revised validation
+  `24488737` completed `0:0`. Failed validation jobs `24488350`, `24488401`, `24488434`, and
+  `24488468` are preserved and classified; they exposed float32 cross-batch sensitivity, leading to
+  the user-approved batch-aware replay contract.
+- Decision: `freeze_baseline`; perform fixed-configuration robustness next and reconsider
+  optimization only if robustness evidence is poor.
+- Limitations: two sites, one split, fixed in-sample upstream C/N, temporary unbacked storage, and
+  no fixed-test, repeated robustness, all-819 GPP release, SR, full-chain, observational,
+  likelihood, or posterior evidence.
+- Campaign-plan amendment recommendation: `none`.
+- Next direction: planning-only Iter006 20-repeat fixed-upstream GPP robustness; fresh consolidated
+  kickoff approval is required.
