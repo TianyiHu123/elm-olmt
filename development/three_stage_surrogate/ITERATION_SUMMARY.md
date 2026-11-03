@@ -153,3 +153,30 @@
 - Campaign-plan amendment recommendation: `none`.
 - Next state: explicit terminal declaration; any GPP configuration-optimization iteration requires
   a separate planning discussion and consolidated kickoff approval.
+
+## iter007 - ABBY/JERC pooled GPP MLP configuration experiment
+
+- Closed: `2026-11-02T22:28:22-07:00`.
+- Status/work type: `completed` / `experiment`.
+- Objective/result: select the best pooled ABBY/JERC GPP MLP configuration from a locked
+  24-candidate matrix using development-only evidence; `pass`.
+- Decision: `configuration_selected_gate_pass`. Freeze candidate 21—`(64,32)`, `tanh`, alpha
+  `1e-4`, otherwise frozen Adam controls—for separately approved fresh robustness.
+- Evidence: 24 candidates completed eight screening fits; finalists `[18,21,19,2,8,13]` completed
+  all 20 fits; 120 selected leaves and 480 pooled metric rows passed independent validation and
+  review. Final order is `21,18,19,2,8,13`; candidate 18 also passed but lost the worst-margin
+  tie-break.
+- Gate: candidate 21 hourly R2 q10/RMSE q90/median absolute bias is
+  `0.904205/4.260999/0.135299`; daily is `0.829424/2.675357/0.135299`; every pooled threshold
+  passes.
+- Accounting: jobs `24494841`, `24494873`, all 192 leaves under `24494900`, `24506893`, all 72
+  leaves under `24507062`, and `24512103` completed `0:0`. One redundant dependency submission
+  was rejected before a job ID and retried unchanged; no workload failure or cancellation.
+- Boundary/evidence: no fixed-test use, all-819 GPP fit, artifact, uncertainty/SR handoff, stable
+  release, catalog, or push. Compact evidence is in
+  `development/three_stage_surrogate/summaries/iter007/`; evidence remains fixed-upstream-stage.
+- Limitations: two sites, pooled masking, fixed in-sample upstream C/N, reused selection splits,
+  finite matrix, temporary unbacked storage, and no fresh-split release-qualified robustness.
+- Campaign-plan amendment recommendation: `none`.
+- Next direction: planning-only Iter008 fresh robustness of candidate 21 on 20 new balanced splits;
+  fresh consolidated kickoff approval is required and no runtime authority is granted.
