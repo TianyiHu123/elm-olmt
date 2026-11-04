@@ -97,13 +97,20 @@ For both sites, reconstructed full-profile carbon agreed with native restart `to
 
 ## 2. Training strategy
 
-Develop and validate one stage at a time. A stage-level baseline run establishes implementation,
+Develop and validate one stage at a time. A stage-level baseline establishes implementation,
 resource, artifact, inference, and held-out development-performance evidence; it is not a release
-fit. If its development-only evidence motivates configuration changes, perform those changes in a
-separate bounded iteration. Only after a stage configuration is frozen may a later release
-iteration refit that stage on all 819 development members and publish the predicted upstream
-inputs needed by the next stage. Never treat a mixed collection of in-sample and held-out upstream
-predictions as the normal downstream training handoff.
+fit. By default, use a separate bounded iteration when baseline evidence motivates configuration
+changes. When completed earlier stages provide directly applicable implementation, resource, and
+configuration-search evidence, a later stage may instead combine its implementation baseline and
+development-only configuration selection in one explicitly approved bounded iteration. Such a
+combined iteration must make the structure/smoke work a technical prerequisite for the search;
+lock the candidate inventory, split design, metrics, ranking, and decision rule before production
+runs; and stop the search if the implementation or interface gate fails. It must not combine
+configuration selection with all-development release fitting, robustness uncertainty, or fixed-test
+evaluation. Only after a stage configuration is frozen may a later release iteration refit that
+stage on all 819 development members and publish the predicted upstream inputs needed by the next
+stage. Never treat a mixed collection of in-sample and held-out upstream predictions as the normal
+downstream training handoff.
 
 ### 2.1 Shared global split
 
@@ -275,9 +282,14 @@ This folder holds **iteration records, HPC job scripts, diagnostics, and develop
    stage using the frozen spinup artifact and predicted C/N handoff. Preserve timestamp-aware
    feature construction and a flexible deterministic inference interface before publishing the
    full-development predicted GPP handoff needed by SR.
-6. **Two-site SR development and three-stage integration:** Build the pooled hourly SR stage from
-   predicted C/N and same-hour predicted GPP, then validate deterministic spinup -> GPP -> SR
-   inference without ELM upstream outputs.
+6. **Two-site SR development, configuration selection, and three-stage integration:** Build the
+   pooled hourly SR stage from predicted C/N and same-hour predicted GPP, validate deterministic
+   spinup -> GPP -> SR inference without ELM upstream outputs, and freeze an SR configuration using
+   development-only member-grouped evidence. Based on the completed spinup and GPP implementation
+   and search evidence, this step may combine structure/smoke validation and configuration
+   selection in one bounded iteration, provided the technical prerequisite and pre-locked search
+   requirements above are satisfied. Keep all-819 SR release fitting, robustness uncertainty, and
+   fixed-test evaluation outside that combined iteration.
 7. **Two-site tuning and robustness:** Settle remaining full-chain choices within the development
    pool; complete the required 20 synchronized robustness repetitions; evaluate full-chain
    hourly/daily flux residuals and the declared spinup targets; and publish the reusable

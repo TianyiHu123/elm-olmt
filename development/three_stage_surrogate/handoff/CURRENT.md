@@ -3,16 +3,18 @@
 ## Campaign Plan
 
 - Plan path: `development/three_stage_surrogate/PLAN.md`
-- Current plan SHA-256: `9bbb68654a5ef7c41298a135758946f3a4ab3397b82d9238539cbc3dbe319128`
+- Current plan SHA-256: `014a112ba6013b28da10d87415c53f39aefcfcf3bd56461ec9a032867d9d5360`
 - Latest iteration locked plan SHA-256: `9bbb68654a5ef7c41298a135758946f3a4ab3397b82d9238539cbc3dbe319128`
-- Applicable campaign phase: progression item 5, GPP development and release
-- Alignment status: `aligned_with_scoped_deviation`
-- Approved deviation: fixed published all-819 predicted C/N on both sides; evidence is
-  `fixed_upstream_gpp_stage`, not end-to-end held out.
+- Applicable campaign phase: progression item 6, SR development and configuration selection
+- Planning alignment status: `aligned`
+- Post-Iter008 plan revision: user authorized combining SR implementation and development-only
+  configuration selection when the structure/smoke gate passes and the search contract is locked
+  before production. The latest closed iteration remains governed by its recorded plan identity.
 
 ## Live State
 
 - Active iteration: none; latest closed iteration is `iter008`
+- Planning state: Iter009 proposal under interactive discussion; no kickoff or runtime authority
 - Status: `completed`
 - Phase: `closed`
 - Work type: `implementation`
@@ -21,7 +23,7 @@
 - Active job scope: none
 - Active monitoring: none; every Iter008 job has authoritative terminal accounting
 - Site profile: `development/hpc/puma.md`
-- Last updated: `2026-11-04T01:12:26-07:00`
+- Last updated: `2026-11-04T01:51:05-07:00`
 
 ## Completed Objective and Scope
 
@@ -76,9 +78,10 @@ validation. All 205 fixed-test members remained excluded. No performance gate wa
 
 ## Explicit Terminal Declaration
 
-No next iteration proposal is authorized. Iter008 is complete and no job is active or unaccounted.
-Downstream SR fitting, full-chain uncertainty, likelihood/MCMC work, or any later release requires
-a separate planning discussion and consolidated kickoff approval.
+Iter008 is complete and no job is active or unaccounted. Iter009 SR implementation and
+configuration-selection planning is underway, but no complete proposal or consolidated kickoff
+package has been approved. SR runtime work, full-chain uncertainty, likelihood/MCMC work, or any
+later release requires the applicable consolidated kickoff approval.
 
 ## Next Session Start Protocol
 
