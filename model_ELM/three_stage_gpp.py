@@ -414,11 +414,11 @@ def predict_artifact(artifact: Mapping[str, Any], raw_features: np.ndarray) -> n
     values = np.asarray(raw_features, dtype=np.float64)
     require(values.ndim == 2 and values.shape[1] == len(artifact["feature_names"]), "inference feature shape mismatch")
     require(np.all(np.isfinite(values)), "inference features nonfinite")
-    # StandardScaler transformed the prepared float32 design in place, rounding after each
-    # arithmetic operation.  Reproduce that numerical path at the released interface.
+    # StandardScaler transformed the prepared float32 design in place after casting its fitted
+    # statistics to the design dtype. Reproduce that dtype and rounding order exactly.
     scaled = values.astype(np.float32, copy=True)
-    scaled -= np.asarray(artifact["x_mean"])
-    scaled /= np.asarray(artifact["x_scale"])
+    scaled -= np.asarray(artifact["x_mean"], dtype=scaled.dtype)
+    scaled /= np.asarray(artifact["x_scale"], dtype=scaled.dtype)
     prediction = artifact["model"].predict(scaled) * float(artifact["y_scale"]) + float(artifact["y_mean"])
     require(np.all(np.isfinite(prediction)), "inference prediction nonfinite")
     return np.asarray(prediction, dtype=np.float64)

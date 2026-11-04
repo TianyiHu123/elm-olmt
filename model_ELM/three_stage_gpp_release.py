@@ -62,7 +62,7 @@ def _load_split_manifest(config: Mapping[str, Any]) -> dict[str, Any]:
     require(sha256_file(path) == config["repeated_split_manifest_sha256"], "split manifest hash mismatch")
     payload = json.loads(path.read_text(encoding="utf-8"))
     require(payload["schema"] == "three-stage-spinup-iter004-splits-v1", "split schema mismatch")
-    require(payload["seed"] == 20261031, "split seed mismatch")
+    require(payload["seed"] == int(config.get("repeated_split_seed", 20261031)), "split seed mismatch")
     require(payload["split_design_sha256"] == config["split_design_sha256"], "split design mismatch")
     require(len(payload["splits"]) == SPLIT_COUNT, "split count mismatch")
     return payload
@@ -98,7 +98,8 @@ def preflight(config: Mapping[str, Any], output: Path) -> dict[str, Any]:
     require(sha256_file(Path(config["gpp_configuration_file"])) == config["gpp_configuration_sha256"], "GPP configuration hash mismatch")
     splits = _load_split_manifest(config)
     counts = validate_split_design(snapshot, splits)
-    require(config["model_config"] == MODEL_CONFIG, "model configuration mismatch")
+    frozen_configuration = json.loads(Path(config["gpp_configuration_file"]).read_text(encoding="utf-8"))
+    require(config["model_config"] == frozen_configuration["model_config"], "model configuration mismatch")
     fixture = np.arange(96, dtype=np.float64).reshape(4, 24)
     require(np.allclose(fixture.mean(axis=1), fixture.reshape(4, 1, 24).mean(axis=2).ravel()), "daily fixture failed")
     report = {
@@ -193,7 +194,10 @@ def validate_raw(config: Mapping[str, Any], path: Path, *, full_hashes: bool = T
     require(manifest["snapshot_sha256"] == snapshot.snapshot_sha256 == config["snapshot_sha256"], "raw snapshot mismatch")
     require(manifest["global_split_sha256"] == config["global_split_sha256"], "raw global split mismatch")
     require(manifest["predicted_cn_sha256"] == config["predicted_cn_sha256"], "raw upstream mismatch")
-    require(manifest["split_manifest_sha256"] == config["repeated_split_manifest_sha256"], "raw repeated split mismatch")
+    raw_source_split_sha256 = config.get(
+        "raw_source_split_manifest_sha256", config["repeated_split_manifest_sha256"]
+    )
+    require(manifest["split_manifest_sha256"] == raw_source_split_sha256, "raw source split mismatch")
     require(layout["development_member_ids"] == list(snapshot.development_ranked), "raw member order mismatch")
     require(layout["feature_names"] == list(feature_names(snapshot)), "raw feature order mismatch")
     require(layout["feature_schema_sha256"] == schema_sha256(feature_names(snapshot)), "raw feature schema mismatch")
@@ -653,6 +657,8 @@ def aggregate(config: Mapping[str, Any], robustness_root: Path, output: Path) ->
         dataset.daily_aggregation = "complete 24-hour mean of paired hourly target and prediction"
         dataset.validation_label = "fixed_upstream_gpp_stage"
         dataset.scope = "surrogate component only; excludes observations, fixed test, SR, and full-chain uncertainty"
+        dataset.release_basis = config.get("release_basis", "performance_gate")
+        dataset.performance_gate_applied = int(bool(config.get("performance_gate_applied", True)))
         dataset.createDimension("site", len(SITES)); dataset.createDimension("resolution", len(RESOLUTIONS)); dataset.createDimension("repetition", SPLIT_COUNT)
         dataset.createVariable("site", str, ("site",))[:] = np.asarray(SITES, dtype=object)
         dataset.createVariable("resolution", str, ("resolution",))[:] = np.asarray(RESOLUTIONS, dtype=object)
@@ -667,11 +673,17 @@ def aggregate(config: Mapping[str, Any], robustness_root: Path, output: Path) ->
         rep_rmse_var[:] = [[[value[1] for value in per_rep[(site, resolution)]] for resolution in RESOLUTIONS] for site in SITES]
         for variable in (bias_var, rmse_var, rep_bias_var, rep_rmse_var):
             variable.units = "gC/m^2/day"
-    gate = evaluate_gate(metric_rows)
+    gate = (
+        evaluate_gate(metric_rows)
+        if bool(config.get("performance_gate_applied", True))
+        else performance_assessment(metric_rows)
+    )
     report = {
         "schema": "three-stage-gpp-iter006-uncertainty-report-v1", "result": "pass",
         "gate": gate, "snapshot_sha256": config["snapshot_sha256"],
         "split_design_sha256": config["split_design_sha256"], "fixed_test_access": False,
+        "release_basis": config.get("release_basis", "performance_gate"),
+        "performance_gate_applied": bool(config.get("performance_gate_applied", True)),
         "member_balance_rule": "equal member weight after within-member occurrence averaging",
         "files": package_files(output, exclude={"uncertainty_report.json"}),
     }
@@ -697,6 +709,36 @@ def evaluate_gate(metric_rows: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
     return {"result": "pass" if passed else "fail", "quantile_method": "linear", "by_site_resolution": results}
 
 
+def performance_assessment(metric_rows: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
+    """Record descriptive robustness quantiles without applying release thresholds."""
+    results: dict[str, Any] = {}
+    for site in SITES:
+        for resolution in RESOLUTIONS:
+            selected = [
+                row for row in metric_rows
+                if row["partition"] == "validation"
+                and row["site"] == site
+                and row["resolution"] == resolution
+            ]
+            require(len(selected) == SPLIT_COUNT, "assessment metric count mismatch")
+            r2 = np.asarray([float(row["r2"]) for row in selected], dtype=np.float64)
+            rmse = np.asarray([float(row["rmse"]) for row in selected], dtype=np.float64)
+            bias = np.asarray([float(row["bias"]) for row in selected], dtype=np.float64)
+            results[f"{site}_{resolution}"] = {
+                "r2_q10": float(np.quantile(r2, 0.10, method="linear")),
+                "rmse_q90": float(np.quantile(rmse, 0.90, method="linear")),
+                "median_absolute_bias": float(np.median(np.abs(bias))),
+                "coverage_complete": all(float(row["coverage_fraction"]) == 1.0 for row in selected),
+            }
+    return {
+        "applied": False,
+        "result": "not_applicable",
+        "release_basis": "iter007_best_configuration",
+        "quantile_method": "linear",
+        "by_site_resolution": results,
+    }
+
+
 def validate_aggregate(config: Mapping[str, Any], robustness_root: Path, output: Path) -> dict[str, Any]:
     metrics = _read_metrics(output / "metric_distribution.csv")
     require(len(metrics) == SPLIT_COUNT * 2 * 3 * 2, "aggregate metric row count mismatch")
@@ -718,19 +760,11 @@ def validate_aggregate(config: Mapping[str, Any], robustness_root: Path, output:
         require(float(row["coverage_fraction"]) == 1.0 and int(row["gap_count"]) == 0, "aggregate coverage mismatch")
         for field in ("r2", "rmse", "mae", "bias", "residual_std", "q0_01", "q0_025", "q0_05", "q0_25", "q0_5", "q0_75", "q0_95", "q0_975", "q0_99"):
             require(np.isfinite(float(row[field])), f"aggregate nonfinite {field}")
-    independent_gate: dict[str, Any] = {}; gate_pass = True
-    for site in SITES:
-        for resolution in RESOLUTIONS:
-            selected = [row for row in rebuilt_metrics if row["partition"] == "validation" and row["site"] == site and row["resolution"] == resolution]
-            r2 = np.asarray([float(row["r2"]) for row in selected], dtype=np.float64)
-            rmse = np.asarray([float(row["rmse"]) for row in selected], dtype=np.float64)
-            bias = np.asarray([float(row["bias"]) for row in selected], dtype=np.float64)
-            r2_q10 = float(np.quantile(r2, 0.10, method="linear")); rmse_q90 = float(np.quantile(rmse, 0.90, method="linear")); median_abs_bias = float(np.median(np.abs(bias)))
-            r2_floor = 0.85 if resolution == "hourly" else 0.75; rmse_ceiling = 5.0 if resolution == "hourly" else 3.0
-            row_pass = r2_q10 >= r2_floor and rmse_q90 <= rmse_ceiling and median_abs_bias <= 0.35 and all(float(row["coverage_fraction"]) == 1.0 for row in selected)
-            independent_gate[f"{site}_{resolution}"] = {"r2_q10": r2_q10, "r2_floor": r2_floor, "rmse_q90": rmse_q90, "rmse_ceiling": rmse_ceiling, "median_absolute_bias": median_abs_bias, "bias_ceiling": 0.35, "pass": bool(row_pass)}
-            gate_pass = gate_pass and row_pass
-    gate = {"result": "pass" if gate_pass else "fail", "quantile_method": "linear", "by_site_resolution": independent_gate}
+    gate = (
+        evaluate_gate(rebuilt_metrics)
+        if bool(config.get("performance_gate_applied", True))
+        else performance_assessment(rebuilt_metrics)
+    )
     generated_report = json.loads((output / "uncertainty_report.json").read_text(encoding="utf-8"))
     require(generated_report["gate"] == gate, "independently recomputed gate mismatch")
     estimates = _read_metrics(output / "uncertainty_estimates.csv")
@@ -785,6 +819,8 @@ def validate_aggregate(config: Mapping[str, Any], robustness_root: Path, output:
             "daily_aggregation": "complete 24-hour mean of paired hourly target and prediction",
             "validation_label": "fixed_upstream_gpp_stage",
             "scope": "surrogate component only; excludes observations, fixed test, SR, and full-chain uncertainty",
+            "release_basis": config.get("release_basis", "performance_gate"),
+            "performance_gate_applied": int(bool(config.get("performance_gate_applied", True))),
         }
         for attribute, expected in expected_attributes.items():
             require(dataset.getncattr(attribute) == expected, f"uncertainty provenance mismatch: {attribute}")
@@ -823,11 +859,16 @@ def _release_artifact(config: Mapping[str, Any], raw_layout: Mapping[str, Any], 
             "validation_label": "fixed_upstream_gpp_stage", "target_units": "gC/m^2/day"}
 
 
-def fit_release(config: Mapping[str, Any], raw_path: Path, aggregate_path: Path, output: Path) -> dict[str, Any]:
+def fit_release(
+    config: Mapping[str, Any], raw_path: Path, aggregate_path: Path | None, output: Path
+) -> dict[str, Any]:
     require(not output.exists(), f"release output exists: {output}")
     package = output / "release_0001"; (package / "artifact").mkdir(parents=True); (package / "uncertainty").mkdir(); (package / "handoff").mkdir(); (package / "validation").mkdir()
-    aggregate_validation = json.loads((aggregate_path / "aggregate_validation.json").read_text(encoding="utf-8"))
-    require(aggregate_validation["result"] == "pass" and aggregate_validation["gate"]["result"] == "pass", "release gate not passed")
+    if aggregate_path is not None:
+        aggregate_validation = json.loads((aggregate_path / "aggregate_validation.json").read_text(encoding="utf-8"))
+        require(aggregate_validation["result"] == "pass", "aggregate validation not passed")
+        expected_result = "pass" if bool(config.get("performance_gate_applied", True)) else "not_applicable"
+        require(aggregate_validation["gate"]["result"] == expected_result, "release assessment mismatch")
     raw_layout, X, y, times = load_raw(raw_path)
     all_positions = np.arange(DEVELOPMENT_MEMBERS, dtype=np.int64)
     x_scaler, y_scaler = _fit_scalers(X, y, all_positions, int(config["scale_chunk_rows"]))
@@ -855,8 +896,9 @@ def fit_release(config: Mapping[str, Any], raw_path: Path, aggregate_path: Path,
                          "feature_schema_sha256": artifact["feature_schema_sha256"], "model_config": config["model_config"],
                          "fit_member_count": DEVELOPMENT_MEMBERS, "fixed_test_access": False}
     write_json(package / "artifact" / "artifact_manifest.json", artifact_manifest)
-    for name in ("gpp_uncertainty.nc", "metric_distribution.csv", "uncertainty_estimates.csv", "repeated_split_manifest.json", "convergence.json", "uncertainty_report.json", "aggregate_validation.json"):
-        shutil.copy2(aggregate_path / name, package / "uncertainty" / name)
+    if aggregate_path is not None:
+        for name in ("gpp_uncertainty.nc", "metric_distribution.csv", "uncertainty_estimates.csv", "repeated_split_manifest.json", "convergence.json", "uncertainty_report.json", "aggregate_validation.json"):
+            shutil.copy2(aggregate_path / name, package / "uncertainty" / name)
     predictions_path = output / "release_predictions_physical_float32.dat"
     release_predictions = np.memmap(predictions_path, mode="w+", dtype=np.float32, shape=(total_rows,))
     chunk = int(config["prediction_chunk_rows"])
@@ -912,7 +954,8 @@ def validate_release(config: Mapping[str, Any], raw_path: Path, fit_package: Pat
     output.mkdir(parents=True); staging = output / "release_0001"; shutil.copytree(fit_package, staging)
     raw_layout, X, _, times = load_raw(raw_path)
     artifact, artifact_manifest = load_release_artifact(staging / "artifact")
-    require(artifact["model_config"] == MODEL_CONFIG == config["model_config"], "release model configuration mismatch")
+    frozen_configuration = json.loads(Path(config["gpp_configuration_file"]).read_text(encoding="utf-8"))
+    require(artifact["model_config"] == frozen_configuration["model_config"] == config["model_config"], "release model configuration mismatch")
     require(artifact["snapshot_sha256"] == config["snapshot_sha256"], "release artifact snapshot mismatch")
     require(artifact["upstream_release_manifest_sha256"] == config["spinup_release_manifest_sha256"], "release artifact upstream release mismatch")
     require(artifact["predicted_cn_sha256"] == config["predicted_cn_sha256"], "release artifact upstream handoff mismatch")
@@ -923,7 +966,9 @@ def validate_release(config: Mapping[str, Any], raw_path: Path, fit_package: Pat
     require(artifact["fit_scope"]["development_member_ids"] == raw_layout["development_member_ids"], "release fit scope mismatch")
     require(artifact["fit_scope"]["fixed_test_access"] is False, "release fixed-test mismatch")
     aggregate_validation = json.loads((staging / "uncertainty" / "aggregate_validation.json").read_text(encoding="utf-8"))
-    require(aggregate_validation["result"] == "pass" and aggregate_validation["gate"]["result"] == "pass", "staged gate mismatch")
+    require(aggregate_validation["result"] == "pass", "staged aggregate validation mismatch")
+    expected_result = "pass" if bool(config.get("performance_gate_applied", True)) else "not_applicable"
+    require(aggregate_validation["gate"]["result"] == expected_result, "staged performance assessment mismatch")
     uncertainty_report = json.loads((staging / "uncertainty" / "uncertainty_report.json").read_text(encoding="utf-8"))
     require(uncertainty_report["result"] == "pass" and uncertainty_report["gate"] == aggregate_validation["gate"], "staged uncertainty report mismatch")
     for item in aggregate_validation["files"]:
@@ -931,7 +976,11 @@ def validate_release(config: Mapping[str, Any], raw_path: Path, fit_package: Pat
         require(candidate.is_file() and candidate.stat().st_size == int(item["size_bytes"]), f"staged uncertainty file missing: {item['path']}")
         require(sha256_file(candidate) == item["sha256"], f"staged uncertainty file hash mismatch: {item['path']}")
     staged_metrics = _read_metrics(staging / "uncertainty" / "metric_distribution.csv")
-    release_gate = evaluate_gate(staged_metrics)
+    release_gate = (
+        evaluate_gate(staged_metrics)
+        if bool(config.get("performance_gate_applied", True))
+        else performance_assessment(staged_metrics)
+    )
     require(release_gate == aggregate_validation["gate"], "release gate recomputation mismatch")
     handoff_path = staging / "handoff" / "gpp_predicted_for_sr.nc"
     with Dataset(str(handoff_path), "r") as handoff:
@@ -965,12 +1014,17 @@ def validate_release(config: Mapping[str, Any], raw_path: Path, fit_package: Pat
                          "snapshot_sha256": config["snapshot_sha256"], "artifact_sha256": artifact_manifest["artifact_sha256"],
                          "handoff_sha256": handoff_manifest["sha256"], "fit_member_count": DEVELOPMENT_MEMBERS,
                          "fixed_test_access": False, "gate": release_gate,
+                         "release_basis": config.get("release_basis", "performance_gate"),
+                         "performance_gate_applied": bool(config.get("performance_gate_applied", True)),
                          "handoff_prediction_count": int(all_observed.size), "handoff_full_finite": True}
     write_json(output / "validation_report.json", validation_report); write_json(staging / "validation" / "validation_report.json", validation_report)
     release_manifest = {"schema": "three-stage-gpp-release-package-manifest-v1", "release": "release_0001",
                         "created_utc": datetime.now(timezone.utc).isoformat(), "result": "validated",
                         "snapshot_sha256": config["snapshot_sha256"], "artifact_sha256": artifact_manifest["artifact_sha256"],
                         "handoff_sha256": handoff_manifest["sha256"], "split_manifest_sha256": config["repeated_split_manifest_sha256"],
-                        "fixed_test_access": False, "files": package_files(staging, exclude={"release_manifest.json"})}
+                        "fixed_test_access": False,
+                        "release_basis": config.get("release_basis", "performance_gate"),
+                        "performance_gate_applied": bool(config.get("performance_gate_applied", True)),
+                        "files": package_files(staging, exclude={"release_manifest.json"})}
     write_json(staging / "release_manifest.json", release_manifest)
     return validation_report

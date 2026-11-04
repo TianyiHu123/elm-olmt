@@ -180,3 +180,29 @@
 - Campaign-plan amendment recommendation: `none`.
 - Next direction: planning-only Iter008 fresh robustness of candidate 21 on 20 new balanced splits;
   fresh consolidated kickoff approval is required and no runtime authority is granted.
+
+## iter008 - ABBY/JERC GPP robustness and release
+
+- Closed: `2026-11-04T01:12:26-07:00`.
+- Status/work type: `completed` / `implementation`.
+- Objective/result: characterize candidate 21 on 20 fresh balanced development splits, publish
+  descriptive uncertainty, fit all 819 development members, and release the GPP artifact plus
+  predicted-GPP downstream handoff; `pass`.
+- Decision: `gpp_release_published`. Stable catalog-last `release_0001` contains artifact
+  `67214897...8ec9`, handoff `c905fc60...98bb`, and release manifest `57cc18b0...70d1`.
+- Evidence: all 20 robustness fits/reloads passed with zero warnings and fixed-test access false;
+  240 metric rows and 84 uncertainty rows passed independent aggregation. Descriptive ABBY/JERC
+  hourly R2 q10 is `0.908730/0.909111`; daily is `0.873134/0.811444`.
+- Correction: failed final `24523438` exposed scaler replay dtype order. Reviewed diagnostics
+  localized the interface defect; the correction mirrors scikit-learn float32 statistic casting.
+  Corrected final `24523529` passed all 100,442,160 predictions without changing science content.
+- Accounting: `24512852`, all leaves under `24513943`, `24520151`, `24523514`, and `24523529`
+  completed `0:0`; failed jobs `24523438` and `24523491` are preserved and classified.
+- Boundary/evidence: no fixed-test or SR fitting; upstream C/N and all-819 release predictions are
+  in-sample; metrics are repeated-split descriptive rather than a release gate. Compact evidence
+  is in `development/three_stage_surrogate/summaries/iter008/`.
+- Limitations: two sites, fixed in-sample upstream C/N, temporary unbacked `/xdisk`, and no
+  full-chain uncertainty, observations, likelihood, MCMC, or push.
+- Campaign-plan amendment recommendation: `none`.
+- Next state: explicit terminal declaration. No next iteration is authorized; downstream SR or
+  later work requires a separate planning discussion and consolidated kickoff approval.

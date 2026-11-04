@@ -64,11 +64,13 @@ def package_files(root: Path, *, exclude: Iterable[str] = ()) -> List[Dict[str, 
     return records
 
 
-def balanced_split_manifest(development_members: Sequence[str]) -> Dict[str, Any]:
+def balanced_split_manifest(
+    development_members: Sequence[str], seed: int = SPLIT_SEED
+) -> Dict[str, Any]:
     """Create the fresh locked 20-fold balanced repeated-split design."""
     members = tuple(str(value) for value in development_members)
     require(len(members) == 819 and len(set(members)) == 819, "development population mismatch")
-    rng = np.random.default_rng(SPLIT_SEED)
+    rng = np.random.default_rng(seed)
     used_extras: set[str] = set()
     splits: List[Dict[str, Any]] = []
     member_array = np.asarray(members, dtype="U6")
@@ -95,7 +97,7 @@ def balanced_split_manifest(development_members: Sequence[str]) -> Dict[str, Any
     require(sum(value == 4 for value in counts.values()) == 815, "four-appearance count mismatch")
     require(sum(value == 5 for value in counts.values()) == 4, "five-appearance count mismatch")
     result = {
-        "schema": "three-stage-spinup-iter004-splits-v1", "seed": SPLIT_SEED,
+        "schema": "three-stage-spinup-iter004-splits-v1", "seed": int(seed),
         "development_count": 819, "train_count": 655, "validation_count": 164,
         "splits": splits, "validation_appearance_counts": counts,
     }
