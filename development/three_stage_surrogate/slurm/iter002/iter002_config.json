@@ -1,0 +1,61 @@
+{
+  "schema": "three-stage-spinup-iter002-config-v1",
+  "repository_root": "/xdisk/chopinsong/tianyihu/elm-olmt",
+  "repository_base_commit": "66975fc84b635624f3c1fa4ae00afd77195f4e3b",
+  "plan_sha256": "9bbb68654a5ef7c41298a135758946f3a4ab3397b82d9238539cbc3dbe319128",
+  "snapshot_root": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe_vertc/surrogate_input_data",
+  "snapshot_revision": "r0001",
+  "snapshot_sha256": "39b05495a57bfc9f323df67b47c0110dadfbf508b3159cde7ce1a6c59dfd187a",
+  "output_root": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/three_stage_surrogate/iter002_abby_jerc_spinup_baseline",
+  "run_directories": {
+    "preflight": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/three_stage_surrogate/iter002_abby_jerc_spinup_baseline/runs/preflight",
+    "smoke": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/three_stage_surrogate/iter002_abby_jerc_spinup_baseline/runs/smoke_80_20",
+    "operational": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/three_stage_surrogate/iter002_abby_jerc_spinup_baseline/runs/operational_655_164",
+    "validation": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/three_stage_surrogate/iter002_abby_jerc_spinup_baseline/runs/validation"
+  },
+  "sites": ["ABBY", "JERC"],
+  "targets": ["TOTSOMC", "TOTSOMN"],
+  "climatology": {
+    "start": "2018-01-01T00:00:00",
+    "end": "2022-12-31T23:00:00",
+    "calendar": "noleap",
+    "hours": 43800,
+    "std_ddof": 0
+  },
+  "feature_names_static": [
+    "PCT_SAND",
+    "ORGANIC",
+    "PRECTmms_clim_mean",
+    "PRECTmms_clim_std",
+    "FSDS_clim_mean",
+    "TBOT_clim_std",
+    "RH_clim_seasonal_amp"
+  ],
+  "site_identity_is_feature": false,
+  "partitions": {
+    "smoke_train": 80,
+    "smoke_validation": 20,
+    "operational_train": 655,
+    "operational_validation": 164,
+    "fixed_test_allowed": false
+  },
+  "model": {
+    "hidden_layer_sizes": [32],
+    "activation": "tanh",
+    "solver": "lbfgs",
+    "alpha": 40.0,
+    "max_iter": 800,
+    "random_state": 42
+  },
+  "target_transform": "natural_log",
+  "metrics": {
+    "scales": ["physical", "log"],
+    "permutation_repeats": 8,
+    "bias_convention": "prediction minus ELM",
+    "r2_definition": "sklearn.metrics.r2_score"
+  },
+  "reload_tolerance": {
+    "rtol": 1e-12,
+    "atol": 1e-10
+  }
+}

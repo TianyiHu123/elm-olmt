@@ -1,0 +1,9 @@
+{
+  "artifact_sha256": "9abb342d57bf81ce933f82a5750bb56df1eaeb721f55080e3766ba76fee8a809",
+  "catalog_sha256": "93f080dea3e8f0d00241b9ecd696f78ab451bb81bae318d47bac5aaabdd510be",
+  "handoff_sha256": "9e2d5be4809ee7c9053baf70ad7574ca0b5cc2afc4a15b6006663a0fb8fafdb5",
+  "release": "release_0001",
+  "release_manifest_sha256": "69f840f7972d640e91b1693c2fcf71b984dae2e20fee9a07f05434af0591f2dc",
+  "schema": "three-stage-spinup-iter004-compact-release-identity-v1",
+  "stable_root": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe_vertc/surrogate_products/spinup_abby_jerc"
+}

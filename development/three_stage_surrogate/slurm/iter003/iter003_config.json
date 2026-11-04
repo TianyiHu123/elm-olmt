@@ -1,0 +1,27 @@
+{
+  "schema": "three-stage-spinup-iter003-config-v1",
+  "repository_root": "/xdisk/chopinsong/tianyihu/elm-olmt",
+  "repository_base_commit": "a8810d8378d17b3b3ca02904703661fdf0d5b9db",
+  "plan_sha256": "9bbb68654a5ef7c41298a135758946f3a4ab3397b82d9238539cbc3dbe319128",
+  "snapshot_root": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe_vertc/surrogate_input_data",
+  "snapshot_revision": "r0001",
+  "snapshot_sha256": "39b05495a57bfc9f323df67b47c0110dadfbf508b3159cde7ce1a6c59dfd187a",
+  "global_split_sha256": "99467dea4d34834c4ea4aaea9e416620cd9bc16310f567f7b7fc1735abe74fce",
+  "output_root": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/three_stage_surrogate/iter003_abby_jerc_spinup_config",
+  "run_directories": {
+    "preflight": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/three_stage_surrogate/iter003_abby_jerc_spinup_config/runs/preflight",
+    "smoke": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/three_stage_surrogate/iter003_abby_jerc_spinup_config/runs/smoke",
+    "screen": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/three_stage_surrogate/iter003_abby_jerc_spinup_config/runs/screen",
+    "aggregate": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/three_stage_surrogate/iter003_abby_jerc_spinup_config/runs/aggregate",
+    "validation": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/three_stage_surrogate/iter003_abby_jerc_spinup_config/runs/validation"
+  },
+  "split_seed": 20261030,
+  "split_count": 20,
+  "train_members": 655,
+  "validation_members": 164,
+  "candidate_count": 96,
+  "array_range": "0-95",
+  "array_concurrency_cap": null,
+  "fixed_test_allowed": false,
+  "target_transform": "natural_log"
+}

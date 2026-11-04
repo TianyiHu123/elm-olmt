@@ -1,0 +1,7 @@
+ITER003_FOUR_RECORD_VALIDATE_PASS
+command=bash development/three_stage_surrogate/slurm/iter003/validate_closeout_iter003.sh --active-job-count 0
+records=iterations/iter003.md,ITERATION_SUMMARY.md,registry.csv,handoff/CURRENT.md
+evidence=summaries/iter003/,screen/attempt_1,aggregate/attempt_1,validation/attempt_1
+result=pass
+decision=freeze_candidate_74
+active_jobs=0

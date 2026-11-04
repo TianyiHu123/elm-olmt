@@ -1,0 +1,4 @@
+validator=development/three_stage_surrogate/slurm/iter008/validate_closeout_iter008.sh
+validator_sha256=73c84595ac45ab08260f88fcefea2cc9126080789ae595f762e52baf62d23b9a
+command=bash development/three_stage_surrogate/slurm/iter008/validate_closeout_iter008.sh --active-job-count 0
+output=ITER008_FOUR_RECORD_VALIDATE_PASS records=report,summary,registry,handoff result=pass decision=gpp_release_published active_jobs=0 release=release_0001 files=13

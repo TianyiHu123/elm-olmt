@@ -1,0 +1,20 @@
+{
+  "all_819_prediction_created": false,
+  "fixed_test_access": false,
+  "flexible_prediction_counts": {
+    "operational164": 164,
+    "single": 1,
+    "smoke20": 20,
+    "subset": 7
+  },
+  "fresh_process_reload_match": true,
+  "operational_artifact_sha256": "4c42e818e124a2f72ed54635ae02979afeb7ec10518c15be187b8775e6947064",
+  "operational_attempt": 2,
+  "result": "pass",
+  "schema": "three-stage-spinup-iter002-validation-v1",
+  "smoke_artifact_sha256": "95df80b18b08a62b5a290a85cdfc34863927c5cfab0e8c425d2ba4517904a7fe",
+  "smoke_attempt": 2,
+  "snapshot_revision": "r0001",
+  "snapshot_sha256": "39b05495a57bfc9f323df67b47c0110dadfbf508b3159cde7ce1a6c59dfd187a",
+  "validation_attempt": 2
+}

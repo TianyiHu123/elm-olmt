@@ -1,0 +1,18 @@
+{
+  "best_candidate_id": 21,
+  "decision": "configuration_selected_gate_pass",
+  "finalist_candidate_ids": [
+    18,
+    21,
+    19,
+    2,
+    8,
+    13
+  ],
+  "fixed_test_access": false,
+  "independently_recomputed_leaf_count": 120,
+  "release_authorized": false,
+  "result": "pass",
+  "schema": "three-stage-gpp-iter007-final-validation-v1",
+  "selection_gate_result": "pass"
+}
