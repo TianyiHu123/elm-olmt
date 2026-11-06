@@ -3,96 +3,84 @@
 ## Campaign Plan
 
 - Plan path: `development/three_stage_surrogate/PLAN.md`
-- Current plan SHA-256: `014a112ba6013b28da10d87415c53f39aefcfcf3bd56461ec9a032867d9d5360`
-- Latest iteration locked plan SHA-256: `9bbb68654a5ef7c41298a135758946f3a4ab3397b82d9238539cbc3dbe319128`
+- Current and latest locked plan SHA-256:
+  `014a112ba6013b28da10d87415c53f39aefcfcf3bd56461ec9a032867d9d5360`
 - Applicable campaign phase: progression item 6, SR development and configuration selection
-- Planning alignment status: `aligned`
-- Post-Iter008 plan revision: user authorized combining SR implementation and development-only
-  configuration selection when the structure/smoke gate passes and the search contract is locked
-  before production. The latest closed iteration remains governed by its recorded plan identity.
+- Planning alignment status: `aligned`; approved deviation: `none`
 
 ## Live State
 
-- Active iteration: none; latest closed iteration is `iter008`
-- Planning state: Iter009 proposal under interactive discussion; no kickoff or runtime authority
+- Active iteration: none; latest closed iteration: `iter009`
 - Status: `completed`
 - Phase: `closed`
 - Work type: `implementation`
 - Acceptance result: `pass`
-- Decision: `gpp_release_published`
-- Active job scope: none
-- Active monitoring: none; every Iter008 job has authoritative terminal accounting
+- Decision: `sr_configuration_selected`
+- Active job scope: none; no job is active or unaccounted
 - Site profile: `development/hpc/puma.md`
-- Last updated: `2026-11-04T01:51:05-07:00`
+- Last updated: `2026-11-06T02:35:17-07:00`
 
 ## Completed Objective and Scope
 
-Iter008 characterized Iter007 candidate 21 on 20 fresh synchronized balanced 655/164
-development-member splits, published descriptive GPP uncertainty, fitted all 819 development
-members, and released the artifact plus `gpp_predicted_for_sr.nc` after independent technical
-validation. All 205 fixed-test members remained excluded. No performance gate was applied.
+Iter009 implemented the pooled ABBY/JERC hourly physical-SR interface from fixed published C/N and
+same-hour GPP predictions, validated its 44-feature contract, screened the exact 24-candidate MLP
+design, and selected the best technically eligible configuration using development-only evidence.
+The 205 fixed-test members, all-819 SR fitting, uncertainty, release, observations, likelihood, and
+MCMC remained outside scope.
 
 ## Best Evidence and Decision
 
-- Preflight `24512852`, all 20 robustness leaves under `24513943`, release fit `24520151`,
-  diagnostic retry `24523514`, and corrected final `24523529` completed `0:0`.
-- Fresh split manifest is `c3aa7c4b...c904`; 815 members appear four times and four appear five
-  times; no validation set matches the prior Iter006/Iter007 design.
-- All 20 robustness split and reload reports passed with zero convergence warnings and no
-  fixed-test access. Aggregate evidence contains 240 metric rows and 84 uncertainty rows.
-- Initial final job `24523438` and diagnostic job `24523491` failed and are preserved. Reviewed
-  diagnosis localized the mismatch to scaler-stat dtype order; the corrected interface exactly
-  mirrors scikit-learn's float32 transform path without changing model or science content.
-- Stable artifact SHA-256: `67214897f16e536f450b34275e5fd19e435e4cc657048fc3194beca500928ec9`.
-- Stable GPP handoff SHA-256: `c905fc60803405ba80b1ee7e4d7b489d1aeb3edc1b918ca2f07d8df9b0d198bb`.
-- Release manifest SHA-256: `57cc18b063ab46a4cd07a3bd4e03ab1bfd05fb81894b097277d3c667135370d1`.
-- All 13 release-manifest files match size and hash; validated, staging, and stable trees agree;
-  catalog was written last and points to that exact manifest.
-- Overall decision: `gpp_release_published`.
+- Unit1 job `24524508`, all 192 screen leaves under `24524587`, all 72 finalist leaves under
+  `24536618`, and final job `24548424` completed `0:0`; no retry submission was consumed.
+- Every production leaf passed complete coverage, finite prediction, serialization, hash,
+  zero-convergence-warning, exclusion, and successful scaled-scratch cleanup gates.
+- Screen finalists were `[0,21,2,8,16,13]`; the final ranking over all 20 splits selected
+  candidate 21: `(64,32)`, `tanh`, alpha `1e-4`, with the frozen Adam controls.
+- Candidate 21 achieved worst/mean normalized ordinal scores `1.0/1.0`. Hourly R2 q10/RMSE q90/
+  median absolute bias were `0.736201/1.119896/0.027569`; daily values were
+  `0.737210/1.098576/0.027569`.
+- Final selection report `4c414784...931c` and fresh validation `8a0138fe...967f` agree on
+  candidate 21. The validator recomputed 240 metric rows from raw physical SR truth and hashed
+  predictions. No absolute performance gate was applied.
+- Overall decision: `sr_configuration_selected`. Candidate 21 is frozen for separately approved
+  later work; no all-819 fit or release is authorized.
 
-## Published Products
+## Outputs and Evidence
 
-- Stable release:
-  `/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe_vertc/surrogate_products/gpp_abby_jerc/release_0001`
-- Artifact: `artifact/gpp_surrogate_artifact.pkl`
-- Descriptive uncertainty: `uncertainty/gpp_uncertainty.nc`, `metric_distribution.csv`, and
-  `uncertainty_estimates.csv`
-- Downstream handoff: `handoff/gpp_predicted_for_sr.nc`
-- Catalog:
-  `/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe_vertc/surrogate_products/gpp_abby_jerc/catalog.json`
-- Compact evidence: `development/three_stage_surrogate/summaries/iter008/`
-- Full run evidence:
-  `/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/three_stage_surrogate/iter008_abby_jerc_gpp_release`
+- Compact evidence: `development/three_stage_surrogate/summaries/iter009/`
+- Iteration report: `development/three_stage_surrogate/iterations/iter009.md`
+- Full run root:
+  `/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/three_stage_surrogate/iter009_abby_jerc_sr_config`
+- Final evidence: `runs/final/attempt_1/final_metric_distribution.csv`, `final_ranking.csv`,
+  `final_selection_report.json`, and `final_validation.json`
+- Execution manifest SHA-256:
+  `dbcd4d68eb355d6613fc7e75f042b04ec88f0bc7c6060bc192147aaad583ee15`
 
-## Risks and Interpretation
+## Interpretation and Risks
 
-- `/xdisk` is temporary and unbacked; run, staging, and stable copies on the same filesystem are
-  not independent backups.
-- Evidence covers ABBY and JERC only. Published predicted C/N is fixed in-sample upstream input,
-  and the all-819 GPP release predictions are in-sample.
-- Robustness distributions describe the approved sampled splits; they are not a global or causal
-  sensitivity claim and did not serve as a performance gate.
-- No fixed-test use, SR fitting, full-chain uncertainty, observation, likelihood, or MCMC work was
-  performed.
+- Evidence is `fixed_upstream_sr_stage`, not end-to-end held out: both published upstream products
+  were fitted on all 819 development members.
+- Results describe the approved balanced splits and finite candidate matrix, not global or causal
+  sensitivity. Site identity is provenance rather than a ranking term.
+- `/xdisk` is temporary and unbacked. No stable SR release or catalog exists.
 - Campaign-plan amendment recommendation: `none`.
 
 ## Explicit Terminal Declaration
 
-Iter008 is complete and no job is active or unaccounted. Iter009 SR implementation and
-configuration-selection planning is underway, but no complete proposal or consolidated kickoff
-package has been approved. SR runtime work, full-chain uncertainty, likelihood/MCMC work, or any
-later release requires the applicable consolidated kickoff approval.
+Iter009 is complete and no job is active or unaccounted. No next iteration proposal is authorized.
+Any all-819 SR fit, robustness/uncertainty, release, fixed-test evaluation, full-chain likelihood,
+MCMC, or later work requires a separate planning discussion and consolidated kickoff approval.
 
 ## Next Session Start Protocol
 
-1. Read `PLAN.md`, this handoff, `WORKFLOW.md`, and `iterations/iter008.md`.
-2. Read `summaries/iter008/summary.md` and verify the stable catalog/release identities if needed.
+1. Read `PLAN.md`, this handoff, `WORKFLOW.md`, and `iterations/iter009.md`.
+2. Read `summaries/iter009/summary.md` and verify external final hashes if needed.
 3. Read `development/hpc/puma.md` before any scheduler work.
-4. Treat all new work as planning-only until the user approves a new consolidated kickoff package.
+4. Treat later work as planning-only until a new complete package is approved.
 
 ## Closeout Identity
 
-- Four-record validator: `development/three_stage_surrogate/slurm/iter008/validate_closeout_iter008.sh`
-- Expected validator result: `ITER008_FOUR_RECORD_VALIDATE_PASS`
-- Closeout mode: `committed`; expected parent `6bbbb779b6700da9e3dd0c010f1fe5c338829f89`;
-  expected subject `Release GPP surrogate artifact`; no push authorized.
+- Four-record validator: `development/three_stage_surrogate/slurm/iter009/validate_closeout_iter009.sh`
+- Expected validator result: `ITER009_FOUR_RECORD_VALIDATE_PASS`
+- Closeout mode: `committed`; expected parent `2b22a3ec11fd8935bc7b434357ead6acc8449252`;
+  expected subject `Select SR surrogate configuration`; no push authorized.

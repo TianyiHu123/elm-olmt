@@ -206,3 +206,26 @@
 - Campaign-plan amendment recommendation: `none`.
 - Next state: explicit terminal declaration. No next iteration is authorized; downstream SR or
   later work requires a separate planning discussion and consolidated kickoff approval.
+
+## iter009 - ABBY/JERC SR implementation and configuration selection
+
+- Closed: `2026-11-06T02:35:17-07:00`.
+- Status/work type: `completed` / `implementation`.
+- Objective/result: implement the fixed-upstream pooled hourly SR stage and select a configuration
+  from the locked 24-candidate development-only design; `pass`.
+- Decision: `sr_configuration_selected`. Freeze candidate 21: `(64,32)`, `tanh`, alpha `1e-4`,
+  with the frozen Adam controls; no all-819 fit or release is authorized.
+- Evidence: Unit1 passed the 44-feature physical-SR interface and raw-cache gates; all 192 screen
+  and 72 finalist leaves completed `0:0` with zero production warnings and no fixed-test access.
+  Fresh final validation recomputed 240 rows and reproduced candidate 21.
+- Ranking: candidate 21 achieved worst/mean ordinal scores `1.0/1.0`; hourly R2 q10/RMSE q90/
+  median absolute bias was `0.736201/1.119896/0.027569`, and daily was
+  `0.737210/1.098576/0.027569`. No absolute performance gate was applied.
+- Accounting: `24524508`, array `24524587`, array `24536618`, and `24548424` completed `0:0`;
+  no retry submission was consumed. Pre-submission review blocks were corrected before execution.
+- Boundary/evidence: fixed upstream C/N and GPP are in-sample; no fixed-test, all-819 SR fit,
+  uncertainty, release, catalog, likelihood/MCMC, or push. Compact evidence is in
+  `development/three_stage_surrogate/summaries/iter009/`.
+- Campaign-plan amendment recommendation: `none`.
+- Next state: explicit terminal declaration. No next iteration is authorized; later SR robustness,
+  release, fixed-test evaluation, or downstream work requires separate planning and approval.
