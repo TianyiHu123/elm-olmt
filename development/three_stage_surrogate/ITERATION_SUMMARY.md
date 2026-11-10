@@ -229,3 +229,26 @@
 - Campaign-plan amendment recommendation: `none`.
 - Next state: explicit terminal declaration. No next iteration is authorized; later SR robustness,
   release, fixed-test evaluation, or downstream work requires separate planning and approval.
+
+## iter010 - ABBY/JERC SR configuration refinement
+
+- Closed: `2026-11-10T01:04:21-07:00`.
+- Status/work type: `completed` / `experiment`.
+- Objective/result: refine the Iter009 SR configuration using a locked 33-candidate matrix and 20
+  fresh development-only splits; `pass`.
+- Decision: `sr_refined_configuration_selected`. Freeze candidate 19—`(96,48)`, `tanh`, alpha
+  `1.0`, otherwise frozen Adam controls—for separately approved later work.
+- Evidence: 264 screen and 72 finalist leaves passed technical and scope gates; finalists
+  `[0,23,19,26,11,15]` ranked `19,23,15,26,11,0`. Fresh validation recomputed 240 rows and
+  reproduced candidate 19.
+- Gate: candidate 19 improved all 6/6 components over control, with no both-worse resolution.
+  Hourly R2 q10/RMSE q90/median absolute bias is `0.773460/1.025263/0.035658`; daily is
+  `0.790604/0.967047/0.035658`.
+- Accounting: Unit1 `24578833` failed before substantive work; corrected Unit1 `24578853`, screen
+  array `24579541`, finalist array `24590678`, and final `24595272` completed `0:0`.
+- Boundary/evidence: fixed upstream C/N and GPP are in-sample; no fixed-test, all-819 SR fit,
+  uncertainty, release, catalog, likelihood/MCMC, or push. Compact evidence is in
+  `development/three_stage_surrogate/summaries/iter010/`.
+- Campaign-plan amendment recommendation: `none`.
+- Next state: explicit terminal declaration. No next iteration is authorized; later SR robustness,
+  release, fixed-test evaluation, or downstream work requires separate planning and approval.
