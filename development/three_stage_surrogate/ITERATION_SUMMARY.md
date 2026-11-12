@@ -252,3 +252,27 @@
 - Campaign-plan amendment recommendation: `none`.
 - Next state: explicit terminal declaration. No next iteration is authorized; later SR robustness,
   release, fixed-test evaluation, or downstream work requires separate planning and approval.
+
+## iter011 - Focused SR capacity versus regularization experiment
+
+- Closed: `2026-11-11T18:37:48-07:00`.
+- Status/work type: `completed` / `experiment`.
+- Objective/result: compare five locked SR capacity/regularization configurations on 20 new matched
+  development-only splits; `pass`.
+- Decision: `sr_capacity_regularization_configuration_selected`. Select B—`(96,48)`, `tanh`,
+  alpha `0.01`, otherwise frozen Iter010 Adam controls—as a development candidate for separately
+  approved fresh robustness; no release is authorized.
+- Evidence: all 100 production fits passed. Mean pooled daily validation RMSE ranks B, D, C, A, E
+  at `0.7692`, `0.7961`, `0.8640`, `0.8657`, `0.8895`; fresh validation recomputed 600 rows.
+- Effects: weaker regularization is supported by B/A (18/20 RMSE wins) and D/C (16/20); capacity
+  is not supported because C/A is nearly neutral and D loses to B. Alpha `0.1` is non-monotonic.
+- Diagnostics: B improves mean daily RMSE at both ABBY and JERC versus A and D, with no site-cost
+  flag, but has larger train-validation gaps and greater split variability than A/C.
+- Accounting: Unit1 `24607609` failed pre-substantively and corrected `24607628` completed `0:0`;
+  array `24607646_0-99` completed `0:0`; final `24617562` failed at a Matplotlib keyword and the
+  exactly corrected final `24617685` completed `0:0`. Both corrections had independent re-review.
+- Boundary/evidence: fixed predicted upstream C/N and GPP, two sites, and development-only splits;
+  no fixed-test, all-819 SR fit, uncertainty, release, catalog, likelihood/MCMC, or push.
+- Campaign-plan amendment recommendation: `none`.
+- Next state: explicit terminal declaration. No next iteration is authorized; fresh B robustness
+  requires a separate planning discussion and consolidated kickoff approval.

@@ -1,0 +1,14 @@
+{
+  "decision": "sr_capacity_regularization_configuration_selected",
+  "diagnostic_flags_reproduced": true,
+  "effect_support_reproduced": true,
+  "fixed_test_access": false,
+  "paired_comparisons_reproduced": true,
+  "production_fit_count": 100,
+  "ranking_reproduced": true,
+  "recomputed_validation_metric_rows": 600,
+  "release_created": false,
+  "result": "pass",
+  "schema": "three-stage-sr-iter011-final-validation-v1",
+  "selected_candidate_id": "B"
+}
