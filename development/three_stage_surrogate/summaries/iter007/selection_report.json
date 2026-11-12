@@ -1,0 +1,102 @@
+{
+  "best_candidate": {
+    "activation": "tanh",
+    "alpha": 0.0001,
+    "candidate_id": 21,
+    "hidden_layer_sizes": [
+      64,
+      32
+    ]
+  },
+  "best_candidate_id": 21,
+  "best_candidate_statistics": {
+    "candidate": {
+      "activation": "tanh",
+      "alpha": 0.0001,
+      "candidate_id": 21,
+      "hidden_layer_sizes": [
+        64,
+        32
+      ]
+    },
+    "candidate_id": 21,
+    "components": {
+      "daily": {
+        "bias_ceiling": 0.35,
+        "margins": {
+          "bias": 0.6134318448959553,
+          "r2": 0.10589834526515718,
+          "rmse": 0.10821430180974856
+        },
+        "median_absolute_bias": 0.13529885428641564,
+        "pass": true,
+        "r2_floor": 0.75,
+        "r2_q10": 0.8294237589488679,
+        "rmse_ceiling": 3.0,
+        "rmse_q90": 2.6753570945707543
+      },
+      "hourly": {
+        "bias_ceiling": 0.35,
+        "margins": {
+          "bias": 0.6134318448959559,
+          "r2": 0.0637707445635777,
+          "rmse": 0.14780028445952914
+        },
+        "median_absolute_bias": 0.13529885428641542,
+        "pass": true,
+        "r2_floor": 0.85,
+        "r2_q10": 0.904205132879041,
+        "rmse_ceiling": 5.0,
+        "rmse_q90": 4.260998577702354
+      }
+    },
+    "composite_variability": 0.0877077360984296,
+    "gate_pass": true,
+    "mean_normalized_margin": 0.27542456098165397,
+    "median_paired_composite_improvement": 0.28868299866736746,
+    "parameter_count": 4929,
+    "rank": 1,
+    "split_count": 20,
+    "split_ids": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19
+    ],
+    "worst_normalized_margin": 0.0637707445635777
+  },
+  "candidate_manifest_sha256": "b1454998c0bb260f363b6cd480e73f1ec13dd4e8a1c53d632adf121eede40fff",
+  "decision": "configuration_selected_gate_pass",
+  "final_metric_distribution_sha256": "abf7e60ef8030c0e4043841bbd6b2e4663578444aeeaf9d960e06cc12cb0b662",
+  "final_ranking_sha256": "0beaac63e6ee6817ec078ef928af32d7b8cd7fe126c6453041bd614e03ec8c63",
+  "finalist_candidate_ids": [
+    18,
+    21,
+    19,
+    2,
+    8,
+    13
+  ],
+  "finalist_manifest_sha256": "f0a97d89040c1b9f2d0f82c31b7989b7796cda3fba0ff59272f2ba74b7dc24ad",
+  "fixed_test_access": false,
+  "release_authorized": false,
+  "result": "pass",
+  "schema": "three-stage-gpp-iter007-selection-v1",
+  "selection_gate_result": "pass"
+}

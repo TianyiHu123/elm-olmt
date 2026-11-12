@@ -1,0 +1,7 @@
+ITER004_FOUR_RECORD_VALIDATE_PASS
+command=bash development/three_stage_surrogate/slurm/iter004/validate_closeout_iter004.sh --active-job-count 0
+records=iterations/iter004.md,ITERATION_SUMMARY.md,registry.csv,handoff/CURRENT.md
+evidence=summaries/iter004/,external Iter004 run root,stable release_0001
+result=pass
+decision=publish_release_0001
+active_jobs=0
