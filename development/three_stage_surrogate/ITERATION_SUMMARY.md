@@ -276,3 +276,30 @@
 - Campaign-plan amendment recommendation: `none`.
 - Next state: explicit terminal declaration. No next iteration is authorized; fresh B robustness
   requires a separate planning discussion and consolidated kickoff approval.
+
+## iter012 - SR surrogate GPP-input ablation
+
+- Closed: `2026-11-12T15:37:51-07:00`.
+- Status/work type: `completed` / `experiment`.
+- Objective/result: test SR dependence on same-hour GPP using no-GPP A, published predicted-GPP B,
+  and true-ELM-GPP diagnostic C with the frozen `(96,48)` tanh alpha `0.01` model; `pass`.
+- Decision: `deployable_arm_B_selected`. Retain B and its predicted-GPP dependency; C remains
+  non-deployable and is not a mathematical upper bound.
+- Primary evidence: mean pooled daily validation RMSE is A/B/C
+  `0.835770/0.771187/0.751254`. B versus A improves by `7.727%`, median absolute improvement
+  `0.052538`, with `19/20` wins and no meaningful site deterioration.
+- Diagnostic evidence: C versus B improves only `2.585%`, median `0.017654`, with `12/20`
+  wins, failing the frozen 5%/14-win threshold. C versus A improves `10.112%` with `19/20`
+  wins, so GPP carries useful information but remaining GPP error is not a substantial limiter.
+- Sites: daily RMSE A/B/C is `0.607712/0.562874/0.558255` at ABBY and
+  `1.010602/0.931282/0.901905` at JERC. B loses to A on only `5/20` and `2/20` site splits.
+- Accounting: Unit1 `24618587` and `24621652` failed pre-substantively; corrected Unit1
+  `24623717`, all 60 leaves under `24623755`, and final `24630916` completed `0:0`.
+  Independent validation reproduced all 360 validation rows and the decision.
+- Boundary/evidence: fixed-upstream, two-site, development-only validation; no fixed-test,
+  upstream retraining, cross-fitting, all-819 SR fit, release, architecture change, performance
+  gate, MCMC change, or push. Compact evidence is in
+  `development/three_stage_surrogate/summaries/iter012/`.
+- Campaign-plan amendment recommendation: `none`.
+- Next state: explicit terminal declaration. No next iteration is authorized; separately approved
+  fresh SR robustness is recommended instead of another GPP-input or architecture experiment.
