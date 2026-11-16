@@ -303,3 +303,28 @@
 - Campaign-plan amendment recommendation: `none`.
 - Next state: explicit terminal declaration. No next iteration is authorized; separately approved
   fresh SR robustness is recommended instead of another GPP-input or architecture experiment.
+
+## iter013 - ABBY/JERC SR robustness and release
+
+- Closed: `2026-11-16T08:18:45-07:00`.
+- Status/work type: `completed` / `implementation`.
+- Objective/result: characterize frozen Iter012 arm B on 20 fresh fixed-upstream development
+  splits, publish descriptive uncertainty, fit all 819 development members, and publish validated
+  SR `release_0001`; `pass`.
+- Decision: `sr_release_published`; artifact `8dd06c29...3fb2`, 819-member handoff
+  `3704cab6...d3a1`, and 17-file release manifest `3a3d3faf...ed4c` passed complete scaled/raw
+  replay and catalog-last publication.
+- Robustness: pooled validation hourly/daily mean R2 `0.839425/0.845276`, mean RMSE
+  `0.832632/0.800984`, and mean bias `0.024049/0.024049`. The release retains all ABBY, JERC,
+  pooled, hourly/daily metrics, residual quantiles, gaps, and 84 uncertainty rows.
+- Boundary: `fixed_upstream_sr_stage`, not end-to-end uncertainty; no performance gate, fixed-test
+  access, upstream retraining, full-chain robustness, coupled inference, MCMC, or push.
+- Publication: stable catalog-last `sr_abby_jerc/release_0001`; exact published spinup and GPP
+  release/handoff identities; 100,442,160 finite all-development predictions.
+- Accounting: `24666357`, all 20 tasks under `24666388`, `24667839`, `24667881`, and `24668984`
+  completed `0:0`; no retry or cancellation occurred.
+- Evidence: `development/three_stage_surrogate/summaries/iter013/`.
+- Limitations: two sites, overlapping repeated validation sets, fixed in-sample upstream features,
+  in-sample release predictions, and temporary unbacked `/xdisk` storage.
+- Campaign-plan amendment recommendation: `none`.
+- Next direction: explicit terminal declaration; no next iteration is proposed or authorized.

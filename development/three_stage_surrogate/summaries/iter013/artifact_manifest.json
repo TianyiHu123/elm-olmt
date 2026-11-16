@@ -1,0 +1,34 @@
+{
+  "artifact_sha256": "8dd06c29d7412d25f3157570bdbc10abbeebb439a3a578e4f10c2d12ae143fb2",
+  "feature_schema_file": "feature_schema.json",
+  "feature_schema_file_sha256": "8910d87d5b6fad7f07893a139bda659f8bb7e488841c520331c7dd83c942ca1f",
+  "feature_schema_sha256": "65893a8919c557e74076465f4151ca441e7a0e07779cae5e795e949312faee02",
+  "fit_member_count": 819,
+  "fixed_test_access": false,
+  "model_config": {
+    "activation": "tanh",
+    "alpha": 0.01,
+    "batch_size": "auto",
+    "early_stopping": true,
+    "hidden_layer_sizes": [
+      96,
+      48
+    ],
+    "learning_rate": "adaptive",
+    "learning_rate_init": 0.001,
+    "max_iter": 500,
+    "n_iter_no_change": 10,
+    "random_state": 42,
+    "shuffle": true,
+    "solver": "adam",
+    "tol": 0.0001,
+    "validation_fraction": 0.1
+  },
+  "scalers_embedded": [
+    "x_mean",
+    "x_scale",
+    "y_mean",
+    "y_scale"
+  ],
+  "schema": "three-stage-sr-release-artifact-manifest-v1"
+}

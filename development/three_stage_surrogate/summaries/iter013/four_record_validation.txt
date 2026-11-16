@@ -1,0 +1,15 @@
+command: bash development/three_stage_surrogate/slurm/iter013/validate_closeout_iter013.sh --active-job-count 0
+validator: development/three_stage_surrogate/slurm/iter013/validate_closeout_iter013.sh
+active_job_count: 0
+result: pass
+aggregate_validation.json: OK
+artifact_manifest.json: OK
+feature_schema.json: OK
+final_report.json: OK
+metric_summary.csv: OK
+release_manifest.json: OK
+train_validation_gap_summary.csv: OK
+uncertainty_report.json: OK
+upstream_releases.json: OK
+validation_report.json: OK
+ITER013_FOUR_RECORD_VALIDATE_PASS

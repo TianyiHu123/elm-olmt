@@ -1,0 +1,11 @@
+{
+  "artifact_sha256": "8dd06c29d7412d25f3157570bdbc10abbeebb439a3a578e4f10c2d12ae143fb2",
+  "fixed_test_access": false,
+  "performance_gate_applied": false,
+  "prediction_count": 100442160,
+  "predictions_sha256": "3704cab6c0167c7d0f7f1c22416b5fe850b6fcb52327df8af6134ffa0f12d3a1",
+  "release_basis": "iter012_deployable_arm_B_selected",
+  "release_manifest_sha256": "3a3d3faf8ffd1aba5af1c842732e26a25470cfa320742e0b38ff7daf5f1aed4c",
+  "result": "pass",
+  "schema": "three-stage-sr-iter013-final-v1"
+}

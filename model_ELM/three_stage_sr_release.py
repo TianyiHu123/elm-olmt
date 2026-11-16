@@ -1,4 +1,4 @@
-"""Iter006 fixed-upstream SR robustness, uncertainty, and release support."""
+"""Fixed-upstream SR robustness, uncertainty, and release support."""
 from __future__ import annotations
 
 import csv
@@ -44,6 +44,9 @@ DAY_COUNT = HOURS // 24
 RESOLUTIONS: Tuple[str, ...] = ("hourly", "daily")
 RELEASE_SCHEMA = "three-stage-sr-release-artifact-v1"
 RAW_SCHEMA = "three-stage-sr-iter006-raw-v1"
+ROBUSTNESS_ARTIFACT_SCHEMA = "three-stage-sr-robustness-artifact-v1"
+SPLIT_REPORT_SCHEMA = "three-stage-sr-robustness-split-v1"
+RELOAD_REPORT_SCHEMA = "three-stage-sr-robustness-replay-v1"
 
 
 def package_files(root: Path, *, exclude: set[str] | None = None) -> list[dict[str, Any]]:
@@ -95,6 +98,8 @@ def preflight(config: Mapping[str, Any], output: Path) -> dict[str, Any]:
     require(sha256_file(snapshot.split_path) == config["global_split_sha256"], "global split hash mismatch")
     require(sha256_file(Path(config["spinup_release_manifest"])) == config["spinup_release_manifest_sha256"], "spinup release hash mismatch")
     require(sha256_file(Path(config["predicted_cn_handoff"])) == config["predicted_cn_sha256"], "predicted-C/N hash mismatch")
+    require(sha256_file(Path(config["gpp_release_manifest"])) == config["gpp_release_manifest_sha256"], "GPP release hash mismatch")
+    require(sha256_file(Path(config["predicted_gpp_handoff"])) == config["predicted_gpp_sha256"], "predicted-GPP hash mismatch")
     require(sha256_file(Path(config["sr_configuration_file"])) == config["sr_configuration_sha256"], "SR configuration hash mismatch")
     splits = _load_split_manifest(config)
     counts = validate_split_design(snapshot, splits)
@@ -103,11 +108,11 @@ def preflight(config: Mapping[str, Any], output: Path) -> dict[str, Any]:
     fixture = np.arange(96, dtype=np.float64).reshape(4, 24)
     require(np.allclose(fixture.mean(axis=1), fixture.reshape(4, 1, 24).mean(axis=2).ravel()), "daily fixture failed")
     report = {
-        "schema": "three-stage-sr-iter006-preflight-v1", "result": "pass", "no_training": True,
+        "schema": "three-stage-sr-preflight-v1", "result": "pass", "no_training": True,
         "snapshot_sha256": snapshot.snapshot_sha256, "split_count": len(splits["splits"]),
         "four_appearance_members": sum(value == 4 for value in counts.values()),
         "five_appearance_members": sum(value == 5 for value in counts.values()),
-        "fixed_test_access": False, "spinup_execution": False,
+        "fixed_test_access": False, "spinup_execution": False, "gpp_execution": False,
     }
     write_json(output / "preflight_report.json", report)
     return report
@@ -388,9 +393,9 @@ def fit_split(config: Mapping[str, Any], raw_path: Path, split_id: int, output: 
         x_val = np.concatenate([np.asarray(X[s, validation_positions, :rows_per_member]).reshape(-1, FEATURE_COUNT) for s in range(len(SITES))])
         prediction = model.predict(x_scaler.transform(x_val).astype(np.float32))
         require(np.all(np.isfinite(prediction)), "smoke prediction invalid")
-        report = {"schema": "three-stage-sr-iter006-smoke-v1", "result": "pass", "split_id": split_id,
+        report = {"schema": "three-stage-sr-smoke-v1", "result": "pass", "split_id": split_id,
                   "train_members": 80, "validation_members": 20, "hours": rows_per_member,
-                  "fixed_test_access": False, "spinup_execution": False}
+                  "fixed_test_access": False, "spinup_execution": False, "gpp_execution": False}
         write_json(output / "smoke_report.json", report)
         return report
     x_scaler, y_scaler = _fit_scalers(X, y, train_positions, int(config["scale_chunk_rows"]))
@@ -415,7 +420,7 @@ def fit_split(config: Mapping[str, Any], raw_path: Path, split_id: int, output: 
     moments["validation_member_ids"] = np.asarray(validation_members, dtype="U6")
     np.savez(output / "member_moments.npz", **moments)
     artifact = {
-        "schema": "three-stage-sr-iter006-robustness-artifact-v1", "model": model,
+        "schema": ROBUSTNESS_ARTIFACT_SCHEMA, "model": model,
         "x_mean": x_scaler.mean_, "x_scale": x_scaler.scale_, "y_mean": y_mean, "y_scale": y_scale,
         "feature_names": layout["feature_names"], "feature_schema_sha256": layout["feature_schema_sha256"],
         "model_config": config["model_config"], "fit_scope": {"split_id": split_id,
@@ -428,12 +433,12 @@ def fit_split(config: Mapping[str, Any], raw_path: Path, split_id: int, output: 
     np.savez(output / "scalers.npz", x_mean=x_scaler.mean_, x_scale=x_scaler.scale_, y_mean=y_scaler.mean_, y_scale=y_scaler.scale_)
     write_json(output / "scaled_layout.json", scaled_layout)
     report = {
-        "schema": "three-stage-sr-iter006-split-v1", "result": "pass", "split_id": split_id,
+        "schema": SPLIT_REPORT_SCHEMA, "result": "pass", "split_id": split_id,
         "artifact_sha256": sha256_file(artifact_path), "predictions_sha256": sha256_file(predictions_path),
         "metrics_sha256": sha256_file(metric_path), "moments_sha256": sha256_file(output / "member_moments.npz"),
         "model_iterations": int(model.n_iter_), "convergence_warning_count": warning_count,
         "train_member_count": TRAIN_MEMBERS, "validation_member_count": VALIDATION_MEMBERS,
-        "fixed_test_access": False, "spinup_execution": False,
+        "fixed_test_access": False, "spinup_execution": False, "gpp_execution": False,
     }
     write_json(output / "split_report.json", report)
     return report
@@ -447,7 +452,7 @@ def validate_split(config: Mapping[str, Any], raw_path: Path, split_path: Path) 
     require(sha256_file(split_path / "predictions_physical_float32.dat") == report["predictions_sha256"], "split prediction hash mismatch")
     with (split_path / "sr_robustness_artifact.pkl").open("rb") as handle:
         artifact = pickle.load(handle)
-    require(artifact["schema"] == "three-stage-sr-iter006-robustness-artifact-v1", "split artifact schema mismatch")
+    require(artifact["schema"] == ROBUSTNESS_ARTIFACT_SCHEMA, "split artifact schema mismatch")
     raw_layout, X_raw, _, _ = load_raw(raw_path)
     scaled_layout = json.loads((split_path / "scaled_layout.json").read_text(encoding="utf-8"))
     X_scaled = np.memmap(split_path / "X_scaled_float32.dat", mode="r", dtype=np.float32, shape=(scaled_layout["rows"], FEATURE_COUNT))
@@ -474,7 +479,7 @@ def validate_split(config: Mapping[str, Any], raw_path: Path, split_path: Path) 
         if first is None:
             first = float(observed[0])
         cross[str(size)] = float(observed[0] - first)
-    diagnostics = {"schema": "three-stage-sr-iter006-split-reload-v1", "split_id": split_id,
+    diagnostics = {"schema": RELOAD_REPORT_SCHEMA, "split_id": split_id,
                    "result": "pass", "chunk_max_absolute_differences": maxima,
                    "same_batch_exact_repeatability": exact_repeat, "cross_batch_first_prediction_difference": cross}
     write_json(split_path / "reload_validation.json", diagnostics)
@@ -622,7 +627,10 @@ def aggregate(config: Mapping[str, Any], robustness_root: Path, output: Path) ->
                                      "residual_convention": "prediction minus ELM", "units": "gC/m^2/day",
                                      "snapshot_sha256": config["snapshot_sha256"], "split_design_sha256": config["split_design_sha256"],
                                      "sr_configuration_sha256": config["sr_configuration_sha256"],
-                                     "upstream_release_manifest_sha256": config["spinup_release_manifest_sha256"]})
+                                     "spinup_release_manifest_sha256": config["spinup_release_manifest_sha256"],
+                                     "gpp_release_manifest_sha256": config["gpp_release_manifest_sha256"],
+                                     "predicted_cn_sha256": config["predicted_cn_sha256"],
+                                     "predicted_gpp_sha256": config["predicted_gpp_sha256"]})
     aggregate_values: dict[tuple[str, str], tuple[float, float]] = {}
     for site in SITES:
         for resolution in RESOLUTIONS:
@@ -647,10 +655,13 @@ def aggregate(config: Mapping[str, Any], robustness_root: Path, output: Path) ->
                                      "residual_convention": "prediction minus ELM", "units": "gC/m^2/day",
                                      "snapshot_sha256": config["snapshot_sha256"], "split_design_sha256": config["split_design_sha256"],
                                      "sr_configuration_sha256": config["sr_configuration_sha256"],
-                                     "upstream_release_manifest_sha256": config["spinup_release_manifest_sha256"]})
+                                     "spinup_release_manifest_sha256": config["spinup_release_manifest_sha256"],
+                                     "gpp_release_manifest_sha256": config["gpp_release_manifest_sha256"],
+                                     "predicted_cn_sha256": config["predicted_cn_sha256"],
+                                     "predicted_gpp_sha256": config["predicted_gpp_sha256"]})
     uncertainty_path = output / "uncertainty_estimates.csv"; _write_csv(uncertainty_path, uncertainty_rows)
     with (output / "convergence.json").open("x", encoding="utf-8") as handle:
-        json.dump({"schema": "three-stage-sr-iter006-convergence-v1", "splits": convergence_rows}, handle, indent=2, sort_keys=True); handle.write("\n")
+        json.dump({"schema": "three-stage-sr-convergence-v1", "splits": convergence_rows}, handle, indent=2, sort_keys=True); handle.write("\n")
     shutil.copy2(Path(config["repeated_split_manifest"]), output / "repeated_split_manifest.json")
     nc_path = output / "sr_uncertainty.nc"
     with Dataset(str(nc_path), "w", clobber=False, format="NETCDF4") as dataset:
@@ -659,11 +670,14 @@ def aggregate(config: Mapping[str, Any], robustness_root: Path, output: Path) ->
         dataset.split_design_sha256 = config["split_design_sha256"]
         dataset.sr_configuration_sha256 = config["sr_configuration_sha256"]
         dataset.spinup_release_manifest_sha256 = config["spinup_release_manifest_sha256"]
+        dataset.gpp_release_manifest_sha256 = config["gpp_release_manifest_sha256"]
+        dataset.predicted_cn_sha256 = config["predicted_cn_sha256"]
+        dataset.predicted_gpp_sha256 = config["predicted_gpp_sha256"]
         dataset.residual_convention = "prediction minus ELM in gC/m^2/day"
         dataset.pooling = "member-balanced: each member equal after averaging repeated held-out occurrences"
         dataset.daily_aggregation = "complete 24-hour mean of paired hourly target and prediction"
         dataset.validation_label = "fixed_upstream_sr_stage"
-        dataset.scope = "surrogate component only; excludes observations, fixed test, SR, and full-chain uncertainty"
+        dataset.scope = "fixed-upstream SR surrogate component only; excludes observations, fixed test, and full-chain uncertainty"
         dataset.release_basis = config.get("release_basis", "performance_gate")
         dataset.performance_gate_applied = int(bool(config.get("performance_gate_applied", True)))
         dataset.createDimension("site", len(SITES)); dataset.createDimension("resolution", len(RESOLUTIONS)); dataset.createDimension("repetition", SPLIT_COUNT)
@@ -683,14 +697,18 @@ def aggregate(config: Mapping[str, Any], robustness_root: Path, output: Path) ->
     gate = (
         evaluate_gate(metric_rows)
         if bool(config.get("performance_gate_applied", True))
-        else performance_assessment(metric_rows)
+        else performance_assessment(metric_rows, config.get("release_basis", "preselected_configuration"))
     )
     report = {
-        "schema": "three-stage-sr-iter006-uncertainty-report-v1", "result": "pass",
+        "schema": "three-stage-sr-uncertainty-report-v1", "result": "pass",
         "gate": gate, "snapshot_sha256": config["snapshot_sha256"],
         "split_design_sha256": config["split_design_sha256"], "fixed_test_access": False,
         "release_basis": config.get("release_basis", "performance_gate"),
         "performance_gate_applied": bool(config.get("performance_gate_applied", True)),
+        "spinup_release_manifest_sha256": config["spinup_release_manifest_sha256"],
+        "gpp_release_manifest_sha256": config["gpp_release_manifest_sha256"],
+        "predicted_cn_sha256": config["predicted_cn_sha256"],
+        "predicted_gpp_sha256": config["predicted_gpp_sha256"],
         "member_balance_rule": "equal member weight after within-member occurrence averaging",
         "files": package_files(output, exclude={"uncertainty_report.json"}),
     }
@@ -716,7 +734,7 @@ def evaluate_gate(metric_rows: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
     return {"result": "pass" if passed else "fail", "quantile_method": "linear", "by_site_resolution": results}
 
 
-def performance_assessment(metric_rows: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
+def performance_assessment(metric_rows: Sequence[Mapping[str, Any]], release_basis: str = "preselected_configuration") -> dict[str, Any]:
     """Record descriptive robustness quantiles without applying release thresholds."""
     results: dict[str, Any] = {}
     for site in SITES:
@@ -740,7 +758,7 @@ def performance_assessment(metric_rows: Sequence[Mapping[str, Any]]) -> dict[str
     return {
         "applied": False,
         "result": "not_applicable",
-        "release_basis": "iter007_best_configuration",
+        "release_basis": release_basis,
         "quantile_method": "linear",
         "by_site_resolution": results,
     }
@@ -770,16 +788,20 @@ def validate_aggregate(config: Mapping[str, Any], robustness_root: Path, output:
     gate = (
         evaluate_gate(rebuilt_metrics)
         if bool(config.get("performance_gate_applied", True))
-        else performance_assessment(rebuilt_metrics)
+        else performance_assessment(rebuilt_metrics, config.get("release_basis", "preselected_configuration"))
     )
     generated_report = json.loads((output / "uncertainty_report.json").read_text(encoding="utf-8"))
     require(generated_report["gate"] == gate, "independently recomputed gate mismatch")
     estimates = _read_metrics(output / "uncertainty_estimates.csv")
     require(len(estimates) == len(SITES) * len(RESOLUTIONS) * (SPLIT_COUNT + 1), "uncertainty table row count mismatch")
-    identity_fields = ("snapshot_sha256", "split_design_sha256", "sr_configuration_sha256", "upstream_release_manifest_sha256")
+    identity_fields = (
+        "snapshot_sha256", "split_design_sha256", "sr_configuration_sha256",
+        "spinup_release_manifest_sha256", "gpp_release_manifest_sha256",
+        "predicted_cn_sha256", "predicted_gpp_sha256",
+    )
     for row in estimates:
         for field in identity_fields:
-            expected = config["spinup_release_manifest_sha256"] if field == "upstream_release_manifest_sha256" else config[field]
+            expected = config[field]
             require(row[field] == expected, f"uncertainty table identity mismatch: {field}")
     split_manifest = _load_split_manifest(config)
     snapshot = ThreeStageSnapshot(config["snapshot_root"], verify_component_hashes=False)
@@ -821,11 +843,14 @@ def validate_aggregate(config: Mapping[str, Any], robustness_root: Path, output:
             "split_design_sha256": config["split_design_sha256"],
             "sr_configuration_sha256": config["sr_configuration_sha256"],
             "spinup_release_manifest_sha256": config["spinup_release_manifest_sha256"],
+            "gpp_release_manifest_sha256": config["gpp_release_manifest_sha256"],
+            "predicted_cn_sha256": config["predicted_cn_sha256"],
+            "predicted_gpp_sha256": config["predicted_gpp_sha256"],
             "residual_convention": "prediction minus ELM in gC/m^2/day",
             "pooling": "member-balanced: each member equal after averaging repeated held-out occurrences",
             "daily_aggregation": "complete 24-hour mean of paired hourly target and prediction",
             "validation_label": "fixed_upstream_sr_stage",
-            "scope": "surrogate component only; excludes observations, fixed test, SR, and full-chain uncertainty",
+            "scope": "fixed-upstream SR surrogate component only; excludes observations, fixed test, and full-chain uncertainty",
             "release_basis": config.get("release_basis", "performance_gate"),
             "performance_gate_applied": int(bool(config.get("performance_gate_applied", True))),
         }
@@ -848,7 +873,7 @@ def validate_aggregate(config: Mapping[str, Any], robustness_root: Path, output:
                 require(np.allclose([float(row["rmse"]) for row in repetition_rows], source_rmse, rtol=1e-12, atol=1e-12), "uncertainty table per-repetition RMSE mismatch")
                 require(np.allclose(dataset.variables["SR_per_repetition_error_bias"][site_index, resolution_index], source_bias, rtol=1e-12, atol=1e-12), "per-repetition bias mismatch")
                 require(np.allclose(dataset.variables["SR_per_repetition_error_rmse"][site_index, resolution_index], source_rmse, rtol=1e-12, atol=1e-12), "per-repetition RMSE mismatch")
-    report = {"schema": "three-stage-sr-iter006-aggregate-validation-v1", "result": "pass",
+    report = {"schema": "three-stage-sr-aggregate-validation-v1", "result": "pass",
               "gate": gate, "metric_rows": len(metrics), "uncertainty_rows": len(estimates),
               "fixed_test_access": False, "files": package_files(output, exclude={"aggregate_validation.json"})}
     write_json(output / "aggregate_validation.json", report)
@@ -861,8 +886,12 @@ def _release_artifact(config: Mapping[str, Any], raw_layout: Mapping[str, Any], 
             "feature_names": raw_layout["feature_names"], "feature_schema_sha256": raw_layout["feature_schema_sha256"],
             "model_config": config["model_config"], "fit_scope": {"kind": "all_development",
             "development_member_ids": list(members), "fixed_test_access": False},
-            "snapshot_sha256": config["snapshot_sha256"], "upstream_release_manifest_sha256": config["spinup_release_manifest_sha256"],
-            "predicted_cn_sha256": config["predicted_cn_sha256"], "upstream_mode": "published_all819_in_sample",
+            "snapshot_sha256": config["snapshot_sha256"],
+            "spinup_release_manifest_sha256": config["spinup_release_manifest_sha256"],
+            "gpp_release_manifest_sha256": config["gpp_release_manifest_sha256"],
+            "predicted_cn_sha256": config["predicted_cn_sha256"],
+            "predicted_gpp_sha256": config["predicted_gpp_sha256"],
+            "upstream_mode": "published_all819_in_sample",
             "validation_label": "fixed_upstream_sr_stage", "target_units": "gC/m^2/day"}
 
 
@@ -870,7 +899,7 @@ def fit_release(
     config: Mapping[str, Any], raw_path: Path, aggregate_path: Path | None, output: Path
 ) -> dict[str, Any]:
     require(not output.exists(), f"release output exists: {output}")
-    package = output / "release_0001"; (package / "artifact").mkdir(parents=True); (package / "uncertainty").mkdir(); (package / "handoff").mkdir(); (package / "validation").mkdir()
+    package = output / "release_0001"; (package / "artifact").mkdir(parents=True); (package / "uncertainty").mkdir(); (package / "handoff").mkdir(); (package / "provenance").mkdir(); (package / "validation").mkdir()
     if aggregate_path is not None:
         aggregate_validation = json.loads((aggregate_path / "aggregate_validation.json").read_text(encoding="utf-8"))
         require(aggregate_validation["result"] == "pass", "aggregate validation not passed")
@@ -899,13 +928,35 @@ def fit_release(
     artifact_path = package / "artifact" / "sr_surrogate_artifact.pkl"
     with artifact_path.open("wb") as handle:
         pickle.dump(artifact, handle, protocol=pickle.HIGHEST_PROTOCOL)
+    feature_schema_path = package / "artifact" / "feature_schema.json"
+    write_json(feature_schema_path, {
+        "schema": "three-stage-sr-feature-schema-v1", "feature_count": FEATURE_COUNT,
+        "feature_names": artifact["feature_names"], "feature_schema_sha256": artifact["feature_schema_sha256"],
+    })
     artifact_manifest = {"schema": "three-stage-sr-release-artifact-manifest-v1", "artifact_sha256": sha256_file(artifact_path),
                          "feature_schema_sha256": artifact["feature_schema_sha256"], "model_config": config["model_config"],
+                         "scalers_embedded": ["x_mean", "x_scale", "y_mean", "y_scale"],
+                         "feature_schema_file": feature_schema_path.name,
+                         "feature_schema_file_sha256": sha256_file(feature_schema_path),
                          "fit_member_count": DEVELOPMENT_MEMBERS, "fixed_test_access": False}
     write_json(package / "artifact" / "artifact_manifest.json", artifact_manifest)
     if aggregate_path is not None:
-        for name in ("sr_uncertainty.nc", "metric_distribution.csv", "uncertainty_estimates.csv", "repeated_split_manifest.json", "convergence.json", "uncertainty_report.json", "aggregate_validation.json"):
+        for name in ("sr_uncertainty.nc", "metric_distribution.csv", "metric_summary.csv", "train_validation_gap_summary.csv", "uncertainty_estimates.csv", "repeated_split_manifest.json", "convergence.json", "uncertainty_report.json", "aggregate_validation.json"):
             shutil.copy2(aggregate_path / name, package / "uncertainty" / name)
+    write_json(package / "provenance" / "upstream_releases.json", {
+        "schema": "three-stage-sr-upstream-provenance-v1",
+        "upstream_mode": "published_all819_in_sample",
+        "validation_label": "fixed_upstream_sr_stage",
+        "spinup_release_manifest": config["spinup_release_manifest"],
+        "spinup_release_manifest_sha256": config["spinup_release_manifest_sha256"],
+        "predicted_cn_handoff": config["predicted_cn_handoff"],
+        "predicted_cn_sha256": config["predicted_cn_sha256"],
+        "gpp_release_manifest": config["gpp_release_manifest"],
+        "gpp_release_manifest_sha256": config["gpp_release_manifest_sha256"],
+        "predicted_gpp_handoff": config["predicted_gpp_handoff"],
+        "predicted_gpp_sha256": config["predicted_gpp_sha256"],
+        "upstream_models_retrained": False,
+    })
     predictions_path = output / "release_predictions_physical_float32.dat"
     release_predictions = np.memmap(predictions_path, mode="w+", dtype=np.float32, shape=(total_rows,))
     chunk = int(config["prediction_chunk_rows"])
@@ -915,10 +966,11 @@ def fit_release(
         require(np.all(np.isfinite(prediction)), "release prediction invalid")
         release_predictions[start:end] = prediction.astype(np.float32)
     release_predictions.flush()
-    handoff_path = package / "handoff" / "sr_predicted_for_sr.nc"
+    handoff_path = package / "handoff" / "sr_predicted_development.nc"
     with Dataset(str(handoff_path), "w", clobber=False, format="NETCDF4") as dataset:
-        dataset.schema = "three-stage-sr-predicted-for-sr-handoff-v1"; dataset.artifact_sha256 = artifact_manifest["artifact_sha256"]
+        dataset.schema = "three-stage-sr-development-predictions-v1"; dataset.artifact_sha256 = artifact_manifest["artifact_sha256"]
         dataset.snapshot_sha256 = config["snapshot_sha256"]; dataset.fit_scope = "all 819 development members; predictions are in-sample"
+        dataset.validation_label = "fixed_upstream_sr_stage"
         dataset.createDimension("site", len(SITES)); dataset.createDimension("member", DEVELOPMENT_MEMBERS); dataset.createDimension("time", HOURS)
         dataset.createVariable("site", str, ("site",))[:] = np.asarray(SITES, dtype=object)
         dataset.createVariable("member_id", str, ("member",))[:] = np.asarray(raw_layout["development_member_ids"], dtype=object)
@@ -931,17 +983,25 @@ def fit_release(
                 prediction = np.asarray(release_predictions[cursor:cursor + HOURS], dtype=np.float32)
                 prediction_var[site_index, position] = prediction; cursor += HOURS
         require(cursor == total_rows, "release handoff row mismatch")
-    handoff_manifest = {"schema": "three-stage-sr-predicted-for-sr-handoff-manifest-v1", "filename": handoff_path.name,
+    handoff_manifest = {"schema": "three-stage-sr-development-predictions-manifest-v1", "filename": handoff_path.name,
                         "sha256": sha256_file(handoff_path), "artifact_sha256": artifact_manifest["artifact_sha256"],
                         "snapshot_sha256": config["snapshot_sha256"], "site_order": list(SITES),
                         "development_member_ids": raw_layout["development_member_ids"], "variables": ["SR_predicted"],
                         "contains_elm_truth": False, "contains_features_or_parameters": False, "fixed_test_access": False}
     write_json(package / "handoff" / "handoff_manifest.json", handoff_manifest)
-    report = {"schema": "three-stage-sr-iter006-release-fit-v1", "result": "pass",
+    # Independently replay the persisted scaled design before removing its large scratch files.
+    for start in range(0, total_rows, chunk):
+        end = min(start + chunk, total_rows)
+        replay = model.predict(scaled_x[start:end]).astype(np.float64) * float(y_scaler.scale_[0]) + float(y_scaler.mean_[0])
+        require(np.allclose(replay, release_predictions[start:end], rtol=config["reload_rtol"], atol=config["reload_atol"]), "scaled release replay mismatch")
+    del scaled_x, scaled_y
+    x_path.unlink(); y_path.unlink()
+    report = {"schema": "three-stage-sr-release-fit-v1", "result": "pass",
               "artifact_sha256": artifact_manifest["artifact_sha256"], "handoff_sha256": handoff_manifest["sha256"],
               "predictions_sha256": sha256_file(predictions_path),
               "model_iterations": int(model.n_iter_), "convergence_warning_count": warning_count,
-              "fit_member_count": DEVELOPMENT_MEMBERS, "fixed_test_access": False}
+              "fit_member_count": DEVELOPMENT_MEMBERS, "scaled_replay_complete": True,
+              "successful_scaled_scratch_removed": True, "fixed_test_access": False}
     write_json(package / "release_fit_report.json", report); write_json(output / "release_fit_report.json", report)
     return report
 
@@ -961,11 +1021,18 @@ def validate_release(config: Mapping[str, Any], raw_path: Path, fit_package: Pat
     output.mkdir(parents=True); staging = output / "release_0001"; shutil.copytree(fit_package, staging)
     raw_layout, X, _, times = load_raw(raw_path)
     artifact, artifact_manifest = load_release_artifact(staging / "artifact")
+    feature_schema_path = staging / "artifact" / artifact_manifest["feature_schema_file"]
+    require(feature_schema_path.is_file(), "release feature schema missing")
+    require(sha256_file(feature_schema_path) == artifact_manifest["feature_schema_file_sha256"], "release feature schema hash mismatch")
+    feature_schema = json.loads(feature_schema_path.read_text(encoding="utf-8"))
+    require(feature_schema["feature_count"] == FEATURE_COUNT, "release feature count mismatch")
     frozen_configuration = json.loads(Path(config["sr_configuration_file"]).read_text(encoding="utf-8"))
     require(artifact["model_config"] == frozen_configuration["model_config"] == config["model_config"], "release model configuration mismatch")
     require(artifact["snapshot_sha256"] == config["snapshot_sha256"], "release artifact snapshot mismatch")
-    require(artifact["upstream_release_manifest_sha256"] == config["spinup_release_manifest_sha256"], "release artifact upstream release mismatch")
+    require(artifact["spinup_release_manifest_sha256"] == config["spinup_release_manifest_sha256"], "release artifact spinup release mismatch")
+    require(artifact["gpp_release_manifest_sha256"] == config["gpp_release_manifest_sha256"], "release artifact GPP release mismatch")
     require(artifact["predicted_cn_sha256"] == config["predicted_cn_sha256"], "release artifact upstream handoff mismatch")
+    require(artifact["predicted_gpp_sha256"] == config["predicted_gpp_sha256"], "release artifact GPP handoff mismatch")
     require(artifact["feature_names"] == raw_layout["feature_names"], "release artifact feature names mismatch")
     require(artifact["feature_schema_sha256"] == raw_layout["feature_schema_sha256"] == artifact_manifest["feature_schema_sha256"], "release artifact feature schema mismatch")
     require(artifact["target_units"] == "gC/m^2/day", "release artifact target units mismatch")
@@ -986,12 +1053,12 @@ def validate_release(config: Mapping[str, Any], raw_path: Path, fit_package: Pat
     release_gate = (
         evaluate_gate(staged_metrics)
         if bool(config.get("performance_gate_applied", True))
-        else performance_assessment(staged_metrics)
+        else performance_assessment(staged_metrics, config.get("release_basis", "preselected_configuration"))
     )
     require(release_gate == aggregate_validation["gate"], "release gate recomputation mismatch")
-    handoff_path = staging / "handoff" / "sr_predicted_for_sr.nc"
+    handoff_path = staging / "handoff" / "sr_predicted_development.nc"
     with Dataset(str(handoff_path), "r") as handoff:
-        require(handoff.getncattr("schema") == "three-stage-sr-predicted-for-sr-handoff-v1", "handoff schema mismatch")
+        require(handoff.getncattr("schema") == "three-stage-sr-development-predictions-v1", "handoff schema mismatch")
         require(handoff.getncattr("artifact_sha256") == artifact_manifest["artifact_sha256"], "handoff artifact attribute mismatch")
         require(handoff.getncattr("snapshot_sha256") == config["snapshot_sha256"], "handoff snapshot attribute mismatch")
         require(set(handoff.variables) == {"site", "member_id", "time", "SR_predicted"}, "handoff variable scope mismatch")
@@ -1005,30 +1072,38 @@ def validate_release(config: Mapping[str, Any], raw_path: Path, fit_package: Pat
         flat_raw = X.reshape(-1, FEATURE_COUNT)
         flat_observed = all_observed.reshape(-1)
         chunk = int(config["prediction_chunk_rows"])
-        for chunk_index in (0, (flat_raw.shape[0] // chunk) // 2, (flat_raw.shape[0] - 1) // chunk):
-            start = chunk_index * chunk; end = min(start + chunk, flat_raw.shape[0])
+        replayed = 0
+        for start in range(0, flat_raw.shape[0], chunk):
+            end = min(start + chunk, flat_raw.shape[0])
             expected = predict_artifact(artifact, np.asarray(flat_raw[start:end], dtype=np.float64))
             observed = np.asarray(flat_observed[start:end], dtype=np.float64)
             require(np.all(np.isfinite(observed)), "handoff nonfinite prediction")
             require(np.allclose(observed, expected, rtol=config["reload_rtol"], atol=config["reload_atol"]), "handoff prediction mismatch")
+            replayed += end - start
+        require(replayed == flat_raw.shape[0], "full raw-interface replay coverage mismatch")
         for size in (1, 7, 1000):
             sample = np.asarray(X[0, 0, :size], dtype=np.float64)
             require(np.array_equal(predict_artifact(artifact, sample), predict_artifact(artifact, sample)), "release same-batch repeatability mismatch")
     handoff_manifest = json.loads((staging / "handoff" / "handoff_manifest.json").read_text(encoding="utf-8"))
     require(handoff_manifest["sha256"] == sha256_file(handoff_path), "handoff manifest hash mismatch")
     require(handoff_manifest["contains_elm_truth"] is False and handoff_manifest["contains_features_or_parameters"] is False, "handoff contents mismatch")
-    validation_report = {"schema": "three-stage-sr-iter006-release-validation-v1", "result": "pass",
+    validation_report = {"schema": "three-stage-sr-release-validation-v1", "result": "pass",
                          "snapshot_sha256": config["snapshot_sha256"], "artifact_sha256": artifact_manifest["artifact_sha256"],
                          "handoff_sha256": handoff_manifest["sha256"], "fit_member_count": DEVELOPMENT_MEMBERS,
                          "fixed_test_access": False, "gate": release_gate,
                          "release_basis": config.get("release_basis", "performance_gate"),
                          "performance_gate_applied": bool(config.get("performance_gate_applied", True)),
-                         "handoff_prediction_count": int(all_observed.size), "handoff_full_finite": True}
+                         "handoff_prediction_count": int(all_observed.size), "handoff_full_finite": True,
+                         "raw_interface_replay_count": int(replayed), "raw_interface_replay_complete": True}
     write_json(output / "validation_report.json", validation_report); write_json(staging / "validation" / "validation_report.json", validation_report)
     release_manifest = {"schema": "three-stage-sr-release-package-manifest-v1", "release": "release_0001",
                         "created_utc": datetime.now(timezone.utc).isoformat(), "result": "validated",
                         "snapshot_sha256": config["snapshot_sha256"], "artifact_sha256": artifact_manifest["artifact_sha256"],
                         "handoff_sha256": handoff_manifest["sha256"], "split_manifest_sha256": config["repeated_split_manifest_sha256"],
+                        "spinup_release_manifest_sha256": config["spinup_release_manifest_sha256"],
+                        "gpp_release_manifest_sha256": config["gpp_release_manifest_sha256"],
+                        "predicted_cn_sha256": config["predicted_cn_sha256"],
+                        "predicted_gpp_sha256": config["predicted_gpp_sha256"],
                         "fixed_test_access": False,
                         "release_basis": config.get("release_basis", "performance_gate"),
                         "performance_gate_applied": bool(config.get("performance_gate_applied", True)),

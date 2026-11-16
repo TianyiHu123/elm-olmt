@@ -1,0 +1,104 @@
+{
+  "artifact_sha256": "8dd06c29d7412d25f3157570bdbc10abbeebb439a3a578e4f10c2d12ae143fb2",
+  "created_utc": "2026-11-16T15:15:47.982388+00:00",
+  "files": [
+    {
+      "path": "artifact/artifact_manifest.json",
+      "sha256": "7980d8dec54d078eb50c4358c4e544b9e71be11e049ea41f8376842f059522a6",
+      "size_bytes": 947
+    },
+    {
+      "path": "artifact/feature_schema.json",
+      "sha256": "8910d87d5b6fad7f07893a139bda659f8bb7e488841c520331c7dd83c942ca1f",
+      "size_bytes": 913
+    },
+    {
+      "path": "artifact/sr_surrogate_artifact.pkl",
+      "sha256": "8dd06c29d7412d25f3157570bdbc10abbeebb439a3a578e4f10c2d12ae143fb2",
+      "size_bytes": 123284
+    },
+    {
+      "path": "handoff/handoff_manifest.json",
+      "sha256": "3075367d04f8ad2171d645ee6e5eab1243e82699ada1eccbff8e882da73d33b1",
+      "size_bytes": 12064
+    },
+    {
+      "path": "handoff/sr_predicted_development.nc",
+      "sha256": "3704cab6c0167c7d0f7f1c22416b5fe850b6fcb52327df8af6134ffa0f12d3a1",
+      "size_bytes": 291097849
+    },
+    {
+      "path": "provenance/upstream_releases.json",
+      "sha256": "a9f026bb85dd011d31bdf99317b4319d0bd94e7ef09c0935ae4170549854d57e",
+      "size_bytes": 1257
+    },
+    {
+      "path": "release_fit_report.json",
+      "sha256": "591208f53799cd0ba6749dddae37f0fd352ab3ad1f81a997b43d8619eca8475d",
+      "size_bytes": 533
+    },
+    {
+      "path": "uncertainty/aggregate_validation.json",
+      "sha256": "d3bf310c1fee63eef33f160c017fdd05a97ce41216aef6a2e7ffacb0dc5803cd",
+      "size_bytes": 2461
+    },
+    {
+      "path": "uncertainty/convergence.json",
+      "sha256": "8ec6a0836d6f044f5ba8f6e481c7a86035debf7ae9518f96003a74d9d591ec98",
+      "size_bytes": 3616
+    },
+    {
+      "path": "uncertainty/metric_distribution.csv",
+      "sha256": "e47513079aa0ba1cc90cc792ca452a5596fe02f6d2a21fa6f149fa946a1f658c",
+      "size_bytes": 92372
+    },
+    {
+      "path": "uncertainty/metric_summary.csv",
+      "sha256": "6723242204d39a3f54264e73d8b90f1ef656810554d024fca6d0fe124f91cc5f",
+      "size_bytes": 27976
+    },
+    {
+      "path": "uncertainty/repeated_split_manifest.json",
+      "sha256": "c6ab41f1a9dbb7f49bc24a3654b2798dcd0ee6886aa5cc1d169aaa9045c754c4",
+      "size_bytes": 311976
+    },
+    {
+      "path": "uncertainty/sr_uncertainty.nc",
+      "sha256": "93d7e6438eb8149451e2c7fe3b84d571bc9946d85041fa87e31e704db945222c",
+      "size_bytes": 14266
+    },
+    {
+      "path": "uncertainty/train_validation_gap_summary.csv",
+      "sha256": "8d18cfb3fc3ced8e4cfea59137247026f7bf71bbc4632de9d2ae88d74ad72e8b",
+      "size_bytes": 5689
+    },
+    {
+      "path": "uncertainty/uncertainty_estimates.csv",
+      "sha256": "798a6304f0f8f9a9016ac8d304d686f84c85c2aa389316514f0305074eb60ce8",
+      "size_bytes": 57302
+    },
+    {
+      "path": "uncertainty/uncertainty_report.json",
+      "sha256": "6870341743dd61f597797f646c2dc4aeb11cbc5d819cec98650867f868353688",
+      "size_bytes": 2673
+    },
+    {
+      "path": "validation/validation_report.json",
+      "sha256": "943ea46df7dff1cf1dfb4186dbfd39b41277d43d7693e1743b0874dea481bca3",
+      "size_bytes": 1628
+    }
+  ],
+  "fixed_test_access": false,
+  "gpp_release_manifest_sha256": "57cc18b063ab46a4cd07a3bd4e03ab1bfd05fb81894b097277d3c667135370d1",
+  "handoff_sha256": "3704cab6c0167c7d0f7f1c22416b5fe850b6fcb52327df8af6134ffa0f12d3a1",
+  "performance_gate_applied": false,
+  "predicted_cn_sha256": "9e2d5be4809ee7c9053baf70ad7574ca0b5cc2afc4a15b6006663a0fb8fafdb5",
+  "predicted_gpp_sha256": "c905fc60803405ba80b1ee7e4d7b489d1aeb3edc1b918ca2f07d8df9b0d198bb",
+  "release": "release_0001",
+  "release_basis": "iter012_deployable_arm_B_selected",
+  "result": "validated",
+  "schema": "three-stage-sr-release-package-manifest-v1",
+  "snapshot_sha256": "39b05495a57bfc9f323df67b47c0110dadfbf508b3159cde7ce1a6c59dfd187a",
+  "spinup_release_manifest_sha256": "69f840f7972d640e91b1693c2fcf71b984dae2e20fee9a07f05434af0591f2dc",
+  "split_manifest_sha256": "c6ab41f1a9dbb7f49bc24a3654b2798dcd0ee6886aa5cc1d169aaa9045c754c4"
+}
