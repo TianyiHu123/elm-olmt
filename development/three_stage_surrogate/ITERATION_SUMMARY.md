@@ -328,3 +328,29 @@
   in-sample release predictions, and temporary unbacked `/xdisk` storage.
 - Campaign-plan amendment recommendation: `none`.
 - Next direction: explicit terminal declaration; no next iteration is proposed or authorized.
+
+## iter014 - ABBY/JERC coupled inference engine and diagnostics
+
+- Closed: `2026-11-17T15:21:18-07:00`.
+- Status/work type: `completed` / `integration`.
+- Objective/result: implement and validate the frozen spinup -> GPP -> SR engine and four
+  development-only scientific diagnostics without fitting any model; `pass`.
+- Decision: `three_stage_inference_ready_for_robustness`; the callable engine passed exact schema,
+  provenance, validation, bounded handoff replay, strict direct/chunk, and serialization gates.
+- Integration: nine locked development members, ABBY/JERC, and early/middle/late 48-hour windows;
+  counts C/N `18/18`, GPP/SR `2592/2592`; maximum handoff differences C `2.037268e-10`, N
+  `1.818989e-11`, GPP `5.340576e-05`, SR `4.768372e-06`.
+- Diagnostics: exact all-development descriptive metrics, pooled/ABBY/JERC density parity,
+  GPP-SR joint density/Pearson structure, and paired locked-bin conditional summaries with separate
+  night/near-zero accounting; four figures passed independent visual and numerical validation.
+- Accounting: preflight `24678619`, `24678718`, `24678814` failed and `24678875` passed;
+  integration `24678937`, `24680350` failed and `24680395` passed; diagnostics `24680459` and
+  `24680504` and final `24691748` completed `0:0`. Every failure is classified; no cancellation.
+- Boundary: no training, fixed-test access, full-819 engine chain, full-chain robustness or
+  uncertainty, release edit, extra site, MCMC, plan amendment, or push.
+- Evidence: `development/three_stage_surrogate/summaries/iter014/`.
+- Limitations: two sites; frozen in-sample development releases; diagnostics are descriptive, not
+  causal confirmation, held-out end-to-end performance, or full-chain uncertainty; temporary
+  unbacked `/xdisk` storage.
+- Campaign-plan amendment recommendation: `none`.
+- Next direction: explicit terminal declaration; no next iteration is proposed or authorized.

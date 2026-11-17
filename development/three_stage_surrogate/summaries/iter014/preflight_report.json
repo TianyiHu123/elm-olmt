@@ -1,0 +1,68 @@
+{
+  "artifact_deserialization": true,
+  "fixed_test_access": false,
+  "full_819_engine": false,
+  "gpp_features": 43,
+  "parameter_names": [
+    "k_l1",
+    "k_l2",
+    "k_l3",
+    "k_s1",
+    "k_s2",
+    "k_s3",
+    "k_s4",
+    "k_frag",
+    "rf_l1s1",
+    "rf_l2s2",
+    "rf_l3s3",
+    "rf_s1s2",
+    "rf_s2s3",
+    "rf_s3s4",
+    "act25",
+    "leaf_long",
+    "leafcn",
+    "frootcn"
+  ],
+  "parameter_vectors_checked": 3,
+  "result": "pass",
+  "sample_members": [
+    "g00314",
+    "g00137",
+    "g00378",
+    "g00968",
+    "g00233",
+    "g00242",
+    "g00427",
+    "g00836",
+    "g00890"
+  ],
+  "sample_positions": [
+    0,
+    102,
+    204,
+    306,
+    409,
+    511,
+    613,
+    715,
+    818
+  ],
+  "schema": "three-stage-inference-iter014-preflight-v1",
+  "spinup_features": 25,
+  "sr_features": 44,
+  "training_or_fitting": false,
+  "windows": [
+    [
+      720,
+      768
+    ],
+    [
+      30648,
+      30696
+    ],
+    [
+      61272,
+      61320
+    ]
+  ]
+}

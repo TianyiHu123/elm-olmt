@@ -1,0 +1,11 @@
+job_id,work_unit,state,exit_code,elapsed,cpus,batch_max_rss,req_mem,classification
+24678619,preflight,FAILED,1:0,00:00:21,2,283920K,10G,batch-shape direct/chunk numerical mismatch
+24678718,preflight,FAILED,1:0,00:00:24,2,291668K,10G,historical-batch GPP handoff compatibility
+24678814,preflight,FAILED,1:0,00:00:19,2,221824K,10G,absolute-path import structure failure
+24678875,preflight,COMPLETED,0:0,00:00:33,2,291916K,10G,accepted
+24678937,integration,FAILED,1:0,00:00:21,4,914620K,20G,handoff mismatch without sufficient magnitude instrumentation
+24680350,integration,FAILED,1:0,00:00:25,4,1049676K,20G,complete numerical envelope exceeded handoff atol 1e-5
+24680395,integration,COMPLETED,0:0,00:00:20,4,828420K,20G,accepted at narrow handoff atol 1e-4
+24680459,diagnostics,COMPLETED,0:0,00:01:48,8,8007800K,40G,science passed but product promotion and parity layout rejected
+24680504,diagnostics,COMPLETED,0:0,00:02:03,8,8017856K,40G,accepted
+24691748,final,COMPLETED,0:0,00:01:01,4,1804820K,20G,accepted

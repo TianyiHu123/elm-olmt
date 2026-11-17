@@ -1,0 +1,75 @@
+{
+  "aggregate_rule": "deterministic blockwise float64 moments over every development record",
+  "conditional_bins": 20,
+  "conditional_edge_rule": "exact linear quantiles of pooled combined eligible daylight ELM and surrogate GPP",
+  "density_bins": 200,
+  "development_member_count": 819,
+  "evidence_class": "in_sample_development_descriptive",
+  "files": [
+    {
+      "path": "exact_metrics.csv",
+      "sha256": "e431490c2eccb89e81296c5dbdeeec3a8346e99c6520803c83ccd323ce2fc265",
+      "size_bytes": 1999
+    },
+    {
+      "path": "gpp_sr_conditional_bins.csv",
+      "sha256": "42dca112bcaec85ad86cfcdad582f4a5c4786822c294720c60663ad2671579af",
+      "size_bytes": 24738
+    },
+    {
+      "path": "gpp_sr_correlations.csv",
+      "sha256": "8f5f6d5db986a471a87f6873c59861a70ebc84cd6a6f68335e73b5dfa8c96c53",
+      "size_bytes": 436
+    },
+    {
+      "path": "gpp_sr_joint_conditional.png",
+      "sha256": "5441a59903dfa9fb38e429d5ebb40cdd467ebfd0c9aad93a96cf001d77945ef1",
+      "size_bytes": 274124
+    },
+    {
+      "path": "gpp_sr_night_near_zero.csv",
+      "sha256": "e0456bba698bee28d6cd6890f3d6a3b50d4a9ec06a0a517970c149e4435cbe70",
+      "size_bytes": 1773
+    },
+    {
+      "path": "joint_gpp_sr_density_grids.npz",
+      "sha256": "0adeae9395bae45d372738c421414d3517b4131fe424daa371cc5fb9ca031963",
+      "size_bytes": 534791
+    },
+    {
+      "path": "joint_gpp_sr_hourly.png",
+      "sha256": "e7952c9e141fff8784040d98c6a719900c90f974a10d7ce91c4a9a2c3e1df79c",
+      "size_bytes": 259063
+    },
+    {
+      "path": "parity_flux_density_grids.npz",
+      "sha256": "feb60e0b5856e724c2642eb476a9d1a579337f685dc5d7463ae1ee5f5b53fcb6",
+      "size_bytes": 352029
+    },
+    {
+      "path": "parity_flux_hourly.png",
+      "sha256": "3ab8868228d2be9468a48f0d5c638cefcb422ca74a21d9f6b68056d36b3d55a7",
+      "size_bytes": 438528
+    },
+    {
+      "path": "spinup_cn_parity.png",
+      "sha256": "589d584eef3b4db17fe84e9b320e0467285a0b9ed75448089942644130ff6492",
+      "size_bytes": 290857
+    }
+  ],
+  "fixed_test_access": false,
+  "hourly_count_by_site": 50221080,
+  "hourly_pooled_count": 100442160,
+  "near_zero_rule": "FSDS > 1 W m-2 and applicable GPP <= 0.1 gC m-2 day-1",
+  "night_rule": "FSDS <= 1 W m-2",
+  "performance_gate_applied": false,
+  "result": "pass",
+  "schema": "three-stage-inference-iter014-diagnostics-v1",
+  "snapshot_sha256": "39b05495a57bfc9f323df67b47c0110dadfbf508b3159cde7ce1a6c59dfd187a",
+  "training_or_inference": false,
+  "verified_handoff_sha256": {
+    "C/N": "9e2d5be4809ee7c9053baf70ad7574ca0b5cc2afc4a15b6006663a0fb8fafdb5",
+    "GPP": "c905fc60803405ba80b1ee7e4d7b489d1aeb3edc1b918ca2f07d8df9b0d198bb",
+    "SR": "3704cab6c0167c7d0f7f1c22416b5fe850b6fcb52327df8af6134ffa0f12d3a1"
+  }
+}

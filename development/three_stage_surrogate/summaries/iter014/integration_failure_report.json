@@ -1,0 +1,386 @@
+{
+  "comparison_counts": {
+    "GPP": 2592,
+    "SR": 2592,
+    "TOTSOMC": 18,
+    "TOTSOMN": 18
+  },
+  "contains_elm_truth_in_engine": false,
+  "direct_chunk_atol": 1e-06,
+  "direct_chunk_rtol": 1e-06,
+  "fixed_test_access": false,
+  "full_819_engine": false,
+  "handoff_replay_atol": 1e-05,
+  "handoff_replay_rtol": 1e-06,
+  "maximum_absolute_differences": {
+    "GPP": 5.340576171875e-05,
+    "SR": 4.76837158203125e-06,
+    "TOTSOMC": 2.0372681319713593e-10,
+    "TOTSOMN": 1.8189894035458565e-11,
+    "chunk_GPP": 0.0,
+    "chunk_SR": 0.0,
+    "chunk_TOTSOMC": 0.0,
+    "chunk_TOTSOMN": 0.0,
+    "reload_GPP": 0.0,
+    "reload_SR": 0.0
+  },
+  "published_replay_comparisons": [
+    {
+      "count": 9,
+      "end": 768,
+      "max_absolute_difference": 0.0,
+      "max_normalized_tolerance_ratio": 0.0,
+      "max_relative_difference_nonzero_reference": 0.0,
+      "mismatch_count": 0,
+      "site": "ABBY",
+      "stage": "TOTSOMC",
+      "start": 720,
+      "zero_reference_count": 0
+    },
+    {
+      "count": 9,
+      "end": 768,
+      "max_absolute_difference": 1.8189894035458565e-11,
+      "max_normalized_tolerance_ratio": 1.7475375329430084e-09,
+      "max_relative_difference_nonzero_reference": 1.7494049623250232e-15,
+      "mismatch_count": 0,
+      "site": "ABBY",
+      "stage": "TOTSOMN",
+      "start": 720,
+      "zero_reference_count": 0
+    },
+    {
+      "count": 432,
+      "end": 768,
+      "max_absolute_difference": 2.47955322265625e-05,
+      "max_normalized_tolerance_ratio": 0.9037846817812373,
+      "max_relative_difference_nonzero_reference": 0.002383122544388156,
+      "mismatch_count": 0,
+      "site": "ABBY",
+      "stage": "GPP",
+      "start": 720,
+      "zero_reference_count": 0
+    },
+    {
+      "count": 432,
+      "end": 768,
+      "max_absolute_difference": 3.0994415283203125e-06,
+      "max_normalized_tolerance_ratio": 0.255781707623849,
+      "max_relative_difference_nonzero_reference": 1.8045964225824887e-06,
+      "mismatch_count": 0,
+      "site": "ABBY",
+      "stage": "SR",
+      "start": 720,
+      "zero_reference_count": 0
+    },
+    {
+      "count": 432,
+      "end": 30696,
+      "max_absolute_difference": 5.340576171875e-05,
+      "max_normalized_tolerance_ratio": 1.6048954929669719,
+      "max_relative_difference_nonzero_reference": 0.0021149035964473334,
+      "mismatch_count": 2,
+      "site": "ABBY",
+      "stage": "GPP",
+      "start": 30648,
+      "zero_reference_count": 0
+    },
+    {
+      "count": 432,
+      "end": 30696,
+      "max_absolute_difference": 3.337860107421875e-06,
+      "max_normalized_tolerance_ratio": 0.2768755754191367,
+      "max_relative_difference_nonzero_reference": 1.6484107465940744e-06,
+      "mismatch_count": 0,
+      "site": "ABBY",
+      "stage": "SR",
+      "start": 30648,
+      "zero_reference_count": 0
+    },
+    {
+      "count": 432,
+      "end": 61320,
+      "max_absolute_difference": 2.288818359375e-05,
+      "max_normalized_tolerance_ratio": 1.0472117528924099,
+      "max_relative_difference_nonzero_reference": 0.001536564158677601,
+      "mismatch_count": 1,
+      "site": "ABBY",
+      "stage": "GPP",
+      "start": 61272,
+      "zero_reference_count": 0
+    },
+    {
+      "count": 432,
+      "end": 61320,
+      "max_absolute_difference": 2.5033950805664062e-06,
+      "max_normalized_tolerance_ratio": 0.2125721936925032,
+      "max_relative_difference_nonzero_reference": 1.4090283964176593e-06,
+      "mismatch_count": 0,
+      "site": "ABBY",
+      "stage": "SR",
+      "start": 61272,
+      "zero_reference_count": 0
+    },
+    {
+      "count": 9,
+      "end": 768,
+      "max_absolute_difference": 2.0372681319713593e-10,
+      "max_normalized_tolerance_ratio": 1.8132059885578029e-09,
+      "max_relative_difference_nonzero_reference": 1.813367381579376e-15,
+      "mismatch_count": 0,
+      "site": "JERC",
+      "stage": "TOTSOMC",
+      "start": 720,
+      "zero_reference_count": 0
+    },
+    {
+      "count": 9,
+      "end": 768,
+      "max_absolute_difference": 1.1823431123048067e-11,
+      "max_normalized_tolerance_ratio": 1.7965770068227998e-09,
+      "max_relative_difference_nonzero_reference": 1.799311070110385e-15,
+      "mismatch_count": 0,
+      "site": "JERC",
+      "stage": "TOTSOMN",
+      "start": 720,
+      "zero_reference_count": 0
+    },
+    {
+      "count": 432,
+      "end": 768,
+      "max_absolute_difference": 1.9073486328125e-05,
+      "max_normalized_tolerance_ratio": 1.0354349251527564,
+      "max_relative_difference_nonzero_reference": 0.02168639485277686,
+      "mismatch_count": 1,
+      "site": "JERC",
+      "stage": "GPP",
+      "start": 720,
+      "zero_reference_count": 0
+    },
+    {
+      "count": 432,
+      "end": 768,
+      "max_absolute_difference": 3.814697265625e-06,
+      "max_normalized_tolerance_ratio": 0.2591771250684098,
+      "max_relative_difference_nonzero_reference": 1.351625329458674e-06,
+      "mismatch_count": 0,
+      "site": "JERC",
+      "stage": "SR",
+      "start": 720,
+      "zero_reference_count": 0
+    },
+    {
+      "count": 432,
+      "end": 30696,
+      "max_absolute_difference": 3.0517578125e-05,
+      "max_normalized_tolerance_ratio": 1.2198556248588452,
+      "max_relative_difference_nonzero_reference": 0.03673086218420899,
+      "mismatch_count": 6,
+      "site": "JERC",
+      "stage": "GPP",
+      "start": 30648,
+      "zero_reference_count": 0
+    },
+    {
+      "count": 432,
+      "end": 30696,
+      "max_absolute_difference": 4.76837158203125e-06,
+      "max_normalized_tolerance_ratio": 0.3280458387083212,
+      "max_relative_difference_nonzero_reference": 1.189306631104312e-06,
+      "mismatch_count": 0,
+      "site": "JERC",
+      "stage": "SR",
+      "start": 30648,
+      "zero_reference_count": 0
+    },
+    {
+      "count": 432,
+      "end": 61320,
+      "max_absolute_difference": 1.430511474609375e-05,
+      "max_normalized_tolerance_ratio": 0.9634359786725264,
+      "max_relative_difference_nonzero_reference": 0.02196883693658853,
+      "mismatch_count": 0,
+      "site": "JERC",
+      "stage": "GPP",
+      "start": 61272,
+      "zero_reference_count": 0
+    },
+    {
+      "count": 432,
+      "end": 61320,
+      "max_absolute_difference": 4.0531158447265625e-06,
+      "max_normalized_tolerance_ratio": 0.32006912288088113,
+      "max_relative_difference_nonzero_reference": 1.5218673993354094e-06,
+      "mismatch_count": 0,
+      "site": "JERC",
+      "stage": "SR",
+      "start": 61272,
+      "zero_reference_count": 0
+    }
+  ],
+  "published_replay_failed_comparisons": 4,
+  "result": "fail_published_handoff_replay",
+  "sample_members": [
+    "g00314",
+    "g00137",
+    "g00378",
+    "g00968",
+    "g00233",
+    "g00242",
+    "g00427",
+    "g00836",
+    "g00890"
+  ],
+  "sample_positions": [
+    0,
+    102,
+    204,
+    306,
+    409,
+    511,
+    613,
+    715,
+    818
+  ],
+  "schema": "three-stage-inference-iter014-integration-failure-v1",
+  "serialized_outputs": [
+    {
+      "end": 768,
+      "hours": 48,
+      "members": [
+        "g00314",
+        "g00137",
+        "g00378",
+        "g00968",
+        "g00233",
+        "g00242",
+        "g00427",
+        "g00836",
+        "g00890"
+      ],
+      "output": "abby_720_768.nc",
+      "output_sha256": "2f16c705caec578de934129864e8a8547e00295f2dba9a110ceefe63d2cf4d60",
+      "site": "ABBY",
+      "start": 720
+    },
+    {
+      "end": 30696,
+      "hours": 48,
+      "members": [
+        "g00314",
+        "g00137",
+        "g00378",
+        "g00968",
+        "g00233",
+        "g00242",
+        "g00427",
+        "g00836",
+        "g00890"
+      ],
+      "output": "abby_30648_30696.nc",
+      "output_sha256": "c35b29ac733fd1b804ae02c2d387c9184405d5887de69508597f652d71a49985",
+      "site": "ABBY",
+      "start": 30648
+    },
+    {
+      "end": 61320,
+      "hours": 48,
+      "members": [
+        "g00314",
+        "g00137",
+        "g00378",
+        "g00968",
+        "g00233",
+        "g00242",
+        "g00427",
+        "g00836",
+        "g00890"
+      ],
+      "output": "abby_61272_61320.nc",
+      "output_sha256": "5f274dbfb961e700bebf74ef0c88358f34fe5d6b6f50fed1878eb05b422a7bb9",
+      "site": "ABBY",
+      "start": 61272
+    },
+    {
+      "end": 768,
+      "hours": 48,
+      "members": [
+        "g00314",
+        "g00137",
+        "g00378",
+        "g00968",
+        "g00233",
+        "g00242",
+        "g00427",
+        "g00836",
+        "g00890"
+      ],
+      "output": "jerc_720_768.nc",
+      "output_sha256": "280b2fddcb8d150c1419d95c1d0daaa9397c2e815fc177199059c1405708a0c8",
+      "site": "JERC",
+      "start": 720
+    },
+    {
+      "end": 30696,
+      "hours": 48,
+      "members": [
+        "g00314",
+        "g00137",
+        "g00378",
+        "g00968",
+        "g00233",
+        "g00242",
+        "g00427",
+        "g00836",
+        "g00890"
+      ],
+      "output": "jerc_30648_30696.nc",
+      "output_sha256": "a3ed129b9ed0a1ad5cc721a55e2b10477d6216f3b9032b0d5754256bfe5134a0",
+      "site": "JERC",
+      "start": 30648
+    },
+    {
+      "end": 61320,
+      "hours": 48,
+      "members": [
+        "g00314",
+        "g00137",
+        "g00378",
+        "g00968",
+        "g00233",
+        "g00242",
+        "g00427",
+        "g00836",
+        "g00890"
+      ],
+      "output": "jerc_61272_61320.nc",
+      "output_sha256": "69ff947f3f73fec657dc67bafb27c8b6897643c722122250dad4fc9d615e5bd6",
+      "site": "JERC",
+      "start": 61272
+    }
+  ],
+  "sites": [
+    "ABBY",
+    "JERC"
+  ],
+  "training_or_fitting": false,
+  "verified_handoff_sha256": {
+    "C/N": "9e2d5be4809ee7c9053baf70ad7574ca0b5cc2afc4a15b6006663a0fb8fafdb5",
+    "GPP": "c905fc60803405ba80b1ee7e4d7b489d1aeb3edc1b918ca2f07d8df9b0d198bb",
+    "SR": "3704cab6c0167c7d0f7f1c22416b5fe850b6fcb52327df8af6134ffa0f12d3a1"
+  },
+  "windows": [
+    [
+      720,
+      768
+    ],
+    [
+      30648,
+      30696
+    ],
+    [
+      61272,
+      61320
+    ]
+  ]
+}
