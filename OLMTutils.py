@@ -1,6 +1,7 @@
 import socket, os, sys, re, glob
 import subprocess
 import numpy as np
+from OLMTmachine import machine_name_selects_ua_puma9, puma_machine_defaults
 
 #Function to return default directories for supported machines
 def get_machine_info(machine_name=''):
@@ -34,6 +35,15 @@ def get_machine_info(machine_name=''):
         hostname = 'saul-p1.nersc.gov'
         queue = 'regular'
         project = 'e3sm'
+    elif machine_name_selects_ua_puma9(machine_name):
+        # Explicit UA Puma branch. Do not reuse the Perlmutter 'login' match.
+        defaults = puma_machine_defaults()
+        rootdir = defaults['rootdir']
+        inputdata = defaults['inputdata']
+        machine = defaults['machine']
+        hostname = defaults['hostname']
+        queue = defaults['queue']
+        project = defaults['project']
     elif ('ubuntu' in machine_name or 'linux-generic' in machine_name):
         rootdir = os.environ['HOME']+'/models'
         inputdata = rootdir + '/inputdata'

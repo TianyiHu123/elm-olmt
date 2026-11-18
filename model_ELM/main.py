@@ -11,6 +11,8 @@ from .MCMC import *
 from .netcdf4_functions import *
 from datetime import datetime
 import xarray as xr
+from OLMTmachine import create_newcase_command as build_create_newcase_command
+from OLMTmachine import puma_blocks_existing_casedir
 
 def smart_loadtxt(filename):
     # Try comma first, then whitespace
@@ -26,7 +28,7 @@ class ELMcase():
             res='',tstep=1,np=1,nyears=1,startyear=-1, machine='', queue='', project = '',\
             exeroot='', modelroot='', runroot='',caseroot='',inputdata='', \
             region_name='', lat_bounds=[-90,90],lon_bounds=[-180,180], \
-            point_list=[], namelist_options=[],casename='',mpilib='', olmtdir='', olmtcondaenv=''):
+            point_list=[], namelist_options=[],casename='',mpilib='', olmtdir='', olmtcondaenv='', compiler=''):
 
       if (casename != ''):
         #get case information from pre-existing pkl file:
@@ -76,7 +78,9 @@ class ELMcase():
         self.queue=queue
         self.project=project
         self.get_machine(machine=machine)
-        self.compiler=''
+        # Keep caller-supplied compiler/mpilib. Empty means "CIME machine default"
+        # (Perlmutter Intel/MPICH when --mach pm-cpu and these flags are omitted).
+        self.compiler=compiler
         self.pio_version=2
         self.compset=compset
         self.case_suffix=suffix   #used for ad_spinup and trans
@@ -114,7 +118,7 @@ class ELMcase():
         self.postproc_startyear=-1
         self.postproc_endyear=9999
         self.namelist_options=namelist_options
-        self.mpilib=''
+        self.mpilib=mpilib
 
   def setup_ensemble(self, sampletype='monte_carlo',parm_list='', ensemble_file='', \
           np_ensemble=64, nsamples=100, obs={}, obs_err={}):
@@ -415,7 +419,7 @@ class ELMcase():
       self.has_finidat=True
 
 #-----------------------------------------------------------------------------------------
-  def create_case(self, machine='',casename='', remove=False, walltime="24:00:00"):
+  def assign_casename(self, casename='', walltime="24:00:00"):
     if (casename == ''):
       #construct default casename
       if (self.site == ''):
@@ -426,8 +430,30 @@ class ELMcase():
     else:
         self.casename = casename
     self.casedir = os.path.abspath(self.caseroot+'/'+self.casename)
+    self.case_walltime = walltime
+
+  def create_newcase_command(self):
+    return build_create_newcase_command(
+        casedir=self.casedir,
+        machine=self.machine,
+        compset=self.compset,
+        res=self.res,
+        walltime=self.case_walltime,
+        project=self.project,
+        compiler=self.compiler,
+        mpilib=self.mpilib,
+        queue=self.queue,
+        log_path=self.OLMTdir+'/create_newcase.log')
+
+  def create_case(self, machine='',casename='', remove=False, walltime="24:00:00"):
+    self.assign_casename(casename=casename, walltime=walltime)
     #TODO - replace with a prompt that automacially deletes after 10 seconds
     if (os.path.exists(self.casedir)):
+      if puma_blocks_existing_casedir(self.machine, True):
+        print('Error: CIME case directory already exists: '+self.casedir)
+        print('Puma will not remove or reuse an existing case. '
+              'Choose a new caseroot or casename.')
+        sys.exit(1)
       if (not remove):
         print('Warning:  Case directory exists')
         var = input('proceed (p), remove old (r), or exit (x)? ')
@@ -443,22 +469,9 @@ class ELMcase():
     #walltime=24
     # timestr=str(int(float(walltime)))+':'+str(int((float(walltime)- \
     #                                  int(float(walltime)))*60))+':00'
-    timestr=walltime
-    self.case_walltime = walltime
     #IF the resolution is user defined (site), we will first create a case with 
     #original resolution to get them correct domain, surface and land use files.
-    cmd = './create_newcase --case '+self.casedir+' --mach '+self.machine+' --compset '+ \
-           self.compset+' --res '+self.res+' --walltime '+timestr+' --handle-preexisting-dirs u' 
-    if (self.project != ''):
-      cmd = cmd+' --project '+self.project
-    if (self.compiler != ''):
-      cmd = cmd+' --compiler '+self.compiler
-    if (self.mpilib != ''):
-      cmd = cmd+' --mpilib '+self.mpilib
-    if (self.queue != ''):
-      cmd = cmd+' --queue '+self.queue
-    #ADD MPILIB OPTION HERE
-    cmd = cmd+' > '+self.OLMTdir+'/create_newcase.log'
+    cmd = self.create_newcase_command()
     os.chdir(self.modelroot+'/cime/scripts')
     print(cmd)
     result = subprocess.run(cmd, stdout=subprocess.PIPE, \

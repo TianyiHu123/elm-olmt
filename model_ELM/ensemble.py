@@ -4,6 +4,13 @@ import os, sys, csv, time, math
 import numpy as np
 import datetime
 import matplotlib.pyplot as plt
+from OLMTmachine import (
+    e3sm_launch_command,
+    is_ua_puma9,
+    olmt_python_command,
+    olmt_python_preamble_lines,
+    slurm_batch_directives,
+)
 
 def _walltime_to_seconds(walltime):
     if isinstance(walltime, (int, float)):
@@ -142,24 +149,14 @@ def create_ensemble_script(self, walltime=None):
           ' cpus_per_task=1 (AD-style)')
     myfile = open('case.submit_ensemble','w')
     myfile.write('#!/bin/bash -e\n\n')
-    if ('pm-cpu' in self.machine):
-        myfile.write('#SBATCH --time='+timestr+'\n')
-        myfile.write('#SBATCH --constraint=cpu\n')
-        myfile.write('#SBATCH --qos='+self.queue+'\n')
-        myfile.write('#SBATCH --account='+self.project+'\n')
-    else:
-        myfile.write('#SBATCH -t '+timestr+'\n')
-        myfile.write('#SBATCH -p '+self.queue+'\n')
-        if (self.project != ''):
-            myfile.write('#SBATCH -A '+self.project+'\n')
-    myfile.write('#SBATCH -J '+self.casename+'\n')
-    myfile.write('#SBATCH --nodes='+str(nnodes)+'\n')
-    # Tianyi added for parallel srun #
-    myfile.write('#SBATCH --ntasks='+str(self.np_ensemble)+'\n')
-    # Tianyi added error output #
-    myfile.write('#SBATCH --output='+self.runroot+'/slurm_error_%j.out'+'\n')
-    myfile.write('#SBATCH --error='+self.runroot+'/slurm_error_%j.err'+'\n')
-    # Tianyi added error output #
+    for line in slurm_batch_directives(
+            self.machine, timestr, self.queue, self.project, self.casename,
+            nnodes, ntasks=self.np_ensemble,
+            output=self.runroot+'/slurm_error_%j.out',
+            error=self.runroot+'/slurm_error_%j.err',
+            flavor='ensemble'):
+        myfile.write(line+'\n')
+    myfile.write('\n')
 
     myfile.write('cd '+self.caseroot+'/'+self.casename+'\n')
     myfile.write('export LD_LIBRARY_PATH='+ldpath+'\n\n')
@@ -171,10 +168,11 @@ def create_ensemble_script(self, walltime=None):
     myfile.write('./preview_namelists\n\n')
     myfile.write('ulimit -n '+str(self.nsamples+1024)+'\n')
     myfile.write('cd '+self.OLMTdir+'\n')
-    # Tianyi Hu activate conda environment
-    myfile.write('conda activate '+self.OLMT_condaenv+'\n')
-    # Tianyi Hu activate conda environment
-    myfile.write('./manage_ensemble.py --case '+self.casename+'\n')
+    for line in olmt_python_preamble_lines(self.machine, self.OLMT_condaenv):
+        myfile.write(line+'\n')
+    myfile.write(olmt_python_command(
+        self.machine, self.OLMT_condaenv,
+        './manage_ensemble.py --case '+self.casename)+'\n')
      # Tianyi Hu added to remove slurm.out because it is too big #
     myfile.write('[ $? -eq 0 ] && rm -v '+self.runroot+'/slurm_error_${SLURM_JOB_ID}.*\n')
     # myfile.write('cd '+self.caseroot+'/'+self.casename+'\n')
@@ -203,25 +201,16 @@ def create_multisite_script(self,sites,scriptdir, walltime='24:00:00'):
     myfile.write('#!/bin/bash -e\n\n')
     if (self.queue == 'debug'):
         walltime=2
-    if ('pm-cpu' in self.machine):
-        #myfile.write('#SBATCH --time='+str(walltime)+':00:00\n') # Tianyi Hu fixed here
-        myfile.write('#SBATCH --time='+walltime+'\n') # Tianyi Hu customized time
-        myfile.write('#SBATCH --constraint=cpu\n')
-        myfile.write('#SBATCH --qos='+self.queue+'\n')
-        myfile.write('#SBATCH --account='+self.project+'\n')
-    else:
-        myfile.write('#SBATCH -t '+str(walltime)+':00:00\n')
-        myfile.write('#SBATCH -t '+walltime+'\n')# Tianyi Hu customized time
-        myfile.write('#SBATCH -p '+self.queue+'\n')
-        if (self.project != ''):
-            myfile.write('#SBATCH -A '+self.project+'\n')
-
-    myfile.write('#SBATCH -J '+self.casename.replace('_'+self.site,'')+'\n')
-    myfile.write('#SBATCH --nodes='+str(nnodes)+'\n')
-    # Tianyi added error output #
-    myfile.write('#SBATCH --output='+self.runroot+'/slurm_error_%j.out'+'\n')
-    myfile.write('#SBATCH --error='+self.runroot+'/slurm_error_%j.err'+'\n')
-    # Tianyi added error output #
+    puma_ntasks = self.np if is_ua_puma9(self.machine) else None
+    for line in slurm_batch_directives(
+            self.machine, walltime, self.queue, self.project,
+            self.casename.replace('_'+self.site,''), nnodes,
+            ntasks=puma_ntasks,
+            output=self.runroot+'/slurm_error_%j.out',
+            error=self.runroot+'/slurm_error_%j.err',
+            flavor='multisite'):
+        myfile.write(line+'\n')
+    myfile.write('\n')
     myfile.write('cd '+self.caseroot+'/'+self.casename+'\n')
     myfile.write('export LD_LIBRARY_PATH='+ldpath+'\n\n')
     myfile.write('e3sm_pids=()\n')
@@ -245,12 +234,9 @@ def create_multisite_script(self,sites,scriptdir, walltime='24:00:00'):
             else:
                 myfile.write('python '+self.OLMTdir+'/modify_netcdf.py --filename '+ \
                     self.finidat+' --var '+var+' --val '+value+'\n')
-      if (self.noslurm):
-        myfile.write('mpiexec -n '+str(self.np)+' '+self.exeroot+'/e3sm.exe > '+ \
-           site_rundir+'/e3sm_log.txt &\n')
-      else:
-        myfile.write('srun -n '+str(self.np)+' -c 1 '+self.exeroot+'/e3sm.exe > '+ \
-                site_rundir+'/e3sm_log.txt &\n')
+      myfile.write(e3sm_launch_command(
+          self.machine, self.np, self.exeroot,
+          site_rundir+'/e3sm_log.txt', noslurm=self.noslurm)+'\n')
       myfile.write('e3sm_pids+=($!)\n\n')
     myfile.write('e3sm_status=0\n')
     myfile.write('for pid in "${e3sm_pids[@]}"; do\n')
@@ -265,15 +251,18 @@ def create_multisite_script(self,sites,scriptdir, walltime='24:00:00'):
     do_spinup_plot = (not 'ICBELM' in self.compset and not '20TR' in self.compset and not 'trans' in self.casename \
         and not 'ad_spinup' in self.casename and is_site_run)
     if do_spinup_plot or self.postproc_vars:
-        myfile.write('conda activate '+self.OLMT_condaenv+'\n')
+        for line in olmt_python_preamble_lines(self.machine, self.OLMT_condaenv):
+            myfile.write(line+'\n')
         myfile.write('postproc_status=0\n')
         for s in sites:
             if do_spinup_plot:
                 #Assume this is a final spinup case, do spinup diagnostic plots
-                myfile.write('python manage_postproc.py --case '+self.casename.replace(sites[0],s)+' --plot_spinup\n')
+                postproc_inv = 'python manage_postproc.py --case '+self.casename.replace(sites[0],s)+' --plot_spinup'
             else:
                 #Do requested postprocessing and plotting
-                myfile.write('python manage_postproc.py --case '+self.casename.replace(sites[0],s)+'\n')
+                postproc_inv = 'python manage_postproc.py --case '+self.casename.replace(sites[0],s)
+            myfile.write(olmt_python_command(
+                self.machine, self.OLMT_condaenv, postproc_inv)+'\n')
             myfile.write('if [ $? -ne 0 ]; then postproc_status=1; fi\n')
         myfile.write('if [ $postproc_status -eq 0 ]; then\n')
         myfile.write('    rm -v '+self.runroot+'/slurm_error_${SLURM_JOB_ID}.*\n')

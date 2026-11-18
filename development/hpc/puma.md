@@ -1,8 +1,9 @@
 # University of Arizona Puma Profile for This Repository
 
 This profile defines Puma site mechanics and repository-wide execution rules for
-`/xdisk/chopinsong/tianyihu/elm-olmt`. It is intended for any current or future workflow in this
-checkout.
+`/xdisk/chopinsong/tianyihu/elm-olmt-puma` (`feature/ua-puma-port`). It is intended for any
+current or future workflow in this checkout. Do not use this path for the separate
+`elm-olmt` worktree on `feature/three-stage-surrogate`.
 
 The labels below define scope:
 
@@ -157,7 +158,7 @@ response, and terminal accounting in the active workload record.
 The repository root is fixed at:
 
 ```bash
-readonly REPO_ROOT=/xdisk/chopinsong/tianyihu/elm-olmt
+readonly REPO_ROOT=/xdisk/chopinsong/tianyihu/elm-olmt-puma
 ```
 
 Canonical and submitted scripts must use this literal path. Do not derive it from `$0`, a copied
@@ -167,7 +168,7 @@ Before loading the environment or touching outputs, validate the selected worklo
 files:
 
 ```bash
-readonly REPO_ROOT=/xdisk/chopinsong/tianyihu/elm-olmt
+readonly REPO_ROOT=/xdisk/chopinsong/tianyihu/elm-olmt-puma
 readonly PUMA_PROFILE="${REPO_ROOT}/development/hpc/puma.md"
 readonly WORKFLOW_FILE="${REPO_ROOT}/<PATH_TO_WORKFLOW>"
 readonly WORKLOAD_ENTRYPOINT="${REPO_ROOT}/<PATH_TO_ENTRYPOINT>"

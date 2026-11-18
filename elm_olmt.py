@@ -2,10 +2,13 @@
 import re, sys
 import model_ELM
 from OLMTutils import get_machine_info, get_site_info, get_point_list, get_default_diag_vars
-import os, glob
+from OLMTmachine import cleanup_olmt_temp
+import os
 import numpy as np
 import configparser
 import argparse
+
+OLMT_WORKSPACE = os.path.abspath(os.path.dirname(os.path.abspath(__file__)))
 
 def load_config(config_file):
     """Load configuration from file and return as dictionary"""
@@ -117,6 +120,11 @@ def main():
     parser.add_argument('--config', '-c', default='run_config.cfg',
                        help='Configuration file (default: run_config.cfg)')
     parser.add_argument('--gui', action='store_true', help='Launch GUI to create configuration')
+    parser.add_argument('--dry-run', action='store_true',
+                       help='Read-only: parse the cfg and print the plan. '
+                            'Does not create, build, submit, or clean temp files.')
+    parser.add_argument('--no-submit', action='store_true',
+                       help='Create and build cases but do not submit Slurm jobs.')
     args = parser.parse_args()
 
     print('\n')
@@ -145,12 +153,18 @@ def main():
     runroot = cfg['machine'].get('runroot', rootdir + '/e3sm_run')
     modelroot = cfg['machine'].get('modelroot', '')
     exeroot = cfg['machine'].get('exeroot', '')
+    compiler = cfg['machine'].get('compiler', '')
+    mpilib = cfg['machine'].get('mpilib', '')
     # exeroot
     print('Run root directory:  '+runroot)
     print('Exe root directory:  '+exeroot)
     print('Case root directory: '+caseroot)
     print('Input data directory: '+inputdata)
-    print('Model root directory: '+modelroot+'\n')
+    print('Model root directory: '+modelroot)
+    print('Compiler:            '+(compiler if compiler else '(CIME machine default)'))
+    print('MPI library:         '+(mpilib if mpilib else '(CIME machine default)')+'\n')
+    if args.dry_run and args.no_submit:
+        print('Note: --dry-run overrides --no-submit (no create/build/submit)\n')
 
     # Extract configuration values
     runtype = cfg['simulation']['runtype']
@@ -276,15 +290,11 @@ def main():
         postproc_freq = cfg['postprocessing'].get('frequency', 'monthly')
         postproc_pfts = cfg['postprocessing'].get('pfts', [0])
 
-    # Remove specific file types from temp directory
-    temp_dir = 'temp'
-    for pattern in ['*.nc', '*.tmp']:
-        files_to_remove = glob.glob(os.path.join(temp_dir, pattern))
-        for file_path in files_to_remove:
-            try:
-                os.remove(file_path)
-            except OSError as e:
-                print(f"Warning: Could not remove {file_path}: {e}")
+    if not args.dry_run:
+        removed = cleanup_olmt_temp(OLMT_WORKSPACE)
+        if removed:
+            print('Cleaned '+str(len(removed))+' file(s) from '+
+                  os.path.join(OLMT_WORKSPACE, 'temp'))
 
     if (runtype == 'site'):
         # Check to see if all reqested sites exist
@@ -422,12 +432,17 @@ def main():
             machine=machine, exeroot=exeroot, suffix=mysuffix, queue=queue, project=project,  \
             res=res, nyears=nyears[c],startyear=startyear[c], region_name=region_name, \
             lat_bounds=lat_bounds, lon_bounds=lon_bounds, np=numproc, point_list=point_list, \
-            olmtdir=scriptdir)
+            olmtdir=scriptdir, compiler=compiler, mpilib=mpilib)
         #Save the other site names in first site's cases (for use in multi-site calibration)
         if site == sites[0]:
             cases[c].all_sites = [s for s in sites]
 
         # Create the case
+        if args.dry_run:
+            cases[c].assign_casename()
+            print('Dry-run would create: '+cases[c].casedir)
+            print('  '+cases[c].create_newcase_command())
+            continue
         cases[c].create_case()
         cases[c].case_options={}
         if (site != ''):
@@ -534,23 +549,26 @@ def main():
         print('Building case')
         cases[c].build_case()
     
-        # Submit the case
-        print('Submitting case')
-        jobnum_depend=-1
-        if (depends[c] >= 0):
-            jobnum_depend = jobnum[depends[c]]
         # Set exeroot for all subsequent cases/sites so we don't have to rebuild
         if (depends[c] < 0 and site == sites[0]):
             exeroot = cases[c].exeroot
         if (ensemble):
             multisite_scripts[c] = cases[c].create_multisite_script([site], scriptdir)
-            jobnum[c] = cases[c].submit_case(depend=jobnum_depend, \
-                ensemble=ensemble,multisite_script=multisite_scripts[c])
         else:
             if (site == sites[0]):
                 # Always use the multi-site script even for one site
                 multisite_scripts[c] = cases[c].create_multisite_script(sites, scriptdir)
-            if (site == sites[nsites-1]):
+        if args.no_submit:
+            print('Skipping submit (--no-submit) for '+cases[c].casename)
+        else:
+            print('Submitting case')
+            jobnum_depend=-1
+            if (depends[c] >= 0):
+                jobnum_depend = jobnum[depends[c]]
+            if (ensemble):
+                jobnum[c] = cases[c].submit_case(depend=jobnum_depend, \
+                    ensemble=ensemble,multisite_script=multisite_scripts[c])
+            elif (site == sites[nsites-1]):
                 jobnum[c] = cases[c].submit_case(depend=jobnum_depend, \
                     ensemble=ensemble,multisite_script=multisite_scripts[c])
         # Return to script directory
