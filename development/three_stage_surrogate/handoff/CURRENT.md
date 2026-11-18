@@ -3,10 +3,13 @@
 ## Campaign Plan
 
 - Plan path: `development/three_stage_surrogate/PLAN.md`
-- Current and last-iteration locked SHA-256: `014a112ba6013b28da10d87415c53f39aefcfcf3bd56461ec9a032867d9d5360`
-- Applicable phase: progression item 6, reusable frozen two-site three-stage integration
+- Current SHA-256: `6fe376067f122a4b6f049b4d5420c69d2f1fcce40e3e6954202814346473214d`
+- Last-iteration locked SHA-256: `014a112ba6013b28da10d87415c53f39aefcfcf3bd56461ec9a032867d9d5360` (Iter014 historical identity)
+- Campaign progression: item 6 is complete; item 7 full-chain robustness remains next, with no
+  iteration initialized or authorized
 - Alignment: `aligned`; approved deviation: `none`
-- Campaign-plan amendment recommendation: `none`
+- Campaign-plan amendment: user-authorized prospective nonnegative GPP policy for future
+  full-chain training; Iter014 and existing `release_0001` artifacts remain unchanged
 
 ## Live State
 

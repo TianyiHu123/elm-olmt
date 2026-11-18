@@ -27,7 +27,7 @@ The system has **three sequential stages**, each trained on pooled site data:
 
 1. **Spinup surrogate:** Predict `TOTSOMC` and `TOTSOMN` from the 18 PPE parameters and site-level surface/climatological features.
 2. **GPP surrogate:** Predict hourly `GPP` from PPE parameters, site descriptors, engineered forcing/calendar features, and **predicted** spinup `TOTSOMC`/`TOTSOMN`.
-3. **SR surrogate:** Predict hourly `SR` from PPE parameters, site descriptors, engineered forcing/calendar features, **predicted** spinup C/N, and **predicted** hourly GPP.
+3. **SR surrogate:** Predict hourly `SR` from PPE parameters, site descriptors, engineered forcing/calendar features, **predicted** spinup C/N, and **gated predicted** hourly GPP.
 
 With member *m*, site *s*, and time *t*:
 
@@ -36,7 +36,11 @@ With member *m*, site *s*, and time *t*:
 \]
 
 \[
-\widehat G_{s,m,t}=f_{\mathrm{GPP}}(\theta_m,z_s,F_{s,t},\widehat C_{s,m},\widehat N_{s,m})
+\widehat G^{\mathrm{raw}}_{s,m,t}=f_{\mathrm{GPP}}(\theta_m,z_s,F_{s,t},\widehat C_{s,m},\widehat N_{s,m})
+\]
+
+\[
+\widehat G_{s,m,t}=\max(0,\widehat G^{\mathrm{raw}}_{s,m,t})
 \]
 
 \[
@@ -45,7 +49,18 @@ With member *m*, site *s*, and time *t*:
 
 Here, \(\theta\) denotes the common 18-parameter PPE input, \(z\) denotes site properties/climatology, and \(F\) denotes hourly forcing and time features. ELM outputs are **supervised targets**; true ELM C/N or GPP values must not replace predicted upstream inputs in the normal downstream training or end-to-end prediction path.
 
-The initial SR stage uses **same-hour predicted GPP**. Alternative lagged or rolling predicted-GPP features may be evaluated later using development members only.
+The GPP gate is applied **after inverse transformation to physical units**. It is a postprediction
+physical constraint, not a change to the GPP neural-network architecture or training loss. The
+full-chain configuration must identify it as `gpp_output_policy="hard_zero_v1"` in model
+configuration and artifact provenance. Sequential SR training, validation, and deployment
+inference must apply exactly this gate before constructing SR inputs. Raw GPP predictions may be
+retained for diagnostics, but must not be supplied to SR in this gated configuration.
+
+The initial SR stage uses **same-hour gated predicted GPP**. Alternative lagged or rolling
+predicted-GPP features may be evaluated later using development members only. Existing
+`release_0001` artifacts and the Iter014 inference validation retain their historical behavior and
+provenance; this policy applies prospectively to full-chain training and must not retroactively
+modify or reinterpret those releases.
 
 ### Features and data alignment
 
@@ -58,7 +73,7 @@ The initial SR stage uses **same-hour predicted GPP**. Alternative lagged or rol
   feature requires a development-only comparison and a user-approved plan revision.
 - Keep a canonical parameter-name/order schema and explicit site/member/time identifiers. The same member ID must resolve to the **same parameter vector at every site**; account for the existing distinction between 0-based array positions and 1-based ensemble directories.
 - Permit different forcing and target windows among sites when their available forcing data differ. Within one site, all eligible members must use the same validated timestamp axis for a given hourly stage. Record each site's model window, expected and valid row counts, and any explicit gaps; never silently truncate all sites to a common window.
-- Reuse one feature-engineering implementation for training and inference, with consistent feature ordering, units, and timestamps.
+- Reuse one feature-engineering implementation for training and inference, with consistent feature ordering, units, timestamps, and the configured GPP output policy.
 - Support an end-to-end predictor that returns C/N, hourly GPP, and hourly SR from parameters plus site/forcing inputs, without needing ELM target outputs at inference. The hourly interface follows the existing forcing-surrogate procedure and accepts the ordered forcing history required to construct its antecedent/rolling features.
 
 **Generalization target:** New PPE parameter vectors at the **nine modeled sites**, not unseen sites.
@@ -136,8 +151,9 @@ Start with the simpler strategy discussed previously:
 1. Fit spinup on the current training members using ELM C/N targets.
 2. Predict C/N **on those same training members** with the fitted spinup surrogate.
 3. Fit GPP using the predicted C/N features and true ELM GPP targets.
-4. Predict GPP **on those same training members** through the fitted spinup → GPP chain.
-5. Fit SR using predicted C/N, predicted GPP, and true ELM SR targets.
+4. Predict GPP **on those same training members** through the fitted spinup → GPP chain, convert
+   predictions back to physical units, and apply `gpp_output_policy="hard_zero_v1"`.
+5. Fit SR using predicted C/N, gated predicted GPP, and true ELM SR targets.
 
 For unseen validation/test members, run the fully fitted chain without fitting any stage on those members.
 
@@ -148,7 +164,7 @@ This direct method is the **initial baseline**, not a guarantee of optimal gener
 Leave a clear extension point for out-of-fold upstream prediction generation:
 
 - **For GPP:** Train spinup on grouped folds and predict C/N for held-out members to construct GPP training features.
-- **For SR:** Construct out-of-fold predictions of the **entire upstream spinup → GPP chain**, ensuring that the upstream models used for a member's training features did not train on that member. This may require nested cross-fitting.
+- **For SR:** Construct out-of-fold predictions of the **entire upstream spinup → GPP chain**, apply the same physical-unit GPP gate before constructing SR inputs, and ensure that the upstream models used for a member's training features did not train on that member. This may require nested cross-fitting.
 - After generating downstream training features, fit full-training upstream models for validation and deployment.
 
 Do **not** implement cross-fitting in the first version. Instead, separate **upstream feature generation** from the GPP/SR model-fitting interfaces, so a future `out_of_fold` generator can replace the initial `in_sample` generator without redesigning the stages. Expose the selected mode in configuration/artifact metadata; an unsupported mode should fail explicitly rather than silently revert to in-sample predictions.
@@ -181,7 +197,7 @@ For the full-profile spinup C/N targets, report site-specific held-out RMSE, MAE
 
 Where the validated preprocessing provides member-level NEON-depth stocks, use the same held-out development members to calculate the small requested diagnostic between paired surrogate log errors and paired depth-correction log errors, including within-element and available cross-element correlations or covariances. This is part of normal robustness evaluation, not a new training experiment or release gate. Preserve the paired values needed to reproduce it and report whether ignored cross-source covariance appears small relative to the retained surrogate and depth covariance components.
 
-All deployment-chain GPP/SR error estimates must come from the full three-stage prediction path using **predicted** upstream C/N and predicted same-hour GPP as applicable. Comparisons that supply true ELM C/N or GPP to a downstream stage may be retained only as explicitly labeled error-propagation diagnostics; they are not deployment-chain uncertainty estimates and must not supply MCMC surrogate-error scales.
+All deployment-chain GPP/SR error estimates must come from the full three-stage prediction path using **predicted** upstream C/N and gated predicted same-hour GPP as applicable. Apply `gpp_output_policy="hard_zero_v1"` after conversion to physical units and before constructing every validation or deployment SR input. Comparisons that supply raw predicted GPP or true ELM C/N or GPP to a downstream stage may be retained only as explicitly labeled error-propagation diagnostics; they are not deployment-chain uncertainty estimates and must not supply MCMC surrogate-error scales.
 
 Inspect training–validation gaps and end-to-end error propagation (spinup → GPP → SR) without prescribing additional training experiments beyond the existing 20-repetition design.
 
@@ -281,9 +297,10 @@ This folder holds **iteration records, HPC job scripts, diagnostics, and develop
 5. **Two-site GPP development:** Build, validate, and if necessary tune the pooled hourly GPP
    stage using the frozen spinup artifact and predicted C/N handoff. Preserve timestamp-aware
    feature construction and a flexible deterministic inference interface before publishing the
-   full-development predicted GPP handoff needed by SR.
+   full-development gated predicted GPP handoff needed by SR, with the physical-unit gate and
+   `gpp_output_policy="hard_zero_v1"` recorded in configuration and artifact provenance.
 6. **Two-site SR development, configuration selection, and three-stage integration:** Build the
-   pooled hourly SR stage from predicted C/N and same-hour predicted GPP, validate deterministic
+   pooled hourly SR stage from predicted C/N and same-hour gated predicted GPP, validate deterministic
    spinup -> GPP -> SR inference without ELM upstream outputs, and freeze an SR configuration using
    development-only member-grouped evidence. Based on the completed spinup and GPP implementation
    and search evidence, this step may combine structure/smoke validation and configuration
