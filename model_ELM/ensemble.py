@@ -7,6 +7,8 @@ import matplotlib.pyplot as plt
 from OLMTmachine import (
     e3sm_launch_command,
     is_ua_puma9,
+    native_restart_guard_lines,
+    native_wrapper_deletes_slurm_logs,
     olmt_python_command,
     olmt_python_preamble_lines,
     slurm_batch_directives,
@@ -213,6 +215,10 @@ def create_multisite_script(self,sites,scriptdir, walltime='24:00:00'):
     myfile.write('\n')
     myfile.write('cd '+self.caseroot+'/'+self.casename+'\n')
     myfile.write('export LD_LIBRARY_PATH='+ldpath+'\n\n')
+    if getattr(self, 'has_finidat', False) and getattr(self, 'finidat', ''):
+        for line in native_restart_guard_lines(self.finidat):
+            myfile.write(line+'\n')
+        myfile.write('\n')
     myfile.write('e3sm_pids=()\n')
     for s in sites:
       site_rundir = self.runroot+'/'+self.casename.replace(sites[0],s)+'/run'
@@ -253,6 +259,7 @@ def create_multisite_script(self,sites,scriptdir, walltime='24:00:00'):
     if do_spinup_plot or self.postproc_vars:
         for line in olmt_python_preamble_lines(self.machine, self.OLMT_condaenv):
             myfile.write(line+'\n')
+        myfile.write('export MPLBACKEND=${MPLBACKEND:-Agg}\n')
         myfile.write('postproc_status=0\n')
         for s in sites:
             if do_spinup_plot:
@@ -261,12 +268,17 @@ def create_multisite_script(self,sites,scriptdir, walltime='24:00:00'):
             else:
                 #Do requested postprocessing and plotting
                 postproc_inv = 'python manage_postproc.py --case '+self.casename.replace(sites[0],s)
+            myfile.write('set +e\n')
             myfile.write(olmt_python_command(
                 self.machine, self.OLMT_condaenv, postproc_inv)+'\n')
             myfile.write('if [ $? -ne 0 ]; then postproc_status=1; fi\n')
-        myfile.write('if [ $postproc_status -eq 0 ]; then\n')
-        myfile.write('    rm -v '+self.runroot+'/slurm_error_${SLURM_JOB_ID}.*\n')
+            myfile.write('set -e\n')
+        myfile.write('if [ $postproc_status -ne 0 ]; then\n')
+        myfile.write('    echo "Error: postprocessing failed." >&2\n')
+        myfile.write('    exit 1\n')
         myfile.write('fi\n')
+    if native_wrapper_deletes_slurm_logs(self.machine):
+        myfile.write('rm -v '+self.runroot+'/slurm_error_${SLURM_JOB_ID}.*\n')
     
     myfile.close()
     os.system('chmod u+x '+fname)

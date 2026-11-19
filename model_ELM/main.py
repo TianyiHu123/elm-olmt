@@ -12,7 +12,7 @@ from .netcdf4_functions import *
 from datetime import datetime
 import xarray as xr
 from OLMTmachine import create_newcase_command as build_create_newcase_command
-from OLMTmachine import puma_blocks_existing_casedir
+from OLMTmachine import native_sbatch_argv, parse_sbatch_jobid, puma_blocks_existing_casedir
 
 def smart_loadtxt(filename):
     # Try comma first, then whitespace
@@ -1074,12 +1074,8 @@ class ELMcase():
         sys.exit(1)
 
   def submit_case(self,depend=-1,ensemble=False, multisite_script=''):
-    #Create a pickle file of the model object for later use
-    #Keep a copy in the case directory and OLMT directory
-    self.create_pkl(outdir=self.casedir)
-    self.create_pkl(outdir=self.OLMTdir+'/pklfiles')
+    self.dump_pickles()
 
-    mysubmit='sbatch'
     #Submit the case with dependency if requested
     #Return the job id
     if (ensemble):
@@ -1091,16 +1087,16 @@ class ELMcase():
     else:
         scriptfile = './case.submit'
     os.chdir(self.casedir)
-    if (depend > 0 and not self.noslurm):
-      if (ensemble or multisite_script != ''):
-          cmd = [mysubmit,'--dependency=afterok:'+str(depend),scriptfile]
-      else:
-          cmd = [scriptfile,'--prereq',str(depend)]
+    use_native_sbatch = (ensemble or multisite_script != '') and not self.noslurm
+    if use_native_sbatch:
+      depend_id = depend if depend > 0 else None
+      cmd = native_sbatch_argv(self.machine, scriptfile, depend=depend_id)
+    elif (depend > 0 and not self.noslurm):
+      # CIME case.submit path: --prereq maps to afterok, but also runs
+      # check_case before sbatch (fails if the upstream restart is missing).
+      cmd = [scriptfile,'--prereq',str(depend)]
     else:
-      if ((ensemble or multisite_script != '') and not self.noslurm):
-          cmd = [mysubmit,scriptfile]
-      else:
-          cmd = [scriptfile]
+      cmd = [scriptfile]
     if (self.noslurm):
         log_file_path='./case_submit.log'
         with open(log_file_path, "w") as log_file:
@@ -1110,13 +1106,25 @@ class ELMcase():
     else:
         print(cmd)
         result = subprocess.run(cmd, stderr=subprocess.STDOUT, \
-                stdout=subprocess.PIPE, text=True)
+            stdout=subprocess.PIPE, text=True)
         output = result.stdout.strip()
         print(output)
-        jobnum = int(output.split()[-1])
+        if result.returncode != 0:
+            raise RuntimeError('sbatch/submit failed ('+str(result.returncode)+'): '+output)
+        jobnum = parse_sbatch_jobid(output)
         print('\nSubmitted '+str(jobnum))
     os.chdir(self.OLMTdir)
     return jobnum
+
+  def dump_pickles(self):
+    """Write case pickles for manage_postproc.py even when submit is skipped."""
+    if not getattr(self, 'casename', ''):
+      raise ValueError('casename required before dump_pickles')
+    if getattr(self, 'casedir', ''):
+      os.makedirs(self.casedir, exist_ok=True)
+      self.create_pkl(outdir=self.casedir)
+    os.makedirs(os.path.join(self.OLMTdir, 'pklfiles'), exist_ok=True)
+    self.create_pkl(outdir=self.OLMTdir+'/pklfiles')
 
   def create_pkl(self, outdir='./pklfiles'):
     os.chdir(self.OLMTdir)

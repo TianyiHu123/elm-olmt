@@ -626,6 +626,8 @@ def main():
                 multisite_scripts[c] = cases[c].create_multisite_script(sites, scriptdir, walltime=walltime[c])
         if args.no_submit:
             print('Skipping submit (--no-submit) for '+casename)
+            cases[c].dump_pickles()
+            print('Wrote case pickles for '+casename)
         else:
             print('Submitting case')
             jobnum_depend=-1

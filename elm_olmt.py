@@ -560,6 +560,8 @@ def main():
                 multisite_scripts[c] = cases[c].create_multisite_script(sites, scriptdir)
         if args.no_submit:
             print('Skipping submit (--no-submit) for '+cases[c].casename)
+            cases[c].dump_pickles()
+            print('Wrote case pickles for '+cases[c].casename)
         else:
             print('Submitting case')
             jobnum_depend=-1

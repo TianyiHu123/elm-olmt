@@ -265,12 +265,14 @@ class SlurmGenerationTests(unittest.TestCase):
         launch = om.e3sm_launch_command(
             'ua-puma9', 1, '/tmp/bld', '/tmp/run/e3sm_log.txt')
         self.assertTrue(launch.startswith('mpirun -np 1 '))
+        self.assertIn('2>&1', launch)
         self.assertNotIn('srun', launch)
 
     def test_perlmutter_launch_remains_srun(self):
         launch = om.e3sm_launch_command(
             'pm-cpu', 1, '/tmp/bld', '/tmp/run/e3sm_log.txt')
         self.assertTrue(launch.startswith('srun -n 1 -c 1 '))
+        self.assertIn('2>&1', launch)
 
     def test_puma_python_uses_micromamba(self):
         preamble = om.olmt_python_preamble_lines('ua-puma9', 'OLMT_puma')

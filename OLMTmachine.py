@@ -123,13 +123,70 @@ def slurm_batch_directives(machine, walltime, queue, project, jobname, nnodes,
 
 
 def e3sm_launch_command(machine, np, exeroot, log_path, noslurm=False):
-    """Background launch line written into the OLMT wrapper script."""
+    """Background launch line written into the OLMT wrapper script.
+
+    Stdout and stderr both go to the model log so PIO warnings do not fill
+    the Slurm .err file (Puma native runs were ~7G of PIO warnings).
+    """
     exe = exeroot + '/e3sm.exe'
+    redir = ' > ' + log_path + ' 2>&1 &'
     if noslurm:
-        return 'mpiexec -n ' + str(np) + ' ' + exe + ' > ' + log_path + ' &'
+        return 'mpiexec -n ' + str(np) + ' ' + exe + redir
     if is_ua_puma9(machine):
-        return 'mpirun -np ' + str(np) + ' ' + exe + ' > ' + log_path + ' &'
-    return 'srun -n ' + str(np) + ' -c 1 ' + exe + ' > ' + log_path + ' &'
+        return 'mpirun -np ' + str(np) + ' ' + exe + redir
+    return 'srun -n ' + str(np) + ' -c 1 ' + exe + redir
+
+
+def parse_sbatch_jobid(output):
+    """Parse a job id from sbatch stdout (parsable or 'Submitted batch job N')."""
+    lines = [ln.strip() for ln in str(output or '').splitlines() if ln.strip()]
+    if not lines:
+        raise ValueError('empty sbatch output')
+    token = lines[-1].split()[-1].split(';')[0]
+    try:
+        return int(token)
+    except ValueError as exc:
+        raise ValueError('cannot parse sbatch job id from: ' + repr(output)) from exc
+
+
+def native_sbatch_argv(machine, script, depend=None):
+    """Argv for submitting an OLMT-native wrapper (not CIME case.submit).
+
+    Puma adds --parsable and --export=ALL. Perlmutter keeps plain sbatch plus
+    optional --dependency=afterok:<id>.
+    """
+    cmd = ['sbatch']
+    if is_ua_puma9(machine):
+        cmd.extend(['--parsable', '--export=ALL'])
+    if depend is not None and int(depend) > 0:
+        cmd.append('--dependency=afterok:' + str(int(depend)))
+    cmd.append(str(script))
+    return cmd
+
+
+def native_wrapper_deletes_slurm_logs(machine):
+    """Remove slurm_error_* after the wrapper succeeds.
+
+    Failures keep the logs. Puma follows Perlmutter here: a successful model
+    job (and postproc, if the wrapper has it) should not leave Slurm stdout/err
+    behind. Combined with e3sm_launch_command redirecting PIO warnings into
+    e3sm_log.txt, the files being deleted are small.
+    """
+    return True
+
+
+def native_restart_guard_lines(finidat):
+    """Runtime check so afterok jobs refuse to start without the genuine restart."""
+    if not finidat:
+        return []
+    path = str(finidat)
+    return [
+        'EXPECTED_FINIDAT=' + path,
+        'if [ ! -f "$EXPECTED_FINIDAT" ]; then',
+        '  echo "ERROR: required restart missing: $EXPECTED_FINIDAT" >&2',
+        '  exit 1',
+        'fi',
+    ]
 
 
 def olmt_python_preamble_lines(machine, env_name):
