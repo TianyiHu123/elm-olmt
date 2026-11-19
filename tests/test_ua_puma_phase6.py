@@ -69,6 +69,11 @@ class MachineDetectionTests(unittest.TestCase):
         self.assertFalse(om.machine_name_selects_ua_puma9('login'))
         self.assertFalse(om.is_ua_puma9('pm-cpu'))
 
+    def test_puma_login_hostname_containing_login_selects_puma(self):
+        self.assertTrue(om.machine_name_selects_ua_puma9(
+            'login01.puma.hpc.arizona.edu'))
+        self.assertIn('login', 'login01.puma.hpc.arizona.edu')
+
     def test_get_machine_info_puma_and_perlmutter(self):
         try:
             from OLMTutils import get_machine_info
@@ -98,6 +103,27 @@ class MachineDetectionTests(unittest.TestCase):
         self.assertEqual(rootdir, '/tmp/pm_scratch')
         self.assertEqual(inputdata, '/global/cfs/cdirs/e3sm/inputdata')
 
+        os.environ['SCRATCH'] = '/tmp/pm_scratch'
+        try:
+            machine, _, inputdata, queue, project, _ = get_machine_info(
+                machine_name='login01.puma.hpc.arizona.edu')
+            self.assertEqual(machine, 'ua-puma9')
+            self.assertEqual(queue, 'standard')
+            self.assertEqual(project, 'chopinsong')
+            self.assertEqual(
+                inputdata, '/xdisk/chopinsong/tianyihu/e3sm_inputdata')
+
+            machine, rootdir, inputdata, queue, project, _ = get_machine_info(
+                machine_name='login01.nersc.gov')
+            self.assertEqual(machine, 'pm-cpu')
+            self.assertEqual(rootdir, '/tmp/pm_scratch')
+            self.assertEqual(inputdata, '/global/cfs/cdirs/e3sm/inputdata')
+        finally:
+            if 'SCRATCH' in env:
+                os.environ['SCRATCH'] = env['SCRATCH']
+            else:
+                os.environ.pop('SCRATCH', None)
+
     def test_hostname_autodetect_puma(self):
         try:
             from OLMTutils import get_machine_info
@@ -115,6 +141,33 @@ class MachineDetectionTests(unittest.TestCase):
         self.assertEqual(machine, 'ua-puma9')
         self.assertEqual(queue, 'standard')
         self.assertEqual(project, 'chopinsong')
+
+    def test_hostname_autodetect_puma_login_containing_login(self):
+        try:
+            from OLMTutils import get_machine_info
+        except Exception as exc:
+            self.skipTest('OLMTutils import unavailable: '+str(exc))
+        old_host = os.environ.get('HOSTNAME')
+        old_scratch = os.environ.get('SCRATCH')
+        os.environ['HOSTNAME'] = 'login01.puma.hpc.arizona.edu'
+        os.environ['SCRATCH'] = '/tmp/pm_scratch'
+        try:
+            machine, _, inputdata, queue, project, _ = get_machine_info(
+                machine_name='')
+        finally:
+            if old_host is None:
+                os.environ.pop('HOSTNAME', None)
+            else:
+                os.environ['HOSTNAME'] = old_host
+            if old_scratch is None:
+                os.environ.pop('SCRATCH', None)
+            else:
+                os.environ['SCRATCH'] = old_scratch
+        self.assertEqual(machine, 'ua-puma9')
+        self.assertEqual(queue, 'standard')
+        self.assertEqual(project, 'chopinsong')
+        self.assertEqual(
+            inputdata, '/xdisk/chopinsong/tianyihu/e3sm_inputdata')
 
 
 class ELMcaseCompilerMpilibTests(unittest.TestCase):
@@ -272,7 +325,11 @@ class AbbyCfgTests(unittest.TestCase):
         self.assertEqual(cfg['simulation'].get('sites'), 'ABBY')
         self.assertTrue(machine.get('caseroot').endswith(caseroot_tail))
         self.assertTrue(machine.get('runroot').endswith(runroot_tail))
-        self.assertIn('1x1pt_ABBY/CLM1PT_data', cfg['simulation'].get('metdir'))
+        self.assertEqual(
+            cfg['simulation'].get('metdir'),
+            '/xdisk/chopinsong/tianyihu/E3SM_out/PTCLM/NEON/CTSM_NEON/ABBY')
+        self.assertNotIn('CLM1PT_data', cfg['simulation'].get('metdir'))
+        self.assertNotIn('1x1pt_ABBY', cfg['simulation'].get('metdir'))
         for section in cfg.values():
             for value in section.values():
                 for snippet in FORBIDDEN_PATH_SNIPPETS:

@@ -28,15 +28,9 @@ def get_machine_info(machine_name=''):
         hostname = 'chrysalis.lcrc.anl.gov'
         queue = 'compute'
         project = 'e3sm'
-    elif ('pm-cpu' in machine_name or 'login' in machine_name):
-        rootdir = os.environ['SCRATCH']
-        inputdata = '/global/cfs/cdirs/e3sm/inputdata'
-        machine = 'pm-cpu'
-        hostname = 'saul-p1.nersc.gov'
-        queue = 'regular'
-        project = 'e3sm'
     elif machine_name_selects_ua_puma9(machine_name):
-        # Explicit UA Puma branch. Do not reuse the Perlmutter 'login' match.
+        # Puma before the Perlmutter 'login' heuristic so a name such as
+        # login01.puma.hpc.arizona.edu cannot be classified as pm-cpu.
         defaults = puma_machine_defaults()
         rootdir = defaults['rootdir']
         inputdata = defaults['inputdata']
@@ -44,6 +38,13 @@ def get_machine_info(machine_name=''):
         hostname = defaults['hostname']
         queue = defaults['queue']
         project = defaults['project']
+    elif ('pm-cpu' in machine_name or 'login' in machine_name):
+        rootdir = os.environ['SCRATCH']
+        inputdata = '/global/cfs/cdirs/e3sm/inputdata'
+        machine = 'pm-cpu'
+        hostname = 'saul-p1.nersc.gov'
+        queue = 'regular'
+        project = 'e3sm'
     elif ('ubuntu' in machine_name or 'linux-generic' in machine_name):
         rootdir = os.environ['HOME']+'/models'
         inputdata = rootdir + '/inputdata'
