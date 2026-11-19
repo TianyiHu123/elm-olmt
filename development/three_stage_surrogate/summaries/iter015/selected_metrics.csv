@@ -1,0 +1,17 @@
+stage,partition,site,target,scale,resolution,metric,mean,median
+gpp,validation,pooled,GPP,physical,hourly,r2,0.9296853484541119,0.9314360833736632
+gpp,validation,pooled,GPP,physical,hourly,rmse,3.6680570001712325,3.639828714875959
+gpp,validation,pooled,GPP,physical,hourly,bias,0.15354586221592878,0.15240344383908844
+gpp,validation,pooled,GPP,physical,daily,r2,0.8970778636236785,0.9004797609353494
+gpp,validation,pooled,GPP,physical,daily,rmse,2.0633017590018956,2.0548039823086737
+gpp,validation,pooled,GPP,physical,daily,bias,0.1535458619962386,0.15240344310719744
+sr,validation,pooled,SR,physical,hourly,r2,0.8028741926044354,0.8088885093624731
+sr,validation,pooled,SR,physical,hourly,rmse,0.9199526675922254,0.9040360267592211
+sr,validation,pooled,SR,physical,hourly,bias,0.03310300277227538,0.06928514080596077
+sr,validation,pooled,SR,physical,daily,r2,0.808663779043169,0.8152066493464192
+sr,validation,pooled,SR,physical,daily,rmse,0.8879787486671669,0.870766427012609
+sr,validation,pooled,SR,physical,daily,bias,0.033103002801603866,0.0692851409919116
+spinup,validation,ABBY,TOTSOMC,log,member,rmse,0.3686893223913953,0.36502424850451165
+spinup,validation,ABBY,TOTSOMN,log,member,rmse,0.3796514932026463,0.36884398266077045
+spinup,validation,JERC,TOTSOMC,log,member,rmse,0.45846777183507587,0.3676625669368166
+spinup,validation,JERC,TOTSOMN,log,member,rmse,0.4633370004895374,0.3712077162805374

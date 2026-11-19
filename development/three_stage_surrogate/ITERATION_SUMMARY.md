@@ -354,3 +354,28 @@
   unbacked `/xdisk` storage.
 - Campaign-plan amendment recommendation: `none`.
 - Next direction: explicit terminal declaration; no next iteration is proposed or authorized.
+
+## iter015 - ABBY/JERC full-chain robustness with hard-zero GPP
+
+- Closed: `2026-11-19T03:42:13-07:00`.
+- Status/work type: `completed` / `experiment`.
+- Objective/result: train and evaluate 20 synchronized fold-specific ABBY/JERC spinup -> GPP ->
+  SR chains with physical-unit `hard_zero_v1`; `pass`.
+- Decision: `full_chain_robustness_characterized`; publish the validated development-only
+  robustness and uncertainty handoff. No all-development refit or release is authorized.
+- Performance: pooled held-out mean GPP hourly/daily R2 `0.929685/0.897078` and RMSE
+  `3.668057/2.063302`; SR hourly/daily R2 `0.802874/0.808664` and RMSE
+  `0.919953/0.887979`. No performance threshold was applied.
+- Gate: mean pooled hourly/daily gated-minus-raw R2 `+0.004582/+0.011979` and
+  raw-minus-gated RMSE `+0.115088/+0.111132`; some daily split comparisons are slightly negative.
+- Uncertainty: equal-member pooled C/N--GPP, C/N--SR, and GPP--SR error correlations are
+  `0.468836/0.530589/0.769234`; exactly three approved figures and the complete covariance,
+  propagation, gate, gap, depth, and joint-density products passed final validation.
+- Accounting: jobs `24700507`, `24700675`, all 19 leaves under `24711922`, `24717714`, and
+  `24717815` completed `0:0` without retry or cancellation. Twenty-three non-failing spinup
+  max-iteration warnings were retained; GPP/SR had none.
+- Boundary/evidence: ABBY/JERC development-only repeated held-out predictions; no fixed-test,
+  all-development fit, tuning, cross-fitting, release edit, MCMC change, plan amendment, or push.
+  Compact evidence is in `development/three_stage_surrogate/summaries/iter015/`.
+- Campaign-plan amendment recommendation: `none`.
+- Next state: Iter015 is terminal. No next iteration is proposed or authorized.
