@@ -379,3 +379,29 @@
   Compact evidence is in `development/three_stage_surrogate/summaries/iter015/`.
 - Campaign-plan amendment recommendation: `none`.
 - Next state: Iter015 is terminal. No next iteration is proposed or authorized.
+
+## iter016 - frozen all-development coupled release and fixed test
+
+- Closed: `2026-11-20T15:31:57-07:00`.
+- Status/work type: `completed` / `release`.
+- Objective/result: refit the frozen ABBY/JERC chain on all 819 development members, evaluate once
+  on the 205 fixed-test members, and publish the versioned coupled bundle; `pass`.
+- Decision: `coupled_release_published`; stable catalog-last `three_stage_abby_jerc/release_0001`
+  contains 26 payloads, manifest `4bdc91e2...543a`, and catalog `89a636b9...85da`.
+- Fixed test: pooled physical C/N R2 `0.841217/0.846365`, log C/N R2 `0.857511/0.857951`,
+  GPP hourly/daily R2 `0.925137/0.887714`, and SR hourly/daily R2 `0.831429/0.837068`.
+  No performance threshold or post-hoc tuning was applied.
+- Gate/limitation: `hard_zero_v1` improves pooled hourly GPP R2 `0.923012 -> 0.925137`.
+  Separately, 128,246 SR values (`0.5101%`) are negative, minimum `-2.2393017 gC/m^2/day`;
+  this is disclosed without adding an unapproved SR gate.
+- Integrity: fitting/scaling used only 819 development members; fixed-test inference was target-free
+  and evaluation separate; direct/chunk replay, exact physical GPP gating, byte-identical staging/
+  stable publication, historical-release immutability, and Iter015 uncertainty linkage passed.
+- Accounting: `24725402`, `24729103`, `24729214`, `24729323`, and `24740188` completed `0:0`;
+  refit `24725445` failed after substantive outputs and was accepted without refit by the approved
+  validation-only recovery. Every job is terminal and independently reviewed.
+- Evidence: `development/three_stage_surrogate/summaries/iter016/`.
+- Limitations: two sites; direct in-sample upstream fitting; one campaign fixed test; development-
+  only empirical uncertainty; temporary unbacked `/xdisk` storage.
+- Campaign-plan amendment recommendation: `none`.
+- Next direction: Iter016 is terminal. No next iteration is proposed or authorized.

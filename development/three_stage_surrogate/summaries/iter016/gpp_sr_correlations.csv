@@ -1,0 +1,7 @@
+scope,series,resolution,gpp_units,sr_units,count,pearson_r
+ABBY,ELM,hourly,gC/m^2/day,gC/m^2/day,12570600,0.307682892723894
+ABBY,surrogate,hourly,gC/m^2/day,gC/m^2/day,12570600,0.2756088920047448
+JERC,ELM,hourly,gC/m^2/day,gC/m^2/day,12570600,0.4358638182032761
+JERC,surrogate,hourly,gC/m^2/day,gC/m^2/day,12570600,0.43024765766448486
+pooled,ELM,hourly,gC/m^2/day,gC/m^2/day,25141200,0.3756523865779588
+pooled,surrogate,hourly,gC/m^2/day,gC/m^2/day,25141200,0.3576170075817064

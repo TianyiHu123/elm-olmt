@@ -1,0 +1,28 @@
+{
+  "schema": "three-stage-iter016-fixed-test-config-v1",
+  "base_config": "/xdisk/chopinsong/tianyihu/elm-olmt/development/three_stage_surrogate/slurm/iter016/iter016_config.json",
+  "base_config_sha256": "fd73f99520eb8a6fc1a095887f4f08df4269b4129e2ab5f30150ffa9bcda1282",
+  "artifact_root": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/three_stage_surrogate/iter016_abby_jerc_frozen_release_fixed_test/runs/refit/attempt_1/artifact_package",
+  "artifact_manifest_sha256": "eaed33d620711fd491042e78e6988146b16585c29b9c4904170afa1855ce1c48",
+  "recovery_report": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/three_stage_surrogate/iter016_abby_jerc_frozen_release_fixed_test/runs/refit/attempt_2/refit_recovery_report.json",
+  "recovery_report_sha256": "9469e440a564352b0541d2610458d870ad787a140c7a61d6192fe0708545e90c",
+  "member_count": 205,
+  "hours": 61320,
+  "member_chunk": 2,
+  "density_bins": 200,
+  "gpp_output_policy": "hard_zero_v1",
+  "bias_convention": "prediction_minus_ELM",
+  "daily_aggregation": "paired_complete_24_hour_arithmetic_mean",
+  "units": {
+    "TOTSOMC": "gC/m^2",
+    "TOTSOMN": "gN/m^2",
+    "GPP": "gC/m^2/day",
+    "SR": "gC/m^2/day"
+  },
+  "training_or_fitting_allowed": false,
+  "configuration_selection_allowed": false,
+  "fixed_test_inference_allowed": true,
+  "fixed_test_target_access_inside_inference": false,
+  "fixed_test_target_access_in_separate_evaluation": true,
+  "release_publication_allowed": false
+}

@@ -1,0 +1,13 @@
+{
+  "current_manifest": "release_0001/release_manifest.json",
+  "current_manifest_sha256": "4bdc91e2eed6ad8b8228bbc814767fe739a649599c197fade4bf9256ceab543a",
+  "current_release": "release_0001",
+  "evaluation_partition": "fixed_test_205",
+  "gpp_output_policy": "hard_zero_v1",
+  "performance_threshold_applied": false,
+  "release_basis": "iter016_frozen_all_development_refit_and_fixed_test",
+  "schema": "three-stage-coupled-product-catalog-v1",
+  "scientific_limitation": "128246 fixed-test SR predictions are negative; no post-hoc SR gate applied",
+  "storage_note": "temporary unbacked /xdisk operational publication",
+  "training_partition": "development_819"
+}

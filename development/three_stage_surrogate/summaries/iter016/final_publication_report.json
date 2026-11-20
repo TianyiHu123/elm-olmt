@@ -1,0 +1,19 @@
+{
+  "catalog_sha256": "89a636b98b3866d6721e663c5b7ee3a9a7698248c8355dde0d9d4fe1fd4285da",
+  "catalog_written_last": true,
+  "direct_chunk_consistency": true,
+  "empty_staging_placeholder_removed": true,
+  "file_count": 26,
+  "gpp_gate_equal_binary": true,
+  "historical_releases_modified": false,
+  "performance_threshold_applied": false,
+  "release": "release_0001",
+  "restart_safe_validated_tree_reuse": true,
+  "result": "pass",
+  "schema": "three-stage-iter016-final-publication-report-v1",
+  "scientific_limitation_recorded": true,
+  "staging_stable_byte_identical": true,
+  "target_free_replay": true,
+  "uncertainty_refit": false,
+  "validated_release_manifest_sha256": "4bdc91e2eed6ad8b8228bbc814767fe739a649599c197fade4bf9256ceab543a"
+}
