@@ -1,0 +1,49 @@
+{
+  "candidate_manifest_sha256": "b1454998c0bb260f363b6cd480e73f1ec13dd4e8a1c53d632adf121eede40fff",
+  "finalist_candidate_ids": [
+    18,
+    21,
+    19,
+    2,
+    8,
+    13
+  ],
+  "finalist_split_ids": [
+    0,
+    2,
+    4,
+    5,
+    6,
+    8,
+    9,
+    11,
+    15,
+    17,
+    18,
+    19
+  ],
+  "fixed_test_access": false,
+  "ranking_rule": [
+    "overall_gate_pass",
+    "largest_worst_normalized_margin",
+    "largest_mean_normalized_margin",
+    "largest_median_paired_composite_improvement",
+    "lower_composite_variability",
+    "lower_parameter_count",
+    "lower_candidate_id"
+  ],
+  "result": "pass",
+  "schema": "three-stage-gpp-iter007-finalists-v1",
+  "screen_metric_distribution_sha256": "8b89e79dcba9a3bed7c589d8ff618dea5248d090a794e1fcf6293d3f1a118437",
+  "screen_ranking_sha256": "8fbbd5bfce7231ba0d85f63ed68b2962cd067f7f8e1ab6bb34ab3c9a46825ea8",
+  "screen_split_ids": [
+    1,
+    3,
+    7,
+    10,
+    12,
+    13,
+    14,
+    16
+  ]
+}

@@ -1,0 +1,196 @@
+{
+  "architecture_change_authorized": false,
+  "comparisons": {
+    "A_vs_B": {
+      "mean": -0.06458336932969466,
+      "median": -0.052537842650642985,
+      "minimum_relative_improvement": 0.02,
+      "pass": false,
+      "q10": -0.12415079623053467,
+      "q90": -0.013039425375333945,
+      "relative_mean_improvement": -0.08374543457628458,
+      "sd": 0.045089247971881616,
+      "site_deterioration_flag": true,
+      "win_count": 1
+    },
+    "B_vs_A": {
+      "mean": 0.06458336932969466,
+      "median": 0.052537842650642985,
+      "minimum_relative_improvement": 0.02,
+      "pass": true,
+      "q10": 0.013039425375333947,
+      "q90": 0.12415079623053467,
+      "relative_mean_improvement": 0.07727408292061391,
+      "sd": 0.045089247971881616,
+      "site_deterioration_flag": false,
+      "win_count": 19
+    },
+    "C_vs_A": {
+      "mean": 0.08451647710033985,
+      "median": 0.07073595125562998,
+      "minimum_relative_improvement": 0.02,
+      "pass": true,
+      "q10": 0.02602553274077355,
+      "q90": 0.16496787096609544,
+      "relative_mean_improvement": 0.10112407152791551,
+      "sd": 0.0659566739506393,
+      "site_deterioration_flag": false,
+      "win_count": 19
+    },
+    "C_vs_B": {
+      "mean": 0.019933107770645192,
+      "median": 0.017653787674979105,
+      "minimum_relative_improvement": 0.05,
+      "pass": false,
+      "q10": -0.05611198530713969,
+      "q90": 0.10447288432543654,
+      "relative_mean_improvement": 0.025847316267859525,
+      "sd": 0.061149145040378945,
+      "site_deterioration_flag": false,
+      "win_count": 12
+    }
+  },
+  "decision": "deployable_arm_B_selected",
+  "fixed_test_access": false,
+  "fixed_upstream_sr_stage_validation": true,
+  "gap_summary_sha256": "6f587311982ce126d5ddab72e1a72b15ed358d09b283cade514351d5247eac32",
+  "metric_distribution_sha256": "d2ccbca35327239266b0cd31b1f8c451746259e6ca72098375e8307030261c73",
+  "metric_rows": 720,
+  "metric_summary_sha256": "c687726c84675a0f782e6295d72c473efeec92c9f231e543695368631a251d9d",
+  "oracle_is_mathematical_upper_bound": false,
+  "overall_comparison_sha256": "2c9a04eda3b48d7e1aaddb938a2bb657eee7a1d3a19f5f4b03f59acd0adf0c5a",
+  "paired_comparisons_sha256": "9cecb397d44b60f2d14f513f09e72ef0a9a8f2985c9ab3f3d8830135890e6c06",
+  "performance_gate_applied": false,
+  "predicted_gpp_consistent_improvement": true,
+  "production_fit_count": 60,
+  "r2_plot_sha256": "9f9b7c2f26e66b2844ab907ad3ee8ed2b5ae1af8cb58f88f59fad155278bea87",
+  "ranking": [
+    {
+      "arm_id": "C",
+      "deployable": false,
+      "mean_pooled_daily_validation_rmse": 0.7512536399781531,
+      "median_pooled_daily_validation_rmse": 0.7633531617303946,
+      "sd_pooled_daily_validation_rmse": 0.07562275759410417
+    },
+    {
+      "arm_id": "B",
+      "deployable": true,
+      "mean_pooled_daily_validation_rmse": 0.7711867477487983,
+      "median_pooled_daily_validation_rmse": 0.7942567658993189,
+      "sd_pooled_daily_validation_rmse": 0.08910894824670759
+    },
+    {
+      "arm_id": "A",
+      "deployable": true,
+      "mean_pooled_daily_validation_rmse": 0.835770117078493,
+      "median_pooled_daily_validation_rmse": 0.8400145832920699,
+      "sd_pooled_daily_validation_rmse": 0.09747996715047232
+    }
+  ],
+  "recommendation": "proceed_to_fresh_sr_robustness_testing",
+  "release_created": false,
+  "result": "pass",
+  "retained_deployable_arm": "B",
+  "rmse_plot_sha256": "df7c725a2e9bd8642f61fad2f1f01e38c3c323204b3095980880e74d045a469a",
+  "schema": "three-stage-sr-iter012-final-selection-v1",
+  "selected_deployable_arm": "B",
+  "site_deterioration": {
+    "A_vs_B": {
+      "candidate": "A",
+      "comparator": "B",
+      "details": [
+        {
+          "candidate_mean_rmse": 0.6077119563909944,
+          "comparator_mean_rmse": 0.5628741320864108,
+          "flag": true,
+          "loss_count": 15,
+          "relative_worsening": 0.07965870475941544,
+          "site": "ABBY"
+        },
+        {
+          "candidate_mean_rmse": 1.01060219038252,
+          "comparator_mean_rmse": 0.9312823403367124,
+          "flag": true,
+          "loss_count": 18,
+          "relative_worsening": 0.08517272003367833,
+          "site": "JERC"
+        }
+      ],
+      "flag": true
+    },
+    "B_vs_A": {
+      "candidate": "B",
+      "comparator": "A",
+      "details": [
+        {
+          "candidate_mean_rmse": 0.5628741320864108,
+          "comparator_mean_rmse": 0.6077119563909944,
+          "flag": false,
+          "loss_count": 5,
+          "relative_worsening": -0.07378137591838904,
+          "site": "ABBY"
+        },
+        {
+          "candidate_mean_rmse": 0.9312823403367124,
+          "comparator_mean_rmse": 1.01060219038252,
+          "flag": false,
+          "loss_count": 2,
+          "relative_worsening": -0.07848770841846725,
+          "site": "JERC"
+        }
+      ],
+      "flag": false
+    },
+    "C_vs_A": {
+      "candidate": "C",
+      "comparator": "A",
+      "details": [
+        {
+          "candidate_mean_rmse": 0.5582554961393356,
+          "comparator_mean_rmse": 0.6077119563909944,
+          "flag": false,
+          "loss_count": 4,
+          "relative_worsening": -0.08138141718547852,
+          "site": "ABBY"
+        },
+        {
+          "candidate_mean_rmse": 0.9019051816722341,
+          "comparator_mean_rmse": 1.01060219038252,
+          "flag": false,
+          "loss_count": 2,
+          "relative_worsening": -0.10755667239266847,
+          "site": "JERC"
+        }
+      ],
+      "flag": false
+    },
+    "C_vs_B": {
+      "candidate": "C",
+      "comparator": "B",
+      "details": [
+        {
+          "candidate_mean_rmse": 0.5582554961393356,
+          "comparator_mean_rmse": 0.5628741320864108,
+          "flag": false,
+          "loss_count": 9,
+          "relative_worsening": -0.008205450710543924,
+          "site": "ABBY"
+        },
+        {
+          "candidate_mean_rmse": 0.9019051816722341,
+          "comparator_mean_rmse": 0.9312823403367124,
+          "flag": false,
+          "loss_count": 8,
+          "relative_worsening": -0.03154484670444495,
+          "site": "JERC"
+        }
+      ],
+      "flag": false
+    }
+  },
+  "site_validation_sha256": "1ed2dbea861b223629b9ea1d1f1faeeddb7d7646ba577c749d4706f50e029d2f",
+  "summary_sha256": "8e82d77879f6775d005e6d0568ac6100506213bd6a233bc391f6f533ab98751e",
+  "true_gpp_substantially_more_informative": false,
+  "true_gpp_useful_vs_no_gpp": true,
+  "validation_metric_rows": 360
+}

@@ -1,0 +1,3 @@
+role,candidate_id,hidden_layers,activation,alpha,median_primary_log_r2,mean_primary_log_r2,std_primary_log_r2,iqr_primary_log_r2,worst_primary_log_r2,median_pooled_log_rmse,convergence_warning_count,paired_primary_delta_mean
+winner,74,"64;32",tanh,10,0.8910194943,0.8539004008,0.0735766460,0.0287502893,0.6810503633,0.3653135514,27,0.0765497079
+baseline,15,32,tanh,40,0.8015374067,0.7773506929,0.0701899756,0.0606771992,0.6250811531,0.4822586150,0,0.0

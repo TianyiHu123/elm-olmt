@@ -1,0 +1,6 @@
+job_id,work_unit,state,exit_code,elapsed,alloc_cpus,requested_memory,batch_max_rss,retry
+24700507,unit1,COMPLETED,0:0,00:00:37,8,40G,1144448K,no
+24700675,pilot_split_0,COMPLETED,0:0,04:21:52,16,80G,38462568K,no
+24711922,production_splits_1_19,COMPLETED,0:0,03:51:31-06:56:13,16_per_leaf,80G_per_leaf,38478540K_peak,no
+24717714,aggregate,COMPLETED,0:0,00:02:22,12,60G,28039984K,no
+24717815,final_validation,COMPLETED,0:0,00:02:40,8,40G,19535548K,no

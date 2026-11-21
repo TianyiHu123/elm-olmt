@@ -1,0 +1,27 @@
+Command: bash development/three_stage_surrogate/slurm/iter014/validate_closeout_iter014.sh --active-job-count 0
+Validator SHA-256: 0ebb78aa9e2529714931718777276e66588b9ce291fcdd43536262fbcdac0eb7
+Result: pass
+Output:
+diagnostics_manifest.json: OK
+exact_metrics.csv: OK
+final_validation.json: OK
+gpp_sr_conditional_bins.csv: OK
+gpp_sr_correlations.csv: OK
+gpp_sr_night_near_zero.csv: OK
+integration_failure_report.json: OK
+integration_report.json: OK
+job_accounting.csv: OK
+preflight_report.json: OK
+summary.md: OK
+diagnostics_manifest.json: OK
+exact_metrics.csv: OK
+gpp_sr_conditional_bins.csv: OK
+gpp_sr_correlations.csv: OK
+gpp_sr_joint_conditional.png: OK
+gpp_sr_night_near_zero.csv: OK
+joint_gpp_sr_density_grids.npz: OK
+joint_gpp_sr_hourly.png: OK
+parity_flux_density_grids.npz: OK
+parity_flux_hourly.png: OK
+spinup_cn_parity.png: OK
+ITER014_FOUR_RECORD_VALIDATE_PASS

@@ -1,0 +1,26 @@
+{
+  "arm_count": 3,
+  "contract_validation": "pass",
+  "feature_schemas_sha256": "69222e112397aef90030e0c0865c7674270d54e5319a835dda102597c7426d3a",
+  "fixed_test_access": false,
+  "fresh_splits": 20,
+  "no_production_training": true,
+  "preflight": "pass",
+  "prior_exact_matches": 0,
+  "production_fit_count": 60,
+  "raw_full_hashes": true,
+  "release_created": false,
+  "resolved_config_sha256": "13a20f4745b7478a2ef8da15f3853b792416b7dd8c3e49d76ff380f8b661d188",
+  "result": "pass",
+  "schema": "three-stage-sr-iter012-unit1-v1",
+  "smoke": "pass",
+  "split_design_sha256": "c784c736df51aeb92f1dc290226bf879ad2b3d831c5988fe018667cb1d128d90",
+  "split_manifest_sha256": "e1ef748c530125bd0e867977ff5f7b6fe91c10d7655b9f151fe522d903c8174e",
+  "split_seed": 20261112,
+  "true_gpp_full_hash": true,
+  "true_gpp_sha256": "89297f4fa220d34e1980173d1ae4257690346ebe63510e9aef18266055a55219",
+  "validation_appearance_values": [
+    4,
+    5
+  ]
+}

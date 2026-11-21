@@ -1,0 +1,95 @@
+{
+  "artifact_manifest_sha256": "eaed33d620711fd491042e78e6988146b16585c29b9c4904170afa1855ce1c48",
+  "bias_convention": "prediction_minus_ELM",
+  "configuration_selection": false,
+  "contains_exact_fixed_test_member_order": true,
+  "daily_aggregation": "paired_complete_24_hour_arithmetic_mean",
+  "deterministic_reload_and_chunk_consistency": true,
+  "figures": [
+    "cn_parity.png",
+    "flux_parity.png",
+    "gpp_sr_joint_density.png"
+  ],
+  "files": [
+    {
+      "path": "cn_metrics.csv",
+      "sha256": "c5a04617a60b806f9b9472e12f62d9cee04286cc0e113bfcdabdc0f30d07e78c",
+      "size_bytes": 4514
+    },
+    {
+      "path": "cn_parity.png",
+      "sha256": "0ab5ab0b4b86cc164a16f8f53ccaa0ca43d5fa440e7d4ada8d15f9ce4fea1e78",
+      "size_bytes": 120079
+    },
+    {
+      "path": "fixed_test_predictions.nc",
+      "sha256": "9e7463b736cfa896acacf91dd354ff0a30ae71479e98a3db793f711a539c25d6",
+      "size_bytes": 223302170
+    },
+    {
+      "path": "flux_metrics.csv",
+      "sha256": "1fda1b5f2d51fbec7cf7fd5e7aefeba2a96ec902613b698eeb914d0e095c4562",
+      "size_bytes": 4579
+    },
+    {
+      "path": "flux_parity.png",
+      "sha256": "1a0e5049838393dffd588018a7af80d614e8fc9954861afb979349021453b54e",
+      "size_bytes": 301117
+    },
+    {
+      "path": "gpp_gate_diagnostics.csv",
+      "sha256": "9173eeb4717116de9be67f71ae616025d1a41983669d9d9c07a3458464ad7b8b",
+      "size_bytes": 1587
+    },
+    {
+      "path": "gpp_sr_correlations.csv",
+      "sha256": "fbc7833e323fd111f86cf3485717125eecb010a0f3299fed6ab1c1b7656ca428",
+      "size_bytes": 484
+    },
+    {
+      "path": "gpp_sr_joint_density.npz",
+      "sha256": "32c7cc4724206e9e9e23a93549332450e43fb9f66cb9187a2b1c0faa3dc364ba",
+      "size_bytes": 464979
+    },
+    {
+      "path": "gpp_sr_joint_density.png",
+      "sha256": "d0b5f77b5a86328c43a6696b857d845e71750e0087e15479dd29bc499bcf3560",
+      "size_bytes": 161116
+    }
+  ],
+  "global_split_sha256": "99467dea4d34834c4ea4aaea9e416620cd9bc16310f567f7b7fc1735abe74fce",
+  "gpp_gate_equal_full_binary": true,
+  "gpp_output_policy": "hard_zero_v1",
+  "hours_per_site_member": 61320,
+  "inference_entry_point": "model_ELM.three_stage_coupled_release.CoupledThreeStageInference",
+  "member_count": 205,
+  "metric_rows": {
+    "cn": 12,
+    "flux": 12,
+    "gate": 6,
+    "joint_correlation": 6
+  },
+  "partition": "fixed_test",
+  "performance_threshold_applied": false,
+  "prediction_serialization_schema": "three-stage-iter016-fixed-test-predictions-v1",
+  "prediction_variable_inventory_verified_target_free": true,
+  "recovery_report_sha256": "9469e440a564352b0541d2610458d870ad787a140c7a61d6192fe0708545e90c",
+  "release_published": false,
+  "result": "pass",
+  "schema": "three-stage-iter016-fixed-test-report-v1",
+  "separate_target_evaluation": true,
+  "sites": [
+    "ABBY",
+    "JERC"
+  ],
+  "snapshot_sha256": "39b05495a57bfc9f323df67b47c0110dadfbf508b3159cde7ce1a6c59dfd187a",
+  "target_free_inference": true,
+  "training_or_fitting": false,
+  "uncertainty_refit": false,
+  "units": {
+    "GPP": "gC/m^2/day",
+    "SR": "gC/m^2/day",
+    "TOTSOMC": "gC/m^2",
+    "TOTSOMN": "gN/m^2"
+  }
+}

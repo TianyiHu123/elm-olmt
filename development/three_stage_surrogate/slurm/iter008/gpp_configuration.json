@@ -1,0 +1,27 @@
+{
+  "schema": "three-stage-gpp-frozen-configuration-v1",
+  "selection_iteration": "iter007",
+  "selection_candidate_id": 21,
+  "selection_report_sha256": "d90cf503ac52181213dee0ab91ed2518879208f84192a32292cc950d1314e745",
+  "feature_schema_sha256": "ab8551d918971fc2973b3da96957ce08db5c7f1b760f31bd33a821f1184a6a19",
+  "feature_count": 43,
+  "target": "GPP",
+  "target_units": "gC/m^2/day",
+  "target_transform": "standardized_physical",
+  "model_config": {
+    "hidden_layer_sizes": [64, 32],
+    "activation": "tanh",
+    "solver": "adam",
+    "alpha": 0.0001,
+    "learning_rate": "adaptive",
+    "learning_rate_init": 0.001,
+    "max_iter": 500,
+    "early_stopping": true,
+    "validation_fraction": 0.1,
+    "n_iter_no_change": 10,
+    "tol": 0.0001,
+    "batch_size": "auto",
+    "shuffle": true,
+    "random_state": 42
+  }
+}

@@ -1,0 +1,47 @@
+{
+  "artifact_sha256": "8dd06c29d7412d25f3157570bdbc10abbeebb439a3a578e4f10c2d12ae143fb2",
+  "fit_member_count": 819,
+  "fixed_test_access": false,
+  "gate": {
+    "applied": false,
+    "by_site_resolution": {
+      "ABBY_daily": {
+        "coverage_complete": true,
+        "median_absolute_bias": 0.04939880372893733,
+        "r2_q10": 0.7596668983817955,
+        "rmse_q90": 0.6742167244801894
+      },
+      "ABBY_hourly": {
+        "coverage_complete": true,
+        "median_absolute_bias": 0.049398803728937325,
+        "r2_q10": 0.7575163919936774,
+        "rmse_q90": 0.6898310205792121
+      },
+      "JERC_daily": {
+        "coverage_complete": true,
+        "median_absolute_bias": 0.06354189735945552,
+        "r2_q10": 0.7663439814568885,
+        "rmse_q90": 1.083151791103527
+      },
+      "JERC_hourly": {
+        "coverage_complete": true,
+        "median_absolute_bias": 0.06354189735945559,
+        "r2_q10": 0.7629615178548111,
+        "rmse_q90": 1.1189736364689438
+      }
+    },
+    "quantile_method": "linear",
+    "release_basis": "iter012_deployable_arm_B_selected",
+    "result": "not_applicable"
+  },
+  "handoff_full_finite": true,
+  "handoff_prediction_count": 100442160,
+  "handoff_sha256": "3704cab6c0167c7d0f7f1c22416b5fe850b6fcb52327df8af6134ffa0f12d3a1",
+  "performance_gate_applied": false,
+  "raw_interface_replay_complete": true,
+  "raw_interface_replay_count": 100442160,
+  "release_basis": "iter012_deployable_arm_B_selected",
+  "result": "pass",
+  "schema": "three-stage-sr-release-validation-v1",
+  "snapshot_sha256": "39b05495a57bfc9f323df67b47c0110dadfbf508b3159cde7ce1a6c59dfd187a"
+}

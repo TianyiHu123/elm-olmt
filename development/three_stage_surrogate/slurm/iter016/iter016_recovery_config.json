@@ -1,0 +1,45 @@
+{
+  "schema": "three-stage-iter016-recovery-config-v1",
+  "base_config": "/xdisk/chopinsong/tianyihu/elm-olmt/development/three_stage_surrogate/slurm/iter016/iter016_config.json",
+  "base_config_sha256": "fd73f99520eb8a6fc1a095887f4f08df4269b4129e2ab5f30150ffa9bcda1282",
+  "fit_attempt": 1,
+  "validation_attempt": 2,
+  "failed_job_id": "24725445",
+  "failed_state": "FAILED",
+  "failed_exit_code": "1:0",
+  "failed_stdout": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/three_stage_surrogate/iter016_abby_jerc_frozen_release_fixed_test/runs/refit/refit_24725445.out",
+  "failed_stdout_sha256": "8adbcfbfde3d2b8557474b67a2750d7daf3d11a76ea5304043b71ec7467bf47e",
+  "failed_stderr": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/three_stage_surrogate/iter016_abby_jerc_frozen_release_fixed_test/runs/refit/refit_24725445.err",
+  "failed_stderr_sha256": "51f989df65b371bffcbdccccad8aa294ff6add13e4c55c57c964dcaa0cfa9d1c",
+  "source_root": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/three_stage_surrogate/iter016_abby_jerc_frozen_release_fixed_test/runs/refit/attempt_1",
+  "artifact_manifest": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/three_stage_surrogate/iter016_abby_jerc_frozen_release_fixed_test/runs/refit/attempt_1/artifact_package/artifact_manifest.json",
+  "artifact_manifest_sha256": "eaed33d620711fd491042e78e6988146b16585c29b9c4904170afa1855ce1c48",
+  "prediction_files": {
+    "gpp_raw": {
+      "path": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/three_stage_surrogate/iter016_abby_jerc_frozen_release_fixed_test/runs/refit/attempt_1/gpp_predictions_physical_float32.dat",
+      "size_bytes": 401768640,
+      "sha256": "f215e2f4b0a35a3b082b61cc900f57b730814616a550482ab86394129e73328e"
+    },
+    "gpp_gated": {
+      "path": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/three_stage_surrogate/iter016_abby_jerc_frozen_release_fixed_test/runs/refit/attempt_1/gpp_gated_physical_float32.dat",
+      "size_bytes": 401768640,
+      "sha256": "cb5f561bf502984a012dad5df01019f288356ca1f64f809f8f94ad0a88002662"
+    },
+    "sr": {
+      "path": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/three_stage_surrogate/iter016_abby_jerc_frozen_release_fixed_test/runs/refit/attempt_1/sr_predictions_physical_float32.dat",
+      "size_bytes": 401768640,
+      "sha256": "f575a7246badf3afcc48a7389636941b1373a0c9d51eb0f90e16408df9f3c53c"
+    }
+  },
+  "total_rows": 100442160,
+  "dtype": "float32",
+  "replay_site": "ABBY",
+  "replay_start": 720,
+  "replay_end": 768,
+  "replay_member_count": 2,
+  "correction": "pass forcing and time prefixes through end=768 instead of full 61320-hour arrays",
+  "additional_fitting_allowed": false,
+  "fixed_test_access_allowed": false,
+  "attempt_1_mutation_allowed": false,
+  "release_publication_allowed": false
+}

@@ -1,0 +1,9 @@
+Command:
+development/three_stage_surrogate/slurm/iter012/validate_closeout_iter012.sh --active-job-count 0
+
+Result:
+All compact evidence hashes verified.
+Iteration report, ITERATION_SUMMARY.md, registry.csv, and handoff/CURRENT.md agreed.
+Unit1 and final scientific/scope assertions passed.
+Required table row counts passed.
+ITER012_FOUR_RECORD_VALIDATE_PASS

@@ -1,0 +1,73 @@
+{
+  "files": [
+    {
+      "path": "convergence.json",
+      "sha256": "8ec6a0836d6f044f5ba8f6e481c7a86035debf7ae9518f96003a74d9d591ec98",
+      "size_bytes": 3616
+    },
+    {
+      "path": "metric_distribution.csv",
+      "sha256": "e47513079aa0ba1cc90cc792ca452a5596fe02f6d2a21fa6f149fa946a1f658c",
+      "size_bytes": 92372
+    },
+    {
+      "path": "repeated_split_manifest.json",
+      "sha256": "c6ab41f1a9dbb7f49bc24a3654b2798dcd0ee6886aa5cc1d169aaa9045c754c4",
+      "size_bytes": 311976
+    },
+    {
+      "path": "sr_uncertainty.nc",
+      "sha256": "93d7e6438eb8149451e2c7fe3b84d571bc9946d85041fa87e31e704db945222c",
+      "size_bytes": 14266
+    },
+    {
+      "path": "uncertainty_estimates.csv",
+      "sha256": "798a6304f0f8f9a9016ac8d304d686f84c85c2aa389316514f0305074eb60ce8",
+      "size_bytes": 57302
+    }
+  ],
+  "fixed_test_access": false,
+  "gate": {
+    "applied": false,
+    "by_site_resolution": {
+      "ABBY_daily": {
+        "coverage_complete": true,
+        "median_absolute_bias": 0.04939880372893733,
+        "r2_q10": 0.7596668983817955,
+        "rmse_q90": 0.6742167244801894
+      },
+      "ABBY_hourly": {
+        "coverage_complete": true,
+        "median_absolute_bias": 0.049398803728937325,
+        "r2_q10": 0.7575163919936774,
+        "rmse_q90": 0.6898310205792121
+      },
+      "JERC_daily": {
+        "coverage_complete": true,
+        "median_absolute_bias": 0.06354189735945552,
+        "r2_q10": 0.7663439814568885,
+        "rmse_q90": 1.083151791103527
+      },
+      "JERC_hourly": {
+        "coverage_complete": true,
+        "median_absolute_bias": 0.06354189735945559,
+        "r2_q10": 0.7629615178548111,
+        "rmse_q90": 1.1189736364689438
+      }
+    },
+    "quantile_method": "linear",
+    "release_basis": "iter012_deployable_arm_B_selected",
+    "result": "not_applicable"
+  },
+  "gpp_release_manifest_sha256": "57cc18b063ab46a4cd07a3bd4e03ab1bfd05fb81894b097277d3c667135370d1",
+  "member_balance_rule": "equal member weight after within-member occurrence averaging",
+  "performance_gate_applied": false,
+  "predicted_cn_sha256": "9e2d5be4809ee7c9053baf70ad7574ca0b5cc2afc4a15b6006663a0fb8fafdb5",
+  "predicted_gpp_sha256": "c905fc60803405ba80b1ee7e4d7b489d1aeb3edc1b918ca2f07d8df9b0d198bb",
+  "release_basis": "iter012_deployable_arm_B_selected",
+  "result": "pass",
+  "schema": "three-stage-sr-uncertainty-report-v1",
+  "snapshot_sha256": "39b05495a57bfc9f323df67b47c0110dadfbf508b3159cde7ce1a6c59dfd187a",
+  "spinup_release_manifest_sha256": "69f840f7972d640e91b1693c2fcf71b984dae2e20fee9a07f05434af0591f2dc",
+  "split_design_sha256": "6e35eae529c80a4611880fe4840bf206b85f6d9a0cb204fff6df5f1a944064f5"
+}

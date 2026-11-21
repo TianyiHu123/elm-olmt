@@ -1,0 +1,16 @@
+{
+  "artifact_sha256": "9abb342d57bf81ce933f82a5750bb56df1eaeb721f55080e3766ba76fee8a809",
+  "covariance_minimum_eigenvalue": -1e-12,
+  "covariance_symmetry_atol": 1e-12,
+  "fit_member_count": 819,
+  "fixed_test_access": false,
+  "handoff_sha256": "9e2d5be4809ee7c9053baf70ad7574ca0b5cc2afc4a15b6006663a0fb8fafdb5",
+  "reload_atol": 1e-10,
+  "reload_rtol": 1e-12,
+  "result": "pass",
+  "robustness_observation_count": 6560,
+  "schema": "three-stage-spinup-iter004-validation-v1",
+  "snapshot_sha256": "39b05495a57bfc9f323df67b47c0110dadfbf508b3159cde7ce1a6c59dfd187a",
+  "split_design_sha256": "0b343378e7631f6fb09593ab4e9ed0125883eceb622174981b0e5a9fc5e86ecb",
+  "split_manifest_sha256": "7644ed38ffa33536e6b6cfcdbc6d80181f31282a84b8e81218ab3e2abfb4ace0"
+}

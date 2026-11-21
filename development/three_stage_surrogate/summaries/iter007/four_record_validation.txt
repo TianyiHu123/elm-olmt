@@ -1,0 +1,1 @@
+ITER007_FOUR_RECORD_VALIDATE_PASS records=report,summary,registry,handoff result=pass decision=configuration_selected_gate_pass best=21 active_jobs=0 release=absent

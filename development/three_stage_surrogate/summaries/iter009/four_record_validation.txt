@@ -1,0 +1,3 @@
+Command: bash development/three_stage_surrogate/slurm/iter009/validate_closeout_iter009.sh --active-job-count 0
+Result: ITER009_FOUR_RECORD_VALIDATE_PASS
+Validated: iteration report, immutable summary, registry row, current handoff, compact evidence hashes, external final products, and zero active Iter009 jobs.

@@ -1,0 +1,7 @@
+ITER002_FOUR_RECORD_VALIDATE_PASS
+command=python3 development/three_stage_surrogate/slurm/iter002/validate_closeout_iter002.py --active-job-count 0
+records=iterations/iter002.md,ITERATION_SUMMARY.md,registry.csv,handoff/CURRENT.md
+evidence=summaries/iter002/,preflight/attempt_2,smoke/attempt_2,operational/attempt_2,validation/attempt_2
+result=pass
+decision=optimization_recommended
+active_jobs=0

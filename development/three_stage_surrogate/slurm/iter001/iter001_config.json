@@ -1,0 +1,37 @@
+{
+  "schema": "three-stage-surrogate-iter001-config-v1",
+  "repository_root": "/xdisk/chopinsong/tianyihu/elm-olmt",
+  "repository_commit": "174a7f6c33acbf111ef67533d6ef69ea33c91565",
+  "campaign_plan": "development/three_stage_surrogate/PLAN.md",
+  "campaign_plan_sha256": "347646addaad8cc8c99a72e6a89e1f1824f023eb5f2481065336e2d2215dda0c",
+  "site_profile": "development/hpc/puma.md",
+  "output_root": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe_vertc/surrogate_input_data",
+  "run_dir": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe_vertc/surrogate_input_data/runs/iter001_abby_jerc_data_init",
+  "split_seed": 2026,
+  "maximum_preflight_correction_retries": 3,
+  "maximum_operational_correction_retries": 3,
+  "site_order": [
+    "ABBY",
+    "JERC"
+  ],
+  "common_sources": {
+    "parameter_list": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe_vertc/params/NEON_ppe_vertc_parmfile",
+    "parameter_names": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe_vertc/params/sobol18_1024_names.txt",
+    "parameter_values": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe_vertc/params/sobol18_1024.txt",
+    "parameter_metadata": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe_vertc/params/sobol18_1024_meta.json"
+  },
+  "sites": {
+    "ABBY": {
+      "transient_pickle": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe_vertc/pkfiles/ABBY_ppe_vertc_I20TRCNPRDCTCBC.pkl",
+      "spinup_preprocessing": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe_vertc/spinup_preprocessing/ABBY/ABBY_spinup_preprocessing.nc",
+      "forcing_directory": "/xdisk/chopinsong/tianyihu/E3SM_out/PTCLM/NEON/CTSM_NEON/ABBY/1x1pt_ABBY/CLM1PT_data",
+      "surface_file": "/xdisk/chopinsong/tianyihu/E3SM_out/PTCLM/NEON/CTSM_NEON/ABBY/surfdata_1x1_NEON_ABBY_hist_2000_c260408.nc"
+    },
+    "JERC": {
+      "transient_pickle": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe_vertc/pkfiles/JERC_ppe_vertc_I20TRCNPRDCTCBC.pkl",
+      "spinup_preprocessing": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe_vertc/spinup_preprocessing/JERC/JERC_spinup_preprocessing.nc",
+      "forcing_directory": "/xdisk/chopinsong/tianyihu/E3SM_out/PTCLM/NEON/CTSM_NEON/JERC/1x1pt_JERC/CLM1PT_data",
+      "surface_file": "/xdisk/chopinsong/tianyihu/E3SM_out/PTCLM/NEON/CTSM_NEON/JERC/surfdata_1x1_NEON_JERC_hist_2000_c260408.nc"
+    }
+  }
+}

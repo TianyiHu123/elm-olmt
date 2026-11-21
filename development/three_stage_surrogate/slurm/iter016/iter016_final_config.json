@@ -1,0 +1,18 @@
+{
+  "schema": "three-stage-iter016-final-config-v1",
+  "base_config": "/xdisk/chopinsong/tianyihu/elm-olmt/development/three_stage_surrogate/slurm/iter016/iter016_config.json",
+  "base_config_sha256": "fd73f99520eb8a6fc1a095887f4f08df4269b4129e2ab5f30150ffa9bcda1282",
+  "release_config": "/xdisk/chopinsong/tianyihu/elm-olmt/development/three_stage_surrogate/slurm/iter016/iter016_release_config.json",
+  "release_config_sha256": "ad493c300d5d32bff49c3c8e5b8dc77661e3517731bec2c3b703037069aefb4e",
+  "candidate_root": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/three_stage_surrogate/iter016_abby_jerc_frozen_release_fixed_test/runs/release/attempt_1/release_0001",
+  "candidate_manifest_sha256": "93e23bf5a50991fffaf42d4032383dd7c65f1971047eb3c8bcb45b6ad27b4b5f",
+  "assembly_report": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/three_stage_surrogate/iter016_abby_jerc_frozen_release_fixed_test/runs/release/attempt_1/release_assembly_report.json",
+  "assembly_report_sha256": "ad9baa7aaf502ad3c194674ed1b6d0310422eb4d2b9923191082f318b4a46d09",
+  "staging_root": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/three_stage_surrogate/iter016_abby_jerc_frozen_release_fixed_test/staging/three_stage_abby_jerc",
+  "stable_product_root": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe_vertc/surrogate_products/three_stage_abby_jerc",
+  "release_name": "release_0001",
+  "catalog_schema": "three-stage-coupled-product-catalog-v1",
+  "performance_threshold_applied": false,
+  "historical_release_modification_allowed": false,
+  "catalog_last_required": true
+}

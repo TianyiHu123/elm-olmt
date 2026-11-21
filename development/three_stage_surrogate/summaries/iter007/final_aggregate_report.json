@@ -1,0 +1,12 @@
+{
+  "best_candidate_id": 21,
+  "decision": "configuration_selected_gate_pass",
+  "finalist_count": 6,
+  "fit_count_per_finalist": 20,
+  "fixed_test_access": false,
+  "metric_rows": 480,
+  "result": "pass",
+  "schema": "three-stage-gpp-iter007-final-aggregate-v1",
+  "selection_gate_result": "pass",
+  "selection_report_sha256": "d90cf503ac52181213dee0ab91ed2518879208f84192a32292cc950d1314e745"
+}

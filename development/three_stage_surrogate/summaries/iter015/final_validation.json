@@ -1,0 +1,32 @@
+{
+  "schema": "three-stage-iter015-compact-final-v1",
+  "result": "pass",
+  "decision": "full_chain_robustness_characterized",
+  "split_count": 20,
+  "gpp_output_policy": "hard_zero_v1",
+  "aggregate_report_sha256": "c06454a70020e0b5ad141baade9dcf7e6242c08cc8af99540f59b0e113610744",
+  "final_report_sha256": "fed360f89b181dfb70166cdf05b18b91deb167737d022a9f6369cc0641dee2b6",
+  "products_manifest_sha256": "293277a89bfa55bed100bf2e00476d26c39614e22dfb1a81eb3953c823df77e9",
+  "aggregate_output_hash_count": 27,
+  "staged_product_files": 28,
+  "product_directory_files": 29,
+  "handoff_files": 3,
+  "cn_covariance_rows": 160,
+  "cn_member_balanced_covariance_rows": 8,
+  "propagation_correlation_rows": 180,
+  "balanced_propagation_correlation_rows": 9,
+  "gpp_sr_correlation_rows": 120,
+  "density_panels": 6,
+  "joint_density_grid_shape": [200, 200],
+  "diagnostic_figures": [
+    "error_propagation.png",
+    "gpp_gate_comparison.png",
+    "gpp_sr_joint.png"
+  ],
+  "fixed_test_access": false,
+  "all_development_fit": false,
+  "cross_fitting": false,
+  "release_modified": false,
+  "performance_threshold_applied": false,
+  "independent_result_review": "pass_with_concerns_records_only_resolved"
+}

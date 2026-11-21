@@ -1,0 +1,3 @@
+command: bash development/three_stage_surrogate/slurm/iter006/validate_closeout_iter006.sh --active-job-count 0
+result: pass
+output: ITER006_FOUR_RECORD_VALIDATE_PASS records=report,summary,registry,handoff result=fail decision=optimization_required active_jobs=0 release=absent

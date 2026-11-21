@@ -1,0 +1,14 @@
+{
+  "gpp_release_manifest": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe_vertc/surrogate_products/gpp_abby_jerc/release_0001/release_manifest.json",
+  "gpp_release_manifest_sha256": "57cc18b063ab46a4cd07a3bd4e03ab1bfd05fb81894b097277d3c667135370d1",
+  "predicted_cn_handoff": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe_vertc/surrogate_products/spinup_abby_jerc/release_0001/handoff/spinup_predicted_cn.nc",
+  "predicted_cn_sha256": "9e2d5be4809ee7c9053baf70ad7574ca0b5cc2afc4a15b6006663a0fb8fafdb5",
+  "predicted_gpp_handoff": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe_vertc/surrogate_products/gpp_abby_jerc/release_0001/handoff/gpp_predicted_for_sr.nc",
+  "predicted_gpp_sha256": "c905fc60803405ba80b1ee7e4d7b489d1aeb3edc1b918ca2f07d8df9b0d198bb",
+  "schema": "three-stage-sr-upstream-provenance-v1",
+  "spinup_release_manifest": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe_vertc/surrogate_products/spinup_abby_jerc/release_0001/release_manifest.json",
+  "spinup_release_manifest_sha256": "69f840f7972d640e91b1693c2fcf71b984dae2e20fee9a07f05434af0591f2dc",
+  "upstream_mode": "published_all819_in_sample",
+  "upstream_models_retrained": false,
+  "validation_label": "fixed_upstream_sr_stage"
+}

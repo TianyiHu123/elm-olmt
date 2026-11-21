@@ -1,0 +1,21 @@
+{
+  "all_development_fit": false,
+  "decision": "deployable_arm_B_selected",
+  "decision_reproduced": true,
+  "diagnostic_conclusions_reproduced": true,
+  "fixed_test_access": false,
+  "fixed_upstream_sr_stage_validation": true,
+  "gpp_execution": false,
+  "oracle_is_mathematical_upper_bound": false,
+  "paired_comparisons_reproduced": true,
+  "performance_gate_applied": false,
+  "production_fit_count": 60,
+  "recomputed_validation_metric_rows": 360,
+  "release_created": false,
+  "result": "pass",
+  "retained_deployable_arm": "B",
+  "schema": "three-stage-sr-iter012-final-validation-v1",
+  "selected_deployable_arm": "B",
+  "spinup_execution": false,
+  "validation_tables_reproduced": true
+}
