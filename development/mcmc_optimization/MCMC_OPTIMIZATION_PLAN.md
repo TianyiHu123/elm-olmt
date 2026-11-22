@@ -1,23 +1,23 @@
 # ELM Three-Stage Surrogate MCMC Optimization Development Plan
 
 **Repository:** [TianyiHu123/elm-olmt](https://github.com/TianyiHu123/elm-olmt)  
-**Integration base:** `pmcpu`, after compatible three-stage surrogate artifacts/interfaces are available  
-**Proposed development branch:** `feature/mcmc-optimization` (create when the integration base is agreed)  
+**Future integration target:** `pmcpu`, subject to a separate review after development  
+**Development branch:** `feature/mcmc-optimization` (created; plan changes are committed independently of implementation iterations)  
 **Development record:** `development/mcmc_optimization/`  
 **Related plan:** [`development/three_stage_surrogate/PLAN.md`](https://github.com/TianyiHu123/elm-olmt/blob/feature/three-stage-surrogate/development/three_stage_surrogate/PLAN.md)  
 **Computing:** UA Puma for surrogate-based initialization, MCMC, and diagnostics; NERSC Perlmutter for source ELM PPE and any later full-ELM verification  
-**Status:** Draft campaign-level plan with settled two-output spinup and initial C/N likelihood design. Implementation details and iteration approvals are separate.
+**Status:** Campaign-level scientific and engineering contract; PPE1 is the active baseline, and PPE2 is a prepared but inactive prior option. Implementation details and iteration approvals are separate.
 
 ## Project context, goal, and scope
 
-Develop a reproducible Bayesian calibration workflow using the **frozen, pooled, three-stage ELM surrogate** (spinup C/N → hourly GPP → hourly soil respiration, SR) and site-specific NEON observations. The nine target sites are **ABBY, JERC, OSBS, SOAP, RMNP, TALL, TEAK, WREF, YELL**. **Initial optimization is independent for each site:** infer a distinct **18-dimensional** ELM parameter posterior per site, using that site's forcing and observations. The pooled surrogate is shared; parameter posteriors are not pooled. Begin with a small one-/two-site pilot, then run all eligible sites.
+Develop a reproducible Bayesian calibration workflow using the **frozen, pooled, three-stage ELM surrogate** (spinup C/N → hourly GPP → hourly soil respiration, SR) and site-specific NEON observations. The nine target sites are **ABBY, JERC, OSBS, SOAP, RMNP, TALL, TEAK, WREF, YELL**. **Initial optimization is independent for each site:** infer a distinct **18-dimensional** ELM parameter posterior per site, using that site's forcing and observations. The pooled surrogate is shared; parameter posteriors are not pooled. **The initial executable baseline uses the original PPE1 (`NEON_ppe_vertc`) prior and its coupled surrogate `release_0001`.** Prepare optional PPE2-prior support now, but do not activate PPE2 scientific calibration until a compatible PPE2-trained/validated release and uncertainty handoff exist. Begin with a small one-/two-site pilot, then run all eligible sites.
 
 Reuse the current scrambled-Sobol candidate search, optional multistart local refinement, diverse candidate pool, `emcee` ensemble sampling, checkpointing, and diagnostic infrastructure wherever compatible. Implement reusable science and inference code under `model_ELM/` and appropriate repository-root entry points. Keep iteration records, HPC scripts, and development-specific tools under `development/mcmc_optimization/`; this directory is **not** a standalone Python package. Do not alter existing released workflows unintentionally.
 
 **In scope:** observation/forcing alignment; explicit scientific priors; deterministic full-chain inference; resolution-specific likelihoods and fixed uncertainty inputs; site-specific initialization and MCMC; convergence, posterior, posterior-predictive, reproducibility, and verification diagnostics.  
 **Out of scope for the first release:** retraining or redesigning the three-stage surrogate; fitted observation-error, covariance, bias, or depth-fraction parameters; full temporal covariance and cross-variable covariance beyond the fixed joint C/N formulation below; simultaneous/hierarchical multisite calibration; full ELM simulations inside the MCMC likelihood. These are optional future extensions, not hidden dependencies.
 
-**Key dependency:** MCMC requires versioned surrogate artifacts with trustworthy end-to-end inference and held-out uncertainty diagnostics. Do not silently substitute true ELM spinup C/N or GPP for predicted upstream inputs. The separate surrogate plan owns the training/validation process.
+**Key dependency:** MCMC requires versioned surrogate artifacts with trustworthy end-to-end inference and held-out uncertainty diagnostics. Do not silently substitute true ELM spinup C/N or GPP for predicted upstream inputs. The separate surrogate plan owns the training/validation process. **Prior identity, sampling domain, trained parameter support, surrogate release, and uncertainty provenance must be compatible.** Changing only the prior switch cannot turn a PPE1 surrogate into a PPE2 surrogate.
 
 ---
 
@@ -25,9 +25,9 @@ Reuse the current scrambled-Sobol candidate search, optional multistart local re
 
 ### 1.1 Authoritative inputs
 
-- **Parameters:** the original 18-parameter `NEON_ppe_vertc_parmfile`, `generate_scramble_sobol.py`, and associated PPE sample/metadata files (parameter names, order, bounds, PFT indices, transforms, conditional C:N rule, seed, and software versions). The parm-list and recorded provenance are authoritative; do not infer bounds or reorder parameters from model weight shapes.
-- **Surrogate:** frozen three-stage spinup/GPP/SR models, scalers, feature schemas, time/calendar and forcing-history requirements, training-member provenance, and artifact checksums. The full chain predicts all upstream quantities from a proposed parameter vector.
-- **Uncertainty:** site-wise, held-out end-to-end validation errors from the surrogate campaign's **20 development-pool robustness repetitions**: GPP and SR at *hourly and daily* resolutions; paired full-profile spinup C/N predictions, targets, and log errors. Record biases, error distributions, per-repetition RMSE/MAE, the site-specific C–N surrogate-error covariance, and derivation of the fixed error inputs. No fixed-test-based coefficient estimation or retuning.
+- **Parameters:** use the original 18-parameter PPE1 `NEON_ppe_vertc_parmfile`, `generate_scramble_sobol.py`, and associated metadata as the **active default**. Preserve the separately supplied PPE2 `generate_scramble_sobol.py`, `SAMPLING_ppe2.md`, and `sobol18_1024.txt` identities for a **selectable but initially inactive** `ppe2` prior. Record each design's parameter names/order, bounds, PFT indices, transforms and conditional rules, seed, and software versions. The selected design's authoritative files define its support; do not infer bounds from model weights.
+- **Surrogate:** initially the published **PPE1 coupled** spinup/GPP/SR `release_0001` via `model_ELM.three_stage_coupled_release.CoupledThreeStageInference`, with its scalers, feature schemas, time/calendar and forcing-history requirements, training-member provenance, and checksums. The full chain predicts all upstream quantities from a proposed parameter vector. A future PPE2-trained release must have an independently validated artifact identity.
+- **Uncertainty:** for PPE1, reuse and validate the **Iter015 development-only 20-repetition handoff**: GPP/SR errors at *hourly and daily* resolutions and paired full-profile spinup C/N errors. Record biases, error distributions, per-repetition RMSE/MAE, site-specific C–N covariance, and derivation of fixed error inputs. **Do not rerun the PPE1 robustness study merely to start MCMC.** A future PPE2-trained surrogate requires its **own** held-out uncertainty estimates and depth coefficients; PPE1 values cannot be silently transferred. No fixed-test-based coefficient estimation or retuning.
 - **Flux observations:** user-preprocessed GPP and SR NetCDF observations with timestamps, units, quality masks, optional uncertainty variables, and provenance. GPP may provide `GPP_mean`, `GPP_halfdiff`, and/or a configured `GPP_err`; SR may provide `SR_err`. Validate actual variable names against each declared file rather than assuming they exist.
 - **Soil observations:** user-provided `NEON_soilC_N_CN.csv` with one positive C stock and one positive N stock per site, units of gC/m² and gN/m², and `effectiveDepth_m`. Verify provenance/processing, effective depth, and anomalous site-level ratios (including TALL) before production use.
 
@@ -50,24 +50,33 @@ with units gC/m² and gN/m². It does not perform NEON depth correction. The MCM
 \widehat N_{s,D}(\theta)=\bar f_{N,s}\widehat N_{s,\mathrm{full}}(\theta),
 \]
 
-where \(D\) is the site's validated NEON effective observation depth. The fractions are fixed site/element inputs, not inferred parameters. Initial preprocessing gives the following descriptive estimates from all 1,024 members at each site:
+where \(D\) is the site's validated NEON effective observation depth. The fractions are fixed site/element inputs, not inferred parameters. Initial **PPE1** preprocessing gives the following descriptive estimates from all 1,024 PPE1 members at each site:
 
 | Site | NEON effective depth | Mean C fraction | Mean N fraction |
 | --- | ---: | ---: | ---: |
 | ABBY | 2.0 m | 0.709296 | 0.707732 |
 | JERC | 2.0 m | 0.757688 | 0.756602 |
 
-For the calibrated operator, re-estimate and freeze each fraction from the designated **819-member development population only**, excluding the protected 205 fixed-test members. Use the validated spinup-preprocessing stocks and record the member manifest, estimator, source identity, target depth, units, and resulting coefficients. Calculate corresponding development-only fractions for each additional site when its validated preprocessing is available. Normal input validation still applies, but the two-output architecture and ownership of the depth correction are no longer open design questions.
+For the calibrated operator, re-estimate and freeze each fraction from the designated **819-member development population only**, excluding the protected 205 fixed-test members. Use the validated spinup-preprocessing stocks and record the member manifest, estimator, source identity, target depth, units, and resulting coefficients. Calculate corresponding development-only fractions for each additional site when its validated preprocessing is available. **PPE2 preprocessing gives materially different depth fractions: when PPE2 is activated, re-estimate/freeze fractions and covariance from the designated PPE2 development members, with PPE2 provenance.** The two-output architecture and ownership of depth correction remain unchanged.
+
+### 1.3 Inference execution and performance contract
+
+The published `CoupledThreeStageInference` delegates to `FoldThreeStageInference.predict_to_arrays`, which **batches hourly GPP and SR feature rows** (bounded by `member_chunk`); it is not inherently an hour-by-hour model invocation. The older `FrozenThreeStageInference` uses a deterministic one-row prediction kernel, so the MCMC adapter must select and record the **coupled release path** rather than accidentally reverting to the older path. Batching does **not** guarantee affordable posterior evaluation, especially for long windows and many MCMC proposals. Forcing-window feature generation, site-context loading, scaler work, stage predictions, and memory allocation may still dominate.
+
+**Early engineering gate:** before setting large candidate budgets or production chain lengths, measure reproducible cold/warm **coupled-surrogate evaluation** time and peak memory, then measure full posterior-call time once the likelihood adapter is available on the target Puma environment for representative ABBY/JERC forcing windows, both single-proposal and plausible batch sizes. Separate artifact loading/preprocessing from per-proposal cost; record thread settings, hardware, exact release, window length, output resolution, and projected Sobol and MCMC walltime from measured throughput. Check deterministic replay and scientifically equivalent stage/likelihood outputs under any batching or caching proposal. Define acceptable resource budgets from evidence at the iteration kickoff, not from an unmeasured claim of speed.
+
+If measured throughput is inadequate, propose a **separately reviewed infrastructure optimization** (for example, safe caching of site-static/forcing features, bounded batching, or avoiding repeated loading); require numerical equivalence and provenance checks before adopting it. This gate belongs to the campaign plan because it affects feasibility, but the optimization design, code changes, and benchmarks belong to approved iteration records. **No inference-engine rewrite or performance experiment is authorized by the plan revision itself.**
 
 ---
 
 ## 2. Parameter prior and sampling domain
 
-Use the PPE's probability model as the initial scientific prior, with exact parameter order and bounds loaded from its authoritative files. This **prior density** is evaluated at every MCMC proposal; the Sobol candidate pool only provides **initial walker positions**, not a discrete prior.
+Require a versioned `prior_id` with two variants: **`ppe1` (default; active scientific baseline)** and **`ppe2` (optional implementation, inactive for science until its compatible surrogate is released)**. Load the selected design's exact order, bounds, conditional draws, and provenance. This **prior density** is evaluated at every MCMC proposal; the Sobol candidate pool only provides **initial walker positions**, not a discrete prior. Switching priors changes the target posterior and the identity of all candidate pools and checkpoints: never reinterpret or resume an old run under the other prior.
 
 | PPE parameter family | Names / rule | Physical prior | MCMC coordinate |
 | --- | --- | --- | --- |
-| Decomposition rates (8) | `k_l1`, `k_l2`, `k_l3`, `k_s1`, `k_s2`, `k_s3`, `k_s4`, `k_frag` | Independent bounded **log-uniform** | Natural log |
+| Other decomposition rates (7) | `k_l1`, `k_l2`, `k_l3`, `k_s1`, `k_s2`, `k_s3`, `k_frag` | Independent bounded **log-uniform** in both designs | Natural log |
+| `k_s4` (1) | `k_s4` | **PPE1:** independent log-uniform on `[2e-5, 2e-4]`. **PPE2:** conditional log-uniform on `[8e-5, min(1e-3, k_s3)]`, with normalized conditional density | Natural log; conditional support |
 | Respiration fractions (6) | `rf_l1s1`, `rf_l2s2`, `rf_l3s3`, `rf_s1s2`, `rf_s2s3`, `rf_s3s4` | Independent bounded **uniform** | Bounded logit |
 | Other scalar traits (2) | `act25`, `leaf_long` | Independent bounded **uniform** | Physical/linear initially |
 | Leaf and root C:N (2) | `leafcn`, `frootcn` | **Uniform leafcn**, **conditional-uniform frootcn** | Physical/linear initially, with joint support check |
@@ -83,14 +92,18 @@ R=\mathrm{frootcn}\mid L\sim U(a(L),b),\qquad g=0.5,\;W=\mathrm{livewoodcn}=50.
 
 For the documented PPE list, `leafcn` is bounded 15–40, `frootcn` is listed as 40–60, and the effective upper bound is 49.5. `livewoodcn` is **fixed**, not an additional inferred parameter. Preserve the **sequential conditional distribution**, not merely the inequalities or a joint-uniform density over the feasible polygon. Require \(a(L)<b\).
 
-Within the valid 18-dimensional domain \(\Omega\), the log-prior, up to parameter-independent constants, is
+Let \(K\) be all eight decomposition rates, with the same conditional C:N limits \(a(L), b\) in both variants. **PPE1** draws `k_s4` independently. **PPE2** draws \(k_{s4}\mid k_{s3}\sim\mathrm{LogUniform}(\ell_4,u_4(k_{s3}))\), where \(\ell_4=8\times10^{-5}\), \(u_4(k_{s3})=\min(10^{-3},k_{s3})\), and the upper limit must exceed the lower limit. Within each design's complete support, the physical-space log densities, up to parameter-independent constants, are
 
 \[
-\log p(\theta)=-\sum_{k\in K}\log k-\log\!\big[b(\mathrm{leafcn})-a(\mathrm{leafcn})\big]+\mathrm{const};
-\quad\log p(\theta)=-\infty\;\text{outside }\Omega.
+\log p_{\mathrm{PPE1}}(\theta)=-\sum_{k\in K}\log k-\log[b(L)-a(L)]+\mathrm{const},
+\]
+\[
+\log p_{\mathrm{PPE2}}(\theta)=-\sum_{k\in K}\log k-\log\!\left[\log\!\left(\frac{u_4(k_{s3})}{\ell_4}\right)\right]-\log[b(L)-a(L)]+\mathrm{const}.
 \]
 
-Retain the physical-space prior as authoritative. When `emcee` works in log or logit coordinates, add the correct transformation Jacobian to the **sampling-coordinate posterior**; a transformation by itself is not a normal/lognormal prior. For deterministic local optimization of the *physical* posterior in transformed coordinates, do **not** add a sampling Jacobian to its objective. Numerical tests must confirm prior density, normalization/relative ratios, support, and physical/transformed posterior equivalence.
+Each density is \(-\infty\) outside **its own** support. The extra PPE2 log-width factor is a **conditional-prior normalization**, not an added uncertainty term in the likelihood. Implement the PPE2 conditional inverse Sobol map and density together: a simple `k_s4 <= k_s3` inequality with the independent PPE1 prior density is wrong.
+
+Retain the physical-space prior as authoritative. When `emcee` works in log or logit coordinates, add the correct transformation Jacobian to the **sampling-coordinate posterior**; a transformation by itself is not a normal/lognormal prior. For deterministic local optimization of the *physical* posterior in transformed coordinates, do **not** add a sampling Jacobian to its objective. Numerical tests must confirm **both variants'** density, conditional normalization and relative ratios, support, inverse Sobol maps, and physical/transformed posterior equivalence. Validate selected-prior/support versus selected-release compatibility before inference; never clip, extrapolate, or silently truncate an incompatible prior to the released surrogate's support.
 
 ---
 
@@ -175,7 +188,7 @@ For the 30% baseline, each diagonal entry is approximately 0.08618. Initial C an
 
 #### Surrogate covariance
 
-For held-out development member \(m\) in robustness repetition \(r\), retain the paired full-profile log errors
+For PPE1 held-out development member \(m\) in robustness repetition \(r\), retain the paired full-profile log errors
 
 \[
 \boldsymbol{\delta}_{s,m,r}^{sur}=
@@ -188,7 +201,7 @@ For held-out development member \(m\) in robustness repetition \(r\), retain the
 \operatorname{Cov}(\boldsymbol{\delta}^{sur}_s).
 \]
 
-Estimate a site-specific 2×2 covariance, including the C–N term, using development-only held-out predictions from the existing 20 repetitions. Preserve paired values and per-repetition estimates, summarize variation among repetitions, and document the estimator used to produce the one fixed covariance selected for MCMC. Because validation members overlap among repetitions, do not treat repeated occurrences as independent replicates when quantifying estimator precision. The protected fixed-test members must not select or estimate this covariance.
+For the **PPE1 baseline**, estimate a site-specific 2×2 covariance, including the C–N term, using development-only held-out predictions from the existing 20 repetitions. When a PPE2 surrogate is trained, repeat the **uncertainty estimation** on its own development held-out predictions instead of transferring the PPE1 covariance. Preserve paired values and per-repetition estimates, summarize variation among repetitions, and document the estimator used to produce the one fixed covariance selected for MCMC. Because validation members overlap among repetitions, do not treat repeated occurrences as independent replicates when quantifying estimator precision. The protected fixed-test members must not select or estimate this covariance.
 
 #### Depth-correction covariance
 
@@ -207,7 +220,7 @@ For element \(v\in\{C,N\}\) and development member \(m\), define
 \end{pmatrix}.
 \]
 
-Completed ABBY/JERC preprocessing gives these exploratory full-ensemble summaries:
+Completed **PPE1** ABBY/JERC preprocessing gives these exploratory full-ensemble summaries:
 
 | Statistic | ABBY | JERC |
 | --- | ---: | ---: |
@@ -247,7 +260,7 @@ The preprocessing provides additional scientific context: modeled NEON-depth log
 
 ### 3.3 Error estimation and limitations
 
-For each site and available flux-likelihood resolution, use **out-of-sample full-chain errors** obtained from the surrogate development repetitions; preserve site-wise biases, RMSE, MAE, residual distributions, repetition-to-repetition variability, and the selected fixed uncertainty scale. Calculate daily errors by aggregating each held-out member's hourly ELM and surrogate predictions *before* taking daily residuals. For an initial constant Gaussian flux-error scale, a root-mean-squared held-out residual is defensible if reported alongside bias and residual standard deviation; a systematic bias is **not** automatically solved by widening uncertainty.
+For each site and available flux-likelihood resolution, use **out-of-sample full-chain errors** from the **selected surrogate's own** development validation (the existing Iter015 handoff for PPE1; a separately validated handoff for any future PPE2 release); preserve site-wise biases, RMSE, MAE, residual distributions, repetition-to-repetition variability, and the selected fixed uncertainty scale. Calculate daily errors by aggregating each held-out member's hourly ELM and surrogate predictions *before* taking daily residuals. For an initial constant Gaussian flux-error scale, a root-mean-squared held-out residual is defensible if reported alongside bias and residual standard deviation; a systematic bias is **not** automatically solved by widening uncertainty.
 
 The flux quadrature formula assumes observation and surrogate errors are independent, while the initial C/N covariance formula assumes mutual independence among observation, surrogate, and depth errors subject to the diagnostic above. Neither formulation represents all ELM structural discrepancy. Hourly errors may be serially correlated, GPP/SR errors may be cross-correlated, and robustness validation sets overlap. Document these limitations and inspect the existing standardized-residual diagnostics before interpreting narrow posterior intervals as well calibrated.
 
@@ -257,7 +270,7 @@ The flux quadrature formula assumes observation and surrogate errors are indepen
 
 Retain the current **scrambled Sobol → evaluate log posterior → diversified promising anchors → optional local optimization → high-quality/diverse pool → initial walkers** workflow, but update it for the new 18-parameter posterior.
 
-1. Draw a new 18-D Owen-scrambled Sobol sequence with an **initialization seed distinct from the PPE design seed**. Use power-of-two blocks and configurable staged evaluation budgets. Map each unit coordinate through the same physical marginal/conditional inverse transforms as `generate_scramble_sobol.py`: log-uniform for the eight rates, linear uniform for `rf_*`, `act25`, `leaf_long`, `leafcn`, and conditional-uniform for `frootcn`. Evaluate the **new** site-specific GPP/SR/(when enabled) C/N posterior, not the legacy SR-only score.
+1. Draw a new 18-D Owen-scrambled Sobol sequence with an **initialization seed distinct from the PPE design seed**. Use power-of-two blocks and configurable staged evaluation budgets. Map each unit coordinate through the selected, provenance-checked generator: log-uniform for the seven shared independent rates, **independent PPE1 or conditional PPE2 `k_s4` log-uniform**, linear uniform for `rf_*`, `act25`, `leaf_long`, and `leafcn`, and conditional-uniform for `frootcn`. Evaluate the **new** site-specific GPP/SR/(when enabled) C/N posterior, not the legacy SR-only score.
 2. Select promising but diverse starting anchors. Retain the existing L-BFGS-B multistart concept only where the pilot confirms benefit; improve numerical conditioning by using normalized/log-scaled coordinates and a C:N-feasible parameterization or valid constraint enforcement. Optimization seeks the **physical posterior mode**, not the transformed-density mode.
 3. Construct a documented pool balancing posterior score and parameter-space coverage, including separated modes when present. Use sensible **prior-unit / sampling-coordinate** distances rather than unscaled physical Euclidean distances, enforce the conditional support, and check numerical rank, nondegenerate span, uniqueness, and finiteness. The existing candidate counts, ~640 pool size, and 64 walkers are **configurable historical starting references**, not mandatory performance claims.
 4. Choose independent, valid initial walker positions from that pool; re-evaluate their current posterior and save the original unit-space/physical states, selection rule, component scores, and provenance. Maintain per-site pools; do not transfer old 14-parameter/`fit_error=True` candidate scores or silently reuse pools evaluated under a different likelihood/prior.
@@ -286,15 +299,16 @@ Prefer extending established modules over duplicating the MCMC machinery. Review
 | --- | --- |
 | `model_ELM/coupling_pipeline.py`, `initialize_pipeline.py` | New 18-D science/prior contract; Sobol inverse maps; valid C:N candidates; prior-aware posterior scores; transformed diversity/local search; immutable pool provenance |
 | `model_ELM/MCMC_forcing.py`, `model_ELM/MCMC.py` | Generalize current SR-only likelihood/sampler for GPP, SR, and joint bivariate-lognormal C/N use; keep all uncertainty inputs fixed and **remove `fit_error`** for the new path |
-| `model_ELM/mcmc_geometry.py` | Verify log/logit transforms and Jacobians; enforce the authoritative 18-parameter schema and C:N support |
+| `model_ELM/mcmc_geometry.py` | Verify log/logit transforms, Jacobians, and exact support for both `prior_id` variants; reject incompatible prior/release combinations |
+| `model_ELM/three_stage_coupled_release.py`, `model_ELM/three_stage_inference.py` | Adapt the published PPE1 coupled inference interface with minimal changes; benchmark full-chain throughput before considering separately approved caching/batching changes; preserve existing release behavior |
 | `model_ELM/load_obs_nc.py`, `model_ELM/coupling_pipeline.py` | Reusable GPP/SR observation loading and time alignment; fixed site-specific C/N depth operator; validated observation, surrogate, and depth covariance inputs; uncertainty precedence and masks |
 | `model_ELM/mcmc_diagnostics.py`, `model_ELM/mcmc_artifacts.py` | Extend per-variable posterior/chain/residual diagnostics, reproducibility, and site-scoped output bundles |
 | `model_ELM/optimization_config.py`, root campaign CLIs | Versioned configuration; no hardcoded 14-parameter count, SR-only target, or `fit_error=True` |
 | `tests/` | Focused numerical/statistical/integration tests for the new posterior and pipeline |
 
-Required tests should cover: inverse Sobol mapping versus PPE generation; parameter order/bounds; conditional C:N support **and density**; log-uniform prior ratios; coordinate Jacobian invariance; synthetic GPP, SR, and bivariate C/N likelihood calculations; exact depth-fraction application; covariance assembly and C–N off-diagonal retention; no fitted error/covariance/bias/depth-fraction dimensions; all four observed-variable contributions; valid missing-data/zero-flux handling; daily aggregation and uncertainty at native scale; chronology and no-leap handling; invalid C/N stocks and non-positive-definite covariance; deterministic replay of initialization and chain restart; preservation of legacy interfaces; and surrogate end-to-end inference without true upstream ELM target leakage.
+Required tests should cover: inverse Sobol mapping versus **each PPE generator**; parameter order/bounds; PPE1 independent and PPE2 normalized conditional `k_s4` support **and density**; conditional C:N support **and density**; log-uniform prior ratios; coordinate Jacobian invariance; synthetic GPP, SR, and bivariate C/N likelihood calculations; exact depth-fraction application; covariance assembly and C–N off-diagonal retention; no fitted error/covariance/bias/depth-fraction dimensions; all four observed-variable contributions; valid missing-data/zero-flux handling; daily aggregation and uncertainty at native scale; chronology and no-leap handling; invalid C/N stocks and non-positive-definite covariance; deterministic replay of initialization and chain restart; preservation of legacy interfaces; surrogate end-to-end inference without true upstream ELM target leakage; rejection of PPE2/release support mismatch; and reproducible measured throughput plus numerical-equivalence checks for any future inference optimization.
 
-A run must fail closed on incompatible artifact schema, trained-site identity, wrong parameter count/order, unsupported stock definition, invalid or fixed-test-contaminated depth coefficients, missing uncertainty provenance, non-finite/non-positive-definite covariance, corrupted checkpoint/pool hashes, or absent required observation overlap.
+A run must fail closed on **mismatched `prior_id`, PPE design metadata, surrogate training support/release, or uncertainty/depth provenance**; incompatible artifact schema, trained-site identity, wrong parameter count/order, unsupported stock definition, invalid or fixed-test-contaminated depth coefficients, missing uncertainty provenance, non-finite/non-positive-definite covariance, corrupted checkpoint/pool hashes, or absent required observation overlap.
 
 ---
 
@@ -302,24 +316,24 @@ A run must fail closed on incompatible artifact schema, trained-site identity, w
 
 ### 7.1 Baseline configurations and comparisons
 
-The initial pilot remains **GPP+SR only**, with **daily GPP + daily SR** as its default and each resolution independently configurable (`hourly` or `daily`). After the normal data/interface validation supplies frozen site-specific depth fractions, the three covariance components, and any fixed bias correction, enable the settled four-component model. Compare it with GPP+SR-only to assess the incremental constraint from C/N; test C/N observational CV assumptions **20%, 30%, 50%** without tuning them opportunistically. Additional daily/hourly combinations are controlled experiments, not a requirement for the first production run.
+The initial pilot uses **`prior_id=ppe1` and the published PPE1 coupled `release_0001`**. It remains **GPP+SR only**, with **daily GPP + daily SR** as its default and each resolution independently configurable (`hourly` or `daily`). After the normal data/interface validation supplies frozen site-specific depth fractions, the three covariance components, and any fixed bias correction, enable the settled four-component model. Compare it with GPP+SR-only to assess the incremental constraint from C/N; test C/N observational CV assumptions **20%, 30%, 50%** without tuning them opportunistically. Additional daily/hourly combinations are controlled experiments, not a requirement for the first production run.
 
 ### 7.2 Proposed development sequence
 
-1. **Branch/project scaffold:** agree on the surrogate integration base, create the optimization branch, and initialize `development/mcmc_optimization/` as *pre-kickoff*. Examine reusable prior, pool, sampler, and artifact code; do not start production campaigns yet.
-2. **Data and interface contract:** validate authoritative 18-parameter PPE metadata, frozen full-profile two-output surrogate inference, observation files, development-only depth fractions, all fixed covariance/bias inputs, error diagnostics, site forcing/timestamps, and provenance. Define reusable science/config validators and prohibit fixed-test leakage into coefficient estimation.
-3. **Prior and initialization prototype:** implement/test physical prior with log-uniform rates and conditional C:N; 18-D scrambled Sobol inverse mapping; constraint-valid local search, candidate pools, and walker selection. Verify density transformations and source consistency.
-4. **Flux-likelihood prototype:** implement the fixed-uncertainty Gaussian GPP/SR likelihood, independently selectable hourly/daily resolutions, and correct daily uncertainty/QC handling. Conduct synthetic and one-site deterministic posterior checks.
-5. **MCMC pilot:** connect the frozen full three-stage surrogate to the new posterior, run GPP+SR-only site-specific chains, confirm checkpoint/restart and resource use on Puma, inspect chain health/multimodality and residual assumptions, and lock production settings after evidence-based review.
-6. **Joint C/N likelihood pilot:** validate the site-level C/N observations, fixed depth operator, log-space covariance components, optional fixed bias correction, and numerical positive-definiteness; enable the joint bivariate-lognormal term and compare the four-component and flux-only posteriors.
-7. **Nine-site production and sensitivity analysis:** run independent posteriors for eligible sites, including the fixed C/N CV sensitivity cases where enabled; produce per-site diagnostics, posterior-predictive checks, provenance, and summaries. Full ELM verification of representative posterior vectors may be a separately budgeted step.
-8. **Review/integration:** test backward compatibility, scientific assumptions, reproducibility, and diagnostics; merge the approved implementation into the agreed integration branch.
+1. **Campaign-plan lock (outside iterations):** finish this campaign-level revision and commit it on the existing `feature/mcmc-optimization` branch. Keep the plan change distinct from iteration kickoff, code implementation, HPC execution, and later scientific-plan amendments.
+2. **Release and prior contracts:** validate PPE1 `release_0001`, the existing PPE1 uncertainty handoff, exact `ppe1` default prior, and optional `ppe2` conditional-`k_s4` inverse map/log-density with independent numerical tests. Bind all run/configuration artifacts to the selected prior and release; **do not execute PPE2 scientific likelihoods against PPE1 artifacts**.
+3. **Interface and performance preflight:** build the minimum coupled adapter, check site/forcing/time/stock interfaces and reproducible end-to-end inference, and benchmark coupled-surrogate throughput and memory under representative workloads. Recheck complete posterior-call throughput once the likelihood is implemented. Decide from measured budgets whether a separate infrastructure optimization is needed before large candidate searches or chains.
+4. **Observation and flux-likelihood prototype:** validate GPP/SR files, masks, timestamps and daily uncertainties; implement independently selectable hourly/daily Gaussian likelihood terms and deterministic one-site checks.
+5. **Candidate search and MCMC pilot:** implement prior-aware 18-D Sobol candidates, valid diversified pools, optional local optimization, and GPP+SR-only site-specific `emcee` pilots. Verify checkpoint/restart, performance, mixing, and residual diagnostics before locking production settings.
+6. **Joint C/N likelihood pilot:** validate observations, development-only PPE1 depth coefficients, the three fixed covariance components and optional fixed bias correction; add the bivariate-lognormal term and compare four-observable versus flux-only posteriors.
+7. **Site expansion and sensitivity:** run independent eligible-site posteriors, including C/N CV scenarios where enabled; produce posterior-predictive and provenance reports. A future switch to PPE2 is a **separate scientific release gate** after PPE2 surrogate and uncertainty validation; it reuses the implemented prior option but requires fresh prior/release compatibility and model checks.
+8. **Review and integration:** evaluate backward compatibility, scientific limitations, reproducibility and diagnostics; merge only approved changes into the agreed integration target.
 
-These are **suggested phases**, not automatically approved numbered iterations. Detailed implementation tactics, Slurm configurations, resources, and gates are agreed at each kickoff. Do not create active iteration records before approval.
+These are **campaign progression phases**, not approved numbered implementation iterations. Agree each iteration's implementation scope, resource contract, and specific gates separately. Completing or committing this plan does **not** authorize an Iter001 code change, benchmark job, or sampler run.
 
 ### 7.3 Development records
 
-Mirror the existing surrogate development conventions: `README.md`, `PLAN.md`, `WORKFLOW.md`, `ITERATION_SUMMARY.md`, `registry.csv`, `handoff/CURRENT.md`, and folders for `iterations/`, `summaries/`, `slurm/`, `tools/`, and `templates/` as needed. Keep reusable optimization science code in `model_ELM/`, not inside this records folder. A small, reproducible **site campaign configuration** should record observation paths, variable/resolution choices, uncertainty assumptions, source hashes, prior metadata, seeds, pool settings, sampling settings, and output destinations.
+Mirror the existing surrogate development conventions: `README.md`, `PLAN.md`, `WORKFLOW.md`, `ITERATION_SUMMARY.md`, `registry.csv`, `handoff/CURRENT.md`, and folders for `iterations/`, `summaries/`, `slurm/`, `tools/`, and `templates/` as needed. Keep reusable optimization science code in `model_ELM/`, not inside this records folder. A small, reproducible **site campaign configuration** should record observation paths, variable/resolution choices, uncertainty assumptions, source hashes, **`prior_id`, PPE design and coupled surrogate release identifiers, PPE-specific depth/uncertainty handoff IDs**, seeds, pool settings, sampling settings, measured performance settings, and output destinations.
 
 ### 7.4 Multisite future placeholder
 
@@ -329,4 +343,4 @@ Expose a per-site function returning separate **GPP, SR, and joint C/N log-likel
 
 ## Expected outcome
 
-A tested, provenance-complete, reproducible, **site-by-site 18-parameter Bayesian optimization system** that starts from a scientific-prior-aware scrambled Sobol search, runs transformed-coordinate `emcee` on the frozen three-stage ELM surrogate, uses fixed observation-plus-surrogate uncertainty for GPP/SR, and applies a fixed site-specific depth operator plus observation, surrogate, and depth covariance for a joint bivariate-lognormal C/N likelihood. It preserves the GPP+SR-only comparison, reports posterior quality, convergence limitations, covariance assumptions, and scientific fit, and never expands the MCMC parameter vector beyond the original 18 physical parameters.
+A tested, provenance-complete, reproducible, **site-by-site 18-parameter Bayesian optimization system** that starts from a scientific-prior-aware scrambled Sobol search, runs transformed-coordinate `emcee` on the **validated PPE1 coupled three-stage ELM surrogate by default**, uses fixed observation-plus-surrogate uncertainty for GPP/SR, and applies a fixed site-specific depth operator plus observation, surrogate, and depth covariance for a joint bivariate-lognormal C/N likelihood. It preserves the GPP+SR-only comparison, reports posterior quality, convergence limitations, covariance assumptions, and scientific fit, and never expands the MCMC parameter vector beyond the original 18 physical parameters. The optional PPE2 conditional-`k_s4` prior is implemented and tested without scientifically activating it until a compatible PPE2-trained release and PPE2-specific uncertainty/depth inputs exist. Surrogate throughput is benchmarked before production budgets are approved; any performance rewrite remains an independently reviewed iteration decision.
