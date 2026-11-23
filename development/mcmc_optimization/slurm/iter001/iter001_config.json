@@ -1,0 +1,21 @@
+{
+  "schema": "mcmc-optimization-iter001-config-v1",
+  "repository_root": "/xdisk/chopinsong/tianyihu/elm-olmt-mcmc",
+  "repository_base_commit": "547cc22b170b3262e8ead20e948372e9d59fbc98",
+  "branch": "feature/mcmc-optimization",
+  "plan_sha256": "46775c71d8fa333024be592673b1b3dcbfe4c7577c5656289ff4ad6465eaafc6",
+  "python": "/home/u32/tianyihu/.local/share/mamba/envs/OLMT_puma/bin/python",
+  "ppe1_root": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe_vertc/params",
+  "ppe2_root": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe2_vertc/params",
+  "snapshot_root": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe_vertc/surrogate_input_data",
+  "release_root": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe_vertc/surrogate_products/three_stage_abby_jerc/release_0001",
+  "uncertainty_handoff": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/three_stage_surrogate/iter015_abby_jerc_full_chain_robustness/handoff/uncertainty_handoff.json",
+  "output_root": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/mcmc_optimization/iter001_dual_prior_coupled_preflight",
+  "sites": ["ABBY", "JERC"],
+  "batch_sizes": [1, 4, 16],
+  "window_hours": [48, 720, 8760],
+  "warm_repetitions": 5,
+  "history_hours": 720,
+  "thread_count": 1,
+  "storage_cap_bytes": 5368709120
+}

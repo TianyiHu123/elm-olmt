@@ -1,0 +1,5 @@
+validator: development/mcmc_optimization/slurm/iter001/validate_closeout_iter001.sh
+validator_sha256: 47d0abd77f75b83c596097649013073c616c98cd156966318e8594e684a074f8
+command: bash development/mcmc_optimization/slurm/iter001/validate_closeout_iter001.sh
+output: ITER001_FOUR_RECORD_VALIDATE_PASS records=report,summary,registry,handoff result=pass decision=continue_existing_inference_path recommendation=A active_jobs=0
+result: pass

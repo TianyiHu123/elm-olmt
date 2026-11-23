@@ -1,0 +1,30 @@
+{
+  "schema": "mcmc-optimization-iter001-execution-manifest-v1",
+  "repository_base_commit": "547cc22b170b3262e8ead20e948372e9d59fbc98",
+  "branch": "feature/mcmc-optimization",
+  "campaign_plan_sha256": "46775c71d8fa333024be592673b1b3dcbfe4c7577c5656289ff4ad6465eaafc6",
+  "files": {
+    "development/hpc/puma_mcmc_worktree.md": "067311e23e52d0fc11a765c992eb1ec159c35c49967be11bc8cc3b2fea154f53",
+    "development/mcmc_optimization/slurm/iter001/iter001_config.json": "dff824bb3bcb8b6b5ed0dc7231afdeaa2333165aca4e84d989727566bbb62340",
+    "development/mcmc_optimization/slurm/iter001/run_iter001.py": "a04dcedd4aaa05d2a45d9f72d5d12b024beca17319fbd6340508d0b81947ffba",
+    "development/mcmc_optimization/slurm/iter001/preflight_iter001.slurm": "f66e6cfa4730b57f723cc5380417c2e2a6af669850873dd846e730b87fdcc918",
+    "development/mcmc_optimization/slurm/iter001/prior_validation_iter001.slurm": "e24aa5509d2cbf1b96749450069d84dddca819c74f350a5a22c728f311982bbc",
+    "development/mcmc_optimization/slurm/iter001/coupled_interface_iter001.slurm": "ed80469ee6d0d3697cd9e12f1d318d1eb41b444ac34554c2819d1918727d7ec0",
+    "development/mcmc_optimization/slurm/iter001/benchmark_iter001.slurm": "f02ff73d44b9d099043815c6716ea6912647a19b2c40a7dc35ae7fd08f87e8ee",
+    "development/mcmc_optimization/slurm/iter001/final_validation_iter001.slurm": "84d5305d50987023eb32a1a63accb261fc630ed5300107e54f2f911800d55406",
+    "model_ELM/mcmc_prior.py": "cef1898ca32bc4d8fb4679ef9baa1af083cbb7c25219c929e57b8add04c3f4d0",
+    "model_ELM/mcmc_coupled_adapter.py": "05ee52c5ed4e79edcca4a1c6469cca0ed4222bf95049ba35b6246ee6963489c0",
+    "tests/test_mcmc_prior_iter001.py": "22d8be5c09f5791ffef992489cd7e1334f5204f7993aa8f9ff2bb0775a6230ca",
+    "tests/test_mcmc_coupled_interface_iter001.py": "459a47381631d93c87578f2c3a8d8916edc9f6354567423b7eada6286da758ed"
+  },
+  "dependencies": {
+    "ppe1_generator": "c3b64ebdd4116ff7aff6c3c4ecc2ac2351f2b275c58cc84be9074ffcdcf88cf2",
+    "ppe1_metadata": "80a6ed8403df389b746d33aef389dde3f89754d94df9f74953acce98dd400e0a",
+    "ppe2_generator": "5cd75435ec8f4c978e9e4f82b220f25b8e95836076ef2f17a58653340d67ef8c",
+    "ppe2_metadata": "b4f155806042e11e4f7de68f020bd4b2a3349dd1b2f24b48820b345ec49336db",
+    "coupled_release_manifest": "4bdc91e2eed6ad8b8228bbc814767fe739a649599c197fade4bf9256ceab543a",
+    "coupled_catalog": "89a636b98b3866d6721e663c5b7ee3a9a7698248c8355dde0d9d4fe1fd4285da",
+    "snapshot": "39b05495a57bfc9f323df67b47c0110dadfbf508b3159cde7ce1a6c59dfd187a",
+    "global_split": "99467dea4d34834c4ea4aaea9e416620cd9bc16310f567f7b7fc1735abe74fce"
+  }
+}

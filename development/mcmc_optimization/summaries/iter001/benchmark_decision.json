@@ -1,0 +1,7 @@
+{
+  "schema": "mcmc-iter001-benchmark-decision-v1",
+  "benchmark_report_sha256": "f7f150687c0352c09c12043526c640789937f542ca8b6d62a11746d44f072176",
+  "independent_review": "pass",
+  "recommendation": "A",
+  "rationale": "All 18 bounded benchmark cells and repeats completed deterministically with low memory use, useful batching efficiency, and no concrete infrastructure blocker; continue the existing inference path. Projections are feasibility evidence, not approved production budgets, and full posterior-call throughput must be rebenchmarked after a likelihood adapter exists."
+}

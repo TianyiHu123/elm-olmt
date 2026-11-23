@@ -1,0 +1,24 @@
+{
+  "benchmark_decision_sha256": "705fe383a5f341074fbbe278c442fe18a363331e8011c0a9e5b3277176cd53fe",
+  "decision": "continue_existing_inference_path",
+  "environment": {
+    "executable": "/home/u32/tianyihu/.local/share/mamba/envs/OLMT_puma/bin/python",
+    "hostname": "r7u06n1.puma.hpc.arizona.edu",
+    "numpy": "1.26.4",
+    "python": "3.11.15 | packaged by conda-forge | (main, Jun 11 2026, 03:34:02) [GCC 14.3.0]",
+    "threads": {
+      "MKL_NUM_THREADS": "1",
+      "NUMEXPR_NUM_THREADS": "1",
+      "OMP_NUM_THREADS": "1",
+      "OPENBLAS_NUM_THREADS": "1"
+    }
+  },
+  "recommendation": "A",
+  "report_sha256": {
+    "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/mcmc_optimization/iter001_dual_prior_coupled_preflight/results/benchmark/benchmark_report.json": "f7f150687c0352c09c12043526c640789937f542ca8b6d62a11746d44f072176",
+    "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/mcmc_optimization/iter001_dual_prior_coupled_preflight/results/interface/interface_report.json": "7fc10ed58aadf99230e0def97e35d29279099f8b5bf9b0afa5e0846cf39fe253",
+    "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/mcmc_optimization/iter001_dual_prior_coupled_preflight/results/prior/prior_report.json": "29bd1e2fc24839c09a6b76b0255ab4971f8e60d507e37875149ad05c4a8c5c3b"
+  },
+  "schema": "mcmc-iter001-final-report-v1",
+  "status": "pass"
+}
