@@ -27,7 +27,7 @@ Reuse the current scrambled-Sobol candidate search, optional multistart local re
 
 - **Parameters:** use the original 18-parameter PPE1 `NEON_ppe_vertc_parmfile`, `generate_scramble_sobol.py`, and associated metadata as the **active default**. Preserve the separately supplied PPE2 `generate_scramble_sobol.py`, `SAMPLING_ppe2.md`, and `sobol18_1024.txt` identities for a **selectable but initially inactive** `ppe2` prior. Record each design's parameter names/order, bounds, PFT indices, transforms and conditional rules, seed, and software versions. The selected design's authoritative files define its support; do not infer bounds from model weights.
 - **Surrogate:** initially the published **PPE1 coupled** spinup/GPP/SR `release_0001` via `model_ELM.three_stage_coupled_release.CoupledThreeStageInference`, with its scalers, feature schemas, time/calendar and forcing-history requirements, training-member provenance, and checksums. The full chain predicts all upstream quantities from a proposed parameter vector. A future PPE2-trained release must have an independently validated artifact identity.
-- **Uncertainty:** for PPE1, reuse and validate the **Iter015 development-only 20-repetition handoff**: GPP/SR errors at *hourly and daily* resolutions and paired full-profile spinup C/N errors. Record biases, error distributions, per-repetition RMSE/MAE, site-specific C–N covariance, and derivation of fixed error inputs. **Do not rerun the PPE1 robustness study merely to start MCMC.** A future PPE2-trained surrogate requires its **own** held-out uncertainty estimates and depth coefficients; PPE1 values cannot be silently transferred. No fixed-test-based coefficient estimation or retuning.
+- **Uncertainty:** for PPE1, reuse and validate the **Iter015 development-only 20-repetition handoff**: GPP/SR errors at *hourly and daily* resolutions and paired full-profile spinup C/N errors. Record biases, error distributions, per-repetition RMSE/MAE, site-specific C–N covariance, and derivation of fixed error inputs. **Do not rerun the PPE1 robustness study merely to start MCMC.** A future PPE2-trained surrogate requires its **own** held-out uncertainty estimates and depth coefficients; PPE1 values cannot be silently transferred. The protected fixed-test members must not enter surrogate training, surrogate uncertainty estimation, or surrogate retuning. The separately defined full-ensemble depth observation operator in Section 1.2 is an explicit exception for depth-operator estimation only.
 - **Flux observations:** user-preprocessed GPP and SR NetCDF observations with timestamps, units, quality masks, optional uncertainty variables, and provenance. GPP may provide `GPP_mean`, `GPP_halfdiff`, and/or a configured `GPP_err`; SR may provide `SR_err`. Validate actual variable names against each declared file rather than assuming they exist.
 - **Soil observations:** user-provided `NEON_soilC_N_CN.csv` with one positive C stock and one positive N stock per site, units of gC/m² and gN/m², and `effectiveDepth_m`. Verify provenance/processing, effective depth, and anomalous site-level ratios (including TALL) before production use.
 
@@ -57,7 +57,7 @@ where \(D\) is the site's validated NEON effective observation depth. The fracti
 | ABBY | 2.0 m | 0.709296 | 0.707732 |
 | JERC | 2.0 m | 0.757688 | 0.756602 |
 
-For the calibrated operator, re-estimate and freeze each fraction from the designated **819-member development population only**, excluding the protected 205 fixed-test members. Use the validated spinup-preprocessing stocks and record the member manifest, estimator, source identity, target depth, units, and resulting coefficients. Calculate corresponding development-only fractions for each additional site when its validated preprocessing is available. **PPE2 preprocessing gives materially different depth fractions: when PPE2 is activated, re-estimate/freeze fractions and covariance from the designated PPE2 development members, with PPE2 provenance.** The two-output architecture and ownership of depth correction remain unchanged.
+For the fixed **PPE1 MCMC observation-depth operator**, adopt the already characterized site-specific means of member-level C and N depth fractions from **all 1,024 PPE1 members** in the previously validated ABBY/JERC spinup-preprocessing NetCDFs. The depth operator is a fixed empirical transformation of full-profile ELM soil stocks, not a refit of the frozen surrogate. Reuse the existing PPE1 preprocessing reports, source hashes, and diagnostic results; read the member-level files only as needed to obtain full-precision operator and paired depth-error covariance values and to verify consistency with the published summaries. Do not rerun ELM restart integration or generate redundant depth-preprocessing figures. Record source identities, the 1,024-member population, estimator, effective observation depth, stock definitions, units, and adopted numerical coefficients. Because the 205 historically protected fixed-test members contribute to this final depth operator, those members are **not independent tests of the combined surrogate-plus-depth operator**; this does not retroactively change the completed independent evaluation of the frozen full-profile surrogate. For additional sites, require an equally documented eligible full PPE-specific depth-preprocessing ensemble. **PPE2 depth fractions/covariance must come from its own PPE2 preprocessing and compatible surrogate/uncertainty release before PPE2 scientific inference is activated; never transfer PPE1 values.** The two-output surrogate architecture and MCMC ownership of depth correction remain unchanged.
 
 ### 1.3 Inference execution and performance contract
 
@@ -205,7 +205,7 @@ For the **PPE1 baseline**, estimate a site-specific 2×2 covariance, including t
 
 #### Depth-correction covariance
 
-For element \(v\in\{C,N\}\) and development member \(m\), define
+For element \(v\in\{C,N\}\) and eligible member \(m\) of the full PPE-specific depth-preprocessing ensemble, define
 
 \[
 \varepsilon_{v,s,m}^{depth}=\log\left(
@@ -220,7 +220,7 @@ For element \(v\in\{C,N\}\) and development member \(m\), define
 \end{pmatrix}.
 \]
 
-Completed **PPE1** ABBY/JERC preprocessing gives these exploratory full-ensemble summaries:
+Completed **PPE1** ABBY/JERC preprocessing gives these 1,024-member full-ensemble summaries (rounded here; do not use report-rounding as numerical likelihood inputs):
 
 | Statistic | ABBY | JERC |
 | --- | ---: | ---: |
@@ -230,7 +230,7 @@ Completed **PPE1** ABBY/JERC preprocessing gives these exploratory full-ensemble
 | C log-error mean | 0.011174 | 0.009329 |
 | N log-error mean | 0.011633 | 0.009577 |
 
-The corresponding exploratory covariance matrices are approximately
+The corresponding full-ensemble covariance matrices, rounded for presentation, are approximately
 
 \[
 \boldsymbol{\Sigma}_{ABBY,\mathrm{depth}}=
@@ -246,13 +246,13 @@ The corresponding exploratory covariance matrices are approximately
 \end{bmatrix}.
 \]
 
-Re-estimate the fractions, mean residuals, and covariance matrices from the designated development members before calibrated use. The near-one C–N depth-error correlations are not the total likelihood-error correlations; the total correlation follows from the sum of all three covariance components.
+For the PPE1 production depth operator, use the existing 1,024-member fraction and depth log-residual estimates; verify or recover the **full-precision paired 2×2 covariance** from the existing member-level ABBY/JERC preprocessing NetCDFs if it was not already stored at full precision. Record the covariance estimator and require agreement with the earlier reports within their printed precision. This is a bounded numerical extraction/verification, **not** new ELM spinup preprocessing, restart processing, surrogate fitting, or a mandatory 819/205 rerun. Keep the 819/205 split strictly for the frozen surrogate training and held-out uncertainty provenance. The near-one C–N depth-error correlations are not the total likelihood-error correlations; the total correlation follows from the sum of all three covariance components.
 
 #### Cross-source independence diagnostic, bias, and numerical handling
 
 Retain zero cross-source covariance in the initial total-covariance formula. During normal surrogate robustness evaluation, calculate the empirical within-element and available cross-element correlation or covariance between \(\boldsymbol{\delta}^{sur}_{s,m,r}\) and \(\boldsymbol{\varepsilon}^{depth}_{s,m}\) on the same held-out members. Report whether these omitted terms are small relative to the retained surrogate and depth components. This is a diagnostic only—not a new experiment, additional training campaign, or release gate. If dependence is substantial, document its potential effect and consider a directly estimated combined surrogate-plus-depth covariance only as a later refinement; do not automatically alter the baseline likelihood.
 
-Record surrogate and depth prediction biases separately. Under the initial additive-error approximation, the optional fixed correction may use their reproducibly estimated development-only combined mean, \(\boldsymbol{\mu}_{s,\mathrm{pred}}=\boldsymbol{\mu}_{s,\mathrm{sur}}+\boldsymbol{\mu}_{s,\mathrm{depth}}\), with the sign convention in \(\mathbf e_s\) above. Do not conflate bias with variance, inflate covariance to hide systematic error, or fit a bias in MCMC.
+Record surrogate and depth prediction biases separately. Under the initial additive-error approximation, the optional fixed correction may combine the **Iter015 development-only surrogate-error mean** with the separately characterized **full-ensemble PPE1 depth-error mean**, \(\boldsymbol{\mu}_{s,\mathrm{pred}}=\boldsymbol{\mu}_{s,\mathrm{sur}}+\boldsymbol{\mu}_{s,\mathrm{depth}}\), with the sign convention in \(\mathbf e_s\) above. Do not conflate bias with variance, inflate covariance to hide systematic error, or fit a bias in MCMC.
 
 Require positive finite observed, full-profile, and depth-adjusted stocks. A nonpositive surrogate stock returns `-inf` and triggers artifact/domain diagnostics rather than clipping. Require every total covariance to be finite, symmetric, and positive definite; use stable covariance estimation and Cholesky/linear-solve and log-determinant calculations rather than an explicit matrix inverse in implementation. Do not replicate either stock observation across hours or days.
 
@@ -308,7 +308,7 @@ Prefer extending established modules over duplicating the MCMC machinery. Review
 
 Required tests should cover: inverse Sobol mapping versus **each PPE generator**; parameter order/bounds; PPE1 independent and PPE2 normalized conditional `k_s4` support **and density**; conditional C:N support **and density**; log-uniform prior ratios; coordinate Jacobian invariance; synthetic GPP, SR, and bivariate C/N likelihood calculations; exact depth-fraction application; covariance assembly and C–N off-diagonal retention; no fitted error/covariance/bias/depth-fraction dimensions; all four observed-variable contributions; valid missing-data/zero-flux handling; daily aggregation and uncertainty at native scale; chronology and no-leap handling; invalid C/N stocks and non-positive-definite covariance; deterministic replay of initialization and chain restart; preservation of legacy interfaces; surrogate end-to-end inference without true upstream ELM target leakage; rejection of PPE2/release support mismatch; and reproducible measured throughput plus numerical-equivalence checks for any future inference optimization.
 
-A run must fail closed on **mismatched `prior_id`, PPE design metadata, surrogate training support/release, or uncertainty/depth provenance**; incompatible artifact schema, trained-site identity, wrong parameter count/order, unsupported stock definition, invalid or fixed-test-contaminated depth coefficients, missing uncertainty provenance, non-finite/non-positive-definite covariance, corrupted checkpoint/pool hashes, or absent required observation overlap.
+A run must fail closed on **mismatched `prior_id`, PPE design metadata, surrogate training support/release, or uncertainty/depth provenance**; incompatible artifact schema, trained-site identity, wrong parameter count/order, unsupported stock definition, missing or inconsistent full-ensemble PPE-specific depth-operator inputs, fixed-test-contaminated **surrogate uncertainty** estimates, missing uncertainty provenance, non-finite/non-positive-definite covariance, corrupted checkpoint/pool hashes, or absent required observation overlap.
 
 ---
 
@@ -325,7 +325,7 @@ The initial pilot uses **`prior_id=ppe1` and the published PPE1 coupled `release
 3. **Interface and performance preflight:** build the minimum coupled adapter, check site/forcing/time/stock interfaces and reproducible end-to-end inference, and benchmark coupled-surrogate throughput and memory under representative workloads. Recheck complete posterior-call throughput once the likelihood is implemented. Decide from measured budgets whether a separate infrastructure optimization is needed before large candidate searches or chains.
 4. **Observation and flux-likelihood prototype:** validate GPP/SR files, masks, timestamps and daily uncertainties; implement independently selectable hourly/daily Gaussian likelihood terms and deterministic one-site checks.
 5. **Candidate search and MCMC pilot:** implement prior-aware 18-D Sobol candidates, valid diversified pools, optional local optimization, and GPP+SR-only site-specific `emcee` pilots. Verify checkpoint/restart, performance, mixing, and residual diagnostics before locking production settings.
-6. **Joint C/N likelihood pilot:** validate observations, development-only PPE1 depth coefficients, the three fixed covariance components and optional fixed bias correction; add the bivariate-lognormal term and compare four-observable versus flux-only posteriors.
+6. **Joint C/N likelihood pilot:** validate observations, existing **1,024-member PPE1 depth coefficients**, the three fixed covariance components and optional fixed bias correction; add the bivariate-lognormal term and compare four-observable versus flux-only posteriors. Reuse the already validated PPE1 preprocessing inputs and depth diagnostics rather than repeating their preparation.
 7. **Site expansion and sensitivity:** run independent eligible-site posteriors, including C/N CV scenarios where enabled; produce posterior-predictive and provenance reports. A future switch to PPE2 is a **separate scientific release gate** after PPE2 surrogate and uncertainty validation; it reuses the implemented prior option but requires fresh prior/release compatibility and model checks.
 8. **Review and integration:** evaluate backward compatibility, scientific limitations, reproducibility and diagnostics; merge only approved changes into the agreed integration target.
 
