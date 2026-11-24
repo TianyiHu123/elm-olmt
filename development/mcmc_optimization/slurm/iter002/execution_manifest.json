@@ -1,0 +1,29 @@
+{
+  "schema": "mcmc-optimization-iter002-execution-manifest-v1",
+  "repository_commit": "f649e43cfa3c08a0cd02e02a92adf66d59fe2ded",
+  "branch": "feature/mcmc-optimization",
+  "plan_sha256": "b302ee65fe8938abd6a5e1bf4d0931c43a298b336acc4c4e1afd120fa2f175ab",
+  "runtime_root": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/mcmc_optimization/iter002_neon_observation_preparation",
+  "publication_root": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/mcmc_optimization/observation_products/release_0001",
+  "canonical_files": {
+    "model_ELM/load_obs_nc.py": "00b9152c6971768bc8dd686520f0a9c928c5db606f54fdf140a1d13a70435883",
+    "tests/test_load_obs_nc_strict.py": "d6cacf44ec6b0e57479bacd74d03b5329db3da72a4f935f517c411e294f9a271",
+    "development/mcmc_optimization/slurm/iter002/run_iter002.py": "f8070d4296b6e90e79d8fb6605bf6be6baba8df7bfc30283f038ce8ca6eac4d2",
+    "development/mcmc_optimization/slurm/iter002/verify_iter002_package.sh": "8f162c877b5087101f7bba4d6e1b4654fa6e918467b37dfc2eca6b6a621f6c10",
+    "development/mcmc_optimization/slurm/iter002/preflight_iter002.slurm": "1b241672f4f293d47336dcb456f9c878a7b877df5814542954c9a6528bb37edb",
+    "development/mcmc_optimization/slurm/iter002/source_audit_iter002.slurm": "d3eb80513f991c020a391f6ead10015f19be980b51939d96777fa8338e5e6a2f",
+    "development/mcmc_optimization/slurm/iter002/flux_prepare_iter002.slurm": "0c65e2ec2704649c791eb8ba56910f54bf79ce07682a1e031658e1f4fac720be",
+    "development/mcmc_optimization/slurm/iter002/uncertainty_iter002.slurm": "1afcc00657384b336a0dbdc8ec9bf5095daaa1d73b6253e00db32de084300ef7",
+    "development/mcmc_optimization/slurm/iter002/publish_iter002.slurm": "1a91e926f6b3ba5cfc62d744c88a471b2e12c852a314651e81d99af62e29859f",
+    "development/mcmc_optimization/slurm/iter002/final_validation_iter002.slurm": "f76cd505a3fa1b15e863eb613885c990624334783c71608360141ffe62c86220"
+  },
+  "submitted_directory": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/mcmc_optimization/iter002_neon_observation_preparation/submitted",
+  "config_copy": "iter002_config.json",
+  "driver_copy": "run_iter002.py",
+  "job_order": ["preflight", "source_audit", "flux_prepare", "uncertainty", "publish", "final_validation"],
+  "planned_attempts": 6,
+  "maximum_attempts": 9,
+  "storage_cap_bytes": 5368709120,
+  "fixed_test_access_for_surrogate_uncertainty": false,
+  "catalog_last": true
+}

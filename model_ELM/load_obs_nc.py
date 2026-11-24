@@ -225,6 +225,126 @@ def load_observations_with_time_from_nc(
     }
 
 
+def load_observations_strict_from_nc(
+    obs_path: str,
+    myvars: Sequence[str],
+    obs_err_vars: Optional[Dict[str, str]] = None,
+    *,
+    error_fallback: Optional[str] = None,
+    absolute_floor: Optional[float] = None,
+    target_calendar: Optional[str] = "noleap",
+    floor_to_hour: bool = False,
+) -> Dict[str, Any]:
+    """Load MCMC observations without legacy truncation or sign filtering.
+
+    The strict interface is intentionally separate from the historical loader above.  It rejects
+    ambiguous dimensions, timestamp disorder/duplicates, failed calendar conversion, unknown
+    units, and missing or invalid configured error variables unless an explicit fallback is
+    selected.  Negative finite observations remain valid.  ``relative_10_percent`` is the only
+    built-in fallback and requires a positive ``absolute_floor`` in converted daily-rate units.
+    """
+    path = Path(obs_path).expanduser().resolve()
+    if not path.is_file():
+        raise FileNotFoundError(f"Observation NetCDF not found: {path}")
+    if not myvars:
+        raise ValueError("myvars must contain at least one observation variable")
+    if error_fallback not in (None, "relative_10_percent"):
+        raise ValueError(f"unsupported strict error fallback: {error_fallback!r}")
+    if error_fallback and (absolute_floor is None or not np.isfinite(absolute_floor) or absolute_floor <= 0):
+        raise ValueError("relative_10_percent fallback requires a positive finite absolute_floor")
+
+    obs_err_vars = obs_err_vars or {}
+    with xr.open_dataset(path) as opened:
+        ds = opened.load()
+
+    if "time" not in ds.coords or ds["time"].ndim != 1 or ds["time"].dims != ("time",):
+        raise ValueError(f"Observation file {path} must expose one-dimensional coordinate 'time'.")
+    try:
+        source_calendar = str(ds["time"].dt.calendar)
+    except Exception as exc:
+        raise ValueError(f"Observation file {path} has an undecodable calendar") from exc
+    if target_calendar and source_calendar != target_calendar:
+        try:
+            ds = ds.convert_calendar(target_calendar, dim="time")
+        except Exception as exc:
+            raise ValueError(
+                f"Failed to convert observation calendar {source_calendar!r} to {target_calendar!r}"
+            ) from exc
+
+    time_da = _floor_hour(ds["time"]) if floor_to_hour else ds["time"]
+    time = np.asarray(time_da.values).reshape(-1)
+    if time.size == 0:
+        raise ValueError(f"Observation file {path} has an empty time coordinate")
+    if np.unique(time).size != time.size:
+        raise ValueError(f"Observation file {path} contains duplicate timestamps")
+    if time.size > 1 and not np.all(time[1:] > time[:-1]):
+        raise ValueError(f"Observation file {path} timestamps are not strictly increasing")
+
+    obs: Dict[str, np.ndarray] = {}
+    obs_err: Dict[str, np.ndarray] = {}
+    error_source: Dict[str, np.ndarray] = {}
+    units: Dict[str, str] = {}
+    for var in myvars:
+        if var not in ds.variables:
+            raise KeyError(f"Observation variable '{var}' not found in {path}")
+        da = ds[var].squeeze(drop=True)
+        if da.dims != ("time",) or da.sizes["time"] != time.size:
+            raise ValueError(
+                f"Observation variable '{var}' must have exactly dimension ('time',) matching time"
+            )
+        converted = _convert_obs_to_daily(da, var)
+        values = np.asarray(converted.values, dtype=np.float64).reshape(-1)
+        obs[var] = values
+        units[var] = str(converted.attrs["units"])
+
+        err_name = obs_err_vars.get(var)
+        if err_name is not None and err_name in ds.variables:
+            err_da = ds[err_name].squeeze(drop=True)
+            if err_da.dims != ("time",) or err_da.sizes["time"] != time.size:
+                raise ValueError(
+                    f"Error variable '{err_name}' must have exactly dimension ('time',) matching time"
+                )
+            err_values = np.asarray(_convert_obs_to_daily(err_da, err_name).values, dtype=np.float64)
+            valid_err = np.isfinite(err_values) & (err_values > 0)
+            if not np.all(valid_err | ~np.isfinite(values)) and error_fallback is None:
+                raise ValueError(f"Error variable '{err_name}' contains invalid values without fallback")
+            sources = np.full(time.size, "configured", dtype="U24")
+        elif err_name is not None and error_fallback is None:
+            raise KeyError(f"Configured error variable '{err_name}' not found in {path}")
+        elif error_fallback is None:
+            err_values = np.full(time.size, np.nan, dtype=np.float64)
+            valid_err = np.zeros(time.size, dtype=bool)
+            sources = np.full(time.size, "none", dtype="U24")
+        else:
+            err_values = np.full(time.size, np.nan, dtype=np.float64)
+            valid_err = np.zeros(time.size, dtype=bool)
+            sources = np.full(time.size, "relative_10_percent", dtype="U24")
+
+        if error_fallback == "relative_10_percent":
+            fallback = np.maximum(0.10 * np.abs(values), float(absolute_floor))
+            use_fallback = np.isfinite(values) & ~valid_err
+            err_values[use_fallback] = fallback[use_fallback]
+            sources[use_fallback] = "relative_10_percent"
+        err_values[~np.isfinite(values)] = np.nan
+        sources[~np.isfinite(values)] = "missing_observation"
+        valid_obs_err = np.isfinite(values) & (np.isfinite(err_values) & (err_values > 0))
+        if error_fallback is not None and not np.all(valid_obs_err | ~np.isfinite(values)):
+            raise ValueError(f"Strict uncertainty construction failed for variable '{var}'")
+        obs_err[var] = err_values
+        error_source[var] = sources
+
+    return {
+        "time": time,
+        "obs": obs,
+        "obs_err": obs_err,
+        "error_source": error_source,
+        "units": units,
+        "source_calendar": source_calendar,
+        "target_calendar": target_calendar or source_calendar,
+        "path": str(path),
+    }
+
+
 def collocate_obs_to_forcing_time(
     forcing_time: Sequence[Any],
     obs_time: Sequence[Any],

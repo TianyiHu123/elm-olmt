@@ -102,9 +102,17 @@ campaign-plan amendment.
 - C/N uses the established joint bivariate-lognormal formulation and fixed observation,
   surrogate, and depth covariance components, including the C-N covariance term. Covariance and
   any fixed development-only bias correction are not inferred.
-- Estimate uncertainty or depth coefficients only from the allowed development population.
-  Protected fixed-test members cannot be used for fitting, tuning, selection, robustness,
-  uncertainty estimation, validation, or likelihood construction.
+- Surrogate training, tuning, selection, robustness, uncertainty estimation, and validation use
+  only the allowed development population. Protected fixed-test members remain excluded from
+  those uses and from estimating surrogate likelihood uncertainty.
+- For the fixed PPE1 depth observation operator only, Section 1.2 of the current campaign plan
+  explicitly requires the complete 1,024-member PPE1 preprocessing ensemble for the C/N depth
+  fractions, depth-residual means, and paired depth covariance. This exception does not make the
+  205 protected members independent evaluation data for the combined surrogate-plus-depth
+  operator and grants no other fixed-test use.
+- Likelihood construction may consume that frozen full-ensemble depth operator together with the
+  separately frozen development-only surrogate uncertainty; it must preserve both provenance
+  populations and the resulting statistical-independence caveat.
 - Each site has a distinct inference configuration, observation window, and 18-parameter
   posterior. Site identity and site-specific provenance must not be pooled away.
 

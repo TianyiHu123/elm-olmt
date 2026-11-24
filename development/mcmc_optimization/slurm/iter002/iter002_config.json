@@ -1,0 +1,98 @@
+{
+  "schema": "mcmc-optimization-iter002-config-v1",
+  "repository_root": "/xdisk/chopinsong/tianyihu/elm-olmt-mcmc",
+  "repository_commit": "f649e43cfa3c08a0cd02e02a92adf66d59fe2ded",
+  "branch": "feature/mcmc-optimization",
+  "plan_sha256": "b302ee65fe8938abd6a5e1bf4d0931c43a298b336acc4c4e1afd120fa2f175ab",
+  "python": "/home/u32/tianyihu/.local/share/mamba/envs/OLMT_puma/bin/python",
+  "runtime_root": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/mcmc_optimization/iter002_neon_observation_preparation",
+  "publication_root": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/mcmc_optimization/observation_products/release_0001",
+  "staging_root": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/mcmc_optimization/iter002_neon_observation_preparation/staging/release_0001",
+  "storage_cap_bytes": 5368709120,
+  "sites": ["ABBY", "JERC"],
+  "calendar": "noleap",
+  "canonical_origin": "2018-01-01 00:00:00",
+  "history_hours": 720,
+  "gpp_min_hours": 18,
+  "sr_min_hours": 22,
+  "gpp_absolute_floor": 0.05,
+  "sr_absolute_floor": 0.05,
+  "cn_observation_cv": [0.2, 0.3, 0.5],
+  "cn_baseline_cv": 0.3,
+  "execution_checksum_manifest_sha256": "4ecf64b47722836785c77e9e600a7405c4874a04925ba7bf3da8e206fc86fe1b",
+  "sources": {
+    "gpp_script": {
+      "path": "/xdisk/chopinsong/chopinsong/CTSM_inputdata/lnd/clm2/neon_ncar/NEON/eval_files/v4/preprocess_neon_stats.py",
+      "sha256": "2317243faca7c6677b46f4741d8c960836c92079aaff41af5f2722fc46e0d5ba"
+    },
+    "soil_csv": {
+      "path": "/home/u32/tianyihu/CTSM5.3.021/neon_surffiles/NEON_soilC_N_CN.csv",
+      "sha256": "1869761ef73ac9b7c7789d29c516523cfd0895d6c0c53031e6bf4a147ac22afa"
+    },
+    "soil_script": {
+      "path": "/home/u32/tianyihu/CTSM5.3.021/neon_surffiles/calc_neon_soilCN.py",
+      "sha256": "9cd8166c8573adda5800a7ff30aac7a1295cf171a795817948f42928b70a05e0"
+    },
+    "release_manifest": {
+      "path": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe_vertc/surrogate_products/three_stage_abby_jerc/release_0001/release_manifest.json",
+      "sha256": "4bdc91e2eed6ad8b8228bbc814767fe739a649599c197fade4bf9256ceab543a"
+    },
+    "release_catalog": {
+      "path": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe_vertc/surrogate_products/three_stage_abby_jerc/catalog.json",
+      "sha256": "89a636b98b3866d6721e663c5b7ee3a9a7698248c8355dde0d9d4fe1fd4285da"
+    },
+    "forcing_snapshot": {
+      "path": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe_vertc/surrogate_input_data/manifests/dataset_snapshot_r0001.json",
+      "sha256": "39b05495a57bfc9f323df67b47c0110dadfbf508b3159cde7ce1a6c59dfd187a"
+    },
+    "uncertainty_handoff": {
+      "path": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/three_stage_surrogate/iter015_abby_jerc_full_chain_robustness/handoff/uncertainty_handoff.json",
+      "sha256": "c9282bbad9abc2d6519329018ca9be026171f071e6e689a44fb2af102784f436"
+    },
+    "uncertainty_manifest": {
+      "path": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/three_stage_surrogate/iter015_abby_jerc_full_chain_robustness/handoff/products_manifest.json",
+      "sha256": "293277a89bfa55bed100bf2e00476d26c39614e22dfb1a81eb3953c823df77e9"
+    },
+    "uncertainty_validation": {
+      "path": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/three_stage_surrogate/iter015_abby_jerc_full_chain_robustness/handoff/final_validation_report.json",
+      "sha256": "fed360f89b181dfb70166cdf05b18b91deb167737d022a9f6369cc0641dee2b6"
+    }
+  },
+  "site_sources": {
+    "ABBY": {
+      "gpp": ["/xdisk/chopinsong/chopinsong/CTSM_inputdata/lnd/clm2/neon_ncar/NEON/eval_files/v4/statistics/ABBY_neon_eval_hourly.nc", "abf1d62a02791c36258330206da4c142527ba1ea5a8b1922122ac3e2cb155503"],
+      "annual": ["/xdisk/chopinsong/chopinsong/CTSM_inputdata/lnd/clm2/neon_ncar/NEON/eval_files/v4/statistics/ABBY_annual_stats.csv", "ccb5b85478319a1d9e390d5926ed02237a95b9ce730031e680a26f9b1f436606"],
+      "sr": ["/xdisk/chopinsong/chopinsong/CTSM_inputdata/lnd/clm2/neon_ncar/NEON/eval_files/v4/ABBY/ABBY_cdo_merge.nc", "e5f7b6795616e3dbb2f24ef351d84f79da29847e82729db09d8756b3d9a1fdb2"],
+      "raw_soil": ["/home/u32/tianyihu/CTSM5.3.021/neon_surffiles/ABBY_surfaceData.csv", "cf74b4002fe3902612571837e660c4e73bfe2ce8ff9fb4171b3f55862849a69b"],
+      "depth": ["/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe_vertc/spinup_preprocessing/ABBY/ABBY_spinup_preprocessing.nc", "822611984a2f2a3bfdfc6c8b9f9b421a6bed809d938351faf122ed954dbab358"]
+    },
+    "JERC": {
+      "gpp": ["/xdisk/chopinsong/chopinsong/CTSM_inputdata/lnd/clm2/neon_ncar/NEON/eval_files/v4/statistics/JERC_neon_eval_hourly.nc", "ac4df46f8b0bb6bc0dd4eba66c8dc1e19a5775e4424cd82965635471ee70ace2"],
+      "annual": ["/xdisk/chopinsong/chopinsong/CTSM_inputdata/lnd/clm2/neon_ncar/NEON/eval_files/v4/statistics/JERC_annual_stats.csv", "4417b47267a309ed97abedd4723a66cc69b3fef964c74d83b814f5157a723461"],
+      "sr": ["/xdisk/chopinsong/chopinsong/CTSM_inputdata/lnd/clm2/neon_ncar/NEON/eval_files/v4/JERC/JERC_cdo_merge.nc", "a5507878801b83c14a1583a4b9f69a039bee748d8a2da2c50073e5fb94ab2c1f"],
+      "raw_soil": ["/home/u32/tianyihu/CTSM5.3.021/neon_surffiles/JERC_surfaceData.csv", "065246b5756cf1c5f7dd4afaaffdab1fd349a2b027d49371bd27bfbe1a7368e5"],
+      "depth": ["/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe_vertc/spinup_preprocessing/JERC/JERC_spinup_preprocessing.nc", "c6fa8500db6bf21387dfc5d875c997e70112db2fe5ddadd09c3760a679f9df61"]
+    }
+  },
+  "iter015_products_root": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/three_stage_surrogate/iter015_abby_jerc_full_chain_robustness/products",
+  "expected_source_coverage_noleap": {
+    "ABBY": {"GPP": {"18": 525, "20": 346, "22": 142, "24": 12}, "SR": {"18": 1095, "20": 1095, "22": 1095, "24": 1083}},
+    "JERC": {"GPP": {"18": 712, "20": 528, "22": 237, "24": 35}, "SR": {"18": 2157, "20": 2152, "22": 2144, "24": 2076}}
+  },
+  "expected_depth_statistics": {
+    "ABBY": {
+      "fractions": [0.7092963303779629, 0.7077317530246572],
+      "mean_log_residual": [0.011174283998339141, 0.01163307469918126],
+      "sample_covariance": [[0.023243511149635396, 0.023753744930420512], [0.023753744930420512, 0.024331829282837562]],
+      "printed_sd": [0.152458, 0.155987],
+      "printed_correlation": 0.998835
+    },
+    "JERC": {
+      "fractions": [0.7576875377034699, 0.7566024347449181],
+      "mean_log_residual": [0.009329490481005212, 0.009576606178251573],
+      "sample_covariance": [[0.019459856218875516, 0.019734091928145941], [0.019734091928145941, 0.020048587882861131]],
+      "printed_sd": [0.139499, 0.141593],
+      "printed_correlation": 0.999092
+    }
+  }
+}

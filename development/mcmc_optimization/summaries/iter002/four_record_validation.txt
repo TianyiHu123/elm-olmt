@@ -1,0 +1,5 @@
+validator: development/mcmc_optimization/slurm/iter002/validate_closeout_iter002.sh
+validator_sha256: edfc2531aa36c6b49044ac5e8a85cb9c0555517ed9c5bfdd86eb5f8c8582827a
+command: bash development/mcmc_optimization/slurm/iter002/validate_closeout_iter002.sh
+output: ITER002_FOUR_RECORD_VALIDATE_PASS records=report,summary,registry,handoff result=pass decision=observation_release_0001_published active_jobs=0
+result: pass
