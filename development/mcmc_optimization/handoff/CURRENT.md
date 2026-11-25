@@ -4,10 +4,12 @@
 
 - Campaign: `MCMC Optimization Development`.
 - Plan: `development/mcmc_optimization/MCMC_OPTIMIZATION_PLAN.md`.
-- Current plan SHA-256: `b302ee65fe8938abd6a5e1bf4d0931c43a298b336acc4c4e1afd120fa2f175ab`.
+- Current plan SHA-256: `5ee74c5208f489c540f21a8c13ce0fbe0ed84ea1d6c9043d6eece2293a0860c0`.
 - Historical Iter001 locked plan SHA-256:
   `46775c71d8fa333024be592673b1b3dcbfe4c7577c5656289ff4ad6465eaafc6`.
-- Alignment: `aligned`; approved deviation `none`; no amendment recommended.
+- Alignment: `aligned`; approved deviation `none`; the user-approved standalone development-sequence
+  amendment makes the validated complete four-observable posterior the default first PPE1 MCMC
+  pilot target without redesigning the likelihood or revising completed iteration evidence.
 
 ## Live State
 
@@ -16,12 +18,12 @@
 - Last completed iteration: `iter003`.
 - Active iteration: none.
 - Active jobs: none; all eight Iter003 attempts have terminal `sacct` accounting.
-- Last updated: `2026-11-25T03:24:53-07:00`.
+- Last updated: `2026-11-25T05:27:29-07:00`.
 - Selected profile: `development/hpc/puma_mcmc_worktree.md`, inheriting
   `development/hpc/puma.md`.
 - Decision: `four_observable_posterior_validated`; all ten gates `pass`.
-- Authority: Iter003 closeout only. No Iter004 initialization/execution, candidate search,
-  optimization, MCMC, push, or merge is authorized.
+- Authority: standalone campaign-plan amendment only; Iter003 remains closed. No Iter004
+  initialization/execution, candidate search, optimization, MCMC, push, or merge is authorized.
 
 ## Iter003 Decision and Implementation
 
