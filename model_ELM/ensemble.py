@@ -232,6 +232,17 @@ def create_multisite_script(self,sites,scriptdir, walltime='24:00:00'):
       myfile.write('cd '+site_rundir+'\n')
       myfile.write('mkdir -p timing/checkpoints\n')
       #restart file options
+      # Safety guard: restart_* options rewrite self.finidat in place via
+      # modify_netcdf.py. When an EXTERNAL finidat is configured, that would
+      # modify the source checkpoint (e.g. the Phase 03 control restart), which
+      # is not allowed. Reject this combination fail-fast. A private-copy
+      # modification workflow can be added later.
+      if (getattr(self, 'external_finidat', '') != ''):
+        if any('restart_' in key for key in self.case_options.keys()):
+          print('Error: restart_* modification options are not allowed with '
+                'external_finidat (would modify the source restart '
+                + str(self.finidat) + '). Aborting before any file write.')
+          sys.exit(1)
       for key in self.case_options.keys():
         if ('restart_' in key):
             var   = key[8:]

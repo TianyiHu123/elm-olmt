@@ -430,24 +430,46 @@ class ELMcase():
       self.has_finidat=True
 
 #-----------------------------------------------------------------------------------------
-  def set_external_startup_finidat(self, finidat, start_year=0, min_levels=0):
+  def set_external_startup_finidat(self, finidat, start_year=0, min_levels=10):
       """Configure this case to initialize RUN_TYPE=startup from an externally
       supplied ELM restart file, independent of any OLMT spinup dependency.
 
-      - Validates the external file (exists, readable, expected date-coded name,
-        and minimum vertical levels if requested).
-      - Records the file path and SHA256 in case metadata.
+      - Validates the external file: exists; readable NetCDF; filename encodes a
+        parseable YYYY-MM-DD date; the current workflow supports only a
+        January-1 restart; and the restart has at least `min_levels` vertical
+        levels (default 10, enforced for the ABBY vertical-soil-carbon case).
+      - If `start_year` is given, it MUST agree with the restart's filename year.
+      - Records the file path and SHA256 of the UNMODIFIED original.
       - Sets self.finidat / startyear so RUN_STARTDATE and the effective ELM
         namelist finidat reference the external restart.
       - Never modifies the external file. Does NOT set RUN_REFCASE/REFDATE/REFTOD
         and does NOT stage coupler/DATM restarts or rpointer files (that is a
         branch restart, which this feature deliberately avoids).
       """
-      import hashlib
+      import hashlib, re
       if (not os.path.isfile(finidat)):
           print('Error: external finidat does not exist: '+finidat)
           sys.exit(1)
-      # Readability + optional dimension sanity check via netCDF4 (no modification).
+      # Validate the ELM restart filename date stamp: ...elm.r.YYYY-MM-DD-SSSSS.nc
+      m = re.search(r'\.elm\.r\.(\d{4})-(\d{2})-(\d{2})-(\d{5})\.nc$',
+                    os.path.basename(finidat))
+      if (not m):
+          print('Error: external finidat name does not match the expected ELM '
+                'restart pattern <case>.elm.r.YYYY-MM-DD-SSSSS.nc: '+finidat)
+          sys.exit(1)
+      fyear, fmon, fday = int(m.group(1)), int(m.group(2)), int(m.group(3))
+      # Current startup workflow supports only a January-1 restart boundary.
+      if (fmon != 1 or fday != 1):
+          print('Error: external finidat date %04d-%02d-%02d is not supported; '
+                'only a January-1 (YYYY-01-01) restart is allowed in this '
+                'workflow.' % (fyear, fmon, fday))
+          sys.exit(1)
+      # Reject a start_year that disagrees with the restart's year.
+      if (start_year and int(start_year) > 0 and int(start_year) != fyear):
+          print('Error: configured start_year (%d) disagrees with the external '
+                'restart year (%d).' % (int(start_year), fyear))
+          sys.exit(1)
+      # Readability + MANDATORY vertical-dimension check via netCDF4 (no write).
       try:
           from netCDF4 import Dataset
           ds = Dataset(finidat, 'r')
@@ -456,14 +478,16 @@ class ELMcase():
               if cand in ds.dimensions:
                   nlev = len(ds.dimensions[cand]); break
           ds.close()
-          if (min_levels and (nlev is None or nlev < min_levels)):
-              print('Error: external finidat vertical levels (%s) < required %d'
-                    % (str(nlev), min_levels))
-              sys.exit(1)
-      except SystemExit:
-          raise
       except Exception as exc:
           print('Error: external finidat is not a readable NetCDF restart: '+str(exc))
+          sys.exit(1)
+      if (nlev is None):
+          print('Error: external finidat has no recognized vertical dimension '
+                '(levgrnd/levtot/levdcmp); cannot validate.')
+          sys.exit(1)
+      if (nlev < int(min_levels)):
+          print('Error: external finidat vertical levels (%d) < required %d'
+                % (nlev, int(min_levels)))
           sys.exit(1)
       # Record provenance (checksum of the untouched original).
       h = hashlib.sha256()
@@ -474,12 +498,10 @@ class ELMcase():
       self.external_finidat_sha256 = h.hexdigest()
       # Configure startup-from-finidat (reuse the explicit-file path).
       self.set_finidat_file(finidat=self.external_finidat)
-      if (start_year and int(start_year) > 0):
-          self.startyear = int(start_year)
-      elif (self.finidat_year):
-          self.startyear = int(self.finidat_year)
+      self.startyear = fyear
       print('External startup finidat set: '+self.external_finidat)
       print('  sha256: '+self.external_finidat_sha256)
+      print('  vertical levels: '+str(nlev))
       print('  RUN_STARTDATE year: '+str(self.startyear))
 
 #-----------------------------------------------------------------------------------------
@@ -510,6 +532,13 @@ class ELMcase():
     self.casedir = os.path.abspath(self.caseroot+'/'+self.casename)
     #TODO - replace with a prompt that automacially deletes after 10 seconds
     if (os.path.exists(self.casedir)):
+      # Prepare-only must be non-interactive and non-destructive: reject an
+      # unexpected pre-existing case rather than prompting or deleting it.
+      if (getattr(self, 'prepare_only', False) and not remove):
+        print('Error: --prepare-only found an existing case directory and will '
+              'not prompt or delete it: '+self.casedir)
+        print('       Remove or rename it manually before preparing. Aborting.')
+        sys.exit(1)
       if (not remove):
         print('Warning:  Case directory exists')
         var = input('proceed (p), remove old (r), or exit (x)? ')
@@ -741,7 +770,16 @@ class ELMcase():
       self.xmlchange('ATM_NCPL',value=str(int(24/float(self.tstep))))
 
     if (self.has_finidat):
-      self.xmlchange('RUN_REFDATE',value=self.finidat_yst+'-01-01')
+      if (self.external_finidat != ''):
+        # External startup-finidat initialization: explicit startup, no CIME
+        # branch/reference semantics. Do NOT set RUN_REFDATE (that is only
+        # meaningful for reference/branch-style initialization and is preserved
+        # for the dependent-finidat path below).
+        self.xmlchange('RUN_TYPE',value='startup')
+        self.xmlchange('CONTINUE_RUN',value='FALSE')
+      else:
+        # Dependent (spinup-chained) initialization: preserve existing behavior.
+        self.xmlchange('RUN_REFDATE',value=self.finidat_yst+'-01-01')
     #adds capability to run with transient CO2
     if ('20TR' in self.casename or 'trans' in self.casename):
       self.xmlchange('CCSM_BGC',value='CO2A')
@@ -966,18 +1004,37 @@ class ELMcase():
         self.xmlchange('ATM_NY',value='1')
         result = subprocess.run(['./case.setup'], stdout=subprocess.PIPE, \
             stderr=subprocess.PIPE, text=True)
+        if (result.returncode != 0):
+          print('Error: case.setup failed in build_case for '+self.casename)
+          print(result.stderr)
+          sys.exit(1)
 
       if (self.dobuild):
         if (clean):
           result = subprocess.run(['./case.build','--clean-all'], \
                   stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+          if (result.returncode != 0):
+            print('Error: case.build --clean-all failed for '+self.casename)
+            print(result.stderr)
+            sys.exit(1)
         result = subprocess.run(['./case.build'], \
                 stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-        if (result.returncode > 0):
-          print('Error:  Failed to build case.  Aborting')
+        if (result.returncode != 0):
+          print('Error:  Failed to build case '+self.casename+'.  Aborting')
           print(result.stderr)
-          #sys.exit(1)
+          sys.exit(1)
+        # Confirm the executable actually exists after a successful build.
+        if (not os.path.exists(self.exeroot+'/e3sm.exe')):
+          print('Error: build reported success but executable is missing: '
+                + self.exeroot+'/e3sm.exe')
+          sys.exit(1)
       else:
+        # Executable reuse: the prebuilt binary MUST exist before we mark the
+        # case built; otherwise a later run would fail with a missing exe.
+        if (not os.path.exists(self.exeroot+'/e3sm.exe')):
+          print('Error: reused executable not found at '+self.exeroot+'/e3sm.exe'
+                + ' (cannot mark case as built). Aborting.')
+          sys.exit(1)
         self.xmlchange('BUILD_COMPLETE',value='TRUE')
       #If using DATM, customize the stream files
       if (not self.is_bypass() and not 'default' in self.forcing):
