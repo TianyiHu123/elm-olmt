@@ -58,3 +58,35 @@
   members are not independent evaluation data for the combined surrogate-plus-depth operator.
 - Next direction is planning-only Iter003, **Complete Four-Observable Posterior Adapter and
   Validation**. No Iter003 initialization, execution, optimization, or MCMC chain is authorized.
+
+## iter003 - Complete Four-Observable Posterior Adapter and Validation
+
+- Closed `2026-11-25T03:24:53-07:00`; `completed`; implementation, integration, numerical
+  validation, and bounded benchmark.
+- Implemented a strict general three-stage release interface, immutable observation contexts, pure
+  Gaussian/joint-CN kernels, and reusable physical/sampling-coordinate scalar/batch posterior APIs.
+  The validated PPE1 loader remains as a temporary compatibility layer; PPE2 science fails closed.
+- Both ABBY and JERC pass daily/daily, hourly/hourly, daily/hourly, and hourly/daily evaluation
+  with exact variable-specific alignment, component isolation, target-free replay, and complete
+  provenance. Full counts are ABBY GPP 15,437/514 and SR 26,264/1,095 hourly/daily; JERC GPP
+  19,844/699 and SR 51,162/2,114.
+- Eight independent flux references and six joint-C/N references across CV 0.20/0.30/0.50 pass;
+  posterior component-sum error is zero. Prior/support/Jacobian, scalar/batch ordering,
+  determinism, failure handling, PPE2 rejection, and legacy compatibility pass.
+- The benchmark completed 72 warm cells, 24 cold measurements, and five repeats/cell. Annual
+  scalar medians span 0.0711--0.2950 s; batch-16 improves all annual configurations; peak is
+  504888 KiB. No material performance blocker applies and projections are not execution budgets.
+- All ten gates pass; independent package and result reviews pass after preserved corrections;
+  decision `four_observable_posterior_validated`.
+- Jobs: preflight `24811598` failed identity transcription and `24811617` passed; component
+  `24811658` failed missing pytest and authorized `24811705` passed; integrated `24811719` exposed
+  incomplete Gate 5 reference evidence and authorized `24812674` passed; benchmark `24811738` and
+  final `24812698` passed. All attempts are terminal; no shared scheduler retry was consumed.
+- Plan SHA-256 `b302ee65...75ab`; aligned; no amendment. Evidence is under
+  `development/mcmc_optimization/summaries/iter003/` and runtime root
+  `/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/mcmc_optimization/iter003_four_observable_posterior`.
+- Unresolved: `pytest` is absent from locked `OLMT_puma`; later work must install/lock it or use a
+  supported alternative. Deferred: retain the PPE1-specific loader until full-pipeline cleanup is
+  separately authorized.
+- Next direction is planning-only **Initial Candidate Search and MCMC Pilot Planning**, using the
+  validated daily/daily, include-C/N, CV 0.30 baseline. No Iter004 work is authorized.

@@ -1,0 +1,57 @@
+{
+  "schema": "mcmc-optimization-iter003-config-v1",
+  "repository_root": "/xdisk/chopinsong/tianyihu/elm-olmt-mcmc",
+  "repository_start_commit": "67ffd6a1cd35e4aab0678e30829fa8e2743f6ff5",
+  "branch": "feature/mcmc-optimization",
+  "plan_sha256": "b302ee65fe8938abd6a5e1bf4d0931c43a298b336acc4c4e1afd120fa2f175ab",
+  "python": "/home/u32/tianyihu/.local/share/mamba/envs/OLMT_puma/bin/python",
+  "runtime_root": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/mcmc_optimization/iter003_four_observable_posterior",
+  "storage_cap_bytes": 5368709120,
+  "planned_submissions": 5,
+  "preflight_correction_reruns": 1,
+  "shared_unchanged_scope_retries": 4,
+  "maximum_submissions": 10,
+  "execution_checksum_manifest_sha256": "492ad4fb4380e8c3d85b23073be574b2c5b23a232c7a49bfcc271851fb46032d",
+  "prior_id": "ppe1",
+  "ppe1_root": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe_vertc/params",
+  "ppe2_root": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe2_vertc/params",
+  "surrogate_release_root": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe_vertc/surrogate_products/three_stage_abby_jerc/release_0001",
+  "surrogate_release_manifest_sha256": "4bdc91e2eed6ad8b8228bbc814767fe739a649599c197fade4bf9256ceab543a",
+  "surrogate_catalog_sha256": "89a636b98b3866d6721e663c5b7ee3a9a7698248c8355dde0d9d4fe1fd4285da",
+  "surrogate_source_file": "/xdisk/chopinsong/tianyihu/elm-olmt-mcmc/model_ELM/three_stage_coupled_release.py",
+  "snapshot_root": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe_vertc/surrogate_input_data",
+  "snapshot_sha256": "39b05495a57bfc9f323df67b47c0110dadfbf508b3159cde7ce1a6c59dfd187a",
+  "uncertainty_root": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/three_stage_surrogate/iter015_abby_jerc_full_chain_robustness/handoff",
+  "uncertainty_handoff_sha256": "c9282bbad9abc2d6519329018ca9be026171f071e6e689a44fb2af102784f436",
+  "uncertainty_manifest_sha256": "293277a89bfa55bed100bf2e00476d26c39614e22dfb1a81eb3953c823df77e9",
+  "uncertainty_validation_sha256": "fed360f89b181dfb70166cdf05b18b91deb167737d022a9f6369cc0641dee2b6",
+  "observation_release_root": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/mcmc_optimization/observation_products/release_0001",
+  "observation_catalog_sha256": "cefc9666c4d958a78ec96826157968883a012bb8bc91c6f9826f52a6f9446bd8",
+  "observation_manifest_sha256": "460c01d957b8e159007b08f6b0c33f43d120d77611a4eaaae7444752f5490fe2",
+  "observation_validation_sha256": "19effdb0f67daa26c8a1e2f429e2aedd2263eac11b6d5887d1c44c4716f88fef",
+  "sites": ["ABBY", "JERC"],
+  "resolution_combinations": [
+    ["daily", "daily"],
+    ["hourly", "hourly"],
+    ["daily", "hourly"],
+    ["hourly", "daily"]
+  ],
+  "cn_observation_cv": [0.2, 0.3, 0.5],
+  "baseline_cn_observation_cv": 0.3,
+  "full_window_start": 720,
+  "full_window_end": 61320,
+  "benchmark": {
+    "warm_repetitions": 5,
+    "batch_sizes": [1, 4, 16],
+    "sites": {
+      "ABBY": {"start": 24408, "windows": [48, 720, 8760]},
+      "JERC": {"start": 2784, "windows": [48, 720, 8760]}
+    },
+    "material_thresholds": {
+      "annual_scalar_median_seconds": 5.0,
+      "annual_1024_projection_seconds": 7200.0,
+      "peak_rss_kib": 16777216,
+      "batch16_per_candidate_must_improve": true
+    }
+  }
+}

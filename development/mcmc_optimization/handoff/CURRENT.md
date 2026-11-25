@@ -2,122 +2,137 @@
 
 ## Campaign Plan
 
-- Campaign: `MCMC Optimization Development`
-- Plan: `development/mcmc_optimization/MCMC_OPTIMIZATION_PLAN.md`
-- Current plan SHA-256: `b302ee65fe8938abd6a5e1bf4d0931c43a298b336acc4c4e1afd120fa2f175ab`
-- Historical Iter001 locked plan SHA-256: `46775c71d8fa333024be592673b1b3dcbfe4c7577c5656289ff4ad6465eaafc6`
-- Alignment: `aligned`; approved deviation `none`.
-- Workflow clarification: surrogate training/tuning/uncertainty remain development-only; the final
-  PPE1 depth observation operator, residual mean, and covariance use the complete 1,024-member
-  preprocessing ensemble. The 205 fixed-test members are not independent evaluation data for the
-  combined surrogate-plus-depth operator.
+- Campaign: `MCMC Optimization Development`.
+- Plan: `development/mcmc_optimization/MCMC_OPTIMIZATION_PLAN.md`.
+- Current plan SHA-256: `b302ee65fe8938abd6a5e1bf4d0931c43a298b336acc4c4e1afd120fa2f175ab`.
+- Historical Iter001 locked plan SHA-256:
+  `46775c71d8fa333024be592673b1b3dcbfe4c7577c5656289ff4ad6465eaafc6`.
+- Alignment: `aligned`; approved deviation `none`; no amendment recommended.
 
 ## Live State
 
-- Current status: `closed`
-- Current phase: `closed`
-- Last completed iteration: `iter002`
-- Active iteration: none
-- Active jobs: none; every submitted Iter002 attempt has terminal `sacct` accounting
-- Last updated: `2026-11-24T04:26:44-07:00`
-- Selected profile: `development/hpc/puma_mcmc_worktree.md`, inheriting `development/hpc/puma.md`
-- Closeout authority: user-approved one local no-push commit; no push, merge, or Iter003 authority
+- Current status: `closed`.
+- Current phase: `closed`.
+- Last completed iteration: `iter003`.
+- Active iteration: none.
+- Active jobs: none; all eight Iter003 attempts have terminal `sacct` accounting.
+- Last updated: `2026-11-25T03:24:53-07:00`.
+- Selected profile: `development/hpc/puma_mcmc_worktree.md`, inheriting
+  `development/hpc/puma.md`.
+- Decision: `four_observable_posterior_validated`; all ten gates `pass`.
+- Authority: Iter003 closeout only. No Iter004 initialization/execution, candidate search,
+  optimization, MCMC, push, or merge is authorized.
 
-## Iter002 Decision and Release
+## Iter003 Decision and Implementation
 
-- Objective completed: immutable ABBY/JERC GPP, SR, TOTSOMC, and TOTSOMN observation and fixed-
-  uncertainty release.
-- Decision: `observation_release_0001_published`; all nine acceptance gates pass.
-- Release root:
-  `/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/mcmc_optimization/observation_products/release_0001`.
-- Catalog SHA-256: `cefc9666c4d958a78ec96826157968883a012bb8bc91c6f9826f52a6f9446bd8`.
-- Release-manifest SHA-256:
-  `460c01d957b8e159007b08f6b0c33f43d120d77611a4eaaae7444752f5490fe2`.
-- Validation-report SHA-256:
-  `19effdb0f67daa26c8a1e2f429e2aedd2263eac11b6d5887d1c44c4716f88fef`.
-- Final package config SHA-256:
-  `44b7950cd8fab968ed0b03b18eca7c3cd99db30ac139ca14295027cf3876cbc3`.
-- Final validation reloaded 18 products; combined runtime/publication storage is 12,243,802 bytes.
-- Independent pre-publication and post-publication reviews: `pass`.
+- Objective completed: reusable ABBY/JERC PPE1 posterior combining the exact 18-D physical prior,
+  frozen target-free three-stage surrogate, immutable Iter002 observations, fixed uncertainty,
+  independent GPP/SR resolution operators, and fixed joint C/N likelihood.
+- Runtime root:
+  `/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/mcmc_optimization/iter003_four_observable_posterior`.
+- General `load_three_stage_release()` validates explicit versioned configuration and currently
+  delegates to the preserved PPE1-specific loader. Observation contexts are immutable and preserve
+  exact hourly/daily forcing mappings. Pure likelihood kernels are separate from orchestration.
+- Scalar and ordered batch physical-space APIs return prior, GPP, SR, C/N, total, counts, and
+  provenance. The sampling-coordinate wrapper adds its Jacobian separately. `include_cn=False`
+  returns C/N component `0.0`; PPE2 requests fail before surrogate inference.
+- Final identities: config `0038e424d5c65f8a6ddcec78a79af2c164fa63e0776d44a7ff8badc6e5c68bcc`;
+  checksum manifest `492ad4fb4380e8c3d85b23073be574b2c5b23a232c7a49bfcc271851fb46032d`;
+  execution manifest `0b5f651336e30098a2b1c58d60e1d617f38ddfc2efa587d12bc7c68ba3882ba4`.
 
-## Scientific Contract Preserved
+## Numerical and Performance Evidence
 
-- GPP daily rule: at least 18 paired hours; gate `max(0,(GPP_DT+GPP_NT)/2)` hourly before daily
-  averaging; retain raw values, signed half-difference, gate-after-daily comparison, and exact masks.
-- SR daily rule: at least 22 valid hours with an independent mask/window. ABBY uses valid measured
-  `SR_err`; JERC uses the documented 10% relative plus 0.05 `gC/m^2/day` floor fallback.
-- Daily observation sigma is RMS over retained hourly sigmas, never divided by `sqrt(n)` or
-  `sqrt(24)`. The GPP absolute floor is also 0.05 `gC/m^2/day`.
-- Coverage after history: ABBY/JERC GPP 514/699 days; SR 1,095/2,114 days.
-- Soil observations retain established processed 2.0-m stocks. Full 1,024-member PPE1 depth
-  fractions/covariance and unchanged Iter015 development-only surrogate uncertainty are published.
-- Fixed-test access for surrogate uncertainty is false. PPE2 inference, posterior implementation,
-  optimization, MCMC chains, surrogate changes, and upstream release rewrites were excluded.
+- Counts: ABBY GPP 15,437 hourly/514 daily, SR 26,264/1,095; JERC GPP 19,844/699,
+  SR 51,162/2,114.
+- Both sites pass `daily/daily`, `hourly/hourly`, `daily/hourly`, and `hourly/daily`, with exact
+  resolution-component isolation and one full-window surrogate call per site reused across
+  operators.
+- Eight independent Gaussian and six independent joint-C/N references (both sites × CV
+  0.20/0.30/0.50) pass `rtol=1e-12`, `atol=1e-10`; maximum normalized tolerance usage is
+  0.000194. Posterior component-sum maximum absolute error is zero.
+- Prior/support/Jacobian, exact bounded replay, scalar/batch parity and ordering, invalid-input
+  handling, nonpositive C/N rejection, target-free inference, PPE2 rejection, and legacy
+  compatibility pass. No protected fixed-test member was used for surrogate uncertainty or
+  validation.
+- Benchmark: 72 warm cells, 24 cold measurements, five repeats/cell. Annual scalar medians span
+  0.0711--0.2950 seconds; annual daily/daily is 0.0785 seconds ABBY and 0.0711 seconds JERC.
+  Batch-16 improves all annual configurations; projected maximum for 1,024 evaluations is
+  302.06 seconds; benchmark peak RSS is 504888 KiB. No performance blocker applies. Projections
+  are estimates, not approved budgets.
+- Final validation job `24812698` passed; posterior evidence SHA-256 `cc21836e...e6ca`, likelihood
+  references `deb2a5e0...1e4`, benchmark `36ed26fd...45d`.
 
 ## Job and Failure Accounting
 
-- Preflight: `24794462` FAILED `2:0`; `24794655` FAILED `1:0`; `24794902` COMPLETED `0:0`.
-- Source audit: `24794997` FAILED `1:0`; `24795247` FAILED `1:0`; `24795589` COMPLETED `0:0`.
-- Flux preparation: `24795706` COMPLETED `0:0`.
-- Uncertainty integration: `24795812` COMPLETED `0:0`.
-- Publication: `24795941` FAILED `1:0`; `24796001` FAILED `1:0`; after explicit correction
-  authority, `24797797` COMPLETED `0:0`.
-- Final validation: `24797845` COMPLETED `0:0`.
-- Every failure is classified in `iterations/iter002.md`; failed publication attempts stopped before
-  any publication write. No scheduler job remains active or unaccounted.
+- Preflight: `24811598` FAILED `1:0` on a submitted verifier-hash transcription;
+  reviewed correction `24811617` COMPLETED `0:0`.
+- Component: `24811658` FAILED `1:0` because locked `OLMT_puma` lacks `pytest`; after fresh user
+  authority and explicit `unittest` legacy coverage, `24811705` COMPLETED `0:0`.
+- Integrated: `24811719` COMPLETED `0:0` but independent review found incomplete Gate 5 C/N
+  reference coverage; after fresh authority, corrected `24812674` COMPLETED `0:0`.
+- Benchmark `24811738` and final `24812698` COMPLETED `0:0`.
+- All failures/corrections are preserved in `iterations/iter003.md`. No job is active or
+  unaccounted. Shared unchanged-scope scheduler retries consumed: zero of four.
 
-## Limitations
+## Limitations and Scientific Assumptions
 
-- Original Perlmutter processing logs are unavailable on Puma; transferred products and scripts are
-  hash-locked.
-- Iter015 daily GPP/SR surrogate errors use complete 24-hour model days, whereas published
-  observation daily means may use 18--23 available hours. Iter002 did not recompute uncertainty.
-- The 205 fixed-test members are not independent evaluation data for the combined surrogate-plus-
-  depth operator.
+- Iter015 daily surrogate errors were estimated for complete model days, while some observed daily
+  means contain only 18--23 valid hours. Iter003 did not recalibrate uncertainty.
+- The complete 1,024-member PPE1 population defines the frozen depth operator; the 205 fixed-test
+  members are not independent validation data for the combined surrogate-plus-depth operator.
+- Posterior values are adapter/validation evidence, not calibrated scientific inference. No
+  candidate search, optimization, walker initialization, or chain was run.
 
-## Proposed Iter003 - Planning Only
+## Unresolved Issues
 
-Proposed title: **Complete Four-Observable Posterior Adapter and Validation**.
+- **Missing `pytest` in `OLMT_puma`: unresolved.** Historical
+  `tests/test_mcmc_iter009_geometry.py` cannot import in the locked environment. Iter003 provides
+  equivalent explicit standard-library `unittest` regression coverage. A later authorized
+  environment-maintenance or campaign iteration must either install and lock compatible `pytest`
+  or use another supported test package/framework and migrate the affected tests. Keep this
+  reminder until resolved.
 
-- Objective: implement and validate one site-specific ABBY/JERC posterior interface that jointly
-  consumes GPP, SR, TOTSOMC, and TOTSOMN from immutable observation `release_0001` and the frozen
-  PPE1 coupled surrogate, without running optimization or production chains.
-- Core scope: load the published release by catalog/manifest identity; align GPP and SR predictions
-  to their independent published daily masks and exact observed-hour indices; apply fixed flux
-  observation/surrogate scales without additional square-root reduction; apply the bivariate-log
-  C/N likelihood for CV 0.20/0.30/0.50 with fixed surrogate/depth covariance and bias correction;
-  combine all four likelihood contributions with the existing 18-parameter prior; expose component
-  log densities and a deterministic batch API; validate scalar/batch parity, site separation,
-  finite-domain rejection, covariance algebra, reproducibility, and target-free smoke performance.
-- Required boundaries: PPE1 only; no PPE2 inference; no surrogate retraining or uncertainty
-  recalibration; no use of the 205 fixed-test members for fitting, selection, uncertainty, or
-  robustness; no observation-rule changes; no Sobol search, optimization, MCMC chains, posterior
-  scientific conclusions, or modification of this release.
-- Proposed gates: immutable dependency hashes; exact mask/hour-index replay; independently
-  recomputed GPP/SR and joint C/N log-likelihood parity; prior-plus-likelihood decomposition;
-  scalar/batch determinism; fail-closed invalid-input behavior; bounded CPU/memory smoke evidence;
-  independent review and four-record closeout.
-- Authority: planning only. Iter003 initialization, repository execution, scheduler work, directory
-  creation, retry budget, publication, and commit require a fresh consolidated kickoff approval.
+## Deferred Technical Debt
 
-## Next Session Start Protocol
+- **Remove PPE-Specific Three-Stage Surrogate Loader After Full MCMC Pipeline Finalization** —
+  `Deferred`.
+- Preserve `load_ppe1_coupled_release()` and historical artifacts. Remove it only after a
+  separately authorized cleanup makes all release/prior/schema/snapshot/uncertainty identities
+  explicit, migrates every MCMC consumer, and proves PPE1 numerical equivalence.
 
-1. Verify the current campaign-plan hash and read this handoff, workflow, Iter002 report, registry,
-   cumulative summary, and compact closeout evidence.
-2. Confirm the Iter002 closeout commit identity and immutable release catalog/manifest identities.
-3. Do not initialize Iter003 until one complete consolidated kickoff package receives explicit user
-   approval.
+## Proposed Next-Iteration Plan (Planning Only)
+
+**Title:** Initial Candidate Search and MCMC Pilot Planning.
+
+- Objective: design, but do not yet execute, a bounded PPE1 ABBY/JERC candidate-search and initial
+  MCMC pilot using site-independent contexts and the validated `daily/daily`, `include_cn=True`,
+  CV 0.30 baseline, while retaining alternative resolution and flux-only comparison interfaces.
+- Locked dependencies: Iter003 decision `four_observable_posterior_validated`; final config
+  `0038e424...8bcc`; PPE1 prior; coupled release; forcing snapshot; Iter002 observation release;
+  fixed uncertainty; hard-zero GPP, unclipped SR, target-free, fixed-test, and provenance contracts.
+- Proposed work units: choose deterministic candidate generation/ranking; define bounded local
+  refinement and diversified walker initialization without changing the posterior; derive
+  compute/storage from measured Iter003 performance; specify checkpoint/restart/convergence,
+  independent review, failure, and scientific non-interpretation gates; present one consolidated
+  kickoff package.
+- Required planning decisions: candidate count/seed/batch size, site separation, walkers and
+  geometry, pilot length/checkpoints/moves, acceptance/ESS/autocorrelation evidence, exact
+  resources/submissions/storage, retry budgets, and stop rule.
+- Exclusions until fresh approval: no candidate generation, optimization, walker initialization,
+  `emcee`, chain, interpretation, PPE2 science, uncertainty changes, artifact rewrites, loader
+  cleanup, or Iter004 scaffold. Resolve or explicitly route around missing `pytest` in the package.
+- Approval boundary: recover this closed state under Workflow Section 4A and obtain fresh
+  consolidated approval before any Iter004 record, repository Python, runtime directory, job, or
+  commit. This proposal grants no authority.
 
 ## Artifact References
 
-- Final report: `development/mcmc_optimization/iterations/iter002.md`
-- Compact evidence: `development/mcmc_optimization/summaries/iter002/summary.md`
-- Registry: `development/mcmc_optimization/registry.csv`
-- Cumulative summary: `development/mcmc_optimization/ITERATION_SUMMARY.md`
-- Canonical package: `development/mcmc_optimization/slurm/iter002/`
+- Final report: `development/mcmc_optimization/iterations/iter003.md`.
+- Compact evidence: `development/mcmc_optimization/summaries/iter003/summary.md`.
+- Registry: `development/mcmc_optimization/registry.csv`.
+- Cumulative summary: `development/mcmc_optimization/ITERATION_SUMMARY.md`.
+- Canonical package: `development/mcmc_optimization/slurm/iter003/`.
 - Runtime root:
-  `/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/mcmc_optimization/iter002_neon_observation_preparation`
-- Release root:
-  `/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/mcmc_optimization/observation_products/release_0001`
-- Existing untracked `mcmc_depth_operator_full_ppe1_amendment.patch` remains user material and is
-  untouched and excluded from Iter002.
+  `/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/mcmc_optimization/iter003_four_observable_posterior`.
+- Final accounting: runtime `manifests/final_job_accounting.json`.
+- Existing unrelated user material remains untouched and excluded.
