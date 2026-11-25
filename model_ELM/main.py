@@ -145,6 +145,14 @@ class ELMcase():
         self.noslurm=True
     if self.queue == '':
         self.queue='batch'
+    # Phase 03B-B: prepare-only mode (create/configure/build/write scripts+pkl,
+    # but do NOT submit any scheduler job). Default False preserves behavior.
+    self.prepare_only=False
+    # Phase 03B-B: optional external startup finidat initialization metadata.
+    # When set, this case initializes RUN_TYPE=startup from an externally
+    # supplied ELM restart, independent of any OLMT spinup dependency.
+    self.external_finidat=''          # path to external ELM restart (startup finidat)
+    self.external_finidat_sha256=''   # recorded checksum of the external restart
 
   def get_model_directories(self):
     if (not os.path.exists(self.modelroot)):
@@ -410,9 +418,83 @@ class ELMcase():
         self.finidat_year = finidat_year
       elif (finidat != ''):
         self.finidat = finidat
-        self.finidat_year = int(finidat[-19:-15])
-        self.finidat_yst=str(10000+finidat_year)[1:]
+        # Parse the 4-digit year from the standard ELM restart filename
+        # (...elm.r.YYYY-MM-DD-SSSSS.nc). Fall back to the passed finidat_year.
+        try:
+            self.finidat_year = int(finidat[-19:-15])
+        except (ValueError, IndexError):
+            self.finidat_year = finidat_year
+        # Derive finidat_yst from the PARSED year (previously used the unset
+        # parameter default, producing an incorrect RUN_REFDATE for explicit files).
+        self.finidat_yst = str(10000+self.finidat_year)[1:]
       self.has_finidat=True
+
+#-----------------------------------------------------------------------------------------
+  def set_external_startup_finidat(self, finidat, start_year=0, min_levels=0):
+      """Configure this case to initialize RUN_TYPE=startup from an externally
+      supplied ELM restart file, independent of any OLMT spinup dependency.
+
+      - Validates the external file (exists, readable, expected date-coded name,
+        and minimum vertical levels if requested).
+      - Records the file path and SHA256 in case metadata.
+      - Sets self.finidat / startyear so RUN_STARTDATE and the effective ELM
+        namelist finidat reference the external restart.
+      - Never modifies the external file. Does NOT set RUN_REFCASE/REFDATE/REFTOD
+        and does NOT stage coupler/DATM restarts or rpointer files (that is a
+        branch restart, which this feature deliberately avoids).
+      """
+      import hashlib
+      if (not os.path.isfile(finidat)):
+          print('Error: external finidat does not exist: '+finidat)
+          sys.exit(1)
+      # Readability + optional dimension sanity check via netCDF4 (no modification).
+      try:
+          from netCDF4 import Dataset
+          ds = Dataset(finidat, 'r')
+          nlev = None
+          for cand in ('levgrnd', 'levtot', 'levdcmp'):
+              if cand in ds.dimensions:
+                  nlev = len(ds.dimensions[cand]); break
+          ds.close()
+          if (min_levels and (nlev is None or nlev < min_levels)):
+              print('Error: external finidat vertical levels (%s) < required %d'
+                    % (str(nlev), min_levels))
+              sys.exit(1)
+      except SystemExit:
+          raise
+      except Exception as exc:
+          print('Error: external finidat is not a readable NetCDF restart: '+str(exc))
+          sys.exit(1)
+      # Record provenance (checksum of the untouched original).
+      h = hashlib.sha256()
+      with open(finidat, 'rb') as fh:
+          for block in iter(lambda: fh.read(1 << 20), b''):
+              h.update(block)
+      self.external_finidat = os.path.abspath(finidat)
+      self.external_finidat_sha256 = h.hexdigest()
+      # Configure startup-from-finidat (reuse the explicit-file path).
+      self.set_finidat_file(finidat=self.external_finidat)
+      if (start_year and int(start_year) > 0):
+          self.startyear = int(start_year)
+      elif (self.finidat_year):
+          self.startyear = int(self.finidat_year)
+      print('External startup finidat set: '+self.external_finidat)
+      print('  sha256: '+self.external_finidat_sha256)
+      print('  RUN_STARTDATE year: '+str(self.startyear))
+
+#-----------------------------------------------------------------------------------------
+  def prepare_case(self, multisite_script=''):
+      """Prepare-only finalization: write the case pickle (required by
+      postprocessing/surrogate workflows) without submitting any scheduler job.
+      The Slurm script is generated separately by create_multisite_script().
+      Returns 0 (no job id)."""
+      self.create_pkl(outdir=self.casedir)
+      self.create_pkl(outdir=self.OLMTdir+'/pklfiles')
+      print('Prepare-only: wrote pickle for '+self.casename+' (no job submitted)')
+      if (multisite_script != ''):
+          print('Prepare-only: Slurm script ready at '+str(multisite_script))
+      os.chdir(self.OLMTdir)
+      return 0
 
 #-----------------------------------------------------------------------------------------
   def create_case(self, machine='',casename='', remove=False, walltime="24:00:00"):

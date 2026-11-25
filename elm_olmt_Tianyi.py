@@ -117,6 +117,9 @@ def main():
     parser.add_argument('--config', '-c', default='run_config.cfg',
                        help='Configuration file (default: run_config.cfg)')
     parser.add_argument('--gui', action='store_true', help='Launch GUI to create configuration')
+    parser.add_argument('--prepare-only', dest='prepare_only', action='store_true',
+                        help='Create, configure, build, and generate Slurm scripts + '
+                             'pickle metadata for all cases, but do NOT submit any job.')
     args = parser.parse_args()
 
     print('\n')
@@ -268,6 +271,41 @@ def main():
  
     if 'surface_data' in cfg:
         add_surfdata = cfg['surface_data'].copy()
+
+    # Phase 03B-B: optional external startup-finidat initialization.
+    # [external_initialization]
+    #   target_stage = transient
+    #   mode         = startup_finidat
+    #   finidat      = /abs/path/to/external/ELM/restart.elm.r.YYYY-01-01-00000.nc
+    #   start_year   = <optional int; default parsed from the finidat filename>
+    external_init = {}
+    if 'external_initialization' in cfg:
+        external_init = cfg['external_initialization'].copy()
+        ext_stage = str(external_init.get('target_stage', 'transient'))
+        ext_mode  = str(external_init.get('mode', 'startup_finidat'))
+        ext_finidat = str(external_init.get('finidat', ''))
+        if (ext_mode != 'startup_finidat'):
+            print('Error: [external_initialization] mode="%s" not supported; '
+                  'only "startup_finidat" is implemented.' % ext_mode)
+            sys.exit(1)
+        if (ext_stage != 'transient'):
+            print('Error: [external_initialization] target_stage="%s" not supported; '
+                  'only "transient" is implemented.' % ext_stage)
+            sys.exit(1)
+        if (ext_finidat == '' or not os.path.isfile(ext_finidat)):
+            print('Error: [external_initialization] finidat is missing or not a file: '
+                  + ext_finidat)
+            sys.exit(1)
+        # Reject unsupported ensemble + external-init combination rather than
+        # silently falling back to dependent finidat.
+        if (parm_list != ''):
+            print('Error: external_initialization is not yet supported for ensemble '
+                  'runs (parm_list set). Member-specific external restarts are a '
+                  'documented future integration point. Aborting rather than '
+                  'silently substituting dependent finidat.')
+            sys.exit(1)
+        print('External initialization requested: stage=%s mode=%s' % (ext_stage, ext_mode))
+        print('  external finidat: '+ext_finidat)
 
     if 'treatment_options' in cfg:
         treatments, treatment_options = process_treatment_options(cfg)
@@ -444,6 +482,25 @@ def main():
         if mysuffix != "":
             mysuffix = "_" + mysuffix
 
+        # Phase 03B-B: if external startup-finidat is requested for the transient
+        # stage, override its start year up front so create_case (RUN_STARTDATE)
+        # and get_forcing both use the external restart's year (e.g. 2019),
+        # independent of trans_startyear.
+        if (bool(external_init) and ('20TR' in compsets[c]) and not istreatment[c]):
+            _ext_fin = str(external_init.get('finidat', ''))
+            _ext_sy = external_init.get('start_year', 0)
+            try:
+                _ext_sy = int(_ext_sy)
+            except (TypeError, ValueError):
+                _ext_sy = 0
+            if (_ext_sy <= 0):
+                # parse YYYY from ...elm.r.YYYY-MM-DD-SSSSS.nc
+                try:
+                    _ext_sy = int(_ext_fin[-19:-15])
+                except (ValueError, IndexError):
+                    _ext_sy = startyear[c]
+            startyear[c] = _ext_sy
+
         cases[c] = model_ELM.ELMcase(caseid='',compset=compsets[c], site=site, \
             caseroot=caseroot,runroot=runroot,inputdata=inputdata,modelroot=modelroot, \
             machine=machine, exeroot=exeroot, suffix=mysuffix, queue=queue, project=project,  \
@@ -453,6 +510,8 @@ def main():
         #Save the other site names in first site's cases (for use in multi-site calibration)
         if site == sites[0]:
             cases[c].all_sites = [s for s in sites]
+        # Phase 03B-B: propagate prepare-only (no scheduler submission).
+        cases[c].prepare_only = bool(args.prepare_only)
 
         # Create the case
         casename = case_names[site_s]+"_"+cases[c].compset+mysuffix
@@ -511,7 +570,23 @@ def main():
 
         # Set the initial data file (if depends on previous case)
         cases[c].dependcase=''
-        if (depends[c] >= 0):
+        # Phase 03B-B: external startup-finidat overrides the dependent finidat
+        # for the transient stage and severs the spinup initialization dependency.
+        use_external_init = bool(external_init) and ('20TR' in compsets[c]) \
+            and not istreatment[c]
+        if (use_external_init):
+            ext_start_year = external_init.get('start_year', 0)
+            try:
+                ext_start_year = int(ext_start_year)
+            except (TypeError, ValueError):
+                ext_start_year = 0
+            cases[c].set_external_startup_finidat(
+                str(external_init.get('finidat', '')),
+                start_year=ext_start_year)
+            # Break the Slurm submission dependency on the (unexecuted) spinup.
+            depends[c] = -1
+            # dependcase stays '' so no spinup-based finidat/initialization is used.
+        elif (depends[c] >= 0):
             # Set the iniial data file from the last year of the prev case
             finidat_year = startyear[depends[c]]+nyears[depends[c]] 
             cases[c].set_finidat_file(finidat_case=cases[depends[c]].casename, \
@@ -572,8 +647,9 @@ def main():
         print('Building case')
         cases[c].build_case()
     
-        # Submit the case
-        print('Submitting case')
+        # Submit the case (or, in --prepare-only mode, generate scripts+pickle
+        # WITHOUT submitting any scheduler job).
+        print('Preparing case' if args.prepare_only else 'Submitting case')
         jobnum_depend=-1
         if (depends[c] >= 0):
             jobnum_depend = jobnum[depends[c]]
@@ -582,15 +658,21 @@ def main():
             exeroot = cases[c].exeroot
         if (ensemble):
             multisite_scripts[c] = cases[c].create_multisite_script([site], scriptdir, walltime=walltime[c])
-            jobnum[c] = cases[c].submit_case(depend=jobnum_depend, \
-                ensemble=ensemble,multisite_script=multisite_scripts[c])
+            if (args.prepare_only):
+                jobnum[c] = cases[c].prepare_case(multisite_script=multisite_scripts[c])
+            else:
+                jobnum[c] = cases[c].submit_case(depend=jobnum_depend, \
+                    ensemble=ensemble,multisite_script=multisite_scripts[c])
         else:
             if (site == sites[0]):
                 # Always use the multi-site script even for one site
                 multisite_scripts[c] = cases[c].create_multisite_script(sites, scriptdir, walltime=walltime[c])
             if (site == sites[nsites-1]):
-                jobnum[c] = cases[c].submit_case(depend=jobnum_depend, \
-                    ensemble=ensemble,multisite_script=multisite_scripts[c])
+                if (args.prepare_only):
+                    jobnum[c] = cases[c].prepare_case(multisite_script=multisite_scripts[c])
+                else:
+                    jobnum[c] = cases[c].submit_case(depend=jobnum_depend, \
+                        ensemble=ensemble,multisite_script=multisite_scripts[c])
         # Return to script directory
         os.chdir(scriptdir)
       
