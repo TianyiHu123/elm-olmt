@@ -686,17 +686,13 @@ class ELMcase():
       while (self.run_n % self.nyears_spinup != 0):
           self.run_n = self.run_n+1
     if (not self.is_bypass() and not ('phase2' in self.casename)):
-        #Figure out the align year
-        testyear = self.met_startyear
-        while (testyear > self.startyear):
-            testyear = testyear - self.nyears_spinup
-        self.met_alignyear = (self.startyear-testyear)+self.met_startyear
-        #Tianyi Hu added to set align = start year
-        self.met_alignyear = self.startyear
-        # if (self.met_endyear != self.met_endyear_spinup):
-        #     self.met_endyear = self.met_endyear_spinup
-        # if ('20TR' in self.compset):
-        #     self.run_n = self.met_endyear_spinup-self.startyear+1
+        #----------------------------------------------------------------------
+        # DATM forcing-year alignment policy (Phase 03B-F3 fix). See
+        # compute_met_alignyear() for the policy and rationale.
+        #----------------------------------------------------------------------
+        self.met_alignyear = self.compute_met_alignyear()
+        if (('20TR' in self.compset) or ('trans' in self.casename)):
+            self.validate_transient_forcing_alignment()
     elif (not self.is_bypass() and ('phase2') in self.casename):
         self.met_alignyear = self.startyear
         self.met_startyear = self.startyear
@@ -712,6 +708,64 @@ class ELMcase():
     # Tianyi Hu added for debug
     print('Simulation starting year: '+str(self.startyear))
     print('Run length (years): '+str(self.run_n)+'\n')
+
+  def compute_met_alignyear(self):
+      """Return the DATM stream yearAlign for this case (Phase 03B-F3 policy).
+
+      DATM maps a model year to a data year via (taxmode='cycle'):
+          dYear = yearFirst + modulo(mYear - yearAlign, nYears)
+      with yearFirst = met_startyear and nYears = number of met years.
+
+      HISTORICAL calendar-matched transient (20TR / 'trans'): we want model
+      year Y -> meteorological data year Y. With yearFirst = met_startyear that
+      requires yearAlign == met_startyear, INDEPENDENT of the simulation start
+      year. The previous 'yearAlign = startyear' behavior broke calendar
+      matching whenever the transient started later than met_startyear (e.g. an
+      external-finidat transient starting 2019 with met beginning 2018 selected
+      2018 forcing for model year 2019 -- see log/03b_f1/f2).
+
+      SPINUP / other cycling cases: preserve the previous default (yearAlign =
+      startyear), which is appropriate for deliberate forcing cycling.
+      """
+      if (('20TR' in self.compset) or ('trans' in self.casename)):
+          return self.met_startyear
+      # Spinup / other cycling case: preserve previous behavior.
+      return self.startyear
+
+  def validate_transient_forcing_alignment(self):
+      """Verify that a calendar-matched historical transient will receive the
+      intended meteorological year for every model year, using DATM's actual
+      cycling formula (taxmode='cycle'):
+          dYear = met_startyear + modulo(mYear - met_alignyear, nYears)
+      For a calendar-matched transient we require dYear == mYear for every model
+      year in [startyear, startyear+run_n-1], i.e. every model year must fall
+      within the available met years [met_startyear, met_endyear]. Fails loudly
+      (no silent wrap) if calendar-matched forcing cannot be achieved.
+      """
+      nYears = self.met_endyear - self.met_startyear + 1
+      yr0 = int(self.startyear)
+      yrN = int(self.startyear) + int(self.run_n) - 1
+      mismatches = []
+      for mYear in range(yr0, yrN + 1):
+          dYear = self.met_startyear + ((mYear - self.met_alignyear) % nYears)
+          if (dYear != mYear):
+              mismatches.append((mYear, dYear))
+      if (mismatches):
+          print('ERROR: DATM forcing-year alignment is not calendar-matched for '
+                'transient case '+str(self.casename))
+          print('  Meteorology years : %d-%d' % (self.met_startyear, self.met_endyear))
+          print('  Simulation years  : %d-%d (run_n=%d)' % (yr0, yrN, self.run_n))
+          print('  yearAlign computed : %d (yearFirst=%d, yearLast=%d)'
+                % (self.met_alignyear, self.met_startyear, self.met_endyear))
+          print('  Mismatched (model_year -> forcing_year): '+str(mismatches[:8]))
+          if (yr0 < self.met_startyear or yrN > self.met_endyear):
+              print('  Cause: requested model years fall outside available met '
+                    'data; calendar-matched forcing is impossible with this data.')
+          raise SystemExit('ERROR: calendar-matched DATM forcing cannot be '
+                           'achieved; refusing to generate a silently misaligned case.')
+      print('DATM forcing alignment verified (calendar-matched): model years '
+            '%d-%d -> forcing years %d-%d; yearAlign=%d'
+            % (yr0, yrN, yr0, yrN, self.met_alignyear))
 
   def xmlchange(self, variable, value='', append=''):
       os.chdir(self.casedir)
