@@ -126,6 +126,39 @@ class ThreeStagePosterior:
             provenance=self._provenance(),
         )
 
+    def _evaluated_result(
+        self,
+        *,
+        log_prior: float,
+        log_likelihood_gpp: float,
+        log_likelihood_sr: float,
+        log_likelihood_cn: float,
+        gpp_raw_min: float | None,
+        evaluation_error: str | None,
+    ) -> PosteriorResult:
+        total = float(
+            log_prior + log_likelihood_gpp + log_likelihood_sr + log_likelihood_cn
+        )
+        return PosteriorResult(
+            site=self.site,
+            prior_id=self.prior.prior_id,
+            gpp_resolution=self.gpp_resolution,
+            sr_resolution=self.sr_resolution,
+            cn_observation_cv=self.cn_observation_cv,
+            include_cn=self.include_cn,
+            log_prior=float(log_prior),
+            log_likelihood_gpp=float(log_likelihood_gpp),
+            log_likelihood_sr=float(log_likelihood_sr),
+            log_likelihood_cn=float(log_likelihood_cn),
+            log_posterior=total,
+            n_gpp=self.gpp_operator.count,
+            n_sr=self.sr_operator.count,
+            surrogate_evaluated=True,
+            gpp_raw_min=gpp_raw_min,
+            evaluation_error=evaluation_error,
+            provenance=self._provenance(),
+        )
+
     def _provenance(self) -> dict[str, object]:
         return {
             "release_id": self.release.config.release_id,
@@ -188,47 +221,59 @@ class ThreeStagePosterior:
             likelihood_started = timing.perf_counter()
             for local, original in enumerate(selected_indices):
                 full_stocks = np.asarray([inference.totsomc[local], inference.totsomn[local]], dtype=np.float64)
-                gpp_prediction = self.gpp_operator.aggregate_predictions(inference.gpp[local], self.start)
-                sr_prediction = self.sr_operator.aggregate_predictions(inference.sr[local], self.start)
-                ll_gpp = gaussian_log_likelihood(
-                    self.gpp_operator.observed, gpp_prediction,
-                    self.gpp_operator.observation_sigma, self.gpp_operator.surrogate_rmse,
-                )
-                ll_sr = gaussian_log_likelihood(
-                    self.sr_operator.observed, sr_prediction,
-                    self.sr_operator.observation_sigma, self.sr_operator.surrogate_rmse,
-                )
-                ll_cn = 0.0
+                gpp_values = np.asarray(inference.gpp[local], dtype=np.float64)
+                gpp_raw_values = np.asarray(inference.gpp_raw[local], dtype=np.float64)
+                sr_values = np.asarray(inference.sr[local], dtype=np.float64)
                 evaluation_error = None
+                if not np.all(np.isfinite(gpp_values)) or not np.all(np.isfinite(gpp_raw_values)):
+                    ll_gpp = float("-inf")
+                    gpp_raw_min = None
+                    evaluation_error = "nonfinite_gpp_prediction"
+                else:
+                    gpp_prediction = self.gpp_operator.aggregate_predictions(gpp_values, self.start)
+                    if not np.all(np.isfinite(gpp_prediction)):
+                        ll_gpp = float("-inf")
+                        evaluation_error = "nonfinite_gpp_prediction"
+                    else:
+                        ll_gpp = gaussian_log_likelihood(
+                            self.gpp_operator.observed, gpp_prediction,
+                            self.gpp_operator.observation_sigma, self.gpp_operator.surrogate_rmse,
+                        )
+                    gpp_raw_min = float(np.min(gpp_raw_values))
+                if not np.all(np.isfinite(sr_values)):
+                    ll_sr = float("-inf")
+                    if evaluation_error is None:
+                        evaluation_error = "nonfinite_sr_prediction"
+                else:
+                    sr_prediction = self.sr_operator.aggregate_predictions(sr_values, self.start)
+                    if not np.all(np.isfinite(sr_prediction)):
+                        ll_sr = float("-inf")
+                        if evaluation_error is None:
+                            evaluation_error = "nonfinite_sr_prediction"
+                    else:
+                        ll_sr = gaussian_log_likelihood(
+                            self.sr_operator.observed, sr_prediction,
+                            self.sr_operator.observation_sigma, self.sr_operator.surrogate_rmse,
+                        )
+                ll_cn = 0.0
                 if self.include_cn:
                     soil = self.observations.soil_cn
                     if not np.all(np.isfinite(full_stocks)) or np.any(full_stocks <= 0.0):
                         ll_cn = float("-inf")
-                        evaluation_error = "nonpositive_or_nonfinite_cn_prediction"
+                        if evaluation_error is None:
+                            evaluation_error = "nonpositive_or_nonfinite_cn_prediction"
                     else:
                         ll_cn = joint_cn_log_likelihood(
                             soil.observed_stocks, full_stocks, soil.depth_fraction,
                             soil.total_bias_correction, soil.covariance_by_cv[self.cn_observation_cv],
                         )
-                total = float(log_prior[original] + ll_gpp + ll_sr + ll_cn)
-                results[int(original)] = PosteriorResult(
-                    site=self.site,
-                    prior_id=self.prior.prior_id,
-                    gpp_resolution=self.gpp_resolution,
-                    sr_resolution=self.sr_resolution,
-                    cn_observation_cv=self.cn_observation_cv,
-                    include_cn=self.include_cn,
+                results[int(original)] = self._evaluated_result(
                     log_prior=float(log_prior[original]),
                     log_likelihood_gpp=ll_gpp,
                     log_likelihood_sr=ll_sr,
                     log_likelihood_cn=ll_cn,
-                    log_posterior=total,
-                    n_gpp=self.gpp_operator.count,
-                    n_sr=self.sr_operator.count,
-                    surrogate_evaluated=True,
-                    gpp_raw_min=float(np.min(inference.gpp_raw[local])),
+                    gpp_raw_min=gpp_raw_min,
                     evaluation_error=evaluation_error,
-                    provenance=self._provenance(),
                 )
             likelihood_seconds = timing.perf_counter() - likelihood_started
         if any(result is None for result in results):
@@ -245,7 +290,17 @@ class ThreeStagePosterior:
         sampler = np.asarray(sampler_theta, dtype=np.float64)
         if sampler.shape != (18,):
             raise ValueError("sampler parameter vector must have shape (18,)")
-        physical_theta = self.prior.coordinate_transform.sampler_to_physical(sampler)
+        if not np.all(np.isfinite(sampler)):
+            raise ValueError("sampler parameter vector must be finite")
+        try:
+            physical_theta = self.prior.coordinate_transform.sampler_to_physical(sampler)
+        except (ValueError, FloatingPointError):
+            physical = self._invalid_result(float("-inf"))
+            return SamplingPosteriorResult(
+                physical=physical,
+                log_abs_det_jacobian=float("-inf"),
+                log_sampling_posterior=float("-inf"),
+            )
         physical = self.evaluate(physical_theta)
         jacobian = float(self.prior.coordinate_transform.log_abs_det_dphysical_dsampler(sampler))
         return SamplingPosteriorResult(
@@ -253,6 +308,43 @@ class ThreeStagePosterior:
             log_abs_det_jacobian=jacobian,
             log_sampling_posterior=float(physical.log_posterior + jacobian),
         )
+
+    def evaluate_sampling_batch(
+        self, sampler_theta: Sequence[Sequence[float]] | np.ndarray,
+    ) -> list[SamplingPosteriorResult]:
+        sampler = np.asarray(sampler_theta, dtype=np.float64)
+        if sampler.ndim != 2 or sampler.shape[1] != 18 or sampler.shape[0] == 0:
+            raise ValueError("sampler parameter batch must have shape (n,18) with n > 0")
+        if not np.all(np.isfinite(sampler)):
+            raise ValueError("sampler parameter batch must be finite")
+        results: list[SamplingPosteriorResult | None] = [None] * sampler.shape[0]
+        valid_positions = []
+        valid_physical = []
+        for position, row in enumerate(sampler):
+            try:
+                physical = self.prior.coordinate_transform.sampler_to_physical(row)
+            except (ValueError, FloatingPointError):
+                invalid = self._invalid_result(float("-inf"))
+                results[position] = SamplingPosteriorResult(
+                    physical=invalid,
+                    log_abs_det_jacobian=float("-inf"),
+                    log_sampling_posterior=float("-inf"),
+                )
+                continue
+            valid_positions.append(position)
+            valid_physical.append(physical)
+        if valid_positions:
+            physical_results = self.evaluate_batch(np.asarray(valid_physical, dtype=np.float64))
+            for position, row, physical in zip(valid_positions, sampler[valid_positions], physical_results):
+                jacobian = float(self.prior.coordinate_transform.log_abs_det_dphysical_dsampler(row))
+                results[position] = SamplingPosteriorResult(
+                    physical=physical,
+                    log_abs_det_jacobian=jacobian,
+                    log_sampling_posterior=float(physical.log_posterior + jacobian),
+                )
+        if any(value is None for value in results):
+            raise RuntimeError("sampling batch result ordering was not completely populated")
+        return [value for value in results if value is not None]
 
 
 def load_three_stage_posterior(

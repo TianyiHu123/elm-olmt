@@ -90,3 +90,25 @@
   separately authorized.
 - Next direction is planning-only **Initial Candidate Search and MCMC Pilot Planning**, using the
   validated daily/daily, include-C/N, CV 0.30 baseline. No Iter004 work is authorized.
+
+## iter004 - Initial Candidate Search and Four-Observable MCMC Pilot
+
+- Closed `2026-11-26T01:18:00-07:00`; `completed`; implementation, integration, candidate search,
+  sampling pilot, and numerical validation. Amended plan SHA-256 `5ee74c52...60c0`.
+- WU1 passed full-window four-observable references and resources. Both scrambled-Sobol searches
+  retained 1,024/1,024 unique finite candidates without Stage 2. Deterministic 256-member pools and
+  64-walker sets pass support, diversity, rank 18, replay, and exact split/restart continuation.
+- Corrected pilots ran exactly 128 steps. ABBY numerical rejection was 7,079/8,192
+  (`0.8641357421875`); JERC was 7,350/8,192 (`0.897216796875`); both had a worst-walker rate of
+  1.0. All were classified `outside_prior_support`. The locked fatal limits were 0.50 overall and
+  0.90 per walker, so neither site continued to 256.
+- State geometry, identity, checkpoints, memory, runtime, and storage remained valid: 64 unique
+  states, rank 18, condition 4.599/3.498, peak RSS about 1.55/1.56 GiB, and exact step-64/128
+  snapshots. The result is not a convergence claim.
+- Failure-compatible diagnostics and independent result review pass. Final verification evidence
+  SHA-256 is `c344218b...6763`; runtime evidence is about 55.7 MB against 10 GiB.
+- All 16 submissions are terminal and reconciled; no job is active or unaccounted. Decision:
+  `iter004_validation_failed`. This fatal numerical gate is not a nonfatal mixing limitation.
+- Missing `pytest` and PPE1-specific-loader cleanup remain deferred. Iter005 is planning-only:
+  audit proposal geometry and transformed-to-physical support before any corrected pilot or longer
+  chain. No Iter005 initialization, execution, push, or merge is authorized.

@@ -1,0 +1,59 @@
+{
+  "schema": "mcmc-optimization-iter004-execution-manifest-v1",
+  "repository_start_commit": "4ed771d270559cf4cb5fc2c8f54b5d099d51ecb8",
+  "branch": "feature/mcmc-optimization",
+  "plan_sha256": "5ee74c5208f489c540f21a8c13ce0fbe0ed84ea1d6c9043d6eece2293a0860c0",
+  "config_sha256": "050e7405a587b4bd64174346e8dfda633bb9da98d6f96c4f54fd5d25b28af6cf",
+  "execution_checksum_manifest_sha256": "bf7f2080194d9f15fc80dc39c1f3716521f7918875727c0e8c96aa18c162b760",
+  "planned_jobs": [
+    "preflight_iter004.slurm",
+    "search_abby_iter004.slurm",
+    "search_jerc_iter004.slurm",
+    "pool_restart_iter004.slurm",
+    "pilot_abby_iter004.slurm",
+    "pilot_jerc_iter004.slurm",
+    "diagnostics_iter004.slurm",
+    "final_iter004.slurm"
+  ],
+  "planned_submissions": 8,
+  "maximum_submissions": 16,
+  "retry_allocation": {
+    "preflight_corrections": 3,
+    "preflight_diagnostics": 1,
+    "wu3_corrections": 1,
+    "wu3_identity_corrections": 1,
+    "pilot_startup_corrections": 2,
+    "shared_unchanged_scope_infrastructure": 0,
+    "diagnostic_only": false,
+    "diagnostic_predecessor_job_id": "24825557",
+    "post_diagnostic_correction_predecessor_job_id": "24825862",
+    "wu3_correction_predecessor_job_id": "24826641",
+    "wu3_identity_correction_predecessor_job_id": "24826855",
+    "pilot_startup_correction_predecessor_job_ids": {"ABBY": "24827059", "JERC": "24827061"}
+  },
+  "numerical_tolerances": {
+    "strict_reference": {"rtol": 1e-12, "atol": 1e-10, "component_sum_rtol": 0.0},
+    "scalar_batch_equivalence": {"rtol": 1e-7, "atol": 1e-8}
+  },
+  "runtime_root": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/mcmc_optimization/iter004_candidate_search_mcmc_pilot",
+  "storage_cap_bytes": 10737418240,
+  "test_inventory": {"pattern": "test_mcmc_three_stage_*.py", "expected": 27, "unexpected_skips": 0},
+  "emcee": {
+    "version": "3.1.6",
+    "conda_build": "pyhd8ed1ab_1",
+    "conda_metadata_sha256": "21b4d613f74a0a25fa2aa3b37209b2ccf18c86fb1cf8f497c1ee00417fdff676",
+    "de_move_sha256": "2793ffc7421207df0db2d87f79909823274d769a917c16cdbb992ee5c4e6e631",
+    "de_snooker_sha256": "73b03a2e56928c590e55e3a7f4c3406d7a82ae642550ae21f79efafec589e9e6",
+    "hdf_backend_sha256": "091e842b4d602b912098ac00a3bd01cab6123506d5532c793a912d9161f20156"
+  },
+  "scientific_target": {
+    "prior_id": "ppe1",
+    "dimensions": 18,
+    "sites": ["ABBY", "JERC"],
+    "forcing_window": [720, 61320],
+    "gpp_resolution": "daily",
+    "sr_resolution": "daily",
+    "include_cn": true,
+    "cn_observation_cv": 0.3
+  }
+}
