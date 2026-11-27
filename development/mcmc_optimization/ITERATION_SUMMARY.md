@@ -156,3 +156,34 @@
   extreme-coordinate marginal escape and move-specific saturation, make only an evidence-backed
   boundary classification correction, and revalidate ABBY/JERC exact restart with fresh backends
   before seeking a separately approved pilot. No Iter006 initialization, execution, push or merge.
+
+## iter006 - Sampler Correction and Boundary-Event Diagnostics
+
+- Closed `2026-11-27T05:17:54-07:00`; status `completed`; acceptance `fail`;
+  decision `iter006_validation_failed`. User kickoff revised the historical Iter005
+  planning-only proposal. Plan SHA-256
+  `5ee74c5208f489c540f21a8c13ce0fbe0ed84ea1d6c9043d6eece2293a0860c0`;
+  frozen PPE1 four-observable science and release identities were preserved.
+- Exact old-source/state replay recovered the Iter005 ABBY fatal event at step 3,
+  uncorrected snooker split 0, walker 40: `k_s2` was two directional ULPs below
+  its `0.003` lower bound, while independent higher precision is inside support.
+  Bounded corrected move/map numerical fixtures passed with frozen policy SHA-256
+  `931a323a0a98641e539945e5060b3b54284569a8bbd5fc7c6e5e44eba491191e`.
+- Stage B's mandatory test gate failed with two errors among 50 tests: an existing
+  fixture compatibility regression and a wrong test working directory. Exhausted
+  correction authority barred Stage C and both pilots. Stage F's own evidence
+  driver failed on truthiness of empty glob iterators; no F result JSON was produced.
+  Both are explicit hard-gate failures, not infrastructure retries. Five Slurm
+  jobs `24840516`, `24840555`, `24840587`, `24840823`, `24840903` are terminal
+  and accounted; no active job. C/D/E unsubmitted. Final accounting SHA-256
+  `1863332a2246a9d7db29ad032d2966310804ee70c38e6d285b9bd5d88445c7b9`.
+  Static four-record reconciliation passed for the failed closeout, SHA-256
+  `c53d74570bce3d588e4939941d7aa44c95d23917ce1872736dad94643427321f`;
+  Stage F in-job validation itself did not pass.
+- No corrected chain, step-zero/per-step/block/cumulative boundary time history,
+  retained endpoint occupancy, movement result, or convergence assessment exists;
+  convergence is unassessed. Runtime evidence root:
+  `/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/mcmc_optimization/iter006_sampler_boundary_diagnostics`;
+  compact summary `development/mcmc_optimization/summaries/iter006/summary.md`.
+  Planning-only next proposal: fix legacy test dispatch, test cwd and F empty-glob
+  check; seek a fresh bounded kickoff for B/C before any pilot.

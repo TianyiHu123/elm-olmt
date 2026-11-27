@@ -1,0 +1,39 @@
+{
+  "schema": "mcmc-iter006-physical-boundary-policy-v1",
+  "coordinate_system_id": "ppe1_prior_unit_logit_boundary_v2",
+  "original_state": "finite_float64_z",
+  "unit_map": "stable_sigmoid_without_clipping",
+  "physical_map": "endpoint_anchored_linear_and_log_uniform_parent_before_child",
+  "jacobian": "analytic_smooth_prior_map_at_original_z",
+  "directional_ulp_ceiling": 8,
+  "allowance_by_branch_and_side": {
+    "linear_lower": 2,
+    "linear_upper": 2,
+    "log_uniform_lower": 3,
+    "log_uniform_upper": 3,
+    "conditional_root_lower": 3,
+    "conditional_root_upper": 3
+  },
+  "selection_basis": "advance rounding budget plus one directional ULP margin: near endpoint, linear span/product/sum contribute at most approximately one physical ULP after small input displacement; log quotient/log/product errors are suppressed by the small input displacement, while exp and anchor multiplication can each contribute rounding; conditional root includes one parent-bound rounding. The respective 2/3/3 allowances are the smallest integers in this declared conservative budget and remain subject to independent reference verification before integration.",
+  "boundary_regime": {
+    "input_rule": "for the applicable bound, first-order physical displacement from the exact stored u must be no more than 8 adjacent float64 ULPs inward; the independent full Decimal reference must also lie no farther than 8 ULPs inward",
+    "full_map_error_rule": "absolute raw-to-full-reference error measured in physical-bound directional ULPs must not exceed the branch allowance",
+    "decimal_precision_digits": 800,
+    "natural_endpoint_rule": "same input regime and full-reference checks as repaired overshoot",
+    "repair_rule": "apply min/max immediately after raw component calculation and before dependent conditional bounds; retain raw and diagnostics",
+    "unit_saturation_rule": "exact 0 or 1 rejects separately; no epsilon replacement"
+  },
+  "derivation_grid_declared_before_results": {
+    "unit_values": ["nextafter(0,1)", "2^-1074", "2^-1022", "2^-64", "2^-53", "2^-52", "2^-40", "2^-20", "0.01", "0.25", "0.5", "0.75", "0.99", "1-2^-20", "1-2^-40", "nextafter(1,0)"],
+    "logit_values": [-744.0, -100.0, -40.0, -36.0, -20.0, 0.0, 20.0, 36.0, 40.0],
+    "parameter_indices": "all 18",
+    "conditional_leaf_values": [15.0, 39.5, 40.0]
+  },
+  "verification_fixtures_declared_before_results": {
+    "seeds": [660041, 660042],
+    "unit_values": ["nextafter(0,1)", "2^-900", "2^-60", "2^-48", "0.123456789", "0.5000000000000001", "0.876543211", "nextafter(1,0)"],
+    "logit_values": [-700.0, -80.0, -37.0, -17.0, 1.0, 17.0, 37.0],
+    "conditional_leaf_values": [15.5, 39.99999999999999]
+  },
+  "fit_or_pilot_tuning": false
+}

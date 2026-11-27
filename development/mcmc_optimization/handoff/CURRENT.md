@@ -14,18 +14,24 @@
 ## Live State
 
 - Current status: `closed`.
-- Current phase: `iter005 closeout complete; iter006 planning only`.
-- Last completed iteration: `iter005`.
-- Active iteration: none. Iter005 report `development/mcmc_optimization/iterations/iter005.md`.
-- Active jobs: none. All five Iter005 and all 16 Iter004 submissions are terminal and reconciled.
-- Last updated: `2026-11-27T01:41:00-07:00`.
+- Current phase: `iter006 failed closeout; planning only`.
+- Last completed iteration: `iter006`.
+- Active iteration: none; report `development/mcmc_optimization/iterations/iter006.md`.
+- Active Iter006 job: none. All five jobs `24840516`, `24840555`, `24840587`,
+  `24840823`, `24840903` and their batch/extern steps are terminal and accounted.
+  C and both pilots were not submitted. The corrected restart and chain histories
+  do not exist. Submission count 5/10; the remaining infrastructure retry allowance
+  cannot cover the application/test failures.
+- Last updated: `2026-11-27T05:18:41-07:00`.
+  All five Iter005 and all 16 Iter004
+  submissions are terminal and reconciled.
 - Selected profile: `development/hpc/puma_mcmc_worktree.md`, inheriting
   `development/hpc/puma.md`.
-- Last decision: `iter005_validation_failed`.
-- Authority: user approved the complete Iter005 kickoff package and separately conditionally authorized
-  a diagnosed too-strict floating-point tolerance correction after correct-implementation evidence.
-  Exact scope, tests, resources, ten-submission ceiling, retries, cancellation, and closeout are in
-  `iterations/iter005.md`. No push, merge, or Iter006 initialization is authorized.
+- Last closed decision: `iter006_validation_failed`.
+- Authority: the user's `ITER006 KICKOFF — SAMPLER CORRECTION AND BOUNDARY-EVENT DIAGNOSTICS`
+  approves the bounded Iter006 implementation, six planned jobs, specified retries, monitoring,
+  closeout and at most one local commit. Exact contract is recorded in `iterations/iter006.md`.
+  No push, merge, plan amendment or Iter007 initialization is authorized.
 
 ## Iter004 Closeout
 
@@ -134,8 +140,31 @@ move-specific saturation before deciding whether a later 128-step pilot is scien
 feasible. A provisional three-job 2-CPU, 10-GB, 1-hour each plan needs a separately reviewed
 kickoff package and explicit approval. Do not initialize, execute, retry, push or merge Iter006.
 
-## Resume Point
+## Iter006 Closeout and Resume Point
 
-Iter005 is closed with `iter005_validation_failed`. Review the fatal mapping evidence and
-planning-only Iter006 proposal before seeking a fresh complete kickoff approval. Do not
-resume the Iter005 partial backend or submit either withheld pilot under this closed contract.
+- User-approved kickoff revised the historical planning-only Iter006 proposal. Frozen science
+  and plan SHA-256 `5ee74c5208f489c540f21a8c13ce0fbe0ed84ea1d6c9043d6eece2293a0860c0`
+  were preserved. Runtime root:
+  `/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/mcmc_optimization/iter006_sampler_boundary_diagnostics`.
+- Stage A exact old-source/state ABBY replay identified the original fatal proposal:
+  step 3, uncorrected snooker split 0, walker 40, `k_s2` two directional ULPs below its
+  `0.003` lower bound. Higher precision places the original stored-unit mapping inside
+  support. Stage B's bounded independent numerical report passed under policy SHA-256
+  `931a323a0a98641e539945e5060b3b54284569a8bbd5fc7c6e5e44eba491191e`.
+- Stage B job `24840823` failed its mandatory test gate: 50 tests ran, two errors,
+  including a modified-posterior legacy fixture regression and test working-directory
+  error. The approved correction budget was exhausted. Stage C and both pilots were
+  withheld. Stage F `24840903` also failed on its own truthy empty-glob check, falsely
+  reporting an absent pilot backend; no F result JSON exists. Neither failure is an
+  infrastructure interruption. Independent read-only result reviews agree.
+- Final accounting `accounting/final_iter006_jobs.psv` SHA-256
+  `1863332a2246a9d7db29ad032d2966310804ee70c38e6d285b9bd5d88445c7b9`;
+  five terminal submissions and no active jobs. Runtime size 3,638,392 bytes under 2 GiB.
+  Static four-record reconciliation passed (`ITER006_FOUR_RECORD_VALIDATE_PASS`, SHA-256
+  `c53d74570bce3d588e4939941d7aa44c95d23917ce1872736dad94643427321f`) and records this failed decision separately from the failed
+  Stage F in-job evidence validation. No corrected site boundary histories or movement
+  assessment exist. The legacy replay does not establish convergence; convergence is unassessed.
+- Planning-only next proposal: repair the legacy fixture dispatch, test launch cwd and F
+  empty-glob check, then seek a new bounded kickoff for numerical, both-site restart and
+  pilot gates in that order. Do not resume old backends, extend chains, tune moves, push,
+  merge or initialize Iter007 under this handoff.

@@ -1,0 +1,53 @@
+{
+  "schema": "mcmc-optimization-iter006-scientific-inputs-v1",
+  "source_config": "development/mcmc_optimization/slurm/iter005/iter005_config.json",
+  "plan_sha256": "5ee74c5208f489c540f21a8c13ce0fbe0ed84ea1d6c9043d6eece2293a0860c0",
+  "prior_id": "ppe1",
+  "ppe1_root": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe_vertc/params",
+  "ppe1_parameter_sha256": "5dac81e5a00088e9d8e94b88f4805bc16076a51f1895cf2e5f78a6382e243718",
+  "ppe1_generator_sha256": "c3b64ebdd4116ff7aff6c3c4ecc2ac2351f2b275c58cc84be9074ffcdcf88cf2",
+  "ppe1_metadata_sha256": "80a6ed8403df389b746d33aef389dde3f89754d94df9f74953acce98dd400e0a",
+  "surrogate_release_root": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe_vertc/surrogate_products/three_stage_abby_jerc/release_0001",
+  "surrogate_release_manifest_sha256": "4bdc91e2eed6ad8b8228bbc814767fe739a649599c197fade4bf9256ceab543a",
+  "surrogate_catalog_sha256": "89a636b98b3866d6721e663c5b7ee3a9a7698248c8355dde0d9d4fe1fd4285da",
+  "surrogate_parameter_constraints_sha256": "29af5ac158761baea828868d1a259f1f295e279c6178b2dd93650c0c2864a6b6",
+  "surrogate_source_file": "/xdisk/chopinsong/tianyihu/elm-olmt-mcmc/model_ELM/three_stage_coupled_release.py",
+  "snapshot_root": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe_vertc/surrogate_input_data",
+  "snapshot_sha256": "39b05495a57bfc9f323df67b47c0110dadfbf508b3159cde7ce1a6c59dfd187a",
+  "snapshot_common_source_sha256": "c0897bc4ea5ae9e55eda3a595f436baaa5882711a85ab2aaee81f259b2df385c",
+  "member_split_sha256": "99467dea4d34834c4ea4aaea9e416620cd9bc16310f567f7b7fc1735abe74fce",
+  "uncertainty_root": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/three_stage_surrogate/iter015_abby_jerc_full_chain_robustness/handoff",
+  "uncertainty_handoff_sha256": "c9282bbad9abc2d6519329018ca9be026171f071e6e689a44fb2af102784f436",
+  "uncertainty_manifest_sha256": "293277a89bfa55bed100bf2e00476d26c39614e22dfb1a81eb3953c823df77e9",
+  "uncertainty_validation_sha256": "fed360f89b181dfb70166cdf05b18b91deb167737d022a9f6369cc0641dee2b6",
+  "observation_release_root": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/mcmc_optimization/observation_products/release_0001",
+  "observation_catalog_sha256": "cefc9666c4d958a78ec96826157968883a012bb8bc91c6f9826f52a6f9446bd8",
+  "observation_manifest_sha256": "460c01d957b8e159007b08f6b0c33f43d120d77611a4eaaae7444752f5490fe2",
+  "observation_validation_sha256": "19effdb0f67daa26c8a1e2f429e2aedd2263eac11b6d5887d1c44c4716f88fef",
+  "iter003_reference_root": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/mcmc_optimization/iter003_four_observable_posterior/results",
+  "iter003_posterior_sha256": "cc21836e92bb8eaf5aa960ece2a02b9ad67f764d85e58b5eda5945c45a15e6ca",
+  "iter003_references_sha256": "deb2a5e05d0dee69786175393f54c74ec796ab0be726a706c33fe78d971e41e4",
+  "iter004_root": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/mcmc_optimization/iter004_candidate_search_mcmc_pilot",
+  "full_window_start": 720,
+  "full_window_end": 61320,
+  "gpp_resolution": "daily",
+  "sr_resolution": "daily",
+  "include_cn": true,
+  "cn_observation_cv": 0.3,
+  "sites": {
+    "ABBY": {
+      "old_pool_sha256": "e63e5737be441156a7759f9a189cad253cf49612fe97c19a8f9d14af7cde998d",
+      "old_walker_sha256": "c40b1b81d9f115b920489b2090720d4b6dc612586c690b25d9b90603a49535ea",
+      "old_walker_ledger_sha256": "96c7bdc4bfabb18653a6e25e8a8a76e545fb62cf2db540cebf30e2e8d4ab91de",
+      "old_target_manifest_sha256": "44d37212918e572f882bdf62416e4fab8910ac2ecff3c69704d049bbc22c7859",
+      "old_source_manifest_sha256": "028cfdf151af2becd6651a0a9cbb5ead260831df53fc0ff591dcfa94e0d1a1f9"
+    },
+    "JERC": {
+      "old_pool_sha256": "af21f7590bb2c88407c93cb9cce122637546a34c3ad449e8daa0da6e0f926d9a",
+      "old_walker_sha256": "8adc6249bc39a5e7c9ad0861ff5d5cb29cc2b0be9bfa88eaf30d0d38f0da127e",
+      "old_walker_ledger_sha256": "0e7cf9a942a67af9e6391279a39c79f5337780e12b064c913e130c3805c7e7c1",
+      "old_target_manifest_sha256": "9e719107b8ddc6d2d9181240750cbf27001b8635b6e4e68c9746c4506fcb983b",
+      "old_source_manifest_sha256": "2ec68f19c10de0921f31e1128f640362aeb61dba8ee44f47da3d2b7e00855ec6"
+    }
+  }
+}

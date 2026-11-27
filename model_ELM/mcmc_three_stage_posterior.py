@@ -10,7 +10,10 @@ import numpy as np
 from netCDF4 import Dataset
 
 from .mcmc_prior import PPE1, Prior18
-from .mcmc_three_stage_sampler_geometry import CoordinateSaturation, PriorUnitLogitGeometry
+from .mcmc_three_stage_sampler_geometry import (
+    BOUNDARY_COORDINATE_SYSTEM_ID, CoordinateSaturation,
+    PriorUnitLogitBoundaryGeometry, PriorUnitLogitGeometry,
+)
 from .mcmc_three_stage_likelihood import gaussian_log_likelihood, joint_cn_log_likelihood
 from .mcmc_three_stage_observations import (
     ObservationReleaseConfig,
@@ -51,6 +54,7 @@ class SamplingPosteriorResult:
     physical: PosteriorResult
     log_abs_det_jacobian: float
     log_sampling_posterior: float
+    mapping_events: tuple[dict[str, object], ...] = ()
 
 
 class ThreeStagePosterior:
@@ -86,7 +90,9 @@ class ThreeStagePosterior:
             raise ValueError("member_chunk must be positive")
         self.site = site
         self.prior = prior
-        if sampling_coordinate_system == "ppe1_prior_unit_logit_v1":
+        if sampling_coordinate_system == BOUNDARY_COORDINATE_SYSTEM_ID:
+            self.sampling_geometry = PriorUnitLogitBoundaryGeometry(prior)
+        elif sampling_coordinate_system == "ppe1_prior_unit_logit_v1":
             self.sampling_geometry = PriorUnitLogitGeometry(prior)
         elif sampling_coordinate_system == "legacy_three_stage_v1":
             self.sampling_geometry = prior.coordinate_transform
@@ -102,6 +108,9 @@ class ThreeStagePosterior:
         self.start = int(start)
         self.end = actual_end
         self.member_chunk = int(member_chunk)
+        self._boundary_target_progress: dict[str, object] = {}
+        self._boundary_last_failure_progress: dict[str, object] = {}
+        self._boundary_sampling_active = False
         self.gpp_operator = observations.operator("GPP", gpp_resolution).window(self.start, self.end)
         self.sr_operator = observations.operator("SR", sr_resolution).window(self.start, self.end)
         snapshot_root = Path(release.config.snapshot_root)
@@ -229,6 +238,11 @@ class ThreeStagePosterior:
                 raise ValueError("three-stage inference provenance indicates target leakage")
             likelihood_started = timing.perf_counter()
             for local, original in enumerate(selected_indices):
+                if (self.sampling_coordinate_system == BOUNDARY_COORDINATE_SYSTEM_ID
+                        and self._boundary_sampling_active
+                        and self._boundary_target_progress.get("phase") in ("target_batch", "physical_likelihood_loop")):
+                    self._boundary_target_progress["phase"] = "physical_likelihood_loop"
+                    self._boundary_target_progress["current_position"] = int(self._boundary_valid_positions[int(original)])
                 full_stocks = np.asarray([inference.totsomc[local], inference.totsomn[local]], dtype=np.float64)
                 gpp_values = np.asarray(inference.gpp[local], dtype=np.float64)
                 gpp_raw_values = np.asarray(inference.gpp_raw[local], dtype=np.float64)
@@ -284,6 +298,12 @@ class ThreeStagePosterior:
                     gpp_raw_min=gpp_raw_min,
                     evaluation_error=evaluation_error,
                 )
+                if (self.sampling_coordinate_system == BOUNDARY_COORDINATE_SYSTEM_ID
+                        and self._boundary_sampling_active
+                        and self._boundary_target_progress.get("phase") == "physical_likelihood_loop"):
+                    self._boundary_target_progress["physical_completed_positions"].append(
+                        int(self._boundary_valid_positions[int(original)])
+                    )
             likelihood_seconds = timing.perf_counter() - likelihood_started
         if any(result is None for result in results):
             raise RuntimeError("posterior batch result ordering was not completely populated")
@@ -301,6 +321,8 @@ class ThreeStagePosterior:
             raise ValueError("sampler parameter vector must have shape (18,)")
         if not np.all(np.isfinite(sampler)):
             raise ValueError("sampler parameter vector must be finite")
+        if self.sampling_coordinate_system == BOUNDARY_COORDINATE_SYSTEM_ID:
+            return self.evaluate_sampling_batch(sampler[None, :])[0]
         try:
             physical_theta = self.sampling_geometry.sampler_to_physical(sampler)
         except CoordinateSaturation:
@@ -330,17 +352,46 @@ class ThreeStagePosterior:
     def evaluate_sampling_batch(
         self, sampler_theta: Sequence[Sequence[float]] | np.ndarray,
     ) -> list[SamplingPosteriorResult]:
+        if self.sampling_coordinate_system != BOUNDARY_COORDINATE_SYSTEM_ID:
+            return self._evaluate_sampling_batch_impl(sampler_theta)
+        self._boundary_sampling_active = True
+        self._boundary_last_failure_progress = {}
+        try:
+            return self._evaluate_sampling_batch_impl(sampler_theta)
+        except Exception:
+            self._boundary_last_failure_progress = dict(self._boundary_target_progress)
+            raise
+        finally:
+            self._boundary_sampling_active = False
+
+    def _evaluate_sampling_batch_impl(
+        self, sampler_theta: Sequence[Sequence[float]] | np.ndarray,
+    ) -> list[SamplingPosteriorResult]:
         sampler = np.asarray(sampler_theta, dtype=np.float64)
         if sampler.ndim != 2 or sampler.shape[1] != 18 or sampler.shape[0] == 0:
             raise ValueError("sampler parameter batch must have shape (n,18) with n > 0")
         if not np.all(np.isfinite(sampler)):
             raise ValueError("sampler parameter batch must be finite")
+        if self.sampling_coordinate_system == BOUNDARY_COORDINATE_SYSTEM_ID:
+            self._boundary_target_progress = {
+                "phase": "mapping", "current_position": None,
+                "mapped_positions": [], "target_submitted_positions": [],
+                "physical_completed_positions": [],
+            }
         results: list[SamplingPosteriorResult | None] = [None] * sampler.shape[0]
         valid_positions = []
         valid_physical = []
+        mapped = {}
         for position, row in enumerate(sampler):
+            if self.sampling_coordinate_system == BOUNDARY_COORDINATE_SYSTEM_ID:
+                self._boundary_target_progress["current_position"] = position
             try:
-                physical = self.sampling_geometry.sampler_to_physical(row)
+                if self.sampling_coordinate_system == BOUNDARY_COORDINATE_SYSTEM_ID:
+                    mapping = self.sampling_geometry.map_with_jacobian(row)
+                    physical = mapping.physical
+                    mapped[position] = mapping
+                else:
+                    physical = self.sampling_geometry.sampler_to_physical(row)
             except CoordinateSaturation:
                 invalid = self._invalid_result(float("-inf"), reason="coordinate_saturation")
                 results[position] = SamplingPosteriorResult(
@@ -361,17 +412,37 @@ class ThreeStagePosterior:
                 continue
             valid_positions.append(position)
             valid_physical.append(physical)
+            if self.sampling_coordinate_system == BOUNDARY_COORDINATE_SYSTEM_ID:
+                self._boundary_target_progress["mapped_positions"].append(position)
         if valid_positions:
+            if self.sampling_coordinate_system == BOUNDARY_COORDINATE_SYSTEM_ID:
+                self._boundary_valid_positions = list(valid_positions)
+                self._boundary_target_progress["phase"] = "target_batch"
+                self._boundary_target_progress["current_position"] = None
+                self._boundary_target_progress["target_submitted_positions"] = list(valid_positions)
             physical_results = self.evaluate_batch(np.asarray(valid_physical, dtype=np.float64))
+            if self.sampling_coordinate_system == BOUNDARY_COORDINATE_SYSTEM_ID:
+                self._boundary_target_progress["phase"] = "assemble"
             for position, row, physical in zip(valid_positions, sampler[valid_positions], physical_results):
-                jacobian = float(self.sampling_geometry.log_abs_det_dphysical_dsampler(row))
+                if self.sampling_coordinate_system == BOUNDARY_COORDINATE_SYSTEM_ID:
+                    self._boundary_target_progress["current_position"] = position
+                if self.sampling_coordinate_system == BOUNDARY_COORDINATE_SYSTEM_ID:
+                    jacobian = mapped[position].log_abs_det_jacobian
+                    mapping_events = mapped[position].events
+                else:
+                    jacobian = float(self.sampling_geometry.log_abs_det_dphysical_dsampler(row))
+                    mapping_events = ()
                 results[position] = SamplingPosteriorResult(
                     physical=physical,
                     log_abs_det_jacobian=jacobian,
                     log_sampling_posterior=float(physical.log_posterior + jacobian),
+                    mapping_events=mapping_events,
                 )
         if any(value is None for value in results):
             raise RuntimeError("sampling batch result ordering was not completely populated")
+        if self.sampling_coordinate_system == BOUNDARY_COORDINATE_SYSTEM_ID:
+            self._boundary_target_progress["phase"] = "complete"
+            self._boundary_target_progress["current_position"] = None
         return [value for value in results if value is not None]
 
 

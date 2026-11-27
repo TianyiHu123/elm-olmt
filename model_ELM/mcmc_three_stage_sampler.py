@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import math
 import os
 from pathlib import Path
 from typing import Any, Callable
@@ -18,7 +19,8 @@ from .mcmc_three_stage_artifacts import (
     write_json_exclusive,
 )
 from .mcmc_three_stage_posterior import SamplingPosteriorResult, ThreeStagePosterior
-from .mcmc_three_stage_sampler_geometry import CoordinateSaturation
+from .mcmc_three_stage_sampler_geometry import BOUNDARY_COORDINATE_SYSTEM_ID, CoordinateSaturation, _sigmoid
+from .mcmc_corrected_de_snooker import CorrectedDESnookerMove, DegenerateSnookerProposal
 
 
 REASON_CODES = {
@@ -86,10 +88,216 @@ class ThreeStageSamplingTarget:
 
     def __init__(self, posterior: ThreeStagePosterior) -> None:
         self.posterior = posterior
+        self.last_mapping_events: list[tuple[dict[str, object], ...]] = []
 
     def __call__(self, coordinates: np.ndarray) -> list[tuple[Any, ...]]:
         results = self.posterior.evaluate_sampling_batch(coordinates)
+        self.last_mapping_events = [result.mapping_events for result in results]
         return [(float(result.log_sampling_posterior), *result_blob(result)) for result in results]
+
+
+def _tagged_json(value: Any) -> Any:
+    """JSON-safe, lossless tags for nonfinite diagnostic values."""
+    if isinstance(value, dict):
+        return {str(key): _tagged_json(item) for key, item in value.items()}
+    if isinstance(value, (list, tuple, np.ndarray)):
+        return [_tagged_json(item) for item in value]
+    if isinstance(value, (np.bool_, bool)):
+        return bool(value)
+    if isinstance(value, (np.integer, int)):
+        return int(value)
+    if isinstance(value, (np.floating, float)):
+        number = float(value)
+        if math.isnan(number):
+            return {"nonfinite": "NaN"}
+        if math.isinf(number):
+            return {"nonfinite": "+Infinity" if number > 0 else "-Infinity"}
+        return number
+    return value
+
+
+class BoundaryProposalAuditLedger:
+    """Append-only generated/examined/completed/error transitions for v2 proposals."""
+
+    def __init__(self, path: Path, *, geometry: Any, identity: dict[str, Any], resume: bool) -> None:
+        self.path = path
+        self.path.parent.mkdir(parents=True, exist_ok=True)
+        if self.path.exists() != bool(resume):
+            raise FileExistsError("boundary audit resume/existence mismatch")
+        self.geometry = geometry
+        self.identity = identity
+        self.current_step = 0
+        self.proposal_call = 0
+        if resume:
+            for line in self.path.read_text(encoding="utf-8").splitlines():
+                if line:
+                    row = json.loads(line)
+                    if "move_call" in row:
+                        self.proposal_call = max(self.proposal_call, int(row["move_call"]))
+
+    def _append(self, rows: list[dict[str, Any]]) -> None:
+        descriptor = os.open(self.path, os.O_WRONLY | os.O_CREAT | os.O_APPEND, 0o600)
+        with os.fdopen(descriptor, "a", encoding="utf-8") as handle:
+            for row in rows:
+                handle.write(json.dumps(_tagged_json(row), sort_keys=True, allow_nan=False) + "\n")
+            handle.flush()
+            os.fsync(handle.fileno())
+
+    def _base(self, move: str, split: int, walker: int, move_call: int) -> dict[str, Any]:
+        run_id = str(self.identity["run_id"])
+        site = str(self.identity["site"])
+        role = str(self.identity["chain_role"])
+        proposal_id = f"{run_id}/{site}/{role}/{self.current_step}/{move_call}/{split}/{walker}"
+        return {
+            "schema": "mcmc-iter006-proposal-audit-v1", "proposal_id": proposal_id,
+            "run_id": run_id, "site": site, "chain_role": role,
+            "global_step": int(self.current_step), "move_call": int(move_call),
+            "split": int(split), "walker": int(walker), "move": move,
+            "numerical_policy_sha256": self.identity["numerical_policy_sha256"],
+        }
+
+    def record_retained_state(self, coordinates: np.ndarray, *, step: int) -> None:
+        rows = []
+        for walker, z in enumerate(np.asarray(coordinates, dtype=np.float64)):
+            unit = _sigmoid(z)
+            mapping = self.geometry.map_with_jacobian(z)
+            rows.append({
+                "schema": "mcmc-iter006-retained-state-v1", "transition": "initialization" if step == 0 else "retained",
+                "run_id": self.identity["run_id"], "site": self.identity["site"],
+                "chain_role": self.identity["chain_role"],
+                "global_step": int(step), "walker": int(walker), "z": z,
+                "u": unit, "physical_endpoint_parameters": [
+                    event["parameter"] for event in mapping.events
+                    if event["kind"] in ("physical_repair", "natural_physical_endpoint")
+                ],
+                "numerical_policy_sha256": self.identity["numerical_policy_sha256"],
+            })
+        self._append(rows)
+
+    def record_generated(self, *, move: str, split: int, walker_indices: np.ndarray,
+                         sampler_coordinates: np.ndarray) -> list[dict[str, Any]]:
+        self.proposal_call += 1
+        call = self.proposal_call
+        rows = []
+        for walker, z in zip(np.asarray(walker_indices, dtype=np.int64), np.asarray(sampler_coordinates)):
+            base = self._base(move, split, int(walker), call)
+            rows.append({**base, "transition": "generated", "z": z,
+                         "u": _sigmoid(np.asarray(z, dtype=np.float64))})
+        self._append(rows)
+        return [self._base(move, split, int(walker), call)
+                for walker in np.asarray(walker_indices, dtype=np.int64)]
+
+    def record_generation_error(self, *, move: str, split: int,
+                                walker_indices: np.ndarray, exc: Exception) -> None:
+        self.proposal_call += 1
+        details = getattr(exc, "details", {})
+        partial = list(details.get("partial_q", []))
+        current = details.get("current_q")
+        rows = []
+        for local, q in enumerate(partial):
+            base = self._base(move, split, int(walker_indices[local]), self.proposal_call)
+            rows.append({**base, "transition": "generated", "z": q,
+                         "u": _sigmoid(np.asarray(q, dtype=np.float64))})
+            rows.append({**base, "transition": "unexamined", "stage": "move_generation_aborted"})
+        failed_local = int(details.get("failed_local_index", len(partial)))
+        if current is not None and failed_local < len(walker_indices):
+            base = self._base(move, split, int(walker_indices[failed_local]), self.proposal_call)
+            rows.append({**base, "transition": "generated", "z": current,
+                         "u": _sigmoid(np.asarray(current, dtype=np.float64))})
+            rows.append({**base, "transition": "failed", "stage": "move_generation",
+                         "error_type": type(exc).__name__, "error": str(exc),
+                         "details": details})
+        else:
+            rows.append({"schema": "mcmc-iter006-move-error-v1", "transition": "move_error",
+                         "run_id": self.identity["run_id"], "site": self.identity["site"],
+                         "chain_role": self.identity["chain_role"],
+                         "global_step": int(self.current_step), "move_call": int(self.proposal_call),
+                         "split": int(split), "move": move,
+                         "failed_walker": (int(walker_indices[failed_local])
+                                           if failed_local < len(walker_indices) else None),
+                         "error_type": type(exc).__name__, "error": str(exc),
+                         "details": details})
+        self._append(rows)
+
+    def record_examined(self, bases: list[dict[str, Any]], sampler_coordinates: np.ndarray) -> list[Any]:
+        mapped = []
+        coordinates = np.asarray(sampler_coordinates, dtype=np.float64)
+        for local, (base, z) in enumerate(zip(bases, coordinates)):
+            try:
+                result = self.geometry.map_with_jacobian(z)
+            except CoordinateSaturation:
+                unit = _sigmoid(z)
+                events = tuple({"kind": "unit_saturation", "parameter": self.geometry.prior.names[index],
+                                "index": index, "side": "lower" if unit[index] == 0.0 else "upper",
+                                "z": float(z[index]), "u": float(unit[index])}
+                               for index in np.flatnonzero((unit == 0.0) | (unit == 1.0)))
+                mapped.append({"events": events})
+                self._append([{**base, "transition": "examined", "u": unit,
+                               "physical": None, "events": events,
+                               "log_abs_det_jacobian": float("-inf")}])
+                continue
+            except Exception as exc:
+                details = getattr(exc, "details", {})
+                self._append([{**earlier, "transition": "failed", "stage": "batch_aborted_before_target"}
+                              for earlier in bases[:local]]
+                             + [{**base, "transition": "failed", "stage": "physical_map",
+                               "error_type": type(exc).__name__, "error": str(exc),
+                               "details": details}]
+                             + [{**later, "transition": "unexamined", "stage": "physical_map_prior_failure"}
+                                for later in bases[local + 1:]])
+                raise
+            mapped.append(result)
+            self._append([{**base, "transition": "examined", "physical": result.physical,
+                           "u": result.unit, "events": result.events,
+                           "log_abs_det_jacobian": result.log_abs_det_jacobian}])
+        return mapped
+
+    def record_target_error(self, bases: list[dict[str, Any]], exc: Exception,
+                            progress: dict[str, Any] | None = None) -> None:
+        if progress is None:
+            posterior = getattr(getattr(self, "target", None), "posterior", None)
+            progress = getattr(posterior, "_boundary_last_failure_progress", {})
+            if not progress:
+                progress = getattr(posterior, "_boundary_target_progress", {})
+        phase = str(progress.get("phase", "unknown"))
+        current = progress.get("current_position")
+        completed = set(progress.get("physical_completed_positions", []))
+        rows = []
+        for local, base in enumerate(bases):
+            common = {**base, "error_type": type(exc).__name__, "error": str(exc),
+                      "target_phase": phase}
+            if phase == "mapping" and current is not None and local > int(current):
+                rows.append({**base, "transition": "unexamined", "stage": "target_mapping_after_failure"})
+            elif phase == "physical_likelihood_loop" and current is not None and local > int(current):
+                rows.append({**base, "transition": "unexamined", "stage": "target_likelihood_after_failure"})
+            elif local in completed and current != local:
+                rows.append({**common, "transition": "failed", "stage": "target_evaluated_no_mh"})
+            elif current is not None and local == int(current):
+                rows.append({**common, "transition": "failed", "stage": "target_current_failure"})
+            else:
+                rows.append({**common, "transition": "failed", "stage": "target_batch_outcome_unknown"})
+        self._append(rows)
+
+    def record_completed(self, *, bases: list[dict[str, Any]], mapped: list[Any],
+                         log_probabilities: np.ndarray, blobs: np.ndarray | None,
+                         accepted: np.ndarray, target_events: list[tuple[dict[str, object], ...]]) -> None:
+        if len(target_events) != len(bases):
+            raise RuntimeError("target mapping-event record length mismatch")
+        rows = []
+        for local, (base, mapping) in enumerate(zip(bases, mapped)):
+            mapping_events = mapping["events"] if isinstance(mapping, dict) else mapping.events
+            if not isinstance(mapping, dict) and list(mapping_events) != list(target_events[local]):
+                raise RuntimeError("target and audit mapping events differ")
+            blob_payload = None
+            if blobs is not None:
+                value = blobs[local]
+                blob_payload = {name: (int(value[name]) if name == "reason_code" else float(value[name]))
+                                for name in BLOB_DTYPE.names or ()}
+            walker = int(base["walker"])
+            rows.append({**base, "transition": "completed", "accepted": bool(accepted[walker]),
+                         "log_sampling_posterior": float(log_probabilities[local]),
+                         "blob": blob_payload, "events": mapping_events})
+        self._append(rows)
 
 
 class ProposalAuditLedger:
@@ -185,20 +393,51 @@ class _AuditedRedBlueMixin:
             sets = [state.coords[inds == value] for value in range(self.nsplits)]
             sample = sets[split]
             complement = sets[:split] + sets[split + 1 :]
-            proposal, factors = self.get_proposal(sample, complement, model.random)
-            new_log_probs, new_blobs = model.compute_log_prob_fn(proposal)
+            try:
+                proposal, factors = self.get_proposal(sample, complement, model.random)
+            except Exception as exc:
+                if isinstance(self.audit_ledger, BoundaryProposalAuditLedger):
+                    self.audit_ledger.record_generation_error(
+                        move=self.audit_move_name, split=split,
+                        walker_indices=all_inds[subset], exc=exc,
+                    )
+                raise
+            boundary_audit = isinstance(self.audit_ledger, BoundaryProposalAuditLedger)
+            if boundary_audit:
+                bases = self.audit_ledger.record_generated(
+                    move=self.audit_move_name, split=split,
+                    walker_indices=all_inds[subset], sampler_coordinates=proposal,
+                )
+                mapped = self.audit_ledger.record_examined(bases, proposal)
+            try:
+                new_log_probs, new_blobs = model.compute_log_prob_fn(proposal)
+            except Exception as exc:
+                if boundary_audit:
+                    self.audit_ledger.record_target_error(bases, exc)
+                raise
             for walker, factor, new_log_prob in zip(all_inds[subset], factors, new_log_probs):
                 difference = factor + new_log_prob - state.log_prob[walker]
                 if difference > np.log(model.random.rand()):
                     accepted[walker] = True
-            self.audit_ledger.record(
-                move=self.audit_move_name,
-                walker_indices=all_inds[subset],
-                sampler_coordinates=proposal,
-                log_probabilities=new_log_probs,
-                blobs=new_blobs,
-                accepted=accepted,
-            )
+            if boundary_audit:
+                try:
+                    self.audit_ledger.record_completed(
+                        bases=bases, mapped=mapped, log_probabilities=new_log_probs,
+                        blobs=new_blobs, accepted=accepted,
+                        target_events=self.audit_ledger.target.last_mapping_events,
+                    )
+                except Exception as exc:
+                    self.audit_ledger.record_target_error(bases, exc)
+                    raise
+            else:
+                self.audit_ledger.record(
+                    move=self.audit_move_name,
+                    walker_indices=all_inds[subset],
+                    sampler_coordinates=proposal,
+                    log_probabilities=new_log_probs,
+                    blobs=new_blobs,
+                    accepted=accepted,
+                )
             new_state = State(proposal, log_prob=new_log_probs, blobs=new_blobs)
             state = self.update(state, new_state, accepted, subset)
         return state, accepted
@@ -218,6 +457,13 @@ class AuditedDESnookerMove(_AuditedRedBlueMixin, emcee.moves.DESnookerMove):
         super().__init__(gammas=1.7)
 
 
+class AuditedCorrectedDESnookerMove(_AuditedRedBlueMixin, CorrectedDESnookerMove):
+    def __init__(self, ledger: BoundaryProposalAuditLedger) -> None:
+        self.audit_ledger = ledger
+        self.audit_move_name = "DESnookerMove"
+        super().__init__(gammas=1.7)
+
+
 def sampler_identity(payload: dict[str, Any]) -> tuple[dict[str, Any], str]:
     required = {
         "site", "prior_id", "parameter_names", "posterior_target_sha256", "pool_sha256",
@@ -227,7 +473,18 @@ def sampler_identity(payload: dict[str, Any]) -> tuple[dict[str, Any], str]:
     if missing:
         raise ValueError(f"sampler identity missing fields: {missing}")
     normalized = dict(payload)
-    if "coordinate_system_id" in normalized:
+    if normalized.get("coordinate_system_id") == BOUNDARY_COORDINATE_SYSTEM_ID:
+        new_required = {
+            "geometry_source_sha256", "sampler_source_sha256", "posterior_source_sha256",
+            "execution_checksum_manifest_sha256", "release_manifest_sha256",
+            "walker_coordinates_sha256", "numerical_policy_sha256",
+            "corrected_move_source_sha256", "run_id", "chain_role",
+        }
+        absent = sorted(new_required - set(normalized))
+        if absent:
+            raise ValueError(f"boundary sampler identity missing fields: {absent}")
+        normalized["schema"] = "mcmc-three-stage-sampler-identity-v3"
+    elif "coordinate_system_id" in normalized:
         new_required = {
             "geometry_source_sha256", "sampler_source_sha256", "posterior_source_sha256",
             "execution_checksum_manifest_sha256", "release_manifest_sha256",
@@ -268,21 +525,27 @@ def run_sampler_block(
         root.mkdir(parents=True)
     completed_backend_guard(root)
     coordinate_id = getattr(posterior, "sampling_coordinate_system", "legacy_three_stage_v1")
-    if coordinate_id == "ppe1_prior_unit_logit_v1":
+    if coordinate_id in ("ppe1_prior_unit_logit_v1", BOUNDARY_COORDINATE_SYSTEM_ID):
         if identity.get("coordinate_system_id") != coordinate_id:
             raise ValueError("new coordinate system requires exact sampler identity")
     elif "coordinate_system_id" in identity:
         raise ValueError("sampler coordinate identity does not match posterior")
     identity_sha = _load_or_create_identity(root, identity, resume=resume)
     backend_path = root / "active_backend.h5"
-    ledger = ProposalAuditLedger(
-        root / "proposal_ledger.jsonl",
-        sampler_to_physical=getattr(
-            posterior, "sampling_geometry", posterior.prior.coordinate_transform
-        ).sampler_to_physical,
-        resume=resume,
-        strict_mapping_errors=coordinate_id == "ppe1_prior_unit_logit_v1",
-    )
+    if coordinate_id == BOUNDARY_COORDINATE_SYSTEM_ID:
+        ledger = BoundaryProposalAuditLedger(
+            root / "proposal_ledger.jsonl", geometry=posterior.sampling_geometry,
+            identity=identity, resume=resume,
+        )
+    else:
+        ledger = ProposalAuditLedger(
+            root / "proposal_ledger.jsonl",
+            sampler_to_physical=getattr(
+                posterior, "sampling_geometry", posterior.prior.coordinate_transform
+            ).sampler_to_physical,
+            resume=resume,
+            strict_mapping_errors=coordinate_id == "ppe1_prior_unit_logit_v1",
+        )
     nwalkers = int(identity["nwalkers"])
     ndim = int(identity["ndim"])
     initial = np.asarray(initial_sampler_coordinates, dtype=np.float64)
@@ -302,7 +565,11 @@ def run_sampler_block(
         backend.reset(nwalkers, ndim)
         start_state = initial
     target = ThreeStageSamplingTarget(posterior)
-    moves = [(AuditedDEMove(ledger), 0.80), (AuditedDESnookerMove(ledger), 0.20)]
+    if coordinate_id == BOUNDARY_COORDINATE_SYSTEM_ID:
+        ledger.target = target
+    snooker = (AuditedCorrectedDESnookerMove(ledger) if coordinate_id == BOUNDARY_COORDINATE_SYSTEM_ID
+               else AuditedDESnookerMove(ledger))
+    moves = [(AuditedDEMove(ledger), 0.80), (snooker, 0.20)]
     sampler = emcee.EnsembleSampler(
         nwalkers, ndim, target, moves=moves, backend=backend, vectorize=True,
         blobs_dtype=BLOB_DTYPE,
@@ -310,10 +577,14 @@ def run_sampler_block(
     if not resume:
         random = np.random.RandomState(int(identity["seed"]))
         sampler.random_state = random.get_state()
+        if coordinate_id == BOUNDARY_COORDINATE_SYSTEM_ID:
+            ledger.record_retained_state(initial, step=0)
     while int(sampler.iteration) < int(target_iteration):
         ledger.current_step = int(sampler.iteration) + 1
         sampler.run_mcmc(start_state if int(sampler.iteration) == 0 else None, 1, progress=False)
         start_state = None
+        if coordinate_id == BOUNDARY_COORDINATE_SYSTEM_ID:
+            ledger.record_retained_state(sampler.get_last_sample().coords, step=int(sampler.iteration))
         if int(sampler.iteration) % int(checkpoint_interval) == 0:
             immutable_checkpoint_snapshot(
                 backend_path=backend_path,
