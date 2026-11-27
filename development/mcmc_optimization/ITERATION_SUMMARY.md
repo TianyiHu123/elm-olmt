@@ -112,3 +112,47 @@
 - Missing `pytest` and PPE1-specific-loader cleanup remain deferred. Iter005 is planning-only:
   audit proposal geometry and transformed-to-physical support before any corrected pilot or longer
   chain. No Iter005 initialization, execution, push, or merge is authorized.
+
+## iter005 - Prior-Aware Bounded Sampler Reconstruction and Corrected Four-Observable Pilot
+
+- Closed `2026-11-27T01:41:00-07:00`; `completed`; implementation, integration, numerical
+  validation, and planned bounded sampling pilot. Plan SHA-256
+  `5ee74c5208f489c540f21a8c13ce0fbe0ed84ea1d6c9043d6eece2293a0860c0`; aligned.
+- Added focused PPE1 prior-unit/logit coordinates and full Jacobian to the existing three-stage
+  posterior and `emcee` sampler. Elementwise prior/surrogate bounds and conditional C:N metadata
+  were compared only in development preflight; ordinary prior, release, schema, support and
+  provenance checks remain. The frozen four-observable scientific target and older closed
+  iterations were not changed.
+- The corrected compute-node preflight passed 41/41 explicit tests with zero skips. The first
+  preflight's two new test-fixture errors were preserved and fixed under the one approved narrow
+  correction opportunity. The first density job exposed an overly strict cross-vector absolute
+  comparison; the user's conditional authorization was used once to apply the already locked
+  scalar/batch tolerance while retaining strict same-vector density and Jacobian checks.
+- ABBY's 64 reused physical walkers passed identity, support, physical target and corrected
+  density checks: maximum prior/Jacobian cancellation `5.68e-14`, normalized same-vector residual
+  `1.82e-12`, and archived/reconstructed difference `1.20e-5` within its separate tolerance.
+  The subsequent 16-step restart failed at step 2 when a proposal's prior inverse produced a
+  physical value outside a marginal bound and raised an uncaught mapping error. The partial
+  128-row ledger has 28 saturation rejections and 41 accepted moves; it is not a validated chain.
+- This fatal mapping/restart gate blocked JERC validation and both 128-step pilots. The planned
+  diagnostics job recorded `iter005_validation_failed`, missing pilot reports, and no convergence
+  claim. Decision: `iter005_validation_failed`, not a mixing limitation. Movement and calibrated
+  parameter estimates were not assessed.
+- Five actual Slurm submissions are terminal and accounted; active/unaccounted jobs zero.
+  Diagnostics SHA-256 `d1d1ec631f4d4620f4345e30ac0515010c5f2f7e40f71541211f4cec68e0479e`,
+  final accounting `80cb77f33c54106521278b851c620ea34c8ab837763fd403fb3da1062762b891`,
+  independent result review `06009889d7667c19f606bb34eb7877df86ed6fcf4275f1a1953c5a4f1fe0fcd6`.
+  Four-record validation `ITER005_FOUR_RECORD_VALIDATE_PASS` artifact SHA-256
+  `8412993640011ecbab5f0990a271eddc56856c44bd0e09606c08b21b5666f9c6`.
+  Final config/checksum/execution manifest hashes are
+  `4cefd55f3aa8f6f348d22463740b00a882c9ca470f0d235b797932848d7c9021` /
+  `2b414218813fbdbc93957f321222e3b144058595ca226a61dc40f5dd386abddc` /
+  `7507fa14751efac64389655be9aea14c1cc8b4f218fea5ce2d8cfa0b2d5ea0e9`.
+  Evidence root: `/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/mcmc_optimization/iter005_prior_unit_sampler_pilot`.
+  Diagnostics measured 1,857,767 file bytes and final accounting measured 1,908,394 bytes
+  including directory metadata, both below 2 GiB.
+- Missing `pytest` and PPE1-specific-loader cleanup remain deferred. Planning-only Iter006
+  proposal: **Boundary-Safe Prior-Unit Mapping and Restart Feasibility**. Diagnose the
+  extreme-coordinate marginal escape and move-specific saturation, make only an evidence-backed
+  boundary classification correction, and revalidate ABBY/JERC exact restart with fresh backends
+  before seeking a separately approved pilot. No Iter006 initialization, execution, push or merge.

@@ -18,6 +18,7 @@ from .mcmc_three_stage_artifacts import (
     write_json_exclusive,
 )
 from .mcmc_three_stage_posterior import SamplingPosteriorResult, ThreeStagePosterior
+from .mcmc_three_stage_sampler_geometry import CoordinateSaturation
 
 
 REASON_CODES = {
@@ -26,6 +27,7 @@ REASON_CODES = {
     "nonpositive_or_nonfinite_cn_prediction": 2,
     "nonfinite_gpp_prediction": 3,
     "nonfinite_sr_prediction": 4,
+    "coordinate_saturation": 5,
 }
 
 BLOB_DTYPE = np.dtype([
@@ -95,7 +97,7 @@ class ProposalAuditLedger:
 
     def __init__(
         self, path: Path | str, *, sampler_to_physical: Callable[[np.ndarray], np.ndarray],
-        resume: bool = False,
+        resume: bool = False, strict_mapping_errors: bool = False,
     ) -> None:
         self.path = Path(path)
         self.path.parent.mkdir(parents=True, exist_ok=True)
@@ -104,6 +106,7 @@ class ProposalAuditLedger:
         if not self.path.exists() and resume:
             raise FileNotFoundError(f"proposal ledger missing for resume: {self.path}")
         self._sampler_to_physical = sampler_to_physical
+        self.strict_mapping_errors = strict_mapping_errors
         self.current_step = 0
         self.proposal_call = 0
         if resume:
@@ -124,7 +127,11 @@ class ProposalAuditLedger:
         for row in np.asarray(sampler_coordinates, dtype=np.float64):
             try:
                 mapped = np.asarray(self._sampler_to_physical(row), dtype=np.float64)
+            except CoordinateSaturation:
+                physical.append(None)
             except (ValueError, FloatingPointError):
+                if self.strict_mapping_errors:
+                    raise
                 physical.append(None)
             else:
                 physical.append(mapped.tolist())
@@ -220,7 +227,18 @@ def sampler_identity(payload: dict[str, Any]) -> tuple[dict[str, Any], str]:
     if missing:
         raise ValueError(f"sampler identity missing fields: {missing}")
     normalized = dict(payload)
-    normalized["schema"] = "mcmc-three-stage-sampler-identity-v1"
+    if "coordinate_system_id" in normalized:
+        new_required = {
+            "geometry_source_sha256", "sampler_source_sha256", "posterior_source_sha256",
+            "execution_checksum_manifest_sha256", "release_manifest_sha256",
+            "walker_coordinates_sha256",
+        }
+        absent = sorted(new_required - set(normalized))
+        if absent:
+            raise ValueError(f"new sampler identity missing fields: {absent}")
+        normalized["schema"] = "mcmc-three-stage-sampler-identity-v2"
+    else:
+        normalized["schema"] = "mcmc-three-stage-sampler-identity-v1"
     return normalized, canonical_json_sha256(normalized)
 
 
@@ -249,12 +267,21 @@ def run_sampler_block(
     else:
         root.mkdir(parents=True)
     completed_backend_guard(root)
+    coordinate_id = getattr(posterior, "sampling_coordinate_system", "legacy_three_stage_v1")
+    if coordinate_id == "ppe1_prior_unit_logit_v1":
+        if identity.get("coordinate_system_id") != coordinate_id:
+            raise ValueError("new coordinate system requires exact sampler identity")
+    elif "coordinate_system_id" in identity:
+        raise ValueError("sampler coordinate identity does not match posterior")
     identity_sha = _load_or_create_identity(root, identity, resume=resume)
     backend_path = root / "active_backend.h5"
     ledger = ProposalAuditLedger(
         root / "proposal_ledger.jsonl",
-        sampler_to_physical=posterior.prior.coordinate_transform.sampler_to_physical,
+        sampler_to_physical=getattr(
+            posterior, "sampling_geometry", posterior.prior.coordinate_transform
+        ).sampler_to_physical,
         resume=resume,
+        strict_mapping_errors=coordinate_id == "ppe1_prior_unit_logit_v1",
     )
     nwalkers = int(identity["nwalkers"])
     ndim = int(identity["ndim"])

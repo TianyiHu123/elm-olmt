@@ -10,6 +10,7 @@ import numpy as np
 from netCDF4 import Dataset
 
 from .mcmc_prior import PPE1, Prior18
+from .mcmc_three_stage_sampler_geometry import CoordinateSaturation, PriorUnitLogitGeometry
 from .mcmc_three_stage_likelihood import gaussian_log_likelihood, joint_cn_log_likelihood
 from .mcmc_three_stage_observations import (
     ObservationReleaseConfig,
@@ -67,6 +68,7 @@ class ThreeStagePosterior:
         start: int = 720,
         end: int | None = None,
         member_chunk: int = 16,
+        sampling_coordinate_system: str = "legacy_three_stage_v1",
     ) -> None:
         if site not in release.config.sites or observations.site != site:
             raise ValueError("posterior site identity mismatch")
@@ -84,6 +86,13 @@ class ThreeStagePosterior:
             raise ValueError("member_chunk must be positive")
         self.site = site
         self.prior = prior
+        if sampling_coordinate_system == "ppe1_prior_unit_logit_v1":
+            self.sampling_geometry = PriorUnitLogitGeometry(prior)
+        elif sampling_coordinate_system == "legacy_three_stage_v1":
+            self.sampling_geometry = prior.coordinate_transform
+        else:
+            raise ValueError("unsupported three-stage sampling coordinate system")
+        self.sampling_coordinate_system = sampling_coordinate_system
         self.release = release
         self.observations = observations
         self.gpp_resolution = gpp_resolution
@@ -105,7 +114,7 @@ class ThreeStagePosterior:
         if not np.array_equal(self.time, np.arange(self.end, dtype=np.int64)):
             raise ValueError("posterior forcing time axis mismatch")
 
-    def _invalid_result(self, log_prior: float) -> PosteriorResult:
+    def _invalid_result(self, log_prior: float, *, reason: str = "outside_prior_support") -> PosteriorResult:
         return PosteriorResult(
             site=self.site,
             prior_id=self.prior.prior_id,
@@ -122,7 +131,7 @@ class ThreeStagePosterior:
             n_sr=self.sr_operator.count,
             surrogate_evaluated=False,
             gpp_raw_min=None,
-            evaluation_error="outside_prior_support",
+            evaluation_error=reason,
             provenance=self._provenance(),
         )
 
@@ -293,8 +302,17 @@ class ThreeStagePosterior:
         if not np.all(np.isfinite(sampler)):
             raise ValueError("sampler parameter vector must be finite")
         try:
-            physical_theta = self.prior.coordinate_transform.sampler_to_physical(sampler)
+            physical_theta = self.sampling_geometry.sampler_to_physical(sampler)
+        except CoordinateSaturation:
+            physical = self._invalid_result(float("-inf"), reason="coordinate_saturation")
+            return SamplingPosteriorResult(
+                physical=physical,
+                log_abs_det_jacobian=float("-inf"),
+                log_sampling_posterior=float("-inf"),
+            )
         except (ValueError, FloatingPointError):
+            if self.sampling_coordinate_system != "legacy_three_stage_v1":
+                raise
             physical = self._invalid_result(float("-inf"))
             return SamplingPosteriorResult(
                 physical=physical,
@@ -302,7 +320,7 @@ class ThreeStagePosterior:
                 log_sampling_posterior=float("-inf"),
             )
         physical = self.evaluate(physical_theta)
-        jacobian = float(self.prior.coordinate_transform.log_abs_det_dphysical_dsampler(sampler))
+        jacobian = float(self.sampling_geometry.log_abs_det_dphysical_dsampler(sampler))
         return SamplingPosteriorResult(
             physical=physical,
             log_abs_det_jacobian=jacobian,
@@ -322,8 +340,18 @@ class ThreeStagePosterior:
         valid_physical = []
         for position, row in enumerate(sampler):
             try:
-                physical = self.prior.coordinate_transform.sampler_to_physical(row)
+                physical = self.sampling_geometry.sampler_to_physical(row)
+            except CoordinateSaturation:
+                invalid = self._invalid_result(float("-inf"), reason="coordinate_saturation")
+                results[position] = SamplingPosteriorResult(
+                    physical=invalid,
+                    log_abs_det_jacobian=float("-inf"),
+                    log_sampling_posterior=float("-inf"),
+                )
+                continue
             except (ValueError, FloatingPointError):
+                if self.sampling_coordinate_system != "legacy_three_stage_v1":
+                    raise
                 invalid = self._invalid_result(float("-inf"))
                 results[position] = SamplingPosteriorResult(
                     physical=invalid,
@@ -336,7 +364,7 @@ class ThreeStagePosterior:
         if valid_positions:
             physical_results = self.evaluate_batch(np.asarray(valid_physical, dtype=np.float64))
             for position, row, physical in zip(valid_positions, sampler[valid_positions], physical_results):
-                jacobian = float(self.prior.coordinate_transform.log_abs_det_dphysical_dsampler(row))
+                jacobian = float(self.sampling_geometry.log_abs_det_dphysical_dsampler(row))
                 results[position] = SamplingPosteriorResult(
                     physical=physical,
                     log_abs_det_jacobian=jacobian,
@@ -361,6 +389,7 @@ def load_three_stage_posterior(
     start: int = 720,
     end: int | None = None,
     member_chunk: int = 16,
+    sampling_coordinate_system: str = "legacy_three_stage_v1",
 ) -> ThreeStagePosterior:
     prior = Prior18.from_directory(prior_id, prior_root)
     release = load_three_stage_release(prior=prior, config=surrogate_release)
@@ -377,4 +406,5 @@ def load_three_stage_posterior(
         start=start,
         end=end,
         member_chunk=member_chunk,
+        sampling_coordinate_system=sampling_coordinate_system,
     )

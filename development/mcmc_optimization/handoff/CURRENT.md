@@ -14,17 +14,18 @@
 ## Live State
 
 - Current status: `closed`.
-- Current phase: `closed`.
-- Last completed iteration: `iter004`.
-- Active iteration: none.
-- Active jobs: none; all 16 Iter004 submissions are terminal and job-scoped `sacct` reconciled.
-- Last updated: `2026-11-26T01:18:00-07:00`.
+- Current phase: `iter005 closeout complete; iter006 planning only`.
+- Last completed iteration: `iter005`.
+- Active iteration: none. Iter005 report `development/mcmc_optimization/iterations/iter005.md`.
+- Active jobs: none. All five Iter005 and all 16 Iter004 submissions are terminal and reconciled.
+- Last updated: `2026-11-27T01:41:00-07:00`.
 - Selected profile: `development/hpc/puma_mcmc_worktree.md`, inheriting
   `development/hpc/puma.md`.
-- Decision: `iter004_validation_failed`.
-- Authority: Iter004 is closed by the authorized local no-push closeout commit. No additional commit,
-  Iter005 initialization, runtime directory, repository Python, scheduler action, retry, push, or
-  merge is authorized without a fresh consolidated package and approval.
+- Last decision: `iter005_validation_failed`.
+- Authority: user approved the complete Iter005 kickoff package and separately conditionally authorized
+  a diagnosed too-strict floating-point tolerance correction after correct-implementation evidence.
+  Exact scope, tests, resources, ten-submission ceiling, retries, cancellation, and closeout are in
+  `iterations/iter005.md`. No push, merge, or Iter006 initialization is authorized.
 
 ## Iter004 Closeout
 
@@ -67,7 +68,7 @@
   expected floating-point reduction differences while retaining strict scientific-reference,
   component-sum, support, identity, and deterministic replay checks.
 
-## Planning-Only Iter005 Proposal
+## Historical Planning-Only Iter005 Proposal
 
 - Proposed title: **Sampler Geometry Audit and Corrected Four-Observable Pilot Planning**.
 - Use immutable Iter004 proposal ledgers to determine why valid transformed walkers generated
@@ -79,14 +80,62 @@
 - Historical coupling MCMC used 64 walkers with 500-step early pilots, 4,000-step follow-up,
   frequently 8,000-step diagnostics, and 32,000-step production chains. This is context, not current
   authority; Iter004's fatal 128-step result must be resolved first.
-- Iter005 is not initialized and must not start automatically.
+- This was the closed Iter004 planning proposal. The later user direction approved direct prior-unit/logit
+  reconstruction with bounded diagnostics, recorded in the active Iter005 report. Iter004 remains immutable.
+
+## Iter005 Closeout
+
+- Status `completed`; closed `2026-11-27T01:41:00-07:00`; acceptance `fail`;
+  decision `iter005_validation_failed`. Report: `development/mcmc_optimization/iterations/iter005.md`;
+  compact summary: `development/mcmc_optimization/summaries/iter005/summary.md`.
+- Frozen PPE1 18-parameter four-observable target, ABBY/JERC independent, daily GPP/SR,
+  include-C/N CV 0.30, window `[720,61320)`, coupled surrogate and observation `release_0001`,
+  and Iter015 uncertainty remained unchanged. Development-only prior/surrogate bounds and
+  conditional C:N checks passed; no elementwise operational bounds check was added.
+- Preflight passed 41/41 tests after one reviewed test-fixture correction. ABBY's 64 reused
+  physical walkers passed source, support, physical-target and strict prior/Jacobian density
+  checks. The cross-vector validation tolerance was corrected once under the user's conditional
+  authority and independent re-review. Same-vector prior/Jacobian cancellation peaked at
+  `5.68e-14`; normalized density at `1.82e-12`; archived/reconstructed difference at `1.20e-5`
+  for walker 63, inside the predeclared parity criterion.
+- The ABBY 16-step restart fixture failed at step 2 when a proposed prior-unit/logit coordinate
+  mapped outside a PPE1 marginal bound and raised an uncaught `RuntimeError`. The partial ledger
+  has 128 proposals, 28 numerical saturations and 41 accepted moves. This is a fatal mapping and
+  exact-restart gate. JERC validation and both 128-step pilots were not run; no movement or
+  convergence result exists. The partial backend/ledger must not be resumed as a validated chain.
+- All five actual Slurm submissions are terminal; active or unaccounted jobs: zero. The approved
+  one preflight correction and one conditional tolerance correction were used, with zero
+  infrastructure retries. The diagnostics job `24838734` completed `0:0` and recorded
+  `iter005_validation_failed`, missing pilot reports, and no convergence claim.
+- External evidence root:
+  `/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/mcmc_optimization/iter005_prior_unit_sampler_pilot`.
+  Final config SHA-256 `4cefd55f3aa8f6f348d22463740b00a882c9ca470f0d235b797932848d7c9021`;
+  checksum manifest `2b414218813fbdbc93957f321222e3b144058595ca226a61dc40f5dd386abddc`;
+  execution manifest `7507fa14751efac64389655be9aea14c1cc8b4f218fea5ce2d8cfa0b2d5ea0e9`.
+  Diagnostics SHA-256 `d1d1ec631f4d4620f4345e30ac0515010c5f2f7e40f71541211f4cec68e0479e`;
+  final accounting `80cb77f33c54106521278b851c620ea34c8ab837763fd403fb3da1062762b891`;
+  independent result review `06009889d7667c19f606bb34eb7877df86ed6fcf4275f1a1953c5a4f1fe0fcd6`;
+  four-record validation `ITER005_FOUR_RECORD_VALIDATE_PASS` artifact
+  `8412993640011ecbab5f0990a271eddc56856c44bd0e09606c08b21b5666f9c6`.
+  Diagnostics counted 1,857,767 file bytes; later accounting `du -sb` counted 1,908,394 bytes
+  including directory metadata. Both are under the 2 GiB cap.
+- Historical failures, retries, logs, source copies, numerical residuals, partial backend and
+  ledger, and terminal accounting remain in the external root. No push or merge occurred.
+
+## Planning-Only Iter006 Proposal
+
+**Boundary-Safe Prior-Unit Mapping and Restart Feasibility.** Reproduce the failed
+extreme-coordinate proposal on a compute node and measure its physical-bound ULP distance.
+Distinguish roundoff saturation from a larger prior mapping defect; preserve the physical
+prior and avoid clipping, reflection or hidden resampling. Independently review a targeted
+geometry correction, then validate strict mapping, Jacobian, density, release identity,
+source hashes, and exact ABBY/JERC 16 versus 8+8 restart using fresh backends. Measure
+move-specific saturation before deciding whether a later 128-step pilot is scientifically
+feasible. A provisional three-job 2-CPU, 10-GB, 1-hour each plan needs a separately reviewed
+kickoff package and explicit approval. Do not initialize, execute, retry, push or merge Iter006.
 
 ## Resume Point
 
-1. Verify branch, HEAD, clean/expected status, current plan hash, Iter004 closeout commit, and this
-   handoff.
-2. Read the full workflow, amended plan, Iter004 report/summary, final validation, final accounting,
-   and both proposal ledgers.
-3. Prepare one consolidated planning package for the geometry audit and corrected pilot. Stop for
-   fresh user approval before creating Iter005 records, executing repository Python, creating runtime
-   directories, changing scheduler state, or committing.
+Iter005 is closed with `iter005_validation_failed`. Review the fatal mapping evidence and
+planning-only Iter006 proposal before seeking a fresh complete kickoff approval. Do not
+resume the Iter005 partial backend or submit either withheld pilot under this closed contract.

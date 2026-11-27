@@ -1,0 +1,58 @@
+{
+  "schema": "mcmc-optimization-iter005-execution-manifest-v1",
+  "repository_start_commit": "205cd410f612bd7c751728d722c599b09aca6b86",
+  "branch": "feature/mcmc-optimization",
+  "plan_sha256": "5ee74c5208f489c540f21a8c13ce0fbe0ed84ea1d6c9043d6eece2293a0860c0",
+  "config_sha256": "4cefd55f3aa8f6f348d22463740b00a882c9ca470f0d235b797932848d7c9021",
+  "execution_checksum_manifest_sha256": "2b414218813fbdbc93957f321222e3b144058595ca226a61dc40f5dd386abddc",
+  "driver_sha256": "bae58c799624743dedaae66c9d1ed4ad571176f2c06dde9e76ac10867bc5a46f",
+  "verify_sha256": "3bd19938d142a84b11fa6a812fd0b18f982dfb7c1e18fc689f5866d6cc22c12c",
+  "runtime_root": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/mcmc_optimization/iter005_prior_unit_sampler_pilot",
+  "storage_cap_bytes": 2147483648,
+  "planned_jobs": [
+    "preflight_iter005.slurm",
+    "density_iter005.slurm",
+    "pilot_abby_iter005.slurm",
+    "pilot_jerc_iter005.slurm",
+    "diagnostics_iter005.slurm"
+  ],
+  "planned_submissions": 5,
+  "maximum_submissions": 10,
+  "retry_allocation": {
+    "reviewed_preflight_correction": 1,
+    "shared_unchanged_scope_infrastructure": 4,
+    "conditional_tolerance_reallocation_from_shared": 1
+  },
+  "coordinate_system_id": "ppe1_prior_unit_logit_v1",
+  "scientific_target": {
+    "prior_id": "ppe1",
+    "dimensions": 18,
+    "sites": ["ABBY", "JERC"],
+    "forcing_window": [720, 61320],
+    "gpp_resolution": "daily",
+    "sr_resolution": "daily",
+    "include_cn": true,
+    "cn_observation_cv": 0.3
+  },
+  "test_inventory": {
+    "three_stage": 33,
+    "prior_iter001": 6,
+    "coupled_iter001": 2,
+    "total": 41,
+    "unexpected_skips": 0
+  },
+  "numerical_tolerances": {
+    "strict_reference": {"rtol": 1e-12, "atol": 1e-10, "component_sum_rtol": 0.0},
+    "scalar_batch": {"rtol": 1e-7, "atol": 1e-8},
+    "physical_roundtrip_rtol": 1e-12,
+    "unit_roundtrip_atol": 1e-12,
+    "density_absolute_atol": 1e-9
+  },
+  "emcee": {
+    "version": "3.1.6",
+    "conda_metadata_sha256": "21b4d613f74a0a25fa2aa3b37209b2ccf18c86fb1cf8f497c1ee00417fdff676",
+    "de_move_sha256": "2793ffc7421207df0db2d87f79909823274d769a917c16cdbb992ee5c4e6e631",
+    "de_snooker_sha256": "73b03a2e56928c590e55e3a7f4c3406d7a82ae642550ae21f79efafec589e9e6",
+    "hdf_backend_sha256": "091e842b4d602b912098ac00a3bd01cab6123506d5532c793a912d9161f20156"
+  }
+}
