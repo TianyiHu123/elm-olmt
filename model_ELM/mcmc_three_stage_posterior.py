@@ -186,6 +186,8 @@ class ThreeStagePosterior:
             "uncertainty_manifest_sha256": self.release.config.uncertainty_manifest_sha256,
             "uncertainty_validation_sha256": self.release.config.uncertainty_validation_sha256,
             "observation_catalog_sha256": self.observations.release_catalog_sha256,
+            "observation_release_id": self.observations.release_id,
+            "observation_coverage_policy": dict(self.observations.coverage_policy),
             "observation_manifest_sha256": self.observations.release_manifest_sha256,
             "observation_validation_sha256": self.observations.validation_report_sha256,
             "site_uncertainty_product_sha256": self.observations.uncertainty_product_sha256,

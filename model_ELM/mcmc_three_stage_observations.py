@@ -1,4 +1,4 @@
-"""Strict loading and alignment of the immutable Iter002 observation release."""
+"""Strict loading and alignment of configured observation releases."""
 from __future__ import annotations
 
 import hashlib
@@ -17,9 +17,6 @@ from .mcmc_coupled_adapter import EXPECTED_SNAPSHOT_SHA256
 
 
 CONFIG_SCHEMA = "mcmc-three-stage-observation-config-v1"
-EXPECTED_CATALOG_SHA256 = "cefc9666c4d958a78ec96826157968883a012bb8bc91c6f9826f52a6f9446bd8"
-EXPECTED_MANIFEST_SHA256 = "460c01d957b8e159007b08f6b0c33f43d120d77611a4eaaae7444752f5490fe2"
-EXPECTED_VALIDATION_SHA256 = "19effdb0f67daa26c8a1e2f429e2aedd2263eac11b6d5887d1c44c4716f88fef"
 ORIGIN = pd.Timestamp("2018-01-01 00:00:00")
 SITES = ("ABBY", "JERC")
 RESOLUTIONS = ("hourly", "daily")
@@ -57,21 +54,23 @@ class ObservationReleaseConfig:
     release_manifest_sha256: str
     validation_report_sha256: str
     snapshot_sha256: str
+    release_id: str | None = None
 
     def validate(self) -> None:
         if self.schema != CONFIG_SCHEMA:
             raise ValueError(f"unsupported observation config schema: {self.schema}")
-        expected = (
-            (self.catalog_sha256, EXPECTED_CATALOG_SHA256, "catalog"),
-            (self.release_manifest_sha256, EXPECTED_MANIFEST_SHA256, "release manifest"),
-            (self.validation_report_sha256, EXPECTED_VALIDATION_SHA256, "validation report"),
-            (self.snapshot_sha256, EXPECTED_SNAPSHOT_SHA256, "snapshot"),
-        )
-        for observed, locked, label in expected:
-            if observed != locked:
+        for observed, label in ((self.catalog_sha256, "catalog"),
+                                (self.release_manifest_sha256, "release manifest"),
+                                (self.validation_report_sha256, "validation report"),
+                                (self.snapshot_sha256, "snapshot")):
+            if len(observed) != 64 or any(ch not in "0123456789abcdef" for ch in observed):
                 raise ValueError(f"configured observation {label} identity mismatch")
+        if self.snapshot_sha256 != EXPECTED_SNAPSHOT_SHA256:
+            raise ValueError("configured observation snapshot compatibility mismatch")
         if not Path(self.release_root).expanduser().resolve().is_dir():
             raise ValueError(f"missing observation release root: {self.release_root}")
+        if self.release_id is not None and self.release_id != Path(self.release_root).name:
+            raise ValueError("configured observation release identity mismatch")
         if not Path(self.snapshot_root).expanduser().resolve().is_dir():
             raise ValueError(f"missing forcing snapshot root: {self.snapshot_root}")
 
@@ -127,6 +126,8 @@ class SoilCNContext:
 @dataclass(frozen=True)
 class ThreeStageObservationContext:
     site: str
+    release_id: str
+    coverage_policy: Mapping[str, object]
     flux: Mapping[tuple[str, str], FluxObservationOperator]
     soil_cn: SoilCNContext
     release_catalog_sha256: str
@@ -147,29 +148,45 @@ class ThreeStageObservationContext:
 def _verify_release(config: ObservationReleaseConfig) -> dict:
     config.validate()
     root = Path(config.release_root).expanduser().resolve()
-    for name, expected in (
-        ("catalog.json", config.catalog_sha256),
-        ("release_manifest.json", config.release_manifest_sha256),
-        ("validation_report.json", config.validation_report_sha256),
+    for name, expected, label in (
+        ("catalog.json", config.catalog_sha256, "catalog"),
+        ("release_manifest.json", config.release_manifest_sha256, "release manifest"),
+        ("validation_report.json", config.validation_report_sha256, "validation"),
     ):
         path = root / name
         if not path.is_file() or _sha256(path) != expected:
-            raise ValueError(f"observation release identity mismatch: {name}")
+            raise ValueError(f"configured observation {label} identity mismatch: {name}")
     catalog = json.loads((root / "catalog.json").read_text(encoding="utf-8"))
     manifest = json.loads((root / "release_manifest.json").read_text(encoding="utf-8"))
-    if catalog.get("current_release") != "release_0001" or catalog.get("decision") != "observation_release_0001_published":
+    release_id = config.release_id or root.name
+    if (catalog.get("current_release") != release_id
+            or catalog.get("decision") != f"observation_{release_id}_published"
+            or catalog.get("release_path") != str(root)):
         raise ValueError("observation catalog contract mismatch")
     if catalog.get("release_manifest_sha256") != config.release_manifest_sha256:
         raise ValueError("observation catalog/manifest mismatch")
-    if manifest.get("schema") != "mcmc-observation-release-manifest-v1" or manifest.get("result") != "validated":
+    if (manifest.get("schema") != "mcmc-observation-release-manifest-v1"
+            or manifest.get("result") != "validated" or manifest.get("release") != release_id):
         raise ValueError("observation manifest contract mismatch")
     if manifest.get("sites") != ["ABBY", "JERC"] or manifest.get("iter015_fixed_test_access") is not False:
         raise ValueError("observation site or fixed-test contract mismatch")
-    for record in manifest.get("files", ()):
+    records = manifest.get("files", ())
+    names = [record["path"] for record in records]
+    if len(names) != len(set(names)) or not names:
+        raise ValueError("observation manifest file inventory mismatch")
+    if not {"validation_report.json", *(f"sites/{site}/{name}" for site in SITES
+                                      for name in ("flux_hourly.nc", "flux_daily.nc", "uncertainty.nc", "soil_cn.json"))}.issubset(names):
+        raise ValueError("observation manifest required product missing")
+    for record in records:
         path = root / record["path"]
+        if path.resolve().is_relative_to(root) is False:
+            raise ValueError("observation manifest path escapes release")
         if (not path.is_file() or path.stat().st_size != int(record["size_bytes"])
                 or _sha256(path) != record["sha256"]):
             raise ValueError(f"observation product identity mismatch: {record['path']}")
+    validation = json.loads((root / "validation_report.json").read_text(encoding="utf-8"))
+    if validation.get("result") != "pass":
+        raise ValueError("observation validation report mismatch")
     return manifest
 
 
@@ -213,13 +230,14 @@ def _hourly_operator(hourly: xr.Dataset, variable: str, rmse: float) -> FluxObse
 
 
 def _daily_operator(
-    hourly: xr.Dataset, daily: xr.Dataset, variable: str, rmse: float,
+    hourly: xr.Dataset, daily: xr.Dataset, variable: str, rmse: float, threshold: int | None = None,
 ) -> FluxObservationOperator:
     prefix = variable.upper()
     value_name = "GPP_gated" if prefix == "GPP" else "SR"
     dimension = "gpp_time" if prefix == "GPP" else "sr_time"
     day_dimension = "gpp_day" if prefix == "GPP" else "sr_day"
-    threshold = 18 if prefix == "GPP" else 22
+    if threshold is None:
+        threshold = int(daily.attrs[f"{prefix.lower()}_min_hours"])
     hourly_value = np.asarray(hourly[value_name].values, dtype=np.float64)
     hourly_sigma = np.asarray(hourly[f"{prefix}_obs_sigma"].values, dtype=np.float64)
     hourly_valid = np.asarray(hourly[f"{prefix}_valid"].values, dtype=np.int8) == 1
@@ -238,10 +256,14 @@ def _daily_operator(
         source_indices = source_indices[source_indices >= 0]
         if np.any(source_indices >= hourly_value.size):
             raise ValueError(f"{prefix} daily source index outside hourly product")
+        if np.unique(source_indices).size != source_indices.size:
+            raise ValueError(f"{prefix} duplicate daily source index")
         source_indices = source_indices[hourly_valid[source_indices]]
         if source_indices.size != day_count[row] or source_indices.size < threshold:
             raise ValueError(f"{prefix} reconstructed daily valid-hour count mismatch")
         forcing_hours = hourly_hours[source_indices]
+        if np.unique(forcing_hours).size != forcing_hours.size:
+            raise ValueError(f"{prefix} duplicate daily forcing hour")
         if not np.all(forcing_hours // 24 == day_coordinate[row]):
             raise ValueError(f"{prefix} daily source hours map to the wrong canonical day")
         observed = float(np.mean(hourly_value[source_indices]))
@@ -284,8 +306,41 @@ def load_three_stage_observations(
         raise ValueError("observation calendar mismatch")
     if int(hourly.attrs.get("history_hours", -1)) != 720:
         raise ValueError("observation history gate mismatch")
-    if int(daily.attrs.get("gpp_min_hours", -1)) != 18 or int(daily.attrs.get("sr_min_hours", -1)) != 22:
+    thresholds = {name: int(daily.attrs.get(f"{name.lower()}_min_hours", -1)) for name in ("GPP", "SR")}
+    if any(value < 1 or value > 24 for value in thresholds.values()):
         raise ValueError("observation daily threshold mismatch")
+    if daily.attrs.get("daily_sigma_rule") != "sqrt(mean(hourly_sigma^2)); no sqrt(n) reduction":
+        raise ValueError("observation daily sigma policy mismatch")
+    reconstruction = daily.attrs.get("gpp_reconstruction_policy")
+    if reconstruction is not None:
+        pre_fill_min = int(daily.attrs.get("gpp_pre_fill_min_hours", -1))
+        maximum_gap = int(daily.attrs.get("gpp_max_physical_gap_hours", -1))
+        reconstructed_hours = int(daily.attrs.get("gpp_reconstructed_hours", -1))
+        if (reconstruction != "linear_bracketed_v1"
+                or not 1 <= pre_fill_min <= reconstructed_hours <= 24
+                or not 1 <= maximum_gap <= 24
+                or thresholds["GPP"] != reconstructed_hours):
+            raise ValueError("unsupported observation reconstruction policy")
+        if hourly.attrs.get("gpp_interpolation_policy") != reconstruction:
+            raise ValueError("observation hourly/daily reconstruction policy mismatch")
+        required = ("GPP_DT_accepted_half_count", "GPP_NT_accepted_half_count",
+                    "GPP_DT_pre_fill_support", "GPP_NT_pre_fill_support",
+                    "GPP_DT_interpolated", "GPP_NT_interpolated")
+        if any(name not in hourly for name in required) or "GPP_pre_fill_eligible" not in daily:
+            raise ValueError("observation reconstruction flags missing")
+        for method in ("DT", "NT"):
+            count = np.asarray(hourly[f"GPP_{method}_accepted_half_count"].values, dtype=np.int64)
+            support = np.asarray(hourly[f"GPP_{method}_pre_fill_support"].values, dtype=bool)
+            filled = np.asarray(hourly[f"GPP_{method}_interpolated"].values, dtype=bool)
+            if not np.all((count >= 0) & (count <= 2)) or not np.array_equal(support, count > 0):
+                raise ValueError("observation pre-fill support mismatch")
+            after_history = np.asarray(hourly.gpp_time.values, dtype=np.int64) >= int(hourly.attrs["history_hours"])
+            if np.any(filled & support) or np.any(filled & after_history & ~np.asarray(hourly.GPP_valid.values, dtype=bool)):
+                raise ValueError("observation interpolation flag mismatch")
+        pre = np.asarray(daily.GPP_pre_fill_eligible.values, dtype=bool)
+        eligible = np.asarray(daily.GPP_eligible.values, dtype=bool)
+        if np.any(eligible & ~pre):
+            raise ValueError("observation filling changed eligibility")
     if hourly.attrs.get("flux_units") != "gC/m^2/day" or daily.attrs.get("flux_units") != "gC/m^2/day":
         raise ValueError("observation flux units mismatch")
     resolutions = tuple(str(value) for value in uncertainty.resolution.values.tolist())
@@ -306,7 +361,7 @@ def load_three_stage_observations(
         for variable in ("GPP", "SR")
     }
     flux.update({
-        (variable, "daily"): _daily_operator(hourly, daily, variable, rmse[(variable, "daily")])
+        (variable, "daily"): _daily_operator(hourly, daily, variable, rmse[(variable, "daily")], thresholds[variable])
         for variable in ("GPP", "SR")
     })
     soil_payload = json.loads((site_root / "soil_cn.json").read_text(encoding="utf-8"))
@@ -333,6 +388,12 @@ def load_three_stage_observations(
     sources = manifest["source_identities"]
     return ThreeStageObservationContext(
         site=site,
+        release_id=config.release_id or root.name,
+        coverage_policy=MappingProxyType({"gpp_min_hours": thresholds["GPP"], "sr_min_hours": thresholds["SR"],
+                                          "gpp_pre_fill_min_hours": pre_fill_min if reconstruction else None,
+                                          "gpp_max_physical_gap_hours": maximum_gap if reconstruction else None,
+                                          "gpp_reconstructed_hours": reconstructed_hours if reconstruction else None,
+                                          "gpp_reconstruction_policy": reconstruction or "observed_hours_v1"}),
         flux=MappingProxyType(dict(flux)),
         soil_cn=SoilCNContext(
             observed_stocks, depth_fraction, total_bias,

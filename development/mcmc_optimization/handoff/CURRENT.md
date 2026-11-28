@@ -14,9 +14,10 @@
 ## Live State
 
 - Current status: `closed`.
-- Current phase: `iter006 reopened closeout completed; compute, independent reviews and static four-record reconciliation passed; one scoped local append commit selected`.
-- Last completed iteration: `iter006`; the prior Iter006 failed closeout in commit `9f81aa9d2065339c59d86f5933231b89b7b9df2a` is historical and superseded by this continuation.
-- Active iteration: none; report `development/mcmc_optimization/iterations/iter006.md`.
+- Current phase: `closed`.
+- Last completed iteration: `iter007`; the prior Iter006 failed closeout in commit `9f81aa9d2065339c59d86f5933231b89b7b9df2a` is historical and superseded by its completed continuation.
+- Active iteration: none.
+- Active Iter007 job: none. All eleven submitted jobs and 33 job/batch/extern rows are terminal and accounted: two preserved application failures and nine completions; combined accounting SHA-256 `a3063e3b987cb4c5a565e981dfb57398f8910e7c8569084779db2114d8207e68`. Dual-release integration `24851532` completed `0:0` all steps, result SHA-256 `193b469c1406777662f084d1163453f17a36f0ecdd77bbdffddf921515e1fde5`, independent result review `pass` SHA-256 `452c3fc9c203548ee6646537fe5d73ac3e9b6f793f204c6fea9d3263a90bdb48`. Immutable release_0002 catalog/manifest/validation fingerprints remain `19bdc165...`/`46db205d...`/`d07c1faf...`. Five infrastructure retries unused; no future runtime authority follows from this closeout.
 - Active Iter006 job: none. F `24848482` completed `0:0` for job/batch/extern;
   its evidence-only output is `diagnostics/attempt_002` and both independent
   result reviews passed.
@@ -29,20 +30,19 @@
   additional correction retry budgets used 2/10. F source and submitted
   package hashes were independently reviewed; static four-record reconciliation
   passed with preserved output SHA-256 `e696e6a7e0d8878b9b0b1d4266b0f5e3c2d9e2d823e4ae742ec3ed4ac0a22137`.
-- Last updated: `2026-11-27T20:28:52-07:00`.
+- Last updated: `2026-11-28T02:00:39-07:00`.
   All five Iter005 and all 16 Iter004 submissions remain terminal and reconciled.
 - Selected profile: `development/hpc/puma_mcmc_worktree.md`, inheriting
   `development/hpc/puma.md`.
-- Last closed decision: `bounded_sampler_pilot_validated`. Current final decision: `bounded_sampler_pilot_validated`.
-- Authority: the user's `ITER006 KICKOFF — SAMPLER CORRECTION AND BOUNDARY-EVENT DIAGNOSTICS`
-  approves the bounded Iter006 implementation, six planned jobs, specified retries, monitoring,
-  closeout and at most one local commit. Exact contract is recorded in `iterations/iter006.md`.
-  No push, merge, plan amendment or Iter007 initialization is authorized.
-  The user's later reopening direction grants fresh authority for focused B/F application
-  corrections and completion of original C/D/E work. The user then approved
-  ten additional correction retries for failed jobs, with a new approval
-  request required if all ten are consumed. Original science, numerical policy,
-  resources, gates, seeds and output cap remain fixed. See report reopening addendum.
+- Last closed decision: `observation_release_0002_published_and_dual_loader_validated`.
+- Authority: the user approved the consolidated Iter007 observation-release runtime contract, three additional unchanged-scope infrastructure retries, and three separate focused application corrections/retries documented in `iterations/iter007.md`. Iter007 used 11 of 12 allowed submissions; no infrastructure retry was used. The completed closeout grants no next runtime, scheduler, MCMC, historical checkpoint retargeting, plan amendment, push or merge authority.
+
+## Iter007 Closeout
+
+- Report `development/mcmc_optimization/iterations/iter007.md`; compact summary `development/mcmc_optimization/summaries/iter007/summary.md`; decision `observation_release_0002_published_and_dual_loader_validated`; acceptance `pass`; plan SHA-256 `5ee74c5208f489c540f21a8c13ce0fbe0ed84ea1d6c9043d6eece2293a0860c0`, alignment `aligned`, deviation `none`.
+- Immutable release `/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/mcmc_optimization/observation_products/release_0002`: catalog SHA-256 `19bdc16534942d74595dfd1545fb20deff135005abc1a5287ab9e64bc1349027`, manifest `46db205dffea320333666e9e5b237ae4ec8ed948077f55284f6931335191796e`, validation `d07c1fafaa366710940d4caf851f1ff07ca93f34ede06fad4d6010432ea69004`. ABBY/JERC GPP pre-fill 335/471 and released 333/463; SR released 1083/2046; every eligible daily product uses exactly 24 canonical hours. Inherited C/N and uncertainty numerical arrays, established diagnostics and three comparison assessments passed staged review. Published reload passed.
+- Runtime `/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/mcmc_optimization/iter007_observation_release_0002` preserves historical failures and reviews, submitted configurations, terminal accounting and postpublication integration evidence. Public loader old-new-old integration passed for ABBY/JERC through `load_three_stage_posterior`; release_0001 old GPP/SR days 514/1095 ABBY and 699/2114 JERC, release_0002 days 333/1083 ABBY and 463/2046 JERC; eight rejection fixtures passed. No MCMC runs or artificial-gap/filter/uncertainty studies were performed. Independent full raw native hourly recomputation was not performed, and integration JSON aggregates each release selection; these limits do not change the validated gates.
+- Static four-record validator `development/mcmc_optimization/slurm/iter007/validate_closeout_iter007.sh` source SHA-256 `40842ca366799c38f7ac1e75096027245c6e261c79311a8aea42d398eac406eb` passed with output SHA-256 `0b1bdfbb4f6629965e992b8c9982ca38f3750d5b28187c6e6fbbb602265b5abf`, marker `ITER007_FOUR_RECORD_VALIDATE_PASS`; independent closeout review `pass`, record SHA-256 `4bd170d4c8ad9e7a8267ae169d50659ad173aca9ff5ea32d6b0329257e6b75a5`. One local no-push commit records this closeout. Planning-only next proposal: design a separately approved ABBY/JERC independent-initialization convergence and boundary-sensitivity iteration under frozen PPE1, coupled surrogate release_0001, corrected Iter006 sampler and explicit prospective release_0002 configuration. Freeze independent seeds, initial states, finite chain/resource budgets from Iter006 throughput, late-block movement, prior-unit occupancy, autocorrelation/ESS and component/posterior-predictive checks before kickoff. Preserve historical release_0001 runs/checkpoints; no next iteration is initialized or authorized here.
 
 ## Iter004 Closeout
 

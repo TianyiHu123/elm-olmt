@@ -16,9 +16,6 @@ from model_ELM.mcmc_coupled_adapter import (
 from model_ELM.mcmc_prior import PPE1, Prior18
 from model_ELM.mcmc_three_stage_observations import (
     CONFIG_SCHEMA as OBS_CONFIG_SCHEMA,
-    EXPECTED_CATALOG_SHA256 as OBS_CATALOG,
-    EXPECTED_MANIFEST_SHA256 as OBS_MANIFEST,
-    EXPECTED_VALIDATION_SHA256,
     ObservationReleaseConfig,
 )
 from model_ELM.mcmc_three_stage_posterior import load_three_stage_posterior
@@ -34,6 +31,9 @@ SNAPSHOT = Path("/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe_vertc
 RELEASE = Path("/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe_vertc/surrogate_products/three_stage_abby_jerc/release_0001")
 UNCERTAINTY = Path("/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/three_stage_surrogate/iter015_abby_jerc_full_chain_robustness/handoff")
 OBSERVATIONS = Path("/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/mcmc_optimization/observation_products/release_0001")
+OBS_CATALOG = "cefc9666c4d958a78ec96826157968883a012bb8bc91c6f9826f52a6f9446bd8"
+OBS_MANIFEST = "460c01d957b8e159007b08f6b0c33f43d120d77611a4eaaae7444752f5490fe2"
+EXPECTED_VALIDATION_SHA256 = "19effdb0f67daa26c8a1e2f429e2aedd2263eac11b6d5887d1c44c4716f88fef"
 SOURCE = Path("/xdisk/chopinsong/tianyihu/elm-olmt-mcmc/model_ELM/three_stage_coupled_release.py")
 
 

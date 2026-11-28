@@ -1,0 +1,23 @@
+{
+  "schema": "mcmc-optimization-iter007-config-v1",
+  "repository_root": "/xdisk/chopinsong/tianyihu/elm-olmt-mcmc",
+  "repository_commit": "19bf509d6cb23c53c8cc58fb25682c89f3825597",
+  "branch": "feature/mcmc-optimization",
+  "plan_sha256": "5ee74c5208f489c540f21a8c13ce0fbe0ed84ea1d6c9043d6eece2293a0860c0",
+  "runtime_root": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/mcmc_optimization/iter007_observation_release_0002",
+  "staging_root": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/mcmc_optimization/iter007_observation_release_0002/staging/release_0002",
+  "publication_root": "/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/mcmc_optimization/observation_products/release_0002",
+  "runtime_cap_bytes": 2147483648,
+  "release_cap_bytes": 104857600,
+  "planned_submissions": 7,
+  "shared_unchanged_scope_retries": 5,
+  "maximum_submissions": 12,
+  "iter002_config": "/xdisk/chopinsong/tianyihu/elm-olmt-mcmc/development/mcmc_optimization/slurm/iter002/iter002_config.json",
+  "iter002_config_sha256": "44b7950cd8fab968ed0b03b18eca7c3cd99db30ac139ca14295027cf3876cbc3",
+  "task_a_raw_manifest_sha256": "3750ed403954ca38ba61da217939eed02405eda9bd5861e7539bb525927ca118",
+  "task_a_results_manifest_sha256": "d220812cba4fee5875d1fed76cb5dd96c30f1189d2421cea3f58f80917ee0eb4",
+  "task_a_validation_sha256": "ba9ad73f550d4eabaa51392385e0476590d976ffcc44309cd466d41483269b1a",
+  "reference_catalog_sha256": "cefc9666c4d958a78ec96826157968883a012bb8bc91c6f9826f52a6f9446bd8",
+  "reference_manifest_sha256": "460c01d957b8e159007b08f6b0c33f43d120d77611a4eaaae7444752f5490fe2",
+  "reference_validation_sha256": "19effdb0f67daa26c8a1e2f429e2aedd2263eac11b6d5887d1c44c4716f88fef"
+}

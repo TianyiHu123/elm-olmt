@@ -233,3 +233,58 @@
   pilot throughput and predeclared prior-unit occupancy, late-block movement,
   autocorrelation/ESS and component/posterior-predictive diagnostics. No next
   iteration is initialized or authorized here.
+
+## iter007 - observation release_0002 and configurable loading completed
+
+- Status `completed`; work type `release | integration`; acceptance `pass`;
+  decision `observation_release_0002_published_and_dual_loader_validated`.
+  The user-directed observation package superseded Iter006's planning-only next
+  proposal. Campaign plan SHA-256
+  `5ee74c5208f489c540f21a8c13ce0fbe0ed84ea1d6c9043d6eece2293a0860c0`
+  remained aligned and unchanged. No MCMC chain, surrogate/prior change or
+  historical checkpoint retargeting occurred.
+- Catalog-last immutable release_0002 contains rebuilt Task A `q0_n02_g02`
+  GPP, Iter002-rule full-day SR, inherited C/N and fixed uncertainty arrays,
+  established diagnostics and three release-comparison assessments. ABBY/JERC
+  GPP pre-fill counts 335/471 and released counts 333/463; released SR counts
+  1083/2046. Every eligible daily group has exactly 24 unique canonical hours.
+  Catalog/manifest/validation SHA-256s are
+  `19bdc16534942d74595dfd1545fb20deff135005abc1a5287ab9e64bc1349027`,
+  `46db205dffea320333666e9e5b237ae4ec8ed948077f55284f6931335191796e`,
+  and `d07c1fafaa366710940d4caf851f1ff07ca93f34ede06fad4d6010432ea69004`.
+  Published final reload passed.
+- One public inference-facing loader read ABBY/JERC old → new → old releases
+  in one process under separate explicit fingerprinted configurations. Frozen
+  release_0001 masks, values, groups, daily means/RMS sigmas and C/N passed;
+  release_0002 exact-24 groups, values/sigmas and inherited C/N passed. Eight
+  identity/hash, schema, compatibility and coverage/index rejection fixtures
+  passed. Integration result SHA-256
+  `193b469c1406777662f084d1163453f17a36f0ecdd77bbdffddf921515e1fde5`;
+  independent result review SHA-256
+  `452c3fc9c203548ee6646537fe5d73ac3e9b6f793f204c6fea9d3263a90bdb48`.
+- All 11 jobs/33 Slurm rows are terminal and accounted, including two preserved
+  application failures and nine completions. Combined accounting SHA-256
+  `a3063e3b987cb4c5a565e981dfb57398f8910e7c8569084779db2114d8207e68`.
+  The initial staged review blocked an incorrect QC pre-fill count; the
+  separately approved correction and independent re-review passed before
+  publication. Five infrastructure retries remain unused. Bulk evidence is in
+  `/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/mcmc_optimization/iter007_observation_release_0002`;
+  the immutable publication is in
+  `/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/mcmc_optimization/observation_products/release_0002`.
+  Independent full raw hourly recomputation was not performed; the audited
+  source identities, Task A products, numeric validator and release manifests
+  support this bounded decision. Static four-record validator source SHA-256
+  `40842ca366799c38f7ac1e75096027245c6e261c79311a8aea42d398eac406eb`
+  passed with output SHA-256
+  `0b1bdfbb4f6629965e992b8c9982ca38f3750d5b28187c6e6fbbb602265b5abf`.
+  Independent closeout review passed, record SHA-256
+  `4bd170d4c8ad9e7a8267ae169d50659ad173aca9ff5ea32d6b0329257e6b75a5`.
+  One scoped local no-push closeout commit.
+- Planning-only next proposal: separately approve ABBY/JERC
+  independent-initialization convergence and boundary sensitivity under frozen
+  PPE1, coupled surrogate release_0001, corrected Iter006 sampler and explicit
+  prospective release_0002 configuration. Before kickoff freeze seeds,
+  independent starts, finite chain/resource budgets from Iter006 throughput,
+  late-block movement, prior-unit occupancy, autocorrelation/ESS and
+  component/posterior-predictive checks. Preserve historical release_0001
+  runs/checkpoints; no next iteration is initialized or authorized here.

@@ -8,9 +8,6 @@ import xarray as xr
 
 from model_ELM.mcmc_three_stage_observations import (
     CONFIG_SCHEMA,
-    EXPECTED_CATALOG_SHA256,
-    EXPECTED_MANIFEST_SHA256,
-    EXPECTED_VALIDATION_SHA256,
     ObservationReleaseConfig,
     _daily_operator,
     load_three_stage_observations,
@@ -20,6 +17,9 @@ from model_ELM.mcmc_coupled_adapter import EXPECTED_SNAPSHOT_SHA256
 
 OBSERVATIONS = Path("/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/mcmc_optimization/observation_products/release_0001")
 SNAPSHOT = Path("/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/NEON_ppe_vertc/surrogate_input_data")
+EXPECTED_CATALOG_SHA256 = "cefc9666c4d958a78ec96826157968883a012bb8bc91c6f9826f52a6f9446bd8"
+EXPECTED_MANIFEST_SHA256 = "460c01d957b8e159007b08f6b0c33f43d120d77611a4eaaae7444752f5490fe2"
+EXPECTED_VALIDATION_SHA256 = "19effdb0f67daa26c8a1e2f429e2aedd2263eac11b6d5887d1c44c4716f88fef"
 
 
 def configuration(**changes):
