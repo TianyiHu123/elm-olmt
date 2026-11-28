@@ -189,7 +189,9 @@ Present one package containing:
    acceptance gates, and decision rule;
 6. preparation, independent review, preflight, submission, monitoring, terminal accounting,
    evaluation, record, and closeout authority;
-7. exact resources and separate preflight-correction and scheduler/resource retry limits;
+7. exact resources, one shared retry budget in additional job submissions for unchanged-scope
+   scheduler/node/transport failures and contract-preserving technical corrections (including
+   preflight corrections), the technical correction classes it covers, and a total submission cap;
 8. bounded cancellation conditions and exact current-iteration job scope;
 9. outside-sandbox authority for locked `sbatch`, job-scoped monitoring/accounting, and bounded
    `scancel`; and
@@ -246,10 +248,28 @@ Classify before acting:
 - **Scientific gate rejection:** eligible completed evidence fails an immutable scientific gate.
 - **Infrastructure performance rejection:** eligible benchmark evidence fails a declared resource
   or throughput gate without implying scientific invalidity.
-- **Scheduler/resource failure:** retry only inside the approved same-scope boundary.
-- **Preflight failure:** use only an approved minimal preflight correction and rerun boundary.
-- **Application/code/interface/schema/data/dependency/numerical failure:** preserve evidence and
-  obtain fresh approval before changing execution material or retrying.
+- **Scheduler/node/transport failure:** retry unchanged work only within the approved shared retry
+  budget, same-scope resource boundary, and total submission cap.
+- **Preflight or application/code/interface failure:** diagnose whether a narrow technical
+  correction preserves the approved contract. A contract-preserving correction may repair
+  plotting, logging, API usage, validation that retains or strengthens its gate, or derived
+  metadata that can be reconciled to frozen validated products. It must not change locked
+  scientific inputs or identities, numerical observation products or masks, processing and
+  uncertainty rules, acceptance gates or decision, resource limits, or published artifacts.
+  If the approved contract covers that correction class, the shared retry budget and total
+  submission cap each have room for every required rerun, and independent read-only re-review
+  passes, the primary may correct and retry without another user approval. Preserve the failed
+  evidence and terminal accounting, record the diagnosis and exact diff, refresh canonical and
+  submitted hashes, then rerun every affected validation and publication gate. Each additional
+  job submission consumes one shared retry and one total-submission slot; a multi-job rebuild and
+  validation sequence consumes one slot per job.
+- **Scientific or contract-impacting application/schema/data/dependency/numerical failure:**
+  preserve evidence and obtain fresh approval before changing execution material or retrying.
+  The same applies when the correction class was omitted from the approved contract, a reviewer
+  blocks it, or either budget is exhausted. A shared retry budget never authorizes source
+  substitution, environment or schema changes, numerical-product changes, weaker gates,
+  resource increases, or revision of a scientific gate result. This rule does not broaden a
+  previously approved iteration contract.
 - **Observation-context failure:** state remains unknown until authoritative reconciliation.
 
 Cancel only an exact recorded current-iteration scope when its approved condition is met. Record
