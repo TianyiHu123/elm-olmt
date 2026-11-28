@@ -353,11 +353,13 @@ class ThreeStagePosterior:
         self, sampler_theta: Sequence[Sequence[float]] | np.ndarray,
     ) -> list[SamplingPosteriorResult]:
         if self.sampling_coordinate_system != BOUNDARY_COORDINATE_SYSTEM_ID:
-            return self._evaluate_sampling_batch_impl(sampler_theta)
+            # The legacy method is also called on duck-typed fixtures that
+            # implement the posterior protocol but do not inherit this class.
+            return ThreeStagePosterior._evaluate_sampling_batch_impl(self, sampler_theta)
         self._boundary_sampling_active = True
         self._boundary_last_failure_progress = {}
         try:
-            return self._evaluate_sampling_batch_impl(sampler_theta)
+            return ThreeStagePosterior._evaluate_sampling_batch_impl(self, sampler_theta)
         except Exception:
             self._boundary_last_failure_progress = dict(self._boundary_target_progress)
             raise

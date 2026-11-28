@@ -1,65 +1,10 @@
 # iter006 compact closeout summary
 
-- Decision: `iter006_validation_failed`; status `completed`; acceptance `fail`.
-  The user's Iter006 kickoff was the consolidated authority to revise Iter005's
-  historical planning-only proposal. The plan remained unchanged, SHA-256
-  `5ee74c5208f489c540f21a8c13ce0fbe0ed84ea1d6c9043d6eece2293a0860c0`.
-- Scope: PPE1 18-parameter ABBY/JERC four-observable target, daily GPP/SR, joint
-  C/N CV 0.30, full `[720,61320)` no-leap window, frozen coupled surrogate,
-  observations and uncertainty. Input inventory SHA-256
-  `faae90d71f1d141474c60883eb4cf83436f4211cd96af1fff7b7d390f8f1a90c`;
-  frozen preflight passed. PPE2 remained scientifically inactive.
-- The old ABBY failure was exactly replayed from frozen source/state/seed `540041`.
-  At step 3, uncorrected snooker split 0, walker 40, `k_s2` mapped to
-  `0.002999999999999999`, two directional ULPs below its marginal lower bound
-  `0.003`. The independent stored-unit reference is about 0.393221 ULP inside
-  the bound. Legacy `log(lower)+u*log(high/lower)` lost the small positive term;
-  five later generated walkers in the fatal subbatch were unexamined. The old
-  ledger and partial HDF replay are byte-identical to Iter005. Attribution
-  SHA-256 `4fb109dc764276d8f438b5e727e79005e5cf0b9197e0f7413d246087f42e13de`.
-- A repository-scoped MIT-attributed corrected snooker implements both upstream
-  changes: direction `delta/norm` and Hastings factor `ndim-1`. A physical
-  boundary mapper retains original finite z and analytic Jacobian, checks
-  actual conditional bounds, and uses a frozen input-regime plus full-error
-  policy. Policy SHA-256 `931a323a0a98641e539945e5060b3b54284569a8bbd5fc7c6e5e44eba491191e`:
-  K is 2 ULP for linear sides and 3 for log-uniform/conditional-root sides,
-  below the eight-ULP ceiling. Stage B's bounded independent numerical report
-  passed, SHA-256 `a37216b7ecfdc1f8f864aa9ec320e9f34077df72c70ac4733b0c4fd1cb9ff4ab`.
-  Installed uncorrected move SHA-256 `73b03a2e56928c590e55e3a7f4c3406d7a82ae642550ae21f79efafec589e9e6`;
-  corrected helper SHA-256 `cb4f08acab24d1b0bb46e4a26688c961d49f7aa99bd60eeced44a387827622a7`.
-- The Stage B test gate failed: 50 tests ran, two errors. The modified posterior
-  broke an existing duck-typed Iter005 fixture; the Iter001 coupled-interface
-  setup also failed because its relative source path was resolved under the
-  external Stage B workdir. Neither is scheduler/node/transport interruption.
-  The one preflight and one scoped test/integration correction opportunities
-  were already consumed in Stage A. Two independent read-only reviewers agreed
-  that B cannot be rerun under this contract and C or either pilot cannot start.
-  Stage F was intended to validate the available failed evidence, but failed.
-- No corrected ABBY/JERC restart or 128-step pilot ran; no corrected step-zero,
-  per-step, block, cumulative boundary time history or pilot figure exists.
-  The legacy event is a proposal-only numerical finding, not retained-state
-  occupancy. Acceptance, movement, endpoint occupancy and convergence were
-  unassessed; no convergence or calibrated-posterior claim is made.
-- Jobs: A `24840516`, `24840555`, `24840587`; B `24840823`; F `24840903`.
-  All five are terminal `FAILED 1:0`; C/D/E were not submitted. F's fixed
-  evidence/hash checks passed, but its own no-pilot-HDF check mistakenly tested
-  truthiness of empty glob iterators and raised before creating its result JSON.
-  This application error is not eligible for an infrastructure retry. Static
-  closeout records the additional F validation failure. Accounting SHA-256
-  `1863332a2246a9d7db29ad032d2966310804ee70c38e6d285b9bd5d88445c7b9`;
-  runtime size 3,638,392 bytes, below 2 GiB. Independent read-only result
-  reviews and static four-record reconciliation passed for the truthful failure;
-  the preserved validator result SHA-256 is
-  `c53d74570bce3d588e4939941d7aa44c95d23917ce1872736dad94643427321f`.
-- Evidence root:
-  `/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/mcmc_optimization/iter006_sampler_boundary_diagnostics`.
-  Stage F reviewed driver SHA-256 `e757b27bbbf013538a969dee72b37492b8749c61ebba30ebd4cfa4046973772d`;
-  source/package manifests `c820e2160eb686f8db3dc432494d6296fd317c38953c36748d0e4908908b636a` /
-  `bddd73492b6a4efb44541408f9dc4b2a9d58284364ff09b0019e31addf9cd848`.
-- Planning-only next proposal: repair the posterior's legacy fixture dispatch,
-  run the established test suite from the repository root and fix F's empty-glob
-  check, then seek a new
-  bounded kickoff for independent B/C validation and, only after those gates,
-  the two 128-step pilots. Retain the frozen policy and old-failure attribution;
-  separately review whether the proposed endpoint policy needs sensitivity
-  checks if accepted endpoint occupancy later proves high.
+- Final decision: `bounded_sampler_pilot_validated`; acceptance `pass`. Status `completed` after the user reopened the premature failed closeout in parent commit `9f81aa9d2065339c59d86f5933231b89b7b9df2a`. That historical closeout and its five failed jobs remain documented in the report and Git history. Plan SHA-256 `5ee74c5208f489c540f21a8c13ce0fbe0ed84ea1d6c9043d6eece2293a0860c0`; no plan amendment. External evidence root: `/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/mcmc_optimization/iter006_sampler_boundary_diagnostics`.
+- Frozen science: PPE1 and exactly 18 physical parameters; independent ABBY/JERC daily GPP, daily SR and joint C/N posteriors, C/N CV 0.30, full no-leap `[720,61320)` window. Coupled surrogate and observation `release_0001`, Iter015 uncertainty/depth, prior, likelihood, masks and covariances unchanged. SCIENTIFIC input inventory SHA-256 `faae90d71f1d141474c60883eb4cf83436f4211cd96af1fff7b7d390f8f1a90c`. PPE2 stayed inactive.
+- Exact old-source/state ABBY replay recovered the Iter005 fatal proposal: step 3, uncorrected snooker split 0, walker 40, `k_s2=0.002999999999999999`, two directional ULPs below lower `0.003`; independent higher precision lies inside support. The old run and original artifacts were not overwritten. Attribution SHA-256 `4fb109dc764276d8f438b5e727e79005e5cf0b9197e0f7413d246087f42e13de`; the legacy partial step generated 16 proposals, mapped 11, failed one, and left 15 without target/MH outcomes. Its history is separate from corrected chains.
+- Corrected repository-scoped snooker applies `delta/norm` and Hastings factor `ndim-1`; old installed move SHA-256 `73b03a2e56928c590e55e3a7f4c3406d7a82ae642550ae21f79efafec589e9e6`, corrected helper `cb4f08acab24d1b0bb46e4a26688c961d49f7aa99bd60eeced44a387827622a7`. Locked finite-precision physical endpoint policy SHA-256 `931a323a0a98641e539945e5060b3b54284569a8bbd5fc7c6e5e44eba491191e`: K=2 directional ULPs for linear sides and K=3 for log-uniform/conditional-root sides, with input-boundary-regime and full-reference-error checks. Original finite z and stable analytic Jacobian are preserved. B2 passed 52/52 tests and independent numerical fixtures; C3 passed strict physical-target parity, both-site 16-versus-8+restart+8 exact backend/logical audit, and an accepted synthetic rounded endpoint retaining original z. C1/C2 failures and the physical-only initial-z refinement diagnosis remain preserved. Approved C pointer SHA-256 `b991f8ce81903270a5dadf7b987e982e3886f316facd8eadecbf8d776514f7ee`.
+- Fresh corrected pilots: ABBY job `24847977`, seed `650041`, and JERC job `24847981`, seed `650042`, each 64 walkers x exactly 128 steps with checkpoints 64/128. Each generated/examined/completed 8192 proposals, zero failed/unexamined/material/other mapping failures. ABBY accepted 892 (`0.10888671875`), JERC 682 (`0.083251953125`); both passed the locked movement checks. Final 16-step acceptance was 50/1024 ABBY and 18/1024 JERC, a short-run mixing caution. Convergence is unassessed; no calibrated posterior intervals are claimed.
+- Boundary time histories: [ABBY figure](/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/mcmc_optimization/iter006_sampler_boundary_diagnostics/diagnostics/attempt_002/ABBY/pilot/boundary_history.png) and [JERC figure](/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/mcmc_optimization/iter006_sampler_boundary_diagnostics/diagnostics/attempt_002/JERC/pilot/boundary_history.png) accompany step-zero/per-step, eight 16-step blocks, cumulative and group CSVs. ABBY had 22 natural physical-endpoint and 48 unit-saturation proposal vectors; JERC had 26 and 125. Neither site used a physical repair or accepted/retained an exact physical endpoint. Component occurrences were 24/57 ABBY and 28/128 JERC. Original-z prior-unit near-boundary retained occupancy (`u<=0.01` or `u>=0.99`, held states included) rose from 34/64 to 64/64 ABBY and 31/64 to 62/64 JERC. This is descriptive short-run behavior, not convergence or proof of a boundary-concentrated posterior. Pilot diagnostic JSON SHA-256 ABBY `ccbd4bc3f22db64e408a1089aac13d82246141508d7719ecc07d04ea2e22953c`, JERC `446100af5f1c3792ef26cd4057c29d388641bb43be69ecf2b7fe1962ce4772ac`.
+- Stage F `24848482` completed evidence-only aggregation. Both independent result reviews passed all histories, figures, source/package pins and counts. Final F report SHA-256 `143f4b1ab4e063a76d3aab5ecb8b2b7ea99ff8f4ca534ccde2fcacd13d5d034e`. All 12 submitted jobs and 36 job/batch/extern rows are terminal: seven preserved application-failed parents and five completed parents. Combined accounting SHA-256 `9aaa24d1988c3b645360e064a87395ec99e7a09c98d0b9b9423e9f28b27d1509`; post-validation runtime size `179569612` bytes <2 GiB. The user-authorized additional correction budget used 2/10 retries. The reviewed static four-record validator passed after one compact-text marker correction; output SHA-256 `e696e6a7e0d8878b9b0b1d4266b0f5e3c2d9e2d823e4ae742ec3ed4ac0a22137`. One scoped local append commit records this closeout.
+- One planning-only next proposal: a separately approved ABBY/JERC independent-initialization convergence and boundary-sensitivity iteration using the same frozen science, corrected move and numerical policy. Derive finite chain and resource budgets from measured pilot throughput; predeclare independent seeds, late-block movement, retained prior-unit boundary occupancy, autocorrelation/ESS where estimable, and component/posterior-predictive checks. Assess whether the early near-boundary occupancy and declining late-block acceptance persist. No new work is authorized by this proposal.

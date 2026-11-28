@@ -187,3 +187,49 @@
   compact summary `development/mcmc_optimization/summaries/iter006/summary.md`.
   Planning-only next proposal: fix legacy test dispatch, test cwd and F empty-glob
   check; seek a fresh bounded kickoff for B/C before any pilot.
+
+## iter006 reopened continuation - sampler boundary validation completed
+
+- The user reopened the premature failed closeout preserved above and in commit
+  `9f81aa9d2065339c59d86f5933231b89b7b9df2a`, authorized completion of
+  the planned work units, and granted ten additional focused correction retries.
+  Reopened Iter006 final decision: `bounded_sampler_pilot_validated`; acceptance `pass`.
+  Plan SHA-256 `5ee74c5208f489c540f21a8c13ce0fbe0ed84ea1d6c9043d6eece2293a0860c0`;
+  frozen PPE1 18-parameter ABBY/JERC daily-GPP/daily-SR/joint-C/N science unchanged.
+- Exact old-source/state replay identified the Iter005 ABBY step-3 uncorrected
+  snooker `k_s2` lower-bound escape of two directional ULPs. The corrected
+  snooker, locked physical policy `931a323a0a98641e539945e5060b3b54284569a8bbd5fc7c6e5e44eba491191e`,
+  B2 52-test numerical gate, C3 both-site strict target and exact restart gates,
+  and synthetic accepted endpoint/original-z restart passed independent reviews.
+  C1/C2 application failures remain preserved; only 2/10 new correction retries
+  were consumed.
+- ABBY D `24847977` and JERC E `24847981` each completed exactly 64 walkers x
+  128 steps with checkpoints 64/128, 8192 fully accountable proposals/site and
+  zero corrected-run mapping failures. Acceptance was `0.10888671875` ABBY and
+  `0.083251953125` JERC; all declared descriptive movement checks passed.
+  Stage F `24848482` produced separate legacy/restart/pilot step-zero,
+  per-step, 16-step-block, cumulative and grouped histories and site figures.
+  F report SHA-256 `143f4b1ab4e063a76d3aab5ecb8b2b7ea99ff8f4ca534ccde2fcacd13d5d034e`;
+  independent F result reviews passed.
+- Pilot physical repairs were zero. Natural physical endpoints/unit saturations
+  occurred only in rejected proposals: ABBY 22/48 vectors, JERC 26/125.
+  No exact physical endpoint was accepted or retained. Descriptive original-z
+  near-boundary retained occupancy rose from 34/64 to 64/64 ABBY and 31/64 to
+  62/64 JERC. Final 16-step acceptance fell to 50/1024 and 18/1024.
+  These short-run patterns motivate a later independent-initialization
+  boundary/mixing sensitivity assessment; convergence and calibrated posterior
+  intervals remain unassessed.
+- All 12 jobs and 36 Slurm job/batch/extern rows are terminal/accounted, with
+  seven preserved failed attempts and five completions. Combined accounting
+  SHA-256 `9aaa24d1988c3b645360e064a87395ec99e7a09c98d0b9b9423e9f28b27d1509`;
+  output root `/xdisk/chopinsong/tianyihu/E3SM_out/SOIL_project/mcmc_optimization/iter006_sampler_boundary_diagnostics`
+  used `179569612` bytes after static validation, below 2 GiB. The reviewed
+  shell/text four-record validator passed after one compact-text marker fix;
+  output SHA-256 `e696e6a7e0d8878b9b0b1d4266b0f5e3c2d9e2d823e4ae742ec3ed4ac0a22137`.
+  One scoped local append commit completes this continuation.
+- Planning-only next proposal: design a separately approved ABBY/JERC
+  independent-initialization convergence and boundary-sensitivity iteration
+  under the same frozen science/move/policy, with finite resources derived from
+  pilot throughput and predeclared prior-unit occupancy, late-block movement,
+  autocorrelation/ESS and component/posterior-predictive diagnostics. No next
+  iteration is initialized or authorized here.
